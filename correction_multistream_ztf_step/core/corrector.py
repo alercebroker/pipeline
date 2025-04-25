@@ -9,6 +9,7 @@ import pandas as pd
 from core.strategy import is_corrected, is_dubious, is_stellar, correct
 
 
+
 class Corrector:
     """Class for applying corrections to a list of detections"""
 
@@ -40,40 +41,32 @@ class Corrector:
                 from generic alert (must include `extra_fields`)
         """
         self.logger = logging.getLogger(f"alerce.{self.__class__.__name__}")
-        self._detections = detections.drop_duplicates(subset=["measurement_id", "oid"])
+        self._detections = detections.drop_duplicates(subset=["measurement_id", "oid"]) 
         self._detections = self._detections.drop_duplicates(["measurement_id", "oid"])
         self._detections = self._detections.set_index(
-            self._detections["measurement_id"].astype(str)
-            + "_"
-            + self._detections["oid"].astype(str)
+            self._detections["measurement_id"].astype(str) + "_" + self._detections["oid"].astype(str)
         )
 
         import ast
 
         self.__extras = [
-            dict(
-                list(row["extra_fields"].items()) if isinstance(row["extra_fields"], dict) else [],
-                measurement_id=row["measurement_id"],
-                oid=row["oid"],
-            )
+            dict(list(row['extra_fields'].items()) if isinstance(row['extra_fields'], dict) else [], 
+                measurement_id=row['measurement_id'], 
+                oid=row['oid'])
             for _, row in detections.iterrows()
         ]
 
         extras = pd.DataFrame(
             self.__extras,
-            columns=self._EXTRA_FIELDS_NEW_DET
-            + self._EXTRA_FIELDS_OLD_DET
-            + ["measurement_id", "oid"],
+            columns=self._EXTRA_FIELDS_NEW_DET + self._EXTRA_FIELDS_OLD_DET + ["measurement_id", "oid"],
         )
         extras = extras.drop_duplicates(["measurement_id", "oid"]).set_index(
-            self._detections["measurement_id"].astype(str)
-            + "_"
-            + self._detections["oid"].astype(str)
+            self._detections["measurement_id"].astype(str) + "_" + self._detections["oid"].astype(str)
         )
         self._detections = self._detections.join(extras, how="left", rsuffix="_extra")
         self._detections = self._detections.drop("oid_extra", axis=1)
         self._detections = self._detections.drop("measurement_id_extra", axis=1)
-
+        
     @property
     def corrected(self) -> pd.Series:
         """Whether the detection has a corrected magnitude"""
@@ -95,7 +88,7 @@ class Corrector:
         corrected_df = correct(self._detections)
         # NaN for non-corrected magnitudes
         return corrected_df.where(self.corrected)
-
+    
     def corrected_as_records(self) -> list[dict]:
         """Corrected alerts as records.
 
@@ -118,16 +111,12 @@ class Corrector:
             corrected=self.corrected, dubious=self.dubious, stellar=self.stellar
         )
         detections = self._detections.drop(columns=self._EXTRA_FIELDS_OLD_DET)
-        corrected = detections.join(corrected).replace(np.nan, None).replace("nan", None)
+        corrected = detections.join(corrected).replace(np.nan, None).replace('nan', None)
         corrected = corrected.drop(columns=self._EXTRA_FIELDS_NEW_DET)
         corrected = corrected.replace(-np.inf, None)
         self.logger.debug("Corrected %s", corrected["corrected"].sum())
-        corrected["parent_candid"] = pd.to_numeric(
-            corrected["parent_candid"], errors="ignore"
-        ).astype("Int64")
-        corrected["measurement_id"] = pd.to_numeric(
-            corrected["measurement_id"], errors="ignore"
-        ).astype("Int64")
+        corrected["parent_candid"] = pd.to_numeric(corrected["parent_candid"], errors='ignore').astype('Int64')
+        corrected["measurement_id"] = pd.to_numeric(corrected["measurement_id"], errors='ignore').astype('Int64')
         corrected = corrected.reset_index(drop=True).to_dict("records")
         for record in corrected:
             record["extra_fields"] = find_extra_fields(record["oid"], record["measurement_id"])

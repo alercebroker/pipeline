@@ -20,7 +20,6 @@ from core.parsers.parser_sql import (
 
 from core.corrector import Corrector
 
-
 class CorrectionMultistreamZTFStep(GenericStep):
     def __init__(
         self,
@@ -33,15 +32,16 @@ class CorrectionMultistreamZTFStep(GenericStep):
         self.logger = logging.getLogger("alerce.CorrectionMultistreamZTFStep")
         self.set_producer_key_field("oid")
 
+
     def execute(self, messages: List[dict]) -> dict:
         all_detections = []
         all_non_detections = []
         msg_data = []
-
+    
         for msg in messages:
             oid = msg["oid"]
             measurement_id = msg["measurement_id"]
-            msg_data.append({"oid": oid, "measurement_id": measurement_id})
+            msg_data.append({"oid": oid, "measurement_id":measurement_id})
 
             for detection in msg["detections"]:
                 parsed_detection = detection.copy()
@@ -49,45 +49,52 @@ class CorrectionMultistreamZTFStep(GenericStep):
                 parsed_detection["new"] = True
                 all_detections.append(parsed_detection)
 
-            for non_detection in msg["non_detections"]:
+            for non_detection in msg["non_detections"]:  
                 parsed_non_detection = non_detection.copy()
                 parsed_non_detection["oid"] = oid
                 all_non_detections.append(parsed_non_detection)
-
+        
+        
         msg_df = pd.DataFrame(msg_data)
-        detections_df = pd.DataFrame(
-            all_detections
-        )  # We will always have detections BUT not always non_detections
+        detections_df = pd.DataFrame(all_detections) # We will always have detections BUT not always non_detections
         if all_non_detections:
             non_detections_df = pd.DataFrame(all_non_detections)
         else:
-            non_detections_df = pd.DataFrame(
-                columns=["oid", "measurement_id", "band", "mjd", "diffmaglim"]
-            )
+            non_detections_df = pd.DataFrame(columns=["oid", "measurement_id", "band", "mjd", "diffmaglim"]) 
 
-        oids = set(msg_df["oid"].unique())
+        oids = set(msg_df["oid"].unique()) 
 
-        measurement_ids = (
-            msg_df.groupby("oid")["measurement_id"].apply(lambda x: [str(id) for id in x]).to_dict()
-        )
+        measurement_ids =  msg_df.groupby("oid")["measurement_id"].apply(lambda x: [str(id) for id in x]).to_dict()
         last_mjds = detections_df.groupby("oid")["mjd"].max().to_dict()
 
         logger = logging.getLogger("alerce.CorrectionMultistreamZTFStep")
         logger.debug(f"Received {len(detections_df)} detections from messages")
         oids = list(oids)
-        detections = detections_df.to_dict("records")
-        non_detections = non_detections_df.to_dict("records")
+        detections = detections_df.to_dict('records')
+        non_detections = non_detections_df.to_dict('records')
+
 
         """Queries the database for all detections and non-detections for each OID and removes duplicates"""
-        db_sql_detections = _get_sql_detections(oids, self.db_sql, parse_sql_detection)
-        db_sql_non_detections = _get_sql_non_detections(oids, self.db_sql, parse_sql_non_detection)
+        db_sql_detections = _get_sql_detections(
+            oids, self.db_sql, parse_sql_detection
+        )
+        db_sql_non_detections = _get_sql_non_detections(
+            oids, self.db_sql, parse_sql_non_detection
+        )
         db_sql_forced_photometries = _get_sql_forced_photometries(
             oids, self.db_sql, parse_sql_forced_photometry
         )
-
-        detections = pd.DataFrame(detections + db_sql_detections + db_sql_forced_photometries)
-        non_detections = pd.DataFrame(non_detections + db_sql_non_detections)
-
+        
+        detections = pd.DataFrame(
+            detections +
+             db_sql_detections
+            + db_sql_forced_photometries
+        )
+        non_detections = pd.DataFrame(
+            non_detections +
+              db_sql_non_detections
+        )
+        
         self.logger.debug(f"Retrieved {detections.shape[0]} detections")
         detections["measurement_id"] = detections["measurement_id"].astype(str)
         detections["parent_candid"] = detections["parent_candid"].astype(str)
@@ -96,29 +103,33 @@ class CorrectionMultistreamZTFStep(GenericStep):
         # TODO: has_stamp in db is not reliable
         # has_stamp true will be on top
         # new true will be on top
-        detections = detections.sort_values(["has_stamp", "new"], ascending=[False, False])
+        detections = detections.sort_values(
+            ["has_stamp", "new"], ascending=[False, False]
+        )
 
         # so this will drop alerts coming from the database if they are also in the stream
         # but will also drop if they are previous detections
-        detections = detections.drop_duplicates(["measurement_id", "oid"], keep="first")
-
-        non_detections = non_detections.drop_duplicates(["oid", "band", "mjd"])
-        self.logger.debug(f"Obtained {len(detections[detections['new']])} new detections")
-
-        non_detections = (
-            non_detections.replace(np.nan, None)
-            if not non_detections.empty
-            else pd.DataFrame(columns=["oid"])
+        detections = detections.drop_duplicates(
+            ["measurement_id", "oid"], keep="first"
         )
 
+        non_detections = non_detections.drop_duplicates(["oid", "band", "mjd"])
+        self.logger.debug(
+            f"Obtained {len(detections[detections['new']])} new detections"
+        )
+        
+        non_detections = non_detections.replace(np.nan, None) if not non_detections.empty else pd.DataFrame(columns=["oid"])
+       
         if not self.config["FEATURE_FLAGS"].get("SKIP_MJD_FILTER", False):
             detections = detections[detections["mjd"] <= detections["oid"].map(last_mjds)]
-
+        
         corrector = Corrector(detections)
         detections = corrector.corrected_as_records()
-        non_detections = non_detections.replace({float("nan"): None})
-        coords = corrector.coordinates_as_records()
-        non_detections = non_detections.drop_duplicates(["oid", "band", "mjd"])
+        non_detections = non_detections.replace({float('nan'): None})
+        coords = corrector.coordinates_as_records() 
+        non_detections = non_detections.drop_duplicates(
+            ["oid", "band", "mjd"]
+        )
 
         return {
             "detections": detections,
@@ -126,7 +137,11 @@ class CorrectionMultistreamZTFStep(GenericStep):
             "coords": coords,
             "measurement_ids": measurement_ids,
         }
+    
+        
 
+
+    
     @classmethod
     def pre_produce(cls, result: dict):
         result["detections"] = pd.DataFrame(result["detections"]).groupby("oid")
@@ -136,19 +151,16 @@ class CorrectionMultistreamZTFStep(GenericStep):
             result["non_detections"] = pd.DataFrame(columns=["oid"]).groupby("oid")
         output = []
         for oid, dets in result["detections"]:
-            dets = dets.replace(
-                {np.nan: None, pd.NA: None, -np.inf: None}
-            )  # Avoid NaN in the final results or infinite
-            for field in [
-                "e_ra",
-                "e_dec",
-            ]:  # Replace the e_ra/e_dec converted to None back to float nan per avsc formatting
-                dets[field] = dets[field].apply(lambda x: x if pd.notna(x) else float("nan"))
+            dets = dets.replace({np.nan: None, pd.NA: None, -np.inf: None})# Avoid NaN in the final results or infinite
+            for field in ['e_ra', 'e_dec']: # Replace the e_ra/e_dec converted to None back to float nan per avsc formatting
+                dets[field] = dets[field].apply(
+                    lambda x: x if pd.notna(x) else float('nan')
+                )
             unique_measurement_ids = result["measurement_ids"][oid]
             unique_measurement_ids_long = [int(id_str) for id_str in unique_measurement_ids]
-            output_message = {
+            output_message = { 
                 "oid": oid,
-                "measurement_id": unique_measurement_ids_long,
+                "measurement_id": unique_measurement_ids_long,    
                 "meanra": result["coords"][oid]["meanra"],
                 "meandec": result["coords"][oid]["meandec"],
                 "detections": dets.to_dict("records"),
@@ -202,9 +214,15 @@ class CorrectionMultistreamZTFStep(GenericStep):
 
     """
 
+
     def tear_down(self):
         if isinstance(self.consumer, KafkaConsumer):
             self.consumer.teardown()
         else:
             self.consumer.__del__()
         self.producer.__del__()
+
+
+
+
+
