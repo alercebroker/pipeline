@@ -189,7 +189,6 @@ class MultiScaleStampClassifier(GenericStep):
         return messages_filtered
 
     def _messages_to_input_dto(self, messages: List[dict]) -> InputDTO:
-
         ## get only necessary information form each msg
         records = []
         for msg in messages:
@@ -236,6 +235,18 @@ class MultiScaleStampClassifier(GenericStep):
             self.logger.info(f" output : {output_dto}")
             store_probability(
                 self.engine, self.classifier_name, self.classifier_version, output_dto
+            )
+
+            oids_removed = [
+                k
+                for k in messages_dict.keys()
+                if k not in output_dto.probabilities.index
+            ]
+            n_messages_total = len(messages_dict)
+            for oid in oids_removed:
+                messages_dict.pop(oid)
+            logging.info(
+                f"Kept {len(messages_dict)}/{n_messages_total} messages with valid probabilities."
             )
 
             return output_dto, messages_dict, DataFrame()
