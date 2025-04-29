@@ -14,7 +14,7 @@ class StampParser(KafkaParser):
         self, model_output: OutputDTO, messages: dict, **kwargs
     ) -> KafkaOutput[list]:
 
-        parsed = {}
+        parsed = []
         probabilities = model_output.probabilities
         for oid, msg in messages.items():
             try:
