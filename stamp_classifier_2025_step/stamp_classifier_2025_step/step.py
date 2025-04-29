@@ -168,10 +168,6 @@ class MultiScaleStampClassifier(GenericStep):
             with fits.open(io.BytesIO(decompressed_data)) as hdul:
                 return hdul[0].data
 
-    def pre_execute(self, messages):
-        """override method"""
-        return self._read_and_transform_messages(messages)
-
     def _check_dimension_stamps(self, messages: list[dict]) -> List[dict]:
         """ensure that all stamps share the same dimension"""
         messages_filtered = []

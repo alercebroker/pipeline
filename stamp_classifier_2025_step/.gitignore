@@ -1,2 +1,4 @@
 *notebooks/*
 *.yaml
+stamp-env
+stamp-venv
