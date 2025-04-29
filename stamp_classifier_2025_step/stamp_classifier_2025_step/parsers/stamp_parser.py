@@ -16,8 +16,7 @@ class StampParser(KafkaParser):
 
         parsed = []
         probabilities = model_output.probabilities
-        for msg in messages:
-            oid = msg['objectId']
+        for oid, msg in messages.items():
             try:
                 data = self._get_probabilities_by_oid(oid, probabilities=probabilities)
                 parsed.append(
