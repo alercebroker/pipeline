@@ -10,7 +10,7 @@ psql_config = {
     "USER": "postgres",
     "PASSWORD": "postgres",
     "PORT": 5432,
-    "DB_NAME": "db_esta_si_que_si",
+    "DB_NAME": "testing_correction_ms_db",
 }
 
 
