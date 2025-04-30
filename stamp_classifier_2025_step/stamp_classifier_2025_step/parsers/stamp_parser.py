@@ -13,11 +13,9 @@ class StampParser(KafkaParser):
     def parse(
         self, model_output: OutputDTO, messages: dict, **kwargs
     ) -> KafkaOutput[list]:
-
         parsed = []
         probabilities = model_output.probabilities
-        for msg in messages:
-            oid = msg['objectId']
+        for oid, msg in messages.items():
             try:
                 data = self._get_probabilities_by_oid(oid, probabilities=probabilities)
                 parsed.append(
@@ -38,4 +36,3 @@ class StampParser(KafkaParser):
         if oid not in probabilities.index:
             return {"error": "OID not found"}
         return probabilities.loc[oid].to_dict()
-

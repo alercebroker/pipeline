@@ -20,12 +20,12 @@ logging.basicConfig(
 from stamp_classifier_2025_step.step import MultiScaleStampClassifier
 
 
-step_config = config_from_yaml_file(os.path.join(SCRIPT_PATH, "/home/alerce/Desktop/alerce/pipeline/scribe/scripts/config.yaml"))
+step_config = config_from_yaml_file(os.path.join(SCRIPT_PATH, "/config/config.yaml"))
 prometheus_metrics = DefaultPrometheusMetrics()
-print(step_config)
+
 if step_config["FEATURE_FLAGS"]["PROMETHEUS"]:
     from prometheus_client import start_http_server
-    from apff.metrics.prometheus import PrometheusMetrics
+    from apf.metrics.prometheus import PrometheusMetrics
 
     prometheus_metrics = PrometheusMetrics()
     start_http_server(8000)
