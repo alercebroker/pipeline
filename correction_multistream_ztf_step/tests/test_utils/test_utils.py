@@ -27,7 +27,7 @@ def set_logger(settings):
 
 def step_creator():
     settings = config_from_yaml_file(
-        "/home/kay/Documentos/alerce/new_step/pipeline/correction_multistream_ztf-step/tests/test_utils/config.yaml"
+        "/tests/test_utils/config.yaml"
     )
     logger = set_logger(settings)
 

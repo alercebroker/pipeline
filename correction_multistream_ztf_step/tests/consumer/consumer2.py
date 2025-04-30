@@ -36,14 +36,14 @@ def consume_and_save_json(consumer_config, topic, schema_path, output_file):
 data1 = consume_and_save_json(
     conf,
     "correction",
-    "/home/kay/Descargas/pipeline_2204/pipeline/schemas/correction_step/output.avsc",
+    "/schemas/ingestion_step/output.avsc",
     "correction_data.json",
 )
 
 data2 = consume_and_save_json(
     conf2,
     "correction-ms-ztf",
-    "/home/kay/Descargas/pipeline_2204/pipeline/schemas/correction_ms_ztf/output.avsc",
+    "/schemas/correction_ms_ztf/output.avsc",
     "correction_ms_ztf_data.json",
 )
 

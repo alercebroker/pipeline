@@ -45,8 +45,8 @@ imageCredentials:
 configYaml:
   enabled: true
   CONSUMER_CONFIG:
-    CLASS: "apf.consumers.KafkaConsumer"
-    SCHEMA_PATH: "/schemas/ingestion_step/output.avsc""
+    CLASS: "apf.consumers.KafkaSchemalessConsumer"
+    SCHEMA_PATH: "/schemas/ingestion_step/output.avsc"
     TOPICS: ["ztf-ingestion"]
     consume.messages: 100
     consume.timeout: 10
