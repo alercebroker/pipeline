@@ -1,0 +1,24 @@
+name: Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "correction_multistream_ztf_step/**"
+      - "!correction_multistream_ztf_step/README.md"
+
+jobs:
+  correction_multistream_ztf_step_lint:
+    uses: ./.github/workflows/lint-template.yaml
+    with:
+      base-folder: "correction_multistream_ztf_step"
+      sources-folder: "correction_multistream_ztf_step"
+  build-correction-multistream-ztf-dagger:
+    uses: ./.github/workflows/template_build_with_dagger.yaml
+    with:
+      ref: ${{ github.ref }}
+      stage: staging
+      extra-args: correction_multistream_ztf_step --dry-run
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
