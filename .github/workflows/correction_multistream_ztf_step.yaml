@@ -14,6 +14,15 @@ jobs:
     with:
       base-folder: "correction_multistream_ztf_step"
       sources-folder: "correction_multistream_ztf_step"
+  correction_step_integration:
+    uses: ./.github/workflows/poetry-tests-template.yaml
+    with:
+      base-folder: "correction_step"
+      sources-folder: "correction"
+      test-folder: "tests/integration"
+      codecov-flags: "" # Do not upload
+    secrets:
+      GH_TOKEN: "${{ secrets.ADMIN_TOKEN }}"
   build-correction-multistream-ztf-dagger:
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
