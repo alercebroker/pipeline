@@ -22,8 +22,8 @@ def serialize_detections(
         "message_id",
         "oid",
         "sid",
-        "pid",
         "tid",
+        "pid",
         "band",
         "measurement_id",
         "mjd",
@@ -49,7 +49,6 @@ def serialize_detections(
 
 def serialize_non_detections(non_detections: pd.DataFrame):
     non_dets = non_detections.replace({np.nan: None})
-
     needed_columns = [
         "message_id",
         "oid",
@@ -84,7 +83,7 @@ def serialize_ztf(data: ParsedData) -> list[dict[str, Any]]:
     message_detections = groupby_messageid(detections)
     message_non_detections = groupby_messageid(non_detections)
 
-    messages = []
+    messages: list[dict[str, Any]] = []
     for message_id, objects in message_objects.items():
         detections = message_detections.get(message_id, [])
         non_detections = message_non_detections.get(message_id, [])

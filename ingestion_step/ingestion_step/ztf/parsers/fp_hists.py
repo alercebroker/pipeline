@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 from ingestion_step.ztf.parsers.transforms import (
-    add_candid,
+    add_candid_fp,
     add_sid,
     add_tid,
     add_zero_e_dec,
@@ -19,7 +19,7 @@ from ingestion_step.ztf.parsers.transforms import (
 
 FP_TRANSFORMS = [
     objectId_to_oid,
-    add_candid,
+    add_candid_fp,
     candid_to_measurment_id,
     add_tid,
     add_sid,
