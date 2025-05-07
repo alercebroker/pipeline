@@ -7,7 +7,7 @@ from ingestion_step.ztf.parsers.transforms import (
     add_sid,
     add_tid,
     apply_transforms,
-    candid_to_measurment_id,
+    candid_to_measurement_id,
     fid_to_band,
     isdiffpos_to_int,
     jd_to_mjd,
@@ -20,7 +20,7 @@ from ingestion_step.ztf.parsers.transforms import (
 
 CANDIDATES_TRANSFORMS = [
     objectId_to_oid,
-    candid_to_measurment_id,
+    candid_to_measurement_id,
     add_tid,
     add_sid,
     isdiffpos_to_int,

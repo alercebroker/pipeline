@@ -33,24 +33,20 @@ def objectId_to_oid(df: pd.DataFrame):
     )
 
 
-def add_candid(df: pd.DataFrame):
+def add_candid_fp(df: pd.DataFrame):
     """
-    Computes a candid by adding the objectId and the pid.
+    Adds a candid to forced_photometries equal to the pid.
 
-    Takes a `DataFrame` containing the columns:
-        - `objectId`
-        - `pid`
-    and uses them to calculate the new columns:
-        - `candid`
+    The pair (oid, pid) should be unique between forced_photometries
     """
 
     # WARN: Use a more appropiate conversion!
-    df["candid"] = df.apply(lambda x: x["oid"] ^ x["pid"], axis=1)
+    df["candid"] = df["pid"]
 
 
-def candid_to_measurment_id(df: pd.DataFrame):
+def candid_to_measurement_id(df: pd.DataFrame):
     """
-    Adds a measurment_id equal to the candid.
+    Adds a measurement_id equal to the candid.
 
     Takes a `DataFrame` containing the columns:
         - `candid`

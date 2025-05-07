@@ -2,14 +2,14 @@ import numpy as np
 import pandas as pd
 
 from ingestion_step.ztf.parsers.transforms import (
-    add_candid,
+    add_candid_fp,
     add_sid,
     add_tid,
     add_zero_e_dec,
     add_zero_e_ra,
     apply_transforms,
     calculate_isdiffpos,
-    candid_to_measurment_id,
+    candid_to_measurement_id,
     fid_to_band,
     forcediffimflux_to_e_mag,
     forcediffimflux_to_mag,
@@ -19,8 +19,8 @@ from ingestion_step.ztf.parsers.transforms import (
 
 FP_TRANSFORMS = [
     objectId_to_oid,
-    add_candid,
-    candid_to_measurment_id,
+    add_candid_fp,
+    candid_to_measurement_id,
     add_tid,
     add_sid,
     fid_to_band,
