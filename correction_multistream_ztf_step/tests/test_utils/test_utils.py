@@ -4,7 +4,6 @@ from apf.core.settings import config_from_yaml_file
 from core.DB.database_sql import PSQLConnection
 from correction_multistream_ztf_step.step import CorrectionMultistreamZTFStep
 
-
 def set_logger(settings):
     level = logging.INFO
     if settings.get("LOGGING_DEBUG"):
