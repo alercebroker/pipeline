@@ -4,7 +4,7 @@ import logging
 
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker, Session
-from db_plugins.db.sql.models_new import (
+from db_plugins.db.sql.models import (
     Base,
     Detection,
     ZtfForcedPhotometry,
