@@ -42,6 +42,14 @@ with open('tests/integration/data/data_input_prv_candidates_staging.json', 'r') 
 class TestCorrectionMultistreamZTF(unittest.TestCase):
     """Test class for Correction Multistream ZTF Step."""
 
+    @classmethod
+    def setUpClass(cls):
+        """Set up the test environment once for all test methods."""
+        cls.settings = config_from_yaml_file("tests/test_utils/config.yaml")
+        cls.logger = cls._set_logger(cls.settings)
+        cls.db_sql = PsqlDatabase(cls.settings["PSQL_CONFIG"])
+        cls.step_params = {"config": cls.settings, "db_sql": cls.db_sql}
+
     def setUp(self):
         # crear db
         self.db_sql = PsqlDatabase(psql_config)
