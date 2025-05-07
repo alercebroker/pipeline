@@ -17,8 +17,8 @@ jobs:
   correction_step_integration:
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
-      base-folder: "correction_step"
-      sources-folder: "correction"
+      base-folder: "correction_step_multistream_ztf_step"
+      sources-folder: "correction_step_multistream_ztf_step"
       test-folder: "tests/integration"
       codecov-flags: "" # Do not upload
     secrets:
