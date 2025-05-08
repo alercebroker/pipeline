@@ -3,7 +3,7 @@ CONSUMER_CONFIG:
   SCHEMA_PATH: "schemas/prv_candidate_step/input.avsc"
   PARAMS:
     input_format: "json"
-    input_path: "tests/data_input_prv_candidates_staging.json"
+    input_path: "tests/integration/data/data_input_prv_candidates_staging.json"
     auto.offset.reset: beginning
   consume.messages: 10
   consume.timeout: 10
