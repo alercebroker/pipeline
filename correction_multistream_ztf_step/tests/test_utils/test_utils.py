@@ -26,9 +26,7 @@ def set_logger(settings):
 
 
 def step_creator():
-    settings = config_from_yaml_file(
-        "/tests/test_utils/config.yaml"
-    )
+    settings = config_from_yaml_file("/tests/test_utils/config.yaml")
     logger = set_logger(settings)
 
     db_sql = PSQLConnection(settings["PSQL_CONFIG"])

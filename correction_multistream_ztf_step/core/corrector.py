@@ -95,7 +95,6 @@ class Corrector:
         corrected_df = correct(self._detections)
         # NaN for non-corrected magnitudes
         return corrected_df.where(self.corrected)
-    
 
     def corrected_as_records(self) -> list[dict]:
         """Corrected alerts as records.
@@ -112,16 +111,37 @@ class Corrector:
                 if extra["oid"] == oid and extra["measurement_id"] == measurement_id:
                     return self.__extras.pop(i)
             return {}
-        
+
         def reorder_record(record):
             # Schema order of fields
             schema_fields = [
-                "oid", "sid", "pid", "tid", "band", "measurement_id", "mjd",
-                "ra", "e_ra", "dec", "e_dec", "mag", "e_mag", "mag_corr", "e_mag_corr",
-                "e_mag_corr_ext", "isdiffpos", "corrected", "dubious", "stellar", "has_stamp",
-                "forced", "new", "parent_candid", "extra_fields"
+                "oid",
+                "sid",
+                "pid",
+                "tid",
+                "band",
+                "measurement_id",
+                "mjd",
+                "ra",
+                "e_ra",
+                "dec",
+                "e_dec",
+                "mag",
+                "e_mag",
+                "mag_corr",
+                "e_mag_corr",
+                "e_mag_corr_ext",
+                "isdiffpos",
+                "corrected",
+                "dubious",
+                "stellar",
+                "has_stamp",
+                "forced",
+                "new",
+                "parent_candid",
+                "extra_fields",
             ]
-            
+
             # Reorder fields of records according to schema
             reordered = {
                 "oid": record.get("oid"),
@@ -129,7 +149,7 @@ class Corrector:
                 "pid": record.get("pid"),
                 "tid": record.get("tid"),
                 "band": record.get("band"),
-                "measurement_id": [record.get("measurement_id")],  
+                "measurement_id": [record.get("measurement_id")],
                 "mjd": record.get("mjd"),
                 "ra": record.get("ra"),
                 "e_ra": record.get("e_ra"),
@@ -148,9 +168,8 @@ class Corrector:
                 "forced": record.get("forced"),
                 "new": record.get("new"),
                 "parent_candid": record.get("parent_candid", None),
-                "extra_fields": record.get("extra_fields", {})
+                "extra_fields": record.get("extra_fields", {}),
             }
-            
 
             return reordered
 
@@ -165,27 +184,46 @@ class Corrector:
         corrected = corrected.drop(columns=self._EXTRA_FIELDS_NEW_DET)
         corrected = corrected.replace(-np.inf, None)
         self.logger.debug("Corrected %s", corrected["corrected"].sum())
-        
+
         # Reorder the DataFrame columns to match the schema
         desired_order = [
-            "oid", "sid", "pid", "tid", "band", "measurement_id", "mjd",
-            "ra", "e_ra", "dec", "e_dec", "mag", "e_mag",
-            "mag_corr", "e_mag_corr", "e_mag_corr_ext", "isdiffpos",
-            "corrected", "dubious", "stellar", "has_stamp", "forced", "new",
-            "parent_candid"
+            "oid",
+            "sid",
+            "pid",
+            "tid",
+            "band",
+            "measurement_id",
+            "mjd",
+            "ra",
+            "e_ra",
+            "dec",
+            "e_dec",
+            "mag",
+            "e_mag",
+            "mag_corr",
+            "e_mag_corr",
+            "e_mag_corr_ext",
+            "isdiffpos",
+            "corrected",
+            "dubious",
+            "stellar",
+            "has_stamp",
+            "forced",
+            "new",
+            "parent_candid",
         ]
         corrected = corrected[desired_order]
 
         corrected = corrected.reset_index(drop=True).to_dict("records")
         for record in corrected:
-            record["extra_fields"] = find_extra_fields(record["oid"],record["measurement_id"])
+            record["extra_fields"] = find_extra_fields(record["oid"], record["measurement_id"])
             record["extra_fields"].pop("measurement_id", None)
             record["extra_fields"].pop("oid", None)
 
             for key, value in list(record["extra_fields"].items()):
                 if isinstance(value, float) and np.isnan(value):
                     record["extra_fields"][key] = None
-                
+
         return corrected
 
     @staticmethod

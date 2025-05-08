@@ -28,7 +28,7 @@ def consume_and_save_json(consumer_config, topic, schema_path, output_file):
                 bytes_io = io.BytesIO(msg.value())
                 data = fastavro.schemaless_reader(bytes_io, schema)
                 print(data)
-                
+
     finally:
         consumer.close()
 
@@ -37,7 +37,8 @@ data1 = consume_and_save_json(
     conf,
     "correction",
     "/schemas/correction_step/output.avsc",
-    "correction_data.json",)
+    "correction_data.json",
+)
 
 data2 = consume_and_save_json(
     conf2,

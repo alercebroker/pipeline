@@ -34,11 +34,11 @@ psql_config = {
     "DB_NAME": "postgres",
 }
 
-with open('tests/integration/data/data_input_prv_candidates_staging.json', 'r') as file:
+with open("tests/integration/data/data_input_prv_candidates_staging.json", "r") as file:
     data_consumer = json.load(file)
 
 
-@pytest.mark.usefixtures("psql_service") 
+@pytest.mark.usefixtures("psql_service")
 class TestCorrectionMultistreamZTF(unittest.TestCase):
     """Test class for Correction Multistream ZTF Step."""
 
@@ -55,7 +55,7 @@ class TestCorrectionMultistreamZTF(unittest.TestCase):
         self.db_sql = PsqlDatabase(psql_config)
         self.db_sql.create_db()
         self.insert_test_data()
-        
+
         self.step = self._step_creator()
 
     def insert_test_data(self):
@@ -85,7 +85,7 @@ class TestCorrectionMultistreamZTF(unittest.TestCase):
                 non_detection = NonDetection(**non_detection_data)
                 session.add(non_detection)
             print("NonDetection listo!")
-            
+
             # Insertar fotometría forzada ZTF
             if isinstance(ztf_forced_photometry, dict):
                 forced_phot = ZtfForcedPhotometry(**ztf_forced_photometry)
@@ -95,7 +95,7 @@ class TestCorrectionMultistreamZTF(unittest.TestCase):
                     forced_phot = ZtfForcedPhotometry(**fp_data)
                     session.add(forced_phot)
             print("ZTFFP listo!")
-            
+
             # Insertar fotometría forzada
             if isinstance(forced_photometry, dict):
                 forced_phot = ForcedPhotometry(**forced_photometry)
@@ -105,7 +105,7 @@ class TestCorrectionMultistreamZTF(unittest.TestCase):
                     forced_phot = ForcedPhotometry(**fp_data)
                     session.add(forced_phot)
             print("FP listo!")
-            
+
             session.commit()
 
     def tearDown(self):
@@ -160,11 +160,11 @@ class TestCorrectionMultistreamZTF(unittest.TestCase):
             missing_top_fields = [field for field in required_top_fields if field not in message]
             if missing_top_fields:
                 return False
-            
+
             unexpected_fields = [field for field in message if field not in required_top_fields]
             if unexpected_fields:
                 return False
-        
+
         return True
 
     @staticmethod
@@ -188,9 +188,9 @@ class TestCorrectionMultistreamZTF(unittest.TestCase):
                             field for field in non_det if field not in required_non_det_fields
                         ]
                         if unexpected_non_det_fields:
-                            print('aqui3')
+                            print("aqui3")
                             return False
-        
+
         return True
 
     @staticmethod
@@ -241,17 +241,21 @@ class TestCorrectionMultistreamZTF(unittest.TestCase):
                         ]
                         if unexpected_det_fields:
                             return False
-        
+
         return True
 
     @staticmethod
     def message_validation(data):
         """Combine all validation methods to validate the entire message structure."""
-        print(TestCorrectionMultistreamZTF.validate_alert_fields_message(data), TestCorrectionMultistreamZTF.validate_non_detection_fields_message(data), TestCorrectionMultistreamZTF.validate_detection_fields_message(data))
+        print(
+            TestCorrectionMultistreamZTF.validate_alert_fields_message(data),
+            TestCorrectionMultistreamZTF.validate_non_detection_fields_message(data),
+            TestCorrectionMultistreamZTF.validate_detection_fields_message(data),
+        )
         return (
-            TestCorrectionMultistreamZTF.validate_alert_fields_message(data) # True
-            and TestCorrectionMultistreamZTF.validate_non_detection_fields_message(data) # False
-            and TestCorrectionMultistreamZTF.validate_detection_fields_message(data) # False
+            TestCorrectionMultistreamZTF.validate_alert_fields_message(data)  # True
+            and TestCorrectionMultistreamZTF.validate_non_detection_fields_message(data)  # False
+            and TestCorrectionMultistreamZTF.validate_detection_fields_message(data)  # False
         )
 
     @staticmethod
@@ -260,7 +264,7 @@ class TestCorrectionMultistreamZTF(unittest.TestCase):
         matching_dicts = [item for item in data if item.get("oid") == oid]
         if not matching_dicts:
             return False
-            
+
         matching_dict = matching_dicts[0]
         len_detections = len(matching_dict["detections"])
         len_non_detections = len(matching_dict["non_detections"])
@@ -268,17 +272,17 @@ class TestCorrectionMultistreamZTF(unittest.TestCase):
 
     def test_correction_step_execution(self):
         """Test the full execution of the correction step."""
-        
+
         # Configure test consumer to return our messages
         self.step.consumer.messages = data_consumer
 
         original_consume = self.step.consumer.consume
         self.step.consumer.consume = lambda: data_consumer
-        
+
         try:
             # Pre-consume and configuration
             self.step._pre_consume()
-            
+
             # Processing all messages in the consumer
             processed_messages = []
             for message in self.step.consumer.consume():
@@ -286,7 +290,7 @@ class TestCorrectionMultistreamZTF(unittest.TestCase):
                 if len(preprocessed_msg) == 0:
                     self.logger.info("Message of len zero after pre_execute")
                     continue
-                
+
                 try:
                     result = self.step.execute(preprocessed_msg)
                     result = self.step._post_execute(result)
@@ -296,36 +300,38 @@ class TestCorrectionMultistreamZTF(unittest.TestCase):
                 except Exception as error:
                     self.logger.error(f"Error during execution: {error}")
                     raise
-            
+
             # If the coe get here without errors, the basic test passed
-            print('processed_messages', len(processed_messages))
+            print("processed_messages", len(processed_messages))
             self.assertTrue(len(processed_messages) > 0, "No se procesaron mensajes")
-            
+
             # Additional verification if the messages are properly processed
-            if hasattr(self.step.producer, "pre_produce_message") and self.step.producer.pre_produce_message:
+            if (
+                hasattr(self.step.producer, "pre_produce_message")
+                and self.step.producer.pre_produce_message
+            ):
                 messages_produce = self.step.producer.pre_produce_message[0]
-                
+
                 # Verifyin the message structure
                 self.assertTrue(
-                    self.message_validation(messages_produce),
-                    "Message validation failed"
+                    self.message_validation(messages_produce), "Message validation failed"
                 )
-                
+
                 # If there is enough data, we verify if there is specifically data
                 if len(messages_produce) >= 2:
                     self.assertTrue(
                         self.output_expected_count(
                             messages_produce, "661678953", expected_dets=3, expected_non_dets=3
                         ),
-                        "Failed count validation for OID 661678953"
+                        "Failed count validation for OID 661678953",
                     )
                     self.assertTrue(
                         self.output_expected_count(
                             messages_produce, "879453281", expected_dets=6, expected_non_dets=6
                         ),
-                        "Failed count validation for OID 879453281"
+                        "Failed count validation for OID 879453281",
                     )
-                
+
         finally:
             # Restore the original method
             self.step.consumer.consume = original_consume
