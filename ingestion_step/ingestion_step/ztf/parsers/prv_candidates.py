@@ -90,6 +90,7 @@ def _parse_dets_from_prv_candidates(
         # "dubious",
         "has_stamp",
         # "step_id_corr",
+        "forced",
     ]
 
     detections = det_prv_candidates[cols].replace({np.nan: None})
