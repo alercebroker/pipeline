@@ -21,9 +21,7 @@ def consume_and_save_json(consumer_config, topic, schema_path, output_file, list
     try:
         while True:
             if not list_oids:
-                print(
-                    "All data processed successfully (or i hope so! team grafini was here)."
-                )
+                print("All data processed successfully (or i hope so! team grafini was here).")
                 break
             msg = consumer.poll(1.0)
             if msg is None:

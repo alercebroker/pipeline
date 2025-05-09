@@ -47,6 +47,19 @@ class CorrectionMultistreamZTFStep(GenericStep):
                 parsed_detection = detection.copy()
                 parsed_detection["oid"] = oid
                 parsed_detection["new"] = True
+                keys_to_remove = [
+                    "magpsf",
+                    "magpsf_corr",
+                    "sigmapsf",
+                    "sigmapsf_corr",
+                    "sigmapsf_corr_ext",
+                ]
+
+                #   Remove the keys from the extra_fields dictionary (sigmapsf is duped with mag_corr and it doesnt make sense having that data in the message)
+                for key in keys_to_remove:
+                    if key in parsed_detection["extra_fields"]:
+                        parsed_detection["extra_fields"].pop(key, None)
+
                 all_detections.append(parsed_detection)
 
             for non_detection in msg["non_detections"]:
@@ -58,6 +71,14 @@ class CorrectionMultistreamZTFStep(GenericStep):
         detections_df = pd.DataFrame(
             all_detections
         )  # We will always have detections BUT not always non_detections
+        # Keep the parent candid as int instead of scientific notation
+        detections_df["parent_candid"] = detections_df["parent_candid"].astype("Int64")
+        # Tranform the NA parent candid to None
+        detections_df["parent_candid"] = (
+            detections_df["parent_candid"]
+            .astype(object)
+            .where(~detections_df["parent_candid"].isna(), None)
+        )
         if all_non_detections:
             non_detections_df = pd.DataFrame(all_non_detections)
         else:
@@ -75,9 +96,9 @@ class CorrectionMultistreamZTFStep(GenericStep):
         logger = logging.getLogger("alerce.CorrectionMultistreamZTFStep")
         logger.debug(f"Received {len(detections_df)} detections from messages")
         oids = list(oids)
+
         detections = detections_df.to_dict("records")
         non_detections = non_detections_df.to_dict("records")
-
         """Queries the database for all detections and non-detections for each OID and removes duplicates"""
         db_sql_detections = _get_sql_detections(oids, self.db_sql, parse_sql_detection)
         db_sql_non_detections = _get_sql_non_detections(oids, self.db_sql, parse_sql_non_detection)
@@ -90,7 +111,6 @@ class CorrectionMultistreamZTFStep(GenericStep):
 
         self.logger.debug(f"Retrieved {detections.shape[0]} detections")
         detections["measurement_id"] = detections["measurement_id"].astype(str)
-        detections["parent_candid"] = detections["parent_candid"].astype(str)
 
         # TODO: check if this logic is ok
         # TODO: has_stamp in db is not reliable
@@ -101,7 +121,6 @@ class CorrectionMultistreamZTFStep(GenericStep):
         # so this will drop alerts coming from the database if they are also in the stream
         # but will also drop if they are previous detections
         detections = detections.drop_duplicates(["measurement_id", "oid"], keep="first")
-
         non_detections = non_detections.drop_duplicates(["oid", "band", "mjd"])
         self.logger.debug(f"Obtained {len(detections[detections['new']])} new detections")
 
@@ -130,12 +149,15 @@ class CorrectionMultistreamZTFStep(GenericStep):
     @classmethod
     def pre_produce(cls, result: dict):
         result["detections"] = pd.DataFrame(result["detections"]).groupby("oid")
+
         try:  # At least one non-detection
             result["non_detections"] = pd.DataFrame(result["non_detections"]).groupby("oid")
         except KeyError:  # to reproduce expected error for missing non-detections in loop
             result["non_detections"] = pd.DataFrame(columns=["oid"]).groupby("oid")
         output = []
+
         for oid, dets in result["detections"]:
+
             dets = dets.replace(
                 {np.nan: None, pd.NA: None, -np.inf: None}
             )  # Avoid NaN in the final results or infinite
@@ -146,13 +168,26 @@ class CorrectionMultistreamZTFStep(GenericStep):
                 dets[field] = dets[field].apply(lambda x: x if pd.notna(x) else float("nan"))
             unique_measurement_ids = result["measurement_ids"][oid]
             unique_measurement_ids_long = [int(id_str) for id_str in unique_measurement_ids]
+
+            detections_result = dets.to_dict("records")
+
+            # Force the detection' parent candid back to integer
+            for detections in detections_result:
+                detections["measurement_id"] = int(detections["measurement_id"])
+                parent_candid = detections.get("parent_candid")
+                if parent_candid is not None and pd.notna(parent_candid):
+                    detections["parent_candid"] = int(parent_candid)
+                else:
+                    detections["parent_candid"] = None
+
             output_message = {
                 "oid": oid,
                 "measurement_id": unique_measurement_ids_long,
                 "meanra": result["coords"][oid]["meanra"],
                 "meandec": result["coords"][oid]["meandec"],
-                "detections": dets.to_dict("records"),
+                "detections": detections_result,
             }
+
             try:
                 output_message["non_detections"] = (
                     result["non_detections"].get_group(oid).to_dict("records")

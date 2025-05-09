@@ -4,7 +4,7 @@ import json
 import io
 import yaml
 
-with open("tests/consumer/kafka_config.yaml", "r") as file:
+with open("/tests/consumer/kafka_config.yaml", "r") as file:
     config = yaml.safe_load(file)
 
 conf = config["kafka_config1"]
@@ -28,7 +28,7 @@ def consume_and_save_json(consumer_config, topic, schema_path, output_file):
                 bytes_io = io.BytesIO(msg.value())
                 data = fastavro.schemaless_reader(bytes_io, schema)
                 print(data)
-                return data
+
     finally:
         consumer.close()
 
@@ -36,7 +36,7 @@ def consume_and_save_json(consumer_config, topic, schema_path, output_file):
 data1 = consume_and_save_json(
     conf,
     "correction",
-    "/schemas/ingestion_step/output.avsc",
+    "/schemas/correction_step/output.avsc",
     "correction_data.json",
 )
 

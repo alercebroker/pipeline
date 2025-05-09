@@ -1,4 +1,4 @@
-from db_plugins.db.sql.models_new import (
+from db_plugins.db.sql.models import (
     Detection,
     ZtfDetection,
     ZtfForcedPhotometry,
