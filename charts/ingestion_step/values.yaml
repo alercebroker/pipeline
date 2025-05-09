@@ -42,6 +42,10 @@ imageCredentials:
   password: ""
   email: ""
 
+envVariables:
+  - name: CONFIG_FROM_YAML
+    value: "yes"
+
 configYaml:
   enabled: true
   CONSUMER_CONFIG:

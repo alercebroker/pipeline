@@ -29,35 +29,32 @@ def objectId_to_oid(df: pd.DataFrame):
         - `oid`
     """
     df["oid"] = df.apply(
-        lambda x: int(catalog_oid_to_masterid("ZTF", x["objectId"])), axis=1
+        lambda x: int(catalog_oid_to_masterid("ZTF", x["objectId"])),
+        axis=1,
     )
 
 
-def add_candid(df: pd.DataFrame):
+def add_candid_fp(df: pd.DataFrame):
     """
-    Computes a candid by adding the objectId and the pid.
+    Adds a candid to forced_photometries equal to the pid.
 
-    Takes a `DataFrame` containing the columns:
-        - `objectId`
-        - `pid`
-    and uses them to calculate the new columns:
-        - `candid`
+    The pair (oid, pid) should be unique between forced_photometries
     """
 
     # WARN: Use a more appropiate conversion!
-    df["candid"] = df.apply(lambda x: x["oid"] ^ x["pid"], axis=1)
+    df["candid"] = df["pid"].astype("Float64")
 
 
-def candid_to_measurment_id(df: pd.DataFrame):
+def candid_to_measurement_id(df: pd.DataFrame):
     """
-    Adds a measurment_id equal to the candid.
+    Adds a measurement_id equal to the candid.
 
     Takes a `DataFrame` containing the columns:
         - `candid`
     and uses them to calculate the new columns:
         - `measurement_id`
     """
-    df["measurement_id"] = df["candid"]
+    df["measurement_id"] = df["candid"].replace({np.nan: None}).astype("Int64")
 
 
 def add_tid(df: pd.DataFrame):
@@ -79,7 +76,7 @@ def fid_to_band(df: pd.DataFrame):
     and uses them to calculate the new columns:
         - `band`
     """
-    df["band"] = df["fid"]
+    df["band"] = df["fid"].astype("Int64")
 
 
 def jd_to_mjd(df: pd.DataFrame):
@@ -89,7 +86,7 @@ def jd_to_mjd(df: pd.DataFrame):
     and uses them to calculate the new columns:
         - `mjd`
     """
-    df["mjd"] = df["jd"] - 2400000.5
+    df["mjd"] = (df["jd"] - 2400000.5).astype("Float64")
 
 
 # TODO: Update to use numpy vectorized function instead of element wise
@@ -134,12 +131,12 @@ def sigmadec_to_e_dec(df: pd.DataFrame):
 
 def add_zero_e_ra(df: pd.DataFrame):
     """Adds a e_ra of zeroes."""
-    df["e_ra"] = 0
+    df["e_ra"] = 0.0
 
 
 def add_zero_e_dec(df: pd.DataFrame):
     """Adds a e_dec of zeroes."""
-    df["e_dec"] = 0
+    df["e_dec"] = 0.0
 
 
 def isdiffpos_to_int(df: pd.DataFrame):
@@ -153,11 +150,11 @@ def isdiffpos_to_int(df: pd.DataFrame):
 
 
 def magpsf_to_mag(df: pd.DataFrame):
-    df["mag"] = df["magpsf"]
+    df["mag"] = df["magpsf"].astype("Float64")
 
 
 def sigmapsf_to_e_mag(df: pd.DataFrame):
-    df["e_mag"] = df["sigmapsf"]
+    df["e_mag"] = df["sigmapsf"].astype("Float64")
 
 
 # TODO: Check that the results are correct and add a small explanation.
@@ -243,6 +240,26 @@ def calculate_isdiffpos(df: pd.DataFrame):
         - `isdiffpos`
     """
     df["isdiffpos"] = np.choose(df["forcediffimflux"] > 0, [-1, 1])
+
+
+def filter_by_forcediffimflux(df: pd.DataFrame):
+    df.drop(
+        df[
+            (df["forcediffimflux"] == None)
+            | (df["forcediffimflux"] == 0)
+            | (np.isclose(df["forcediffimflux"], -99999))
+        ].index,
+        inplace=True,
+    )
+
+    df.drop(
+        df[
+            (df["forcediffimfluxunc"] == None)
+            | (df["forcediffimfluxunc"] == 0)
+            | (np.isclose(df["forcediffimfluxunc"], -99999))
+        ].index,
+        inplace=True,
+    )
 
 
 def apply_transforms(

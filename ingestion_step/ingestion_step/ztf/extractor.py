@@ -44,7 +44,6 @@ def _extract_candidates(
         {
             "message_id": message_id,
             "objectId": message["objectId"],
-            "candid": message["candid"],
             "parent_candid": None,
             "has_stamp": _has_stamp(message),
             "forced": False,
@@ -76,7 +75,7 @@ def _extract_prv_candidates(
                     "message_id": message_id,
                     "objectId": message["objectId"],
                     "parent_candid": message["candid"],
-                    "has_stamp": _has_stamp(message),
+                    "has_stamp": False,
                     "forced": False,
                     **prv_candidate,
                 }
@@ -106,7 +105,7 @@ def _extract_fp_hists(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
                     "dec": message["candidate"]["dec"],
                     "magzpsci": message["candidate"]["magzpsci"],
                     "parent_candid": message["candid"],
-                    "has_stamp": _has_stamp(message),
+                    "has_stamp": False,
                     "forced": True,
                     **fp_hist,
                 }
