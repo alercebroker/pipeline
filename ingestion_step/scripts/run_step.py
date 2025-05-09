@@ -16,7 +16,9 @@ sys.path.append(PACKAGE_PATH)
 
 
 if os.getenv("CONFIG_FROM_YAML"):
-    STEP_CONFIG = config_from_yaml_file("/config/config.yaml")
+    STEP_CONFIG = config_from_yaml_file(
+        os.getenv("CONFIG_YAML_PATH", "/config/config.yaml")
+    )
     STEP_CONFIG["METRICS_CONFIG"]["EXTRA_METRICS"] = [
         {"key": "candid", "format": str}
     ]
