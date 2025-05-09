@@ -242,6 +242,26 @@ def calculate_isdiffpos(df: pd.DataFrame):
     df["isdiffpos"] = np.choose(df["forcediffimflux"] > 0, [-1, 1])
 
 
+def filter_by_forcediffimflux(df: pd.DataFrame):
+    df.drop(
+        df[
+            (df["forcediffimflux"] == None)
+            | (df["forcediffimflux"] == 0)
+            | (np.isclose(df["forcediffimflux"], -99999))
+        ].index,
+        inplace=True,
+    )
+
+    df.drop(
+        df[
+            (df["forcediffimfluxunc"] == None)
+            | (df["forcediffimfluxunc"] == 0)
+            | (np.isclose(df["forcediffimfluxunc"], -99999))
+        ].index,
+        inplace=True,
+    )
+
+
 def apply_transforms(
     df: pd.DataFrame, transforms: list[Callable[[pd.DataFrame], None]]
 ):
