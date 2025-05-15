@@ -26,8 +26,14 @@ def _has_stamp(message: dict[str, Any]) -> bool:
     """
     return (
         ("cutoutScience" in message and message["cutoutScience"] is not None)
-        and ("cutoutTemplate" in message and message["cutoutTemplate"] is not None)
-        and ("cutoutDifference" in message and message["cutoutDifference"] is not None)
+        and (
+            "cutoutTemplate" in message
+            and message["cutoutTemplate"] is not None
+        )
+        and (
+            "cutoutDifference" in message
+            and message["cutoutDifference"] is not None
+        )
     )
 
 
@@ -87,7 +93,9 @@ def _extract_prv_candidates(
     }
 
 
-def _extract_fp_hists(messages: list[dict[str, Any]]) -> dict[str, NDArray[Any]]:
+def _extract_fp_hists(
+    messages: list[dict[str, Any]],
+) -> dict[str, NDArray[Any]]:
     """
     Extract all forced photometries for the list of messages.
 

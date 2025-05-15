@@ -82,4 +82,6 @@ def parse_prv_candidates(
     detections = _parse_dets_from_prv_candidates(prv_candidates)
     non_detections = _parse_non_dets_from_prv_candidates(prv_candidates)
 
-    return ParsedPrvCandidates(detections=detections, non_detections=non_detections)
+    return ParsedPrvCandidates(
+        detections=detections, non_detections=non_detections
+    )
