@@ -45,20 +45,7 @@ class ParsedCandidates(NamedTuple):
 def _parse_objs_from_candidates(
     candidates: pd.DataFrame,
 ) -> pd.DataFrame:
-    cols = [
-        # Filds requiered to recreate messages for next step
-        "message_id",
-        "measurement_id",
-        # Fields for DB
-        "oid",
-        "sid",
-        "tid",
-        "ra",
-        "dec",
-        "mjd",
-    ]
-
-    objects = candidates[cols].replace({np.nan: None})
+    objects = candidates.replace({np.nan: None})
 
     return objects
 
@@ -66,48 +53,7 @@ def _parse_objs_from_candidates(
 def _parse_dets_from_candidates(
     candidates: pd.DataFrame,
 ) -> pd.DataFrame:
-    cols = [
-        "message_id",
-        "oid",
-        "tid",
-        "sid",
-        "measurement_id",
-        "pid",
-        "ra",
-        "e_ra",
-        "dec",
-        "e_dec",
-        "band",
-        "mjd",
-        "diffmaglim",
-        "isdiffpos",
-        "nid",
-        "magpsf",
-        "sigmapsf",
-        "magap",
-        "sigmagap",
-        "distnr",
-        "rb",
-        "rbversion",
-        "drb",
-        "drbversion",
-        "magapbig",
-        "sigmagapbig",
-        "parent_candid",
-        "rfid",
-        "mag",
-        "e_mag",
-        # "magpsf_corr",
-        # "sigmapsf_corr",
-        # "sigmapsf_corr_ext",
-        # "corrected",
-        # "dubious",
-        "has_stamp",
-        # "step_id_corr",
-        "forced",
-    ]
-
-    detections = candidates[cols].replace({np.nan: None})
+    detections = candidates.replace({np.nan: None})
 
     return detections
 
