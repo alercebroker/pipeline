@@ -40,6 +40,49 @@ class Command(ABC):
     def db_operation(session: Session, data: List):
         pass
 
+class ZTFCorrectionCommand(Command):
+
+    def _clean_data(self, data):
+        """
+        Filter out the measurementes new = False
+        Identifies the new detection that trigger the
+        alert.
+        Takes the object data from the payload
+        """
+        pass
+
+    def _format_data(self, data):
+        """
+        Generate a dictionary with  data for the tables:
+        ztf_detection
+        ztf_forced photometry
+        ps1_ztf
+        ss_ztf
+        """
+
+        pass
+
+    @staticmethod
+    def db_operation(session: Session, data: List):
+        # insert detections
+
+        # insert forced photometry
+
+        # insert ps1_ztf
+
+        # insert ss_ztf
+
+        # insert gaia_ztf
+
+        # data quaility_ztf
+        
+        pass
+
+
+### ###### ###
+### LEGACY ###
+### ###### ###
+
 class ZtfCorrectionCommand(Command):
     pass
 
