@@ -121,6 +121,7 @@ class ZtfDetection(Base):
 
 
 class ForcedPhotometry(Base):
+
     __tablename__ = "forced_photometry"
 
     oid = Column(BigInteger, nullable=False)  # int8,
