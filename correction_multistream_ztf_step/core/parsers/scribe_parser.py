@@ -1,20 +1,23 @@
 
 import json
 
-
-
 def dict_splitter(correction_dict):
 
+    base_dict = correction_dict.copy()
+    
+    base_dict.pop('payload')
+    list_new_dicts = []
 
-    for d in correction_dict:
+    for d in correction_dict['payload']: ## confirmar si sigue siendo payolad
 
-        pass        
+        aux_dict = base_dict.copy()
+        aux_dict['payload'] = d
+        list_new_dicts.append(aux_dict)
 
+    return list_new_dicts
 
-    return
-
-
-with open('parsers_utils/correction_output.json') as f:
+with open('parsers_utils/test_correction.json') as f:
     d = json.load(f)
     
-splited_correction_dicto = dict_splitter(d)
+
+
