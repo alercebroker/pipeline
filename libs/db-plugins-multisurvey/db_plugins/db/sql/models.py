@@ -203,3 +203,52 @@ class NonDetection(Base):
         ForeignKeyConstraint([oid], [Object.oid]),
         Index("ix_non_detection_oid", "oid", postgresql_using="hash"),
     )
+
+class ss_ztf(Base):
+    __tablename__ = "ss_ztf"
+
+    oid = Column(BigInteger, nullable=False)
+    measurement_id = Column(BigInteger, nullable=False)
+    ssdistnr = Column(REAL)
+    ssmagnr = Column(REAL)
+    ssnamenr = Column(REAL)
+
+    __table_args__ = (
+            PrimaryKeyConstraint("oid", "measurement_id", name="pk_oid_measurement_id"),
+    )
+
+class ps1_ztf(Base):
+    __tablename__ = "ps1_ztf"
+
+
+    oid = Column(BigInteger, nullable=False)
+    measurement_id = Column(BigInteger, nullable=False)
+    objectidps1 = Column(BigInteger)
+    sgmag1 = Column(REAL)
+    srmag1 = Column(REAL)
+    simag1 = Column(REAL)
+    szmag1 = Column(REAL)
+    sgscore1 = Column(REAL)
+    distpsnr1 = Column(REAL)
+    objectidps2 = Column(BigInteger)
+    sgmag2 = Column(REAL)
+    srmag2 = Column(REAL)
+    simag2 = Column(REAL)
+    szmag2 = Column(REAL)
+    sgscore2 = Column(REAL)
+    distpsnr2 = Column(REAL)
+    objectidps3 = Column(BigInteger)
+    sgmag3 = Column(REAL)
+    srmag3 = Column(REAL)
+    simag3 = Column(REAL)
+    szmag3 = Column(REAL)
+    sgscore3 = Column(REAL)
+    distpsnr3 = Column(REAL)
+    nmtchps = Column(SmallInteger)
+    unique1 = Column(Boolean, nullable=False)
+    unique2 = Column(Boolean, nullable=False)
+    unique3 = Column(Boolean, nullable=False)
+
+    __table_args__ = (
+            PrimaryKeyConstraint("oid", "measurement_id", name="pk_oid_measurement_id"),
+    )
