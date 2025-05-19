@@ -1,5 +1,7 @@
 
-import json
+
+
+
 
 def dict_splitter(correction_dict):
 
@@ -16,8 +18,6 @@ def dict_splitter(correction_dict):
 
     return list_new_dicts
 
-with open('parsers_utils/test_correction.json') as f:
-    d = json.load(f)
-    
+
 
 
