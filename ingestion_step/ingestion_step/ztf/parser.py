@@ -19,7 +19,7 @@ class ZTFParser(ParserInterface):
         Parser method for ZTF.
 
         Extracts `candidates`, `prv_candidates` y `fp_hists`, then parses
-        each of those into its respectives `objects`, `detections`,
+        each of those into its respective `objects`, `detections`,
         `non_detections` and `forced_photometries`.
         """
         msg_data = extractor.extract(messages)

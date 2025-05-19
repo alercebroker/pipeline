@@ -16,7 +16,7 @@ class ParsedData(TypedDict):
     sets of columns are stored on the dataframe.
 
     If the classification doesn't apply to a survey, for example, a survey
-    dosen't have `non_detections`, then the associated `DataFrame` will be empty.
+    doesn't have `non_detections`, then the associated `DataFrame` will be empty.
     """
 
     objects: pd.DataFrame
