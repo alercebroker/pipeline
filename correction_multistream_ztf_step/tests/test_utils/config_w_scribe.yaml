@@ -1,0 +1,18 @@
+SCRIBE_ENABLED: true
+CONSUMER_CONFIG:
+  CLASS: "apf.consumers.test_consumer.TestConsumer"
+  SCHEMA_PATH: "schemas/prv_candidate_step/input.avsc"
+  PARAMS:
+    input_format: "json"
+    input_path: "tests/integration/data/data_input_prv_candidates_staging.json"
+    auto.offset.reset: beginning
+  consume.messages: 10
+  consume.timeout: 10
+FEATURE_FLAGS:
+  SKIP_MJD_FILTER: true
+PRODUCER_CONFIG:
+  CLASS: "apf.producers.test_producer.TestProducer"
+SCRIBE_PRODUCER_CONFIG:
+    CLASS: "apf.producers.test_producer.TestProducer"
+    SCHEMA_PATH: "/home/alerce/Desktop/alerce/pipeline/schemas/scribe_step/scribe.avsc"
+    TOPIC: "scribe-multisurvey_ztf_detections"

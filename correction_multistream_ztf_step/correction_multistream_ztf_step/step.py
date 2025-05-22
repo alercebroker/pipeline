@@ -18,9 +18,15 @@ from core.parsers.parser_sql import (
     parse_sql_non_detection,
 )
 
+from apf.core import get_class
+
 from core.parsers.parser_utils import parse_output
 
+from core.parsers.scribe_parser import scribe_parser
+
+
 from core.corrector import Corrector
+
 
 
 class CorrectionMultistreamZTFStep(GenericStep):
@@ -33,7 +39,10 @@ class CorrectionMultistreamZTFStep(GenericStep):
         super().__init__(config=config, **kwargs)
         self.db_sql = db_sql
         self.logger = logging.getLogger("alerce.CorrectionMultistreamZTFStep")
-        self.set_producer_key_field("oid")
+        self.scribe_enabled = config.get("SCRIBE_ENABLED", False)
+        if self.scribe_enabled:
+            cls = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
+            self.scribe_producer = cls(self.config["SCRIBE_PRODUCER_CONFIG"])
 
     def execute(self, messages: List[dict]) -> dict:
         all_detections = []
@@ -150,11 +159,14 @@ class CorrectionMultistreamZTFStep(GenericStep):
 
         parsed_output = parse_output(result)
         return parsed_output
-    """
 
     def post_execute(self, result: dict):
-        self.produce_scribe(result["detections"])
-        return result
+        if self.scribe_enabled:
+            scribe_messages = scribe_parser(result)
+            #self.produce_scribe(scribe_messages)
+        return scribe_messages
+    
+    """
 
     def produce_scribe(self, detections: list[dict]):
         count = 0

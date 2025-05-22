@@ -1,22 +1,21 @@
 
 
+def scribe_parser(correction_list):
 
+    result_messages = []
+    for correction in correction_list:
+        result_messages.append(
+            {
+                "step": "correction",
+                "survey": "ztf",
+                "payload": {
+                    "oid": correction["oid"],
+                    "detections": correction["detections"]
+                }
+            }
+        )
 
-
-def dict_splitter(correction_dict):
-
-    base_dict = correction_dict.copy()
-    
-    base_dict.pop('payload')
-    list_new_dicts = []
-
-    for d in correction_dict['payload']: ## confirmar si sigue siendo payolad
-
-        aux_dict = base_dict.copy()
-        aux_dict['payload'] = d
-        list_new_dicts.append(aux_dict)
-
-    return list_new_dicts
+    return result_messages
 
 
 
