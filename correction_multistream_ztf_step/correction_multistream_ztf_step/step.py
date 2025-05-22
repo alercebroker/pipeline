@@ -161,43 +161,13 @@ class CorrectionMultistreamZTFStep(GenericStep):
         return parsed_output
 
     def post_execute(self, result: dict):
-        if self.scribe_enabled:
-            scribe_messages = scribe_parser(result)
-            #self.produce_scribe(scribe_messages)
-        return scribe_messages
+
+        #self.produce_scribe(scribe_parser(result))
+
+        return result           
     
     """
-
     def produce_scribe(self, detections: list[dict]):
-        count = 0
-        for detection in detections:
-            count += 1
-            flush = False
-            # Prevent further modification for next step
-            detection = deepcopy(detection)
-            if not detection.pop("new"):
-                continue
-            measurement_id = detection.pop("measurement_id")
-            oid = detection.get("oid")
-            is_forced = detection.pop("forced")
-            set_on_insert = not detection.get("has_stamp", False)
-            extra_fields = detection["extra_fields"]
-            # remove possible elasticc extrafields
-            for to_remove in ["prvDiaSources", "prvDiaForcedSources", "fp_hists"]:
-                extra_fields.pop(to_remove, None)
-            if "diaObject" in extra_fields:
-                extra_fields["diaObject"] = pickle.loads(extra_fields["diaObject"])
-            detection["extra_fields"] = extra_fields
-            scribe_data = {
-                "collection": "forced_photometry" if is_forced else "detection",
-                "type": "update",
-                "criteria": {"measurement_id": measurement_id, "oid": oid},
-                "data": detection,
-                "options": {"upsert": True, "set_on_insert": set_on_insert},
-            }
-            scribe_payload = {"payload": json.dumps(scribe_data)}
-            if count == len(detections):
-                flush = True
             self.scribe_producer.produce(scribe_payload, flush=flush, key=oid)
 
     """

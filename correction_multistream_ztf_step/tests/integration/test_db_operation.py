@@ -279,6 +279,8 @@ class TestCorrectionMultistreamZTF(unittest.TestCase):
     @staticmethod
     def structure_comp(result: list[dict]):
 
+        result = scribe_parser(result)
+
         KEYS_RESULT = [
             "step",
             "survey",
@@ -326,13 +328,13 @@ class TestCorrectionMultistreamZTF(unittest.TestCase):
 
                 try:
                     result = self.step.execute(preprocessed_msg)
+                    self.step.producer.produce(result)
                     result = self.step._post_execute(result)
-
                     assert self.structure_comp(result)
                     processed_messages.extend(result)
-
                     result = self.step._pre_produce(result)
-                    self.step.producer.produce(result)
+
+
                 except Exception as error:
                     self.logger.error(f"Error during execution: {error}")
                     raise
