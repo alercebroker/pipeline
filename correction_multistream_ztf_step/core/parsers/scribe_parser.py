@@ -1,3 +1,5 @@
+
+
 def scribe_parser(correction_list):
 
     result_messages = []
@@ -6,8 +8,16 @@ def scribe_parser(correction_list):
             {
                 "step": "correction",
                 "survey": "ztf",
-                "payload": {"oid": correction["oid"], "detections": correction["detections"]},
+                "payload": {
+                    "oid": correction["oid"],
+                    "measurement_id": correction["measurement_id"],
+                    "detections": correction["detections"]
+                }
             }
         )
 
     return result_messages
+
+
+
+

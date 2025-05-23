@@ -284,7 +284,7 @@ class TestCorrectionMultistreamZTF(unittest.TestCase):
 
         KEYS_RESULT = ["step", "survey", "payload"]
 
-        KEYS_PAYLOAD = ["oid", "detections"]
+        KEYS_PAYLOAD = ["oid", "measurement_id", "detections"]
         for oid_dict in result:
             for key in list(oid_dict.keys()):
 
