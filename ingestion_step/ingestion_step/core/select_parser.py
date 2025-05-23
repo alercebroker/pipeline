@@ -6,12 +6,12 @@ from .parser_interface import ParserInterface
 
 def select_parser(strategy: str | None) -> ParserInterface:
     """
-    Selects the appropiate Parser for the given strategy/survey.
+    Selects the appropriate Parser for the given strategy/survey.
 
     Returns an object that implements ParserInterface for the given
     strategy.
 
-    `strategy` must be one of (case insensitve):
+    `strategy` must be one of (case-insensitive):
         - 'ztf'
     Otherwise raises `SelectorException`.
     """
