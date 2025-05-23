@@ -161,16 +161,16 @@ class CorrectionMultistreamZTFStep(GenericStep):
         return parsed_output
 
     def post_execute(self, result: dict):
-
-        #self.produce_scribe(scribe_parser(result))
-
+        self.produce_scribe(scribe_parser(result))
         return result           
     
-    """
-    def produce_scribe(self, detections: list[dict]):
-            self.scribe_producer.produce(scribe_payload, flush=flush, key=oid)
+    
+    def produce_scribe(self, scribe_payloads):
+        for payload in scribe_payloads: 
+            self.scribe_producer.produce(payload)
+        print(self.scribe_producer.pre_produce_message[0])
 
-    """
+    
 
     def tear_down(self):
         if isinstance(self.consumer, KafkaConsumer):
