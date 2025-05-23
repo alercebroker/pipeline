@@ -150,7 +150,7 @@ def extract(messages: list[dict[str, Any]]):
     Returns the `ZTFData` of the batch of messages.
 
     Extracts from each message it's 'candidates', 'prv_candidates' and 'fp_hists'
-    and adds to each neccesary fields from the alert itself (so some data is
+    and adds to each necessary fields from the alert itself (so some data is
     duplicated between dataframes)
 
     'prv_candidates' and 'fp_hists' are flattened and *may be empty*, as
