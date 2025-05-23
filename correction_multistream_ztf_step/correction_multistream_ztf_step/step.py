@@ -1,6 +1,7 @@
 import logging
 import numpy as np
 import pandas as pd
+import json
 from apf.core.step import GenericStep
 from apf.consumers import KafkaConsumer
 from typing import List
@@ -39,7 +40,7 @@ class CorrectionMultistreamZTFStep(GenericStep):
         super().__init__(config=config, **kwargs)
         self.db_sql = db_sql
         self.logger = logging.getLogger("alerce.CorrectionMultistreamZTFStep")
-        self.scribe_enabled = config.get("SCRIBE_ENABLED", False)
+        self.scribe_enabled = config.get("SCRIBE_ENABLED", True)
         if self.scribe_enabled:
             cls = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
             self.scribe_producer = cls(self.config["SCRIBE_PRODUCER_CONFIG"])
@@ -58,6 +59,19 @@ class CorrectionMultistreamZTFStep(GenericStep):
                 parsed_detection = detection.copy()
                 parsed_detection["oid"] = oid
                 parsed_detection["new"] = True
+                keys_to_remove = [
+                    "magpsf",
+                    "magpsf_corr",
+                    "sigmapsf",
+                    "sigmapsf_corr",
+                    "sigmapsf_corr_ext",
+                ]
+
+                #   Remove the keys from the extra_fields dictionary (sigmapsf is duped with mag_corr and it doesnt make sense having that data in the message)
+                for key in keys_to_remove:
+                    if key in parsed_detection["extra_fields"]:
+                        parsed_detection["extra_fields"].pop(key, None)
+
                 keys_to_remove = [
                     "magpsf",
                     "magpsf_corr",
@@ -90,6 +104,14 @@ class CorrectionMultistreamZTFStep(GenericStep):
             .astype(object)
             .where(~detections_df["parent_candid"].isna(), None)
         )
+        # Keep the parent candid as int instead of scientific notation
+        detections_df["parent_candid"] = detections_df["parent_candid"].astype("Int64")
+        # Tranform the NA parent candid to None
+        detections_df["parent_candid"] = (
+            detections_df["parent_candid"]
+            .astype(object)
+            .where(~detections_df["parent_candid"].isna(), None)
+        )
         if all_non_detections:
             non_detections_df = pd.DataFrame(all_non_detections)
         else:
@@ -107,6 +129,7 @@ class CorrectionMultistreamZTFStep(GenericStep):
         logger = logging.getLogger("alerce.CorrectionMultistreamZTFStep")
         logger.debug(f"Received {len(detections_df)} detections from messages")
         oids = list(oids)
+
 
         detections = detections_df.to_dict("records")
         non_detections = non_detections_df.to_dict("records")
@@ -166,9 +189,9 @@ class CorrectionMultistreamZTFStep(GenericStep):
     
     
     def produce_scribe(self, scribe_payloads):
-        for payload in scribe_payloads: 
+        for scribe_data in scribe_payloads: 
+            payload = {"payload": json.dumps(scribe_data)}
             self.scribe_producer.produce(payload)
-        print(self.scribe_producer.pre_produce_message[0])
 
     
 

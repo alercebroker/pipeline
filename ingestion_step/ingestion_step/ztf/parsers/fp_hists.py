@@ -40,57 +40,7 @@ subset of columns.
 
 
 def _parse_fps_from_fp_hists(fp_hist: pd.DataFrame) -> pd.DataFrame:
-    cols = [
-        "message_id",
-        "oid",
-        "sid",
-        "tid",
-        "measurement_id",
-        "pid",
-        "ra",
-        "e_ra",
-        "dec",
-        "e_dec",
-        "band",
-        "mjd",
-        "mag",
-        "e_mag",
-        "rfid",
-        # "mag_corr",
-        # "e_mag_corr",
-        # "e_mag_corr_ext",
-        "isdiffpos",
-        # "corrected",
-        # "dubious",
-        "parent_candid",
-        "has_stamp",
-        "field",
-        "rcid",
-        "sciinpseeing",
-        "scibckgnd",
-        "scisigpix",
-        "magzpsci",
-        "magzpsciunc",
-        "magzpscirms",
-        "clrcoeff",
-        "clrcounc",
-        "exptime",
-        "adpctdif1",
-        "adpctdif2",
-        "diffmaglim",
-        "programid",
-        "procstatus",
-        "distnr",
-        "ranr",
-        "decnr",
-        "magnr",
-        "sigmagnr",
-        "chinr",
-        "sharpnr",
-        "forced",
-    ]
-
-    forced_photometries = fp_hist[cols].replace({np.nan: None})
+    forced_photometries = fp_hist.replace({np.nan: None})
 
     return forced_photometries
 
