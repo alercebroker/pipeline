@@ -31,7 +31,7 @@ def set_logger(settings):
 
 def step_creator():
     if os.getenv("CONFIG_FROM_YAML", False):
-        settings = config_from_yaml_file("/home/alerce/Desktop/alerce/pipeline/correction_multistream_ztf_step/scripts/config.yaml")
+        settings = config_from_yaml_file("/config/config.yaml")
     else:
         from settings import settings_creator
 
