@@ -2,6 +2,7 @@ import unittest
 import logging
 import pytest
 from apf.core.settings import config_from_yaml_file
+
 # from libs.apf.apf.producers.test_producer import TestProducer
 
 import json
@@ -55,7 +56,7 @@ class TestCorrectionMultistreamZTF(unittest.TestCase):
 
     def setUp(self):
         # crear db
-        self.settings = config_from_yaml_file('tests/test_utils/config_w_scribe.yaml')
+        self.settings = config_from_yaml_file("tests/test_utils/config_w_scribe.yaml")
         self.scribe_enabled = self.settings.get("SCRIBE_ENABLED", False)
 
         self.db_sql = PsqlDatabase(psql_config)
@@ -275,22 +276,15 @@ class TestCorrectionMultistreamZTF(unittest.TestCase):
         len_detections = len(matching_dict["detections"])
         len_non_detections = len(matching_dict["non_detections"])
         return len_detections == expected_dets and len_non_detections == expected_non_dets
-    
+
     @staticmethod
     def structure_comp(result: list[dict]):
 
         result = scribe_parser(result)
 
-        KEYS_RESULT = [
-            "step",
-            "survey",
-            "payload"
-        ]
+        KEYS_RESULT = ["step", "survey", "payload"]
 
-        KEYS_PAYLOAD = [
-            "oid",
-            "detections"
-        ]
+        KEYS_PAYLOAD = ["oid", "detections"]
         for oid_dict in result:
             for key in list(oid_dict.keys()):
 
@@ -301,7 +295,7 @@ class TestCorrectionMultistreamZTF(unittest.TestCase):
             for key in list(oid_dict["payload"].keys()):
 
                 if not key in KEYS_PAYLOAD:
-                    return False        
+                    return False
 
         return True
 
@@ -334,7 +328,6 @@ class TestCorrectionMultistreamZTF(unittest.TestCase):
                     processed_messages.extend(result)
                     result = self.step._pre_produce(result)
 
-
                 except Exception as error:
                     self.logger.error(f"Error during execution: {error}")
                     raise
@@ -347,7 +340,8 @@ class TestCorrectionMultistreamZTF(unittest.TestCase):
             # Additional verification if the messages are properly processed
             if (
                 hasattr(self.step.producer, "pre_produce_message")
-                and self.step.producer.pre_produce_message and not self.scribe_enabled
+                and self.step.producer.pre_produce_message
+                and not self.scribe_enabled
             ):
                 messages_produce = self.step.producer.pre_produce_message[0]
 

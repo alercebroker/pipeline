@@ -29,7 +29,6 @@ from core.parsers.scribe_parser import scribe_parser
 from core.corrector import Corrector
 
 
-
 class CorrectionMultistreamZTFStep(GenericStep):
     def __init__(
         self,
@@ -130,7 +129,6 @@ class CorrectionMultistreamZTFStep(GenericStep):
         logger.debug(f"Received {len(detections_df)} detections from messages")
         oids = list(oids)
 
-
         detections = detections_df.to_dict("records")
         non_detections = non_detections_df.to_dict("records")
         """Queries the database for all detections and non-detections for each OID and removes duplicates"""
@@ -185,15 +183,12 @@ class CorrectionMultistreamZTFStep(GenericStep):
 
     def post_execute(self, result: dict):
         self.produce_scribe(scribe_parser(result))
-        return result           
-    
-    
+        return result
+
     def produce_scribe(self, scribe_payloads):
-        for scribe_data in scribe_payloads: 
+        for scribe_data in scribe_payloads:
             payload = {"payload": json.dumps(scribe_data)}
             self.scribe_producer.produce(payload)
-
-    
 
     def tear_down(self):
         if isinstance(self.consumer, KafkaConsumer):

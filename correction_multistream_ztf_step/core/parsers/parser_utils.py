@@ -1,5 +1,6 @@
 import pandas as pd
-import numpy as np 
+import numpy as np
+
 
 def get_fid(fid_as_int: int):
     fid = {1: "g", 2: "r", 0: None, 12: "gr", 3: "i"}
@@ -7,6 +8,7 @@ def get_fid(fid_as_int: int):
         return fid[fid_as_int]
     except KeyError:
         return fid_as_int
+
 
 def parse_output(result: dict):
     result["detections"] = pd.DataFrame(result["detections"]).groupby("oid")
