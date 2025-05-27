@@ -117,32 +117,12 @@ def _extract_fp_hists(
             fp_hists["objectId"].append(message["objectId"])
             fp_hists["parent_candid"].append(message["candid"])
             fp_hists["has_stamp"].append(False)
-            fp_hists["forced"].append(False)
+            fp_hists["forced"].append(True)
 
     return {
         col: np.array(fp_hists[col], dtype=dtype)
         for col, dtype in fp_hist_schema.items()
     }
-
-    fp_hists = []
-    for message_id, message in enumerate(messages):
-        if "fp_hists" not in message or message["fp_hists"] is None:
-            continue
-        for fp_hist in message["fp_hists"]:
-            fp_hists.append(
-                {
-                    "message_id": message_id,
-                    "objectId": message["objectId"],
-                    "ra": message["candidate"]["ra"],
-                    "dec": message["candidate"]["dec"],
-                    "parent_candid": message["candid"],
-                    "has_stamp": False,
-                    "forced": True,
-                    **fp_hist,
-                }
-            )
-
-    return fp_hists
 
 
 def extract(messages: list[dict[str, Any]]):
