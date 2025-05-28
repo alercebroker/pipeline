@@ -1,6 +1,74 @@
 import pandas as pd
 import numpy as np
+import math
 
+from db_plugins.db.sql.models import (
+    ZtfDetection,
+    ZtfForcedPhotometry,
+    ForcedPhotometry,
+    NonDetection,
+    Detection,
+)
+
+GENERIC_FIELDS = [
+    "tid",
+    "sid",
+    "oid",
+    "pid",
+    "mjd",
+    "fid",
+    "ra",
+    "dec",
+    "measurement_id",
+    "isdiffpos",
+    "parent_candid",
+    "has_stamp",
+    "magpsf",
+    "sigmapsf",
+    "mag",
+    "e_mag",
+]
+
+CHANGE_VALUES = [
+    "tid",
+    "sid",
+]
+
+GENERIC_FIELDS_FP = [
+    "tid",
+    "sid",
+    "oid",
+    "pid",
+    "mjd",
+    "fid",
+    "ra",
+    "dec",
+    "isdiffpos",
+    "parent_candid",
+    "has_stamp",
+]
+
+CHANGE_NAMES = {  # outside extrafields
+    "magpsf": "mag",
+    "sigmapsf": "e_mag",
+}
+
+CHANGE_NAMES_2 = {  # inside extrafields
+    "sigmapsf_corr": "e_mag_corr",
+    "sigmapsf_corr_ext": "e_mag_corr_ext",
+    "magpsf_corr": "mag_corr",
+}
+ERRORS = {
+    1: 0.065,
+    2: 0.085,
+    3: 0.01,
+}
+
+def _e_ra(dec, fid):
+    try:
+        return ERRORS[fid] / abs(math.cos(math.radians(dec)))
+    except ZeroDivisionError:
+        return float("nan")
 
 def get_fid(fid_as_int: int):
     fid = {1: "g", 2: "r", 0: None, 12: "gr", 3: "i"}
@@ -59,3 +127,49 @@ def parse_output(result: dict):
             output_message["non_detections"] = []
         output.append(output_message)
     return output
+
+def ddbb_to_dict(data: list, ztf: bool) -> tuple[list,list]:
+    """
+    The general idea is to take the data from ddbb and parser into list 
+    of dictionaries. If the data comes direct from ztf, then we add the
+    extra_fields field. We also make a change value to tid and sid
+    """
+    parsed_data = []
+    if ztf:
+        extra_fields_list = []
+
+    for detection in data:
+        detection: dict = detection[0].__dict__
+        extra_fields = {}
+        parsed_detections = {}
+        for field, value in detection.items():
+            if field.startswith("_"):
+                continue
+            elif not field in GENERIC_FIELDS and ztf:
+                extra_fields[field] = value
+            else:
+                if field in CHANGE_VALUES:
+                    parsed_detections[field] = 0
+                else:
+                    parsed_detections[field] = value
+        parsed_data.append(parsed_detections)
+        if ztf:
+            extra_fields_list.append(extra_fields)
+
+    if ztf:
+        return parsed_data, extra_fields_list
+    else:
+        return parsed_data
+    
+def model_instance(model_class, data: dict) -> dict:
+    return model_class(**data)
+
+def dicts_through_model(data: list[dict], model_class) -> list[dict]:
+
+    parsed_list = []
+
+    for detection in data:
+        parsed = model_instance(model_class, detection)
+        parsed_list.append(parsed)
+
+    return parsed_list

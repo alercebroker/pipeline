@@ -7,68 +7,28 @@ from db_plugins.db.sql.models import (
 )
 import math
 
-# We assign tid and sid to 0, subject to changes in the future
+# CHANGE_VALUES is used to pass certain values to 0. In this case, tid and sid.
+# CHANGE_NAMES (and _2) are suposed to parser some names to the correct ones.
 
-GENERIC_FIELDS = [
-    "tid",
-    "sid",
-    "oid",
-    "pid",
-    "mjd",
-    "fid",
-    "ra",
-    "dec",
-    "measurement_id",
-    "isdiffpos",
-    "parent_candid",
-    "has_stamp",
-    "magpsf",
-    "sigmapsf",
-    "mag",
-    "e_mag",
-]
+# Constant imports
+from core.parsers.parser_utils import (
+    GENERIC_FIELDS,
+    CHANGE_VALUES,
+    CHANGE_NAMES,
+    CHANGE_NAMES_2,
+    ERRORS,
+)
 
-CHANGE_VALUES = [
-    "tid",
-    "sid",
-]
-
-GENERIC_FIELDS_FP = [
-    "tid",
-    "sid",
-    "oid",
-    "pid",
-    "mjd",
-    "fid",
-    "ra",
-    "dec",
-    "isdiffpos",
-    "parent_candid",
-    "has_stamp",
-]
-
-CHANGE_NAMES = {  # outside extrafields
-    "magpsf": "mag",
-    "sigmapsf": "e_mag",
-}
-
-CHANGE_NAMES_2 = {  # inside extrafields
-    "sigmapsf_corr": "e_mag_corr",
-    "sigmapsf_corr_ext": "e_mag_corr_ext",
-    "magpsf_corr": "mag_corr",
-}
-ERRORS = {
-    1: 0.065,
-    2: 0.085,
-    3: 0.01,
-}
+# Function imports
+from core.parsers.parser_utils import (
+    _e_ra,
+    ddbb_to_dict,
+    dicts_through_model
+)
 
 
-def _e_ra(dec, fid):
-    try:
-        return ERRORS[fid] / abs(math.cos(math.radians(dec)))
-    except ZeroDivisionError:
-        return float("nan")
+
+
 
 
 def parse_sql_detection(ztf_models: list, models: list, *, oids) -> list:
@@ -77,59 +37,21 @@ def parse_sql_detection(ztf_models: list, models: list, *, oids) -> list:
     and we change some names helped by the CHANGE_NAMES dict in the top of the code.
 
     """
-    parsed_ztf_dets = []
-    extra_fields_list = []
 
-    # Here we take all the info from the DDBB and split it into dictionaries. Also we save some variables called extra_fields where this
-    # variables are NOT in the GENERIC_FIELDS dict.
-    for det in ztf_models:
-        det: dict = det[0].__dict__
-        extra_fields = {}
-        parsed_det = {}
-        for field, value in det.items():
-            if field.startswith("_"):
-                continue
-            elif not field in GENERIC_FIELDS:
-                extra_fields[field] = value
-            else:
-                if field in CHANGE_VALUES:
-                    parsed_det[field] = 0
-                else:
-                    parsed_det[field] = value
-        parsed_ztf_dets.append(parsed_det)
-        extra_fields_list.append(extra_fields)
+    parsed_ztf_detections, extra_fields_list = ddbb_to_dict(ztf_models, ztf=True)
+    parsed_dets = ddbb_to_dict(models, ztf=False)
 
-    parsed_dets = []
+    # Here we form the parsed_ztf object for every dict in parsed_ztf_detections.
+    parsed_ztf_list = dicts_through_model(parsed_ztf_detections, ZtfDetection)
 
-    # Here we take all the info from the DDBB and split it into dictionaries too.
-    for d in models:
-        d: dict = d[0].__dict__
-        parsed_d = {}
-        for field, value in d.items():
-            if field.startswith("_"):
-                continue
-            else:
-                if field in CHANGE_VALUES:
-                    parsed_d[field] = 0
-                else:
-                    parsed_d[field] = value
-        parsed_dets.append(parsed_d)
 
-    parsed_ztf_list = []
-
-    # Here we form the parsed_ztf object for every dict in parsed_ztf_dets.
-    for det in parsed_ztf_dets:
-        parsed_ztf = ZtfDetection(
-            **det,
-        )
-        parsed_ztf_list.append(parsed_ztf)
-
+    
     # Here we join detections and ztf_detections in one. Also we hardcode forced and new as False because this is from the DDBB
     # and is not a new object. On the other land as we are in detections, this is not forced so forced is false. Also we join the extra_fields field
     # and change some names in this field.
     for detections in parsed_dets:
         for key, value in detections.items():
-            if not key in parsed_ztf_dets[parsed_dets.index(detections)].keys():
+            if not key in parsed_ztf_detections[parsed_dets.index(detections)].keys():
                 setattr(parsed_ztf_list[parsed_dets.index(detections)], key, value)
 
         setattr(parsed_ztf_list[parsed_dets.index(detections)], "forced", False)
@@ -166,7 +88,7 @@ def parse_sql_detection(ztf_models: list, models: list, *, oids) -> list:
 
     for d in dict_parsed:
         del d["_sa_instance_state"]
-
+        
     return dict_parsed
 
 
@@ -203,50 +125,18 @@ def parse_sql_forced_photometry(ztf_models: list, models: list, *, oids) -> list
     """
     Here we join the ztf_fp and fp in one dict for every oid. Also we add the field extra_fields to the final result.
     """
-    parsed_ztf_dets = []
-    extra_fields_list = []
-    # Here we take the info from the DDBB and make the extra_fields list of dicts.
-    for d in ztf_models:
-        parsed_fp_d = {}
-        extra_fields = {}
-        for key, value in d[0].__dict__.items():
-            if key.startswith("_"):
-                continue
-            elif not key in GENERIC_FIELDS:
-                extra_fields[key] = value
-            else:
-                if key in CHANGE_VALUES:
-                    parsed_fp_d[key] = 0
-                else:
-                    parsed_fp_d[key] = value
-        parsed_ztf_dets.append(parsed_fp_d)
-        extra_fields_list.append(extra_fields)
-    parsed_dets = []
+    parsed_ztf_detections, extra_fields_list = ddbb_to_dict(ztf_models, ztf=True)
 
-    # Here we take the info from the DDBB and make the extra_fields list of dicts.
-    for d in models:
-        d: dict = d[0].__dict__
-        parsed_d = {}
-        for field, value in d.items():
-            if field.startswith("_"):
-                continue
-            else:
-                if field in CHANGE_VALUES:
-                    parsed_d[field] = 0
-                else:
-                    parsed_d[field] = value
-        parsed_dets.append(parsed_d)
+    parsed_dets = ddbb_to_dict(ztf_models, ztf=False)
 
-    parsed_ztf_list = []
 
-    for forced in parsed_ztf_dets:
-        parsed_ztf = (ZtfForcedPhotometry(**forced),)
-        parsed_ztf_list.append(parsed_ztf[0])
+    parsed_ztf_list = dicts_through_model(parsed_ztf_detections, ZtfForcedPhotometry)
+
 
     # Here we join ztf_fp and fp and put forced to true and new to false.
     for detections in parsed_dets:
         for key, value in detections.items():
-            if not key in parsed_ztf_dets[parsed_dets.index(detections)].keys():
+            if not key in parsed_ztf_detections[parsed_dets.index(detections)].keys():
                 setattr(parsed_ztf_list[parsed_dets.index(detections)], key, value)
 
         setattr(parsed_ztf_list[parsed_dets.index(detections)], "forced", True)
@@ -265,4 +155,5 @@ def parse_sql_forced_photometry(ztf_models: list, models: list, *, oids) -> list
         d["tid"] = 0
         del d["pid"]  # Temporal fix to avoid error (Not all pids have value in the new DDBB)
         d["pid"] = 0
+
     return dict_parsed

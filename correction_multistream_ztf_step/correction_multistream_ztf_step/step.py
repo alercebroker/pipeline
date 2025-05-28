@@ -186,6 +186,7 @@ class CorrectionMultistreamZTFStep(GenericStep):
         return result
 
     def produce_scribe(self, scribe_payloads):
+
         for scribe_data in scribe_payloads:
             payload = {"payload": json.dumps(scribe_data)}
             self.scribe_producer.produce(payload)
