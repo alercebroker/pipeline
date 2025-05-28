@@ -20,19 +20,6 @@ class SqlScribe(GenericStep):
         self.db_client = SQLCommandExecutor(config["PSQL_CONFIG"])
         self.command_factory = sql_command_factory
 
-    def pre_execute(self, messages):
-        valid_messages = []
-
-        for message in messages:
-            if '"payload": {"oid": 36028941616460583,' in message["payload"]:
-                valid_messages.append(message)
-        
-        print(f"N Messages: {len(messages)}\nN Valid Messages: {len(valid_messages)}")
-        print(valid_messages)
-        print("----------\n")
-        return valid_messages
-
-
     def execute(self, messages):
         """
         Transforms a batch of messages from a topic into Scribe

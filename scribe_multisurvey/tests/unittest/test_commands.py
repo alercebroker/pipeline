@@ -157,7 +157,6 @@ class CommandTests(unittest.TestCase):
             )
 
         update = operations[2]._doc.pop("$set")
-        pprint(update)
 
         assert "probabilities.$[el].class_rank_1" in update
         assert "probabilities.$[el].probability_rank_1" in update

@@ -114,44 +114,44 @@ def parse_ztf_det(raw_detection: dict, oid: str) -> dict:
     }
     return detection
 
-def parse_ztf_ps1(candidate: dict, oid: str) -> dict:
-    ps1 = {
-        "oid": oid,
-        "measurement_id": candidate["measurement_id"],
-        "ssdistnr": candidate["extra_fields"]["ssdistnr"],
-        "ssmagnr": candidate["extra_fields"]["ssmagnr"],
-        "ssnamenr": candidate["extra_fields"]["ssnamenr"],
-    }
-    return ps1
-
 def parse_ztf_ss(candidate: dict, oid: str) -> dict:
     ss = {
         "oid": oid,
         "measurement_id": candidate["measurement_id"],
-        "objectidps1": candidate["extra_fields"]["objecti"],
-        "sgmag1": candidate["extra_fields"]["sgmag1 "],
-        "srmag1": candidate["extra_fields"]["srmag1 "],
-        "simag1": candidate["extra_fields"]["simag1 "],
-        "szmag1": candidate["extra_fields"]["szmag1 "],
-        "sgscore1": candidate["extra_fields"]["sgscore"],
-        "distpsnr1": candidate["extra_fields"]["distpsn"],
-        "objectidps2": candidate["extra_fields"]["objecti"],
-        "sgmag2": candidate["extra_fields"]["sgmag2 "],
-        "srmag2": candidate["extra_fields"]["srmag2 "],
-        "simag2": candidate["extra_fields"]["simag2 "],
-        "szmag2": candidate["extra_fields"]["szmag2 "],
-        "sgscore2": candidate["extra_fields"]["sgscore"],
-        "distpsnr2": candidate["extra_fields"]["distpsn"],
-        "objectidps3": candidate["extra_fields"]["objecti"],
-        "sgmag3": candidate["extra_fields"]["sgmag3 "],
-        "srmag3": candidate["extra_fields"]["srmag3 "],
-        "simag3": candidate["extra_fields"]["simag3 "],
-        "szmag3": candidate["extra_fields"]["szmag3 "],
-        "sgscore3": candidate["extra_fields"]["sgscore"],
-        "distpsnr3": candidate["extra_fields"]["distpsn"],
-        "nmtchps": candidate["extra_fields"]["nmtchps"],
+        "ssdistnr": candidate["extra_fields"]["ssdistnr"],
+        "ssmagnr": candidate["extra_fields"]["ssmagnr"],
+        "ssnamenr":None if candidate["extra_fields"]["ssnamenr"] == 'null' else  candidate["extra_fields"]["ssnamenr"],
     }
     return ss
+
+def parse_ztf_ps1(candidate: dict, oid: str) -> dict:
+    ps1 = {
+        "oid": oid,
+        "measurement_id": candidate["measurement_id"],
+        "objectidps1": candidate["extra_fields"]["objectidps1"],
+        "sgmag1": candidate["extra_fields"]["sgmag1"],
+        "srmag1": candidate["extra_fields"]["srmag1"],
+        "simag1": candidate["extra_fields"]["simag1"],
+        "szmag1": candidate["extra_fields"]["szmag1"],
+        "sgscore1": candidate["extra_fields"]["sgscore1"],
+        "distpsnr1": candidate["extra_fields"]["distpsnr1"],
+        "objectidps2": candidate["extra_fields"]["objectidps2"],
+        "sgmag2": candidate["extra_fields"]["sgmag2"],
+        "srmag2": candidate["extra_fields"]["srmag2"],
+        "simag2": candidate["extra_fields"]["simag2"],
+        "szmag2": candidate["extra_fields"]["szmag2"],
+        "sgscore2": candidate["extra_fields"]["sgscore2"],
+        "distpsnr2": candidate["extra_fields"]["distpsnr2"],
+        "objectidps3": candidate["extra_fields"]["objectidps3"],
+        "sgmag3": candidate["extra_fields"]["sgmag3"],
+        "srmag3": candidate["extra_fields"]["srmag3"],
+        "simag3": candidate["extra_fields"]["simag3"],
+        "szmag3": candidate["extra_fields"]["szmag3"],
+        "sgscore3": candidate["extra_fields"]["sgscore3"],
+        "distpsnr3": candidate["extra_fields"]["distpsnr3"],
+        "nmtchps": candidate["extra_fields"]["nmtchps"],
+    }
+    return ps1
 
 def parse_ztf_gaia(candidate: dict, oid: str) -> dict:
     gaia = {
@@ -205,7 +205,7 @@ def parse_ztf_refernece(candidate: dict, oid: str) -> dict:
         "oid": oid,
         "rfid": candidate["extra_fields"]["rfid"],
         "measurement_id": candidate["measurement_id"],
-        "band": candidate["extra_fields"]["band"],
+        "band": candidate["band"],
         "rcid": candidate["extra_fields"]["rcid"],
         "field": candidate["extra_fields"]["field"],
         "magnr": candidate["extra_fields"]["magnr"],
@@ -214,8 +214,8 @@ def parse_ztf_refernece(candidate: dict, oid: str) -> dict:
         "sharpnr": candidate["extra_fields"]["sharpnr"],
         "ranr": candidate["extra_fields"]["ranr"],
         "decnr": candidate["extra_fields"]["decnr"],
-        "mjdstartref": candidate["extra_fields"]["mjdstartref"],
-        "mjdendref": candidate["extra_fields"]["mjdendref"],
+        "mjdstartref": candidate["extra_fields"]["jdstartref"] - 2400000.5,
+        "mjdendref": candidate["extra_fields"]["jdendref"] - 2400000.5,
         "nframesref": candidate["extra_fields"]["nframesref"],
     }
     return reference

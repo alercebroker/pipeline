@@ -834,7 +834,6 @@ class PsqlIntegrationTest(unittest.TestCase):
                 )
             )
             result = result.fetchall()
-            print(result)
             assert result[0][0] == "test_score_oid"
             assert result[0][1] == "test_detector_name"
             assert result[0][2] == "test_version"

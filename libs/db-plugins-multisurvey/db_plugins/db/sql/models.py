@@ -211,7 +211,7 @@ class ZtfSS(Base):
     measurement_id = Column(BigInteger, nullable=False)
     ssdistnr = Column(REAL)
     ssmagnr = Column(REAL)
-    ssnamenr = Column(REAL)
+    ssnamenr = Column(VARCHAR)
 
     __table_args__ = (
         PrimaryKeyConstraint("oid", "measurement_id", name="pk_ztfss_oid_measurement_id"),
@@ -312,7 +312,7 @@ class ZtfReference(Base):
 
     oid = Column(BigInteger, nullable=False)
     rfid = Column(BigInteger, nullable=False)
-    measurement_ic = Column(BigInteger, nullable=False)
+    measurement_id = Column(BigInteger, nullable=False)
     band = Column(Integer)
     rcid = Column(Integer)
     field = Column(Integer)

@@ -127,11 +127,11 @@ class ZTFCorrectionCommand(Command):
         for single_data in data:
             detections.extend(single_data["detections"])
             forced_pothometries.extend(single_data["forced_photometries"])
-            ps1.extend(single_data["ps1"])
-            ss.extend(single_data["ss"])
-            gaia.extend(single_data["gaia"])
-            dq.extend(single_data["dq"])
-            reference.extend(single_data["reference"])            
+            ps1.append(single_data["ps1"])
+            ss.append(single_data["ss"])
+            gaia.append(single_data["gaia"])
+            dq.append(single_data["dq"])
+            reference.append(single_data["reference"])            
         
         # insert detections
         if len(detections) > 0:
@@ -156,6 +156,9 @@ class ZTFCorrectionCommand(Command):
             )
 
         # insert ps1_ztf
+        print("DEBUGIN!!!!!")
+        print(ps1)
+        print("+++++++++++++")
         if len(ps1) > 0:
             ps_stmt = insert(ZtfPS1)
             ps_result = session.connection().execute(
@@ -168,7 +171,7 @@ class ZTFCorrectionCommand(Command):
 
         # insert ss_ztf
         if len(ss) > 0:
-            ss_stmt = insert(ZtfForcedPhotometry)
+            ss_stmt = insert(ZtfSS)
             ss_result = session.connection().execute(
                 ss_stmt.on_conflict_do_update(
                     constraint="pk_ztfss_oid_measurement_id",
@@ -204,7 +207,7 @@ class ZTFCorrectionCommand(Command):
             reference_stmt = insert(ZtfReference)
             reference_result = session.connection().execute(
                 reference_stmt.on_conflict_do_update(
-                    constraint="pk_ztfreference_oid_rfidb",
+                    constraint="pk_ztfreference_oid_rfid",
                     set_=reference_stmt.excluded
                 ),
                 reference
