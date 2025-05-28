@@ -253,7 +253,7 @@ class ztf_ps1(Base):
     )
 
 class gaia_ztf(Base):
-    __tablename__ = "gaia_ztf"
+    __tablename__ = "ztf_gaia"
 
     oid = Column(BigInteger, nullable=False)
     measurement_id = Column(BigInteger, nullable=False)
