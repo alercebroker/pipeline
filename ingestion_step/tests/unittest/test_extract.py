@@ -14,6 +14,9 @@ def test_extract_candidates(ztf_alerts: list[dict[str, Any]]):
 
     fields = {"objectId", "candid", "parent_candid", "has_stamp"}
     assert fields <= set(candidates.keys())
+    assert not any(
+        candidates["forced"]
+    ), "`forced` should be false on candidates"
 
 
 def test_extract_prv_candidates(ztf_alerts: list[dict[str, Any]]):
@@ -21,6 +24,9 @@ def test_extract_prv_candidates(ztf_alerts: list[dict[str, Any]]):
 
     fields = {"objectId", "parent_candid", "has_stamp"}
     assert fields <= set(prv_candidates.keys())
+    assert not any(
+        prv_candidates["forced"]
+    ), "`forced` should be false on prv_candidates"
 
 
 def test_extract_fp_hists(ztf_alerts: list[dict[str, Any]]):
@@ -38,6 +44,7 @@ def test_extract_fp_hists(ztf_alerts: list[dict[str, Any]]):
     }
 
     assert fields <= set(fp_hists.keys())
+    assert all(fp_hists["forced"]), "`forced` should be true on fp"
 
 
 def test_extract(ztf_alerts: list[dict[str, Any]]):
@@ -61,7 +68,7 @@ def test_extract(ztf_alerts: list[dict[str, Any]]):
 def test_candid_precision():
     with open("tests/data/avros/3044341005815015012.avro", "rb") as file:
         reader = fastavro.reader(file)
-        messages = [record for record in reader]
+        messages: list[Any] = [record for record in reader]
 
     prv_candidates = extractor._extract_prv_candidates(messages)
     prv_pandas = pd.DataFrame(prv_candidates)

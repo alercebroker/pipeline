@@ -16,7 +16,7 @@ from ingestion_step.utils.database import (
 from ingestion_step.ztf.serializer import serialize_ztf
 
 
-class SortingHatStep(GenericStep):
+class IngestionStep(GenericStep):
     ingestion_timestamp: int | None
 
     def __init__(

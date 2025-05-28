@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "ingestion-step"
 version = "27.4.1a3"
-description = "Sorting hat step"
+description = "Ingestion step"
 authors = []
 readme = "README.md"
 packages = [{ include = "ingestion_step" }]
