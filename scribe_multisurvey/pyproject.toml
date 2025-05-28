@@ -1,15 +1,15 @@
 [tool.poetry]
-name = "scribe"
+name = "scribe-multisurvey"
 version = "27.5.7a11"
-description = "Mongo scribe"
+description = "SQL scribe for multisurvey pipeline"
 authors = []
 readme = "README.md"
-packages = [{include = "mongo_scribe"}]
+packages = [{include = "sql_scribe"}]
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.11"
+python = ">=3.10,<3.11"
 apf-base = { path = "../libs/apf", develop = true }
-db-plugins = {path = "../libs/db-plugins", develop = true}
+db-plugins = {path = "../libs/db-plugins-multisurvey", develop = true}
 pandas = "1.5.3"
 sqlalchemy = "2.0.19"
 psycopg2-binary = "^2.9.7"

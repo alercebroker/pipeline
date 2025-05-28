@@ -2,6 +2,7 @@ from json import loads
 from .exceptions import WrongFormatCommandException
 from .commands import (
     Command,
+    ZTFCorrectionCommand
 )
 
 
@@ -11,7 +12,7 @@ def validate(message: dict) -> dict:
     It raises MisformattedCommand if the JSON string isn't a valid command.
     """
     if any(
-        required not in message for required in ["type", "data", "collection", "survey", "step"]
+        required not in message for required in ["payload", "survey", "step"]
     ):
         raise WrongFormatCommandException
 
@@ -35,28 +36,12 @@ def decode_message(encoded_message: str) -> dict:
 
 def command_factory(msg: str) -> Command:
     message = decode_message(msg)
-    type_ = message.pop("type")
-    table = message.pop("collection")
+    print("HERE")
+    print(message)
+    survey = message.pop("survey")
+    step = message.pop("step")
 
     # here it comes
-    """ if type_ == "insert" and table == "object":
-        return InsertObjectCommand(**message)
-    if type_ == "update_object_from_stats":
-        return UpdateObjectFromStatsCommand(**message)
-    if type_ == "update" and table == "detection":
-        return InsertDetectionsCommand(**message)
-    if type_ == "upsert" and table == "magstats":
-        return UpdateObjectStatsCommand(**message)
-    if type_ == "update" and table == "non_detection":
-        return UpsertNonDetectionsCommand(**message)
-    if type_ == "update_features" and table == "object":
-        return UpsertFeaturesCommand(**message)
-    if type_ == "update_probabilities" and table == "object":
-        return UpsertProbabilitiesCommand(**message)
-    if type_ == "update" and table == "object" and "xmatch" in message["data"]:
-        return UpsertXmatchCommand(**message)
-    if type_ == "update" and table == "forced_photometry":
-        return InsertForcedPhotometryCommand(**message)
-    if type_ == "insert" and table == "score":
-        return UpsertScoreCommand(**message) """
-    raise ValueError(f"Unrecognized command type {type_} in table {table}.")
+    if survey == "ztf" and step == "correction":
+        return ZTFCorrectionCommand(**message)
+    raise ValueError(f"Unrecognized command type {survey} in table {step}.")

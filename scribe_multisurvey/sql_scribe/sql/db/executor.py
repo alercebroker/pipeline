@@ -3,10 +3,10 @@ from typing import Callable, Dict, List
 
 from .connection import PSQLConnection, Session
 from sql_scribe.sql.command.commands import (
-    Command
+    Command,
+    ZTFCorrectionCommand
 )
 
-""" 
 class CommandHandler:
     def __init__(self, query_function: Callable[[Session, List], None]):
         self.query = query_function
@@ -26,11 +26,17 @@ class CommandHandler:
             self.query(session, self.data)
             session.commit()
         self.data = []
- """
+
 
 class SQLCommandExecutor:
     def __init__(self, config: dict) -> None:
-        self.connection = PSQLConnection(config["PSQL"])
+        self.connection = PSQLConnection(config)
+        commands_list = (
+            ZTFCorrectionCommand,
+        )
+        self.handlers: Dict[str, CommandHandler] = {
+            c.type: CommandHandler(c.db_operation) for c in commands_list
+        }
 
     def _add_command(self, command: Command):
         self.handlers[command.type].add_command(command)

@@ -8,7 +8,18 @@ from sqlalchemy.orm import sessionmaker, Session
 class PSQLConnection:
     def __init__(self, config: dict) -> None:
         url = self.__format_db_url(config)
-        self._engine = create_engine(url, echo=False)
+        schema = config.get("SCHEMA", None)
+        if schema:
+            self._engine = create_engine(url,
+                echo=False,
+                connect_args={
+                    "options": "-csearch_path={}".format(
+                        schema
+                    )
+                },
+            )
+        else:
+            self._engine = create_engine(url, echo=False)
         self._session_factory = sessionmaker(
             self._engine,
         )

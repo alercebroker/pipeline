@@ -8,13 +8,9 @@ SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 PACKAGE_PATH = os.path.abspath(os.path.join(SCRIPT_PATH, ".."))
 sys.path.append(PACKAGE_PATH)
 
-if os.getenv("CONFIG_FROM_YAML"):
-    from apf.core.settings import config_from_yaml_file
+from apf.core.settings import config_from_yaml_file
 
-    STEP_CONFIG = config_from_yaml_file("/config/config.yaml")
-
-else:
-    from settings import STEP_CONFIG
+STEP_CONFIG = config_from_yaml_file("/home/alex/Work/Projects/pipeline/scribe_multisurvey/scripts/config.yaml")
 
 level = logging.INFO
 if STEP_CONFIG.get("LOGGING_DEBUG", False):
@@ -34,14 +30,6 @@ from prometheus_client import start_http_server
 # Pyroscope config
 use_profiling = STEP_CONFIG.pop("USE_PROFILING")
 pyroscope_server = STEP_CONFIG.pop("PYROSCOPE_SERVER")
-# db config
-DB_CONFIG = {}
-if STEP_CONFIG.get("DB_SECRET_NAME", None):
-    db_credentials = get_credentials(STEP_CONFIG["DB_SECRET_NAME"])
-    DB_CONFIG["PSQL"] = db_credentials
-else:
-    DB_CONFIG=STEP_CONFIG.get("DB_CONFIG")
-STEP_CONFIG["DB_CONFIG"] = DB_CONFIG
 
 if use_profiling:
     from pyroscope import configure

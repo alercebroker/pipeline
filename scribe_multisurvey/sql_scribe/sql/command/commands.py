@@ -15,26 +15,27 @@ from sqlalchemy import update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
-from sql.command.parser import (
+from .parser import (
     parse_ztf_det,
     parse_ztf_gaia,
     parse_ztf_pf,
     parse_ztf_ps1,
     parse_ztf_ss,
+    parse_ztf_dq,
 )
 
 
-step_version = version("scribe")
+step_version = version("scribe-multisurvey")
 
 
 class Command(ABC):
     type: str
 
-    def __init__(self, data, criteria=None, options=None):
-        self._check_inputs(data, criteria)
+    def __init__(self, payload, criteria=None, options=None):
+        self._check_inputs(payload, criteria)
         self.criteria = criteria or {}
         self.options = options
-        self.data = self._format_data(data)
+        self.data = self._format_data(payload)
 
     def _format_data(self, data):
         return data
@@ -49,15 +50,7 @@ class Command(ABC):
         pass
 
 class ZTFCorrectionCommand(Command):
-
-    def _clean_data(self, data):
-        """
-        Filter out the measurementes new = False
-        Identifies the new detection that trigger the
-        alert.
-        Takes the object data from the payload
-        """
-        pass
+    type = "ZTFCorrectionCommand"
 
     def _format_data(self, data):
         """
@@ -69,8 +62,11 @@ class ZTFCorrectionCommand(Command):
         gaia_ztf
         """
 
+        print("NOW HERE")
+        print(data)
+        print("------")
         oid = data["oid"]
-        candidate_measurement_id = data["measurement_id"]
+        candidate_measurement_id = data["measurement_id"][0]
 
         # detections
         candidate = {}        
@@ -78,28 +74,35 @@ class ZTFCorrectionCommand(Command):
         detections = []
         forced_photometries = []
 
-        for detection in data["payload"]["detections"]:
+        for detection in data["detections"]:
             if detection["new"]:
                 # forced photometry
-                if detection["forced"]:
+                # correct! if detection["forced"]: 
+                if detection["extra_fields"].get("forcediffimflux", None):
                     forced_photometries.append(parse_ztf_pf(detection, oid))
                 # detection
                 else:
                     parsed_detection = parse_ztf_det(detection, oid)
-                    if parsed_detection["candidate"] == candidate_measurement_id:
+                    if parsed_detection["measurement_id"] == candidate_measurement_id:
                         candidate = detection
                     detections.append(parsed_detection)
+        
+        print("Finally here")
+        print(candidate)
+        print("**********")
 
-        parsed_ps1 = parse_ztf_ps1(candidate)
-        parsed_ss = parse_ztf_ss(candidate)
-        parsed_gaia = parse_ztf_gaia(candidate)
+        parsed_ps1 = {} # parse_ztf_ps1(candidate, oid)
+        parsed_ss = {} # parse_ztf_ss(candidate, oid)
+        parsed_gaia = {} # parse_ztf_gaia(candidate, oid)
+        parsed_dq = {} # parse_ztf_dq(candidate, oid)
 
         return {
             "detections": detections,
             "forced_photometries": forced_photometries,
             "ps1": parsed_ps1,
             "ss": parsed_ss,
-            "gaia": parsed_gaia
+            "gaia": parsed_gaia,
+            "dq": parsed_dq,
         }
 
     @staticmethod
@@ -111,26 +114,36 @@ class ZTFCorrectionCommand(Command):
         ss = []
         gaia = []
         for single_data in data:
-            detections.append(single_data["detections"])
-            forced_pothometries.append(single_data["forced_pothometries"])
-            ps1.append(single_data["ps1"])
-            ss.append(single_data["ss"])
-            gaia.append(single_data["gaia"])
+            detections.extend(single_data["detections"])
+            forced_pothometries.extend(single_data["forced_photometries"])
+            ps1.extend(single_data["ps1"])
+            ss.extend(single_data["ss"])
+            gaia.extend(single_data["gaia"])
         
         # insert detections
-        detections_stmt = insert(ZtfDetection)
-        detections_stmt = detections_stmt.on_conflict_do_update(
-            constraint="pk_ztfdetection_oid_measurementid",
-            set_=detections_stmt.excluded,
-        )
-        detections_result = session.connection().execute(detections_stmt, detections)
+        if len(detections) > 0:
+            detections_stmt = insert(ZtfDetection)
+            detections_result = session.connection().execute(
+                detections_stmt.on_conflict_do_update(
+                    constraint="pk_ztfdetection_oid_measurementid",
+                    set_=detections_stmt.excluded
+                ),
+                detections
+            )
+
         # insert forced photometry
-        fp_stmt = insert(ZtfForcedPhotometry)
-        fp_stmt = fp_stmt.on_conflict_do_update(
-            constraint="pk_ztfforcedphotometry_oid_measurementid",
-            set_=fp_stmt.excluded,
-        )
-        fp_result = session.connection().execute(fp_stmt, forced_pothometries)
+        if len(forced_pothometries) > 0:
+            print("pf")
+            print(forced_pothometries)
+            fp_stmt = insert(ZtfForcedPhotometry)
+            fp_result = session.connection().execute(
+                fp_stmt.on_conflict_do_update(
+                    constraint="pk_ztfforcedphotometry_oid_measurementid",
+                    set_=fp_stmt.excluded
+                ),
+                forced_pothometries
+            )
+            print("######")
 
         # insert ps1_ztf
 
@@ -139,14 +152,11 @@ class ZTFCorrectionCommand(Command):
         # insert gaia_ztf
 
         # data quaility_ztf
-        
-        pass
-
 
 ### ###### ###
 ### LEGACY ###
 ### ###### ###
-
+"""
 class ZtfCorrectionCommand(Command):
     pass
 
@@ -404,7 +414,7 @@ class UpdateObjectStatsCommand(Command):
         unique_magstats = {(el["oid"], el["fid"]): el for el in magstats}
         unique_magstats = list(unique_magstats.values())
         upsert_stmt = insert(MagStats)
-        upsert_stmt = upsert_stmt.on_conflict_do_update(
+  /commands.py", line 155, in Upsert      upsert_stmt = upsert_stmt.on_conflict_do_update(
             constraint="magstat_pkey", set_=upsert_stmt.excluded
         )
         return session.execute(upsert_stmt, unique_magstats)
@@ -546,3 +556,4 @@ class UpsertXmatchCommand(Command):
         )
         logging.debug("Upserting %s xmatches", len(unique))
         return session.execute(insert_stmt, unique)
+"""

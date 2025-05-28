@@ -160,4 +160,10 @@ def parse_ztf_gaia(candidate: dict, oid: str) -> dict:
     gaia = {
 
     }
-    return gaia    
+    return gaia
+
+def parse_ztf_dq(candidate: dict, oid: str) -> dict:
+    dq = {
+
+    }
+    return dq
