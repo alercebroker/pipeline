@@ -204,8 +204,8 @@ class NonDetection(Base):
         Index("ix_non_detection_oid", "oid", postgresql_using="hash"),
     )
 
-class ss_ztf(Base):
-    __tablename__ = "ss_ztf"
+class ztf_ss(Base):
+    __tablename__ = "ztf_ss"
 
     oid = Column(BigInteger, nullable=False)
     measurement_id = Column(BigInteger, nullable=False)
@@ -214,11 +214,12 @@ class ss_ztf(Base):
     ssnamenr = Column(REAL)
 
     __table_args__ = (
-            PrimaryKeyConstraint("oid", "measurement_id", name="pk_oid_measurement_id"),
+        PrimaryKeyConstraint("oid", "measurement_id", name="pk_oid_measurement_id"),
+        Index("ix_zrt_ss_oid", "oid", postgresql_using="btree"),
     )
 
-class ps1_ztf(Base):
-    __tablename__ = "ps1_ztf"
+class ztf_ps1(Base):
+    __tablename__ = "ztf_ps1"
 
 
     oid = Column(BigInteger, nullable=False)
@@ -245,10 +246,89 @@ class ps1_ztf(Base):
     sgscore3 = Column(REAL)
     distpsnr3 = Column(REAL)
     nmtchps = Column(SmallInteger)
-    unique1 = Column(Boolean, nullable=False)
-    unique2 = Column(Boolean, nullable=False)
-    unique3 = Column(Boolean, nullable=False)
 
     __table_args__ = (
-            PrimaryKeyConstraint("oid", "measurement_id", name="pk_oid_measurement_id"),
+        PrimaryKeyConstraint("oid", "measurement_id", name="pk_oid_measurement_id"),
+        Index("ix_ztf_ps1_oid", "oid", postgresql_using="btree"),
+    )
+
+class gaia_ztf(Base):
+    __tablename__ = "gaia_ztf"
+
+    oid = Column(BigInteger, nullable=False)
+    measurement_id = Column(BigInteger, nullable=False)
+    neargaia = Column(REAL)
+    neargaiabright = Column(REAL)
+    maggaia = Column(REAL)
+    maggaiabright = Column(REAL)
+
+    __table_args__ = (
+        PrimaryKeyConstraint("oid", name="pk_oid"),
+    )
+
+class ztf_dataquality(Base):
+    __tablename__ = "ztf_dataquality"
+
+
+    oid = Column(BigInteger, nullable=False)
+    measurement_id = Column(BigInteger, nullable=False)
+    xpos = Column(REAL)
+    ypos = Column(REAL)
+    chipsf = Column(REAL)
+    sky = Column(REAL)
+    fwhm = Column(REAL)
+    classtar = Column(REAL)
+    mindtoedge = Column(REAL)
+    seeratio = Column(REAL)
+    aimage = Column(REAL)
+    bimage = Column(REAL)
+    aimagerat = Column(REAL)
+    bimagerat = Column(REAL)
+    nneg = Column(REAL)
+    nbad = Column(REAL)
+    sumrat = Column(REAL)
+    scorr = Column(REAL)
+    dsnrms = Column(REAL)
+    ssnrms = Column(REAL)
+    magzpsci = Column(REAL)
+    magzpsciunc = Column(REAL)
+    magzpscirms = Column(REAL)
+    nmatches = Column(REAL)
+    clrcoeff = Column(REAL)
+    clrcounc = Column(REAL)
+    zpclrcov = Column(REAL)
+    zpmed = Column(REAL)
+    clrmed = Column(REAL)
+    clrrms = Column(REAL)
+    exptime = Column(REAL)
+
+    __table_args__ = (
+        PrimaryKeyConstraint("oid", "measurement_id", name="pk_oid_measurement_id"),
+        Index("ix_ztf_dataquality_oid", "oid", postgresql_using="btree"),
+        Index("ix_ztf_dataquality_measurement_id", "measurement_id", postgresql_using="btree"),
+    )
+
+class ztf_reference(Base):
+    __tablename__ = "ztf_reference"
+
+
+    oid = Column(BigInteger, nullable=False)
+    rfid = Column(BigInteger, nullable=False)
+    measurement_ic = Column(BigInteger, nullable=False)
+    band = Column(Integer)
+    rcid = Column(Integer)
+    field = Column(Integer)
+    magnr = Column(REAL)
+    sigmagnr = Column(REAL)
+    chinr = Column(REAL)
+    sharpnr = Column(REAL)
+    ranr = Column(DOUBLE_PRECISION)
+    decnr = Column(DOUBLE_PRECISION)
+    mjdstartref = Column(DOUBLE_PRECISION)
+    mjdendref = Column(DOUBLE_PRECISION)
+    nframesref = Column(Integer)
+
+    __table_args__ = (
+        PrimaryKeyConstraint("oid", "rfid", name="pk_oid_rfid"),
+        Index("ix_ztf_reference_oid", "oid", postgresql_using="btree"),
     )
