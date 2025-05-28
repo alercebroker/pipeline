@@ -40,9 +40,7 @@ COPY --from=builder /schemas /schemas
 
 COPY ingestion_step/ingestion_step /app/ingestion_step
 COPY ingestion_step/scripts /app/scripts
-COPY ingestion_step/settings.py \
-  ingestion_step/README.md \
-  /app/
+COPY ingestion_step/README.md /app/
 
 WORKDIR /app
 RUN poetry install --only-root;

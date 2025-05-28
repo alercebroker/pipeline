@@ -41,7 +41,7 @@ def add_candid_fp(df: pd.DataFrame):
     The pair (oid, pid) should be unique between forced_photometries
     """
 
-    # WARN: Use a more appropiate conversion!
+    # WARN: Use a more appropriate conversion!
     df["candid"] = df["pid"].astype("Float64")
 
 
@@ -114,8 +114,8 @@ def sigmara_to_e_ra(df: pd.DataFrame):
 
 def sigmadec_to_e_dec(df: pd.DataFrame):
     """
-    If there is a sigmadec renames it to e_ra, otherwise it uses the fid errores
-    pre defined.
+    If there is a sigmadec renames it to e_ra, otherwise it uses the fid errors
+    pre-defined.
 
     Takes a `DataFrame` containing the columns:
         - `sigmadec`
@@ -141,7 +141,7 @@ def add_zero_e_dec(df: pd.DataFrame):
 
 def isdiffpos_to_int(df: pd.DataFrame):
     """
-    Converts isdiffpos to a int representation (1 or -1) instead of a string
+    Converts isdiffpos to an int representation (1 or -1) instead of a string
     ('t', 'f', '1' or '-1').
     """
     df["isdiffpos"] = df["isdiffpos"].apply(
