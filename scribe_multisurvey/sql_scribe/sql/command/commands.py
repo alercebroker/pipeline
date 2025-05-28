@@ -204,7 +204,7 @@ class ZTFCorrectionCommand(Command):
             reference_stmt = insert(ZtfReference)
             reference_result = session.connection().execute(
                 reference_stmt.on_conflict_do_update(
-                    constraint="pk_ztfreference_oid_rfid",
+                    constraint="pk_ztfreference_oid_rfidb",
                     set_=reference_stmt.excluded
                 ),
                 reference
