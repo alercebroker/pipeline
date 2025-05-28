@@ -127,7 +127,7 @@ def parse_ztf_ps1(candidate: dict, oid: str) -> dict:
 def parse_ztf_ss(candidate: dict, oid: str) -> dict:
     ss = {
         "oid": oid,
-        "measurement_id": candidate["extra_fields"]["measure"],
+        "measurement_id": candidate["measurement_id"],
         "objectidps1": candidate["extra_fields"]["objecti"],
         "sgmag1": candidate["extra_fields"]["sgmag1 "],
         "srmag1": candidate["extra_fields"]["srmag1 "],
@@ -150,20 +150,72 @@ def parse_ztf_ss(candidate: dict, oid: str) -> dict:
         "sgscore3": candidate["extra_fields"]["sgscore"],
         "distpsnr3": candidate["extra_fields"]["distpsn"],
         "nmtchps": candidate["extra_fields"]["nmtchps"],
-        "unique1": candidate["extra_fields"]["unique1"],
-        "unique2": candidate["extra_fields"]["unique2"],
-        "unique3": candidate["extra_fields"]["unique3"],
     }
     return ss
 
 def parse_ztf_gaia(candidate: dict, oid: str) -> dict:
     gaia = {
-
+        "oid": oid,
+        "measurement_id": candidate["measurement_id"],
+        "neargaia": candidate["extra_fields"]["neargaia"],
+        "neargaiabright": candidate["extra_fields"]["neargaiabright"],
+        "maggaia": candidate["extra_fields"]["maggaia"],
+        "maggaiabright": candidate["extra_fields"]["maggaiabright"],
     }
     return gaia
 
 def parse_ztf_dq(candidate: dict, oid: str) -> dict:
     dq = {
-
+        "oid": oid,
+        "measurement_id": candidate["measurement_id"],
+        "xpos": candidate["extra_fields"]["xpos"],
+        "ypos": candidate["extra_fields"]["ypos"],
+        "chipsf": candidate["extra_fields"]["chipsf"],
+        "sky": candidate["extra_fields"]["sky"],
+        "fwhm": candidate["extra_fields"]["fwhm"],
+        "classtar": candidate["extra_fields"]["classtar"],
+        "mindtoedge": candidate["extra_fields"]["mindtoedge"],
+        "seeratio": candidate["extra_fields"]["seeratio"],
+        "aimage": candidate["extra_fields"]["aimage"],
+        "bimage": candidate["extra_fields"]["bimage"],
+        "aimagerat": candidate["extra_fields"]["aimagerat"],
+        "bimagerat": candidate["extra_fields"]["bimagerat"],
+        "nneg": candidate["extra_fields"]["nneg"],
+        "nbad": candidate["extra_fields"]["nbad"],
+        "sumrat": candidate["extra_fields"]["sumrat"],
+        "scorr": candidate["extra_fields"]["scorr"],
+        "dsnrms": candidate["extra_fields"]["dsnrms"],
+        "ssnrms": candidate["extra_fields"]["ssnrms"],
+        "magzpsci": candidate["extra_fields"]["magzpsci"],
+        "magzpsciunc": candidate["extra_fields"]["magzpsciunc"],
+        "magzpscirms": candidate["extra_fields"]["magzpscirms"],
+        "nmatches": candidate["extra_fields"]["nmatches"],
+        "clrcoeff": candidate["extra_fields"]["clrcoeff"],
+        "clrcounc": candidate["extra_fields"]["clrcounc"],
+        "zpclrcov": candidate["extra_fields"]["zpclrcov"],
+        "zpmed": candidate["extra_fields"]["zpmed"],
+        "clrmed": candidate["extra_fields"]["clrmed"],
+        "clrrms": candidate["extra_fields"]["clrrms"],
+        "exptime": candidate["extra_fields"]["exptime"],
     }
     return dq
+
+def parse_ztf_refernece(candidate: dict, oid: str) -> dict:
+    reference = {
+        "oid": oid,
+        "rfid": candidate["extra_fields"]["rfid"],
+        "measurement_id": candidate["measurement_id"],
+        "band": candidate["extra_fields"]["band"],
+        "rcid": candidate["extra_fields"]["rcid"],
+        "field": candidate["extra_fields"]["field"],
+        "magnr": candidate["extra_fields"]["magnr"],
+        "sigmagnr": candidate["extra_fields"]["sigmagnr"],
+        "chinr": candidate["extra_fields"]["chinr"],
+        "sharpnr": candidate["extra_fields"]["sharpnr"],
+        "ranr": candidate["extra_fields"]["ranr"],
+        "decnr": candidate["extra_fields"]["decnr"],
+        "mjdstartref": candidate["extra_fields"]["mjdstartref"],
+        "mjdendref": candidate["extra_fields"]["mjdendref"],
+        "nframesref": candidate["extra_fields"]["nframesref"],
+    }
+    return reference

@@ -10,6 +10,11 @@ import logging
 from db_plugins.db.sql.models import (
     ZtfDetection,
     ZtfForcedPhotometry,
+    ZtfSS,
+    ZtfPS1,
+    ZtfGaia,
+    ZtfDataquality,
+    ZtfReference,
 )
 from sqlalchemy import update
 from sqlalchemy.dialects.postgresql import insert
@@ -22,6 +27,7 @@ from .parser import (
     parse_ztf_ps1,
     parse_ztf_ss,
     parse_ztf_dq,
+    parse_ztf_refernece,
 )
 
 
@@ -91,10 +97,11 @@ class ZTFCorrectionCommand(Command):
         print(candidate)
         print("**********")
 
-        parsed_ps1 = {} # parse_ztf_ps1(candidate, oid)
-        parsed_ss = {} # parse_ztf_ss(candidate, oid)
-        parsed_gaia = {} # parse_ztf_gaia(candidate, oid)
-        parsed_dq = {} # parse_ztf_dq(candidate, oid)
+        parsed_ps1 = parse_ztf_ps1(candidate, oid)
+        parsed_ss = parse_ztf_ss(candidate, oid)
+        parsed_gaia = parse_ztf_gaia(candidate, oid)
+        parsed_dq = parse_ztf_dq(candidate, oid)
+        parsed_reference = parse_ztf_refernece(candidate, oid)
 
         return {
             "detections": detections,
@@ -103,6 +110,7 @@ class ZTFCorrectionCommand(Command):
             "ss": parsed_ss,
             "gaia": parsed_gaia,
             "dq": parsed_dq,
+            "reference": parsed_reference,
         }
 
     @staticmethod
@@ -113,12 +121,17 @@ class ZTFCorrectionCommand(Command):
         ps1 = []
         ss = []
         gaia = []
+        dq = []
+        reference = []
+
         for single_data in data:
             detections.extend(single_data["detections"])
             forced_pothometries.extend(single_data["forced_photometries"])
             ps1.extend(single_data["ps1"])
             ss.extend(single_data["ss"])
             gaia.extend(single_data["gaia"])
+            dq.extend(single_data["dq"])
+            reference.extend(single_data["reference"])            
         
         # insert detections
         if len(detections) > 0:
@@ -133,8 +146,6 @@ class ZTFCorrectionCommand(Command):
 
         # insert forced photometry
         if len(forced_pothometries) > 0:
-            print("pf")
-            print(forced_pothometries)
             fp_stmt = insert(ZtfForcedPhotometry)
             fp_result = session.connection().execute(
                 fp_stmt.on_conflict_do_update(
@@ -143,15 +154,61 @@ class ZTFCorrectionCommand(Command):
                 ),
                 forced_pothometries
             )
-            print("######")
 
         # insert ps1_ztf
+        if len(ps1) > 0:
+            ps_stmt = insert(ZtfPS1)
+            ps_result = session.connection().execute(
+                ps_stmt.on_conflict_do_update(
+                    constraint="pk_ztfps1_oid_measurement_id",
+                    set_=ps_stmt.excluded
+                ),
+                ps1
+            )
 
         # insert ss_ztf
+        if len(ss) > 0:
+            ss_stmt = insert(ZtfForcedPhotometry)
+            ss_result = session.connection().execute(
+                ss_stmt.on_conflict_do_update(
+                    constraint="pk_ztfss_oid_measurement_id",
+                    set_=ss_stmt.excluded
+                ),
+                ss
+            )
 
         # insert gaia_ztf
+        if len(gaia) > 0:
+            gaia_stmt = insert(ZtfGaia)
+            gaia_result = session.connection().execute(
+                gaia_stmt.on_conflict_do_update(
+                    constraint="pk_ztfgaia_oid",
+                    set_=gaia_stmt.excluded
+                ),
+                gaia
+            )
 
-        # data quaility_ztf
+        # insert dataquaility_ztf
+        if len(dq) > 0:
+            dq_stmt = insert(ZtfDataquality)
+            dq_result = session.connection().execute(
+                dq_stmt.on_conflict_do_update(
+                    constraint="pk_ztfdataqualit_oid_measurement_id",
+                    set_=dq_stmt.excluded
+                ),
+                dq
+            )
+
+        # insert reference_ztf
+        if len(reference) > 0:
+            reference_stmt = insert(ZtfReference)
+            reference_result = session.connection().execute(
+                reference_stmt.on_conflict_do_update(
+                    constraint="pk_ztfreference_oid_rfid",
+                    set_=reference_stmt.excluded
+                ),
+                reference
+            )
 
 ### ###### ###
 ### LEGACY ###
