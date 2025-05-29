@@ -128,7 +128,7 @@ def parse_output(result: dict):
         output.append(output_message)
     return output
 
-def ddbb_to_dict(data: list, ztf: bool) -> tuple[list,list]:
+def ddbb_to_dict(data: list, ztf: bool) -> list | tuple[list,list]:
     """
     The general idea is to take the data from ddbb and parser into list 
     of dictionaries. If the data comes direct from ztf, then we add the
@@ -165,7 +165,7 @@ def model_instance(model_class, data: dict) -> dict:
     return model_class(**data)
 
 def dicts_through_model(data: list[dict], model_class) -> list[dict]:
-
+    """ Generic function to apply to every dict the appropiate model"""
     parsed_list = []
 
     for detection in data:
@@ -173,3 +173,52 @@ def dicts_through_model(data: list[dict], model_class) -> list[dict]:
         parsed_list.append(parsed)
 
     return parsed_list
+
+def join_ztf(parsed_dets, parsed_ztf_list, parsed_ztf_detections, extra_fields_list, det):
+    """ 
+    
+    Join the ztf data with the non ztf data. Also add the extra_fields.
+    If the data is detections, then we change some names.
+    
+    """
+    for detections in parsed_dets:
+        for key, value in detections.items():
+            if not key in parsed_ztf_detections[parsed_dets.index(detections)].keys():
+                setattr(parsed_ztf_list[parsed_dets.index(detections)], key, value)
+
+        setattr(parsed_ztf_list[parsed_dets.index(detections)], "forced", True)
+        setattr(parsed_ztf_list[parsed_dets.index(detections)], "new", False)
+        setattr(
+            parsed_ztf_list[parsed_dets.index(detections)],
+            "extra_fields",
+            extra_fields_list[parsed_dets.index(detections)],
+        )
+
+        if det:
+            for name in CHANGE_NAMES.keys():
+                parsed_ztf_list[parsed_dets.index(detections)].__dict__[CHANGE_NAMES[name]] = (
+                    parsed_ztf_list[parsed_dets.index(detections)].__dict__[name]
+                )
+                del parsed_ztf_list[parsed_dets.index(detections)].__dict__[name]
+
+            for name in CHANGE_NAMES_2.keys():
+                parsed_ztf_list[parsed_dets.index(detections)].__dict__["extra_fields"][
+                    CHANGE_NAMES_2[name]
+                ] = parsed_ztf_list[parsed_dets.index(detections)].__dict__["extra_fields"][name]
+                del parsed_ztf_list[parsed_dets.index(detections)].__dict__["extra_fields"][name]
+
+
+    return parsed_ztf_list
+
+def calc_ra_dec(dict_parsed):
+
+    for d in dict_parsed:
+        e_ra = _e_ra(d["dec"], d["band"])
+        e_dec = ERRORS[d["band"]]
+
+        d["e_ra"] = e_ra
+        d["e_dec"] = e_dec
+
+        del d["_sa_instance_state"]
+
+    return dict_parsed
