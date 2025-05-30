@@ -64,11 +64,13 @@ ERRORS = {
     3: 0.01,
 }
 
+
 def _e_ra(dec, fid):
     try:
         return ERRORS[fid] / abs(math.cos(math.radians(dec)))
     except ZeroDivisionError:
         return float("nan")
+
 
 def get_fid(fid_as_int: int):
     fid = {1: "g", 2: "r", 0: None, 12: "gr", 3: "i"}
@@ -128,9 +130,10 @@ def parse_output(result: dict):
         output.append(output_message)
     return output
 
-def ddbb_to_dict(data: list, ztf: bool) -> list | tuple[list,list]:
+
+def ddbb_to_dict(data: list, ztf: bool) -> list | tuple[list, list]:
     """
-    The general idea is to take the data from ddbb and parser into list 
+    The general idea is to take the data from ddbb and parser into list
     of dictionaries. If the data comes direct from ztf, then we add the
     extra_fields field. We also make a change value to tid and sid
     """
@@ -160,12 +163,14 @@ def ddbb_to_dict(data: list, ztf: bool) -> list | tuple[list,list]:
         return parsed_data, extra_fields_list
     else:
         return parsed_data
-    
+
+
 def model_instance(model_class, data: dict) -> dict:
     return model_class(**data)
 
+
 def dicts_through_model(data: list[dict], model_class) -> list[dict]:
-    """ Generic function to apply to every dict the appropiate model"""
+    """Generic function to apply to every dict the appropiate model"""
     parsed_list = []
 
     for detection in data:
@@ -174,12 +179,13 @@ def dicts_through_model(data: list[dict], model_class) -> list[dict]:
 
     return parsed_list
 
+
 def join_ztf(parsed_dets, parsed_ztf_list, parsed_ztf_detections, extra_fields_list, det):
-    """ 
-    
+    """
+
     Join the ztf data with the non ztf data. Also add the extra_fields.
     If the data is detections, then we change some names.
-    
+
     """
     for detections in parsed_dets:
         for key, value in detections.items():
@@ -196,9 +202,9 @@ def join_ztf(parsed_dets, parsed_ztf_list, parsed_ztf_detections, extra_fields_l
 
         if det:
             for name in CHANGE_NAMES.keys():
-                parsed_ztf_list[parsed_dets.index(detections)].__dict__[CHANGE_NAMES[name]] = (
-                    parsed_ztf_list[parsed_dets.index(detections)].__dict__[name]
-                )
+                parsed_ztf_list[parsed_dets.index(detections)].__dict__[
+                    CHANGE_NAMES[name]
+                ] = parsed_ztf_list[parsed_dets.index(detections)].__dict__[name]
                 del parsed_ztf_list[parsed_dets.index(detections)].__dict__[name]
 
             for name in CHANGE_NAMES_2.keys():
@@ -207,8 +213,8 @@ def join_ztf(parsed_dets, parsed_ztf_list, parsed_ztf_detections, extra_fields_l
                 ] = parsed_ztf_list[parsed_dets.index(detections)].__dict__["extra_fields"][name]
                 del parsed_ztf_list[parsed_dets.index(detections)].__dict__["extra_fields"][name]
 
-
     return parsed_ztf_list
+
 
 def calc_ra_dec(dict_parsed):
 
