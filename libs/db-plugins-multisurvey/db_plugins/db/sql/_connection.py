@@ -35,6 +35,9 @@ class PsqlDatabase:
         )
 
     def create_db(self):
+        print("Tablas que se crearán:")
+        for table_name in Base.metadata.tables.keys():
+            print(f"  - {table_name}")
         Base.metadata.create_all(self._engine)
 
     def drop_db(self):

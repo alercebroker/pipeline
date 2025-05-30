@@ -60,9 +60,7 @@ class TestCorrectionMultistreamZTF(unittest.TestCase):
         self.scribe_enabled = self.settings.get("SCRIBE_ENABLED", False)
 
         self.db_sql = PsqlDatabase(psql_config)
-
-        self.db_sql.drop_db()
-
+        
         self.db_sql.create_db()
         self.insert_test_data()
 
@@ -234,23 +232,25 @@ class TestCorrectionMultistreamZTF(unittest.TestCase):
     @staticmethod
     def message_validation(data):
         """Combine all validation methods to validate the entire message structure."""
-        return TestCorrectionMultistreamZTF.validate_non_detection_fields_message(
-            data
-        ) and TestCorrectionMultistreamZTF.validate_detection_fields_message(data)
+        return (
+            TestCorrectionMultistreamZTF.validate_non_detection_fields_message(data)
+            and TestCorrectionMultistreamZTF.validate_detection_fields_message(data) 
+        )
 
     @staticmethod
     def output_expected_count(data, oid, expected_dets, expected_non_dets):
         """Check if a message with the given OID has the expected number of detections and non-detections."""
-
-        matching_dict = next((item[0] for item in data[:3] if item[0]["oid"] == int(oid)), None)
-
+        
+        matching_dict = next(
+            (item[0] for item in data[:3] if item[0]['oid'] == int(oid)), 
+            None
+        )
+        
         if matching_dict is None:
             return False
-
-        return (
-            len(matching_dict["detections"]) == expected_dets
-            and len(matching_dict["non_detections"]) == expected_non_dets
-        )
+        
+        return (len(matching_dict["detections"]) == expected_dets and 
+                len(matching_dict["non_detections"]) == expected_non_dets)
 
     @staticmethod
     def structure_comp(result: list[dict]):
@@ -322,7 +322,7 @@ class TestCorrectionMultistreamZTF(unittest.TestCase):
                 self.assertTrue(
                     self.message_validation(messages_produce), "Message validation failed"
                 )
-
+                
                 # If there is enough data, we verify if there is specifically data
                 if len(messages_produce) >= 2:
                     self.assertTrue(
