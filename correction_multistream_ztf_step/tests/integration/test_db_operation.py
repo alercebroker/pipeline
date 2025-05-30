@@ -3,6 +3,8 @@ import logging
 import pytest
 from apf.core.settings import config_from_yaml_file
 
+# from libs.apf.apf.producers.test_producer import TestProducer
+
 import json
 
 from db_plugins.db.sql._connection import PsqlDatabase
@@ -24,6 +26,8 @@ from tests.integration.data.ztf_messages import (
     objects,
 )
 from sqlalchemy import insert
+from apf.core import get_class
+from core.parsers.scribe_parser import scribe_parser
 
 psql_config = {
     "ENGINE": "postgresql",
@@ -45,14 +49,18 @@ class TestCorrectionMultistreamZTF(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up the test environment once for all test methods."""
-        cls.settings = config_from_yaml_file("tests/test_utils/config.yaml")
+        cls.settings = config_from_yaml_file("tests/test_utils/config_w_scribe.yaml")
         cls.logger = cls._set_logger(cls.settings)
         cls.db_sql = PsqlDatabase(psql_config)
         cls.step_params = {"config": cls.settings, "db_sql": cls.db_sql}
 
     def setUp(self):
         # crear db
+        self.settings = config_from_yaml_file("tests/test_utils/config_w_scribe.yaml")
+        self.scribe_enabled = self.settings.get("SCRIBE_ENABLED", False)
+
         self.db_sql = PsqlDatabase(psql_config)
+        
         self.db_sql.create_db()
         self.insert_test_data()
 
@@ -146,28 +154,6 @@ class TestCorrectionMultistreamZTF(unittest.TestCase):
         return step
 
     @staticmethod
-    def validate_alert_fields_message(data):
-        """Validate that all required top-level fields are present in the messages."""
-        for message in data:
-            required_top_fields = [
-                "oid",
-                "measurement_id",
-                "meanra",
-                "meandec",
-                "detections",
-                "non_detections",
-            ]
-            missing_top_fields = [field for field in required_top_fields if field not in message]
-            if missing_top_fields:
-                return False
-
-            unexpected_fields = [field for field in message if field not in required_top_fields]
-            if unexpected_fields:
-                return False
-
-        return True
-
-    @staticmethod
     def validate_non_detection_fields_message(data):
         """Validate that all required non-detection fields are present in the messages."""
         for message in data:
@@ -188,7 +174,6 @@ class TestCorrectionMultistreamZTF(unittest.TestCase):
                             field for field in non_det if field not in required_non_det_fields
                         ]
                         if unexpected_non_det_fields:
-                            print("aqui3")
                             return False
 
         return True
@@ -247,38 +232,55 @@ class TestCorrectionMultistreamZTF(unittest.TestCase):
     @staticmethod
     def message_validation(data):
         """Combine all validation methods to validate the entire message structure."""
-        print(
-            TestCorrectionMultistreamZTF.validate_alert_fields_message(data),
-            TestCorrectionMultistreamZTF.validate_non_detection_fields_message(data),
-            TestCorrectionMultistreamZTF.validate_detection_fields_message(data),
-        )
         return (
-            TestCorrectionMultistreamZTF.validate_alert_fields_message(data)  # True
-            and TestCorrectionMultistreamZTF.validate_non_detection_fields_message(data)  # False
-            and TestCorrectionMultistreamZTF.validate_detection_fields_message(data)  # False
+            TestCorrectionMultistreamZTF.validate_non_detection_fields_message(data)
+            and TestCorrectionMultistreamZTF.validate_detection_fields_message(data) 
         )
 
     @staticmethod
     def output_expected_count(data, oid, expected_dets, expected_non_dets):
         """Check if a message with the given OID has the expected number of detections and non-detections."""
-        matching_dicts = [item for item in data if item.get("oid") == oid]
-        if not matching_dicts:
+        
+        matching_dict = next(
+            (item[0] for item in data[:3] if item[0]['oid'] == int(oid)), 
+            None
+        )
+        
+        if matching_dict is None:
             return False
+        
+        return (len(matching_dict["detections"]) == expected_dets and 
+                len(matching_dict["non_detections"]) == expected_non_dets)
 
-        matching_dict = matching_dicts[0]
-        len_detections = len(matching_dict["detections"])
-        len_non_detections = len(matching_dict["non_detections"])
-        return len_detections == expected_dets and len_non_detections == expected_non_dets
+    @staticmethod
+    def structure_comp(result: list[dict]):
+
+        result = scribe_parser(result)
+
+        KEYS_RESULT = ["step", "survey", "payload"]
+
+        KEYS_PAYLOAD = ["oid", "measurement_id", "detections"]
+        for oid_dict in result:
+            for key in list(oid_dict.keys()):
+
+                if not key in KEYS_RESULT:
+                    return False
+
+        for oid_dict in result:
+            for key in list(oid_dict["payload"].keys()):
+
+                if not key in KEYS_PAYLOAD:
+                    return False
+
+        return True
 
     def test_correction_step_execution(self):
         """Test the full execution of the correction step."""
 
         # Configure test consumer to return our messages
         self.step.consumer.messages = data_consumer
-
         original_consume = self.step.consumer.consume
         self.step.consumer.consume = lambda: data_consumer
-
         try:
             # Pre-consume and configuration
             self.step._pre_consume()
@@ -293,43 +295,53 @@ class TestCorrectionMultistreamZTF(unittest.TestCase):
 
                 try:
                     result = self.step.execute(preprocessed_msg)
-                    result = self.step._post_execute(result)
-                    result = self.step._pre_produce(result)
+
                     self.step.producer.produce(result)
+                    result = self.step._post_execute(result)
+                    assert self.structure_comp(result)
                     processed_messages.extend(result)
+                    result = self.step._pre_produce(result)
+
                 except Exception as error:
                     self.logger.error(f"Error during execution: {error}")
                     raise
 
-            # If the coe get here without errors, the basic test passed
-            print("processed_messages", len(processed_messages))
+            # If the code get here without errors, the basic test passed
+            assert len(self.step.producer.pre_produce_message) == 3
             self.assertTrue(len(processed_messages) > 0, "No se procesaron mensajes")
 
-            # Additional verification if the messages are properly processed
+            # verification if the messages are properly processed
+
             if (
                 hasattr(self.step.producer, "pre_produce_message")
                 and self.step.producer.pre_produce_message
+                and self.scribe_enabled
             ):
-                messages_produce = self.step.producer.pre_produce_message[0]
-
+                messages_produce = self.step.producer.pre_produce_message
                 # Verifyin the message structure
                 self.assertTrue(
                     self.message_validation(messages_produce), "Message validation failed"
                 )
-
+                
                 # If there is enough data, we verify if there is specifically data
                 if len(messages_produce) >= 2:
                     self.assertTrue(
                         self.output_expected_count(
-                            messages_produce, "661678953", expected_dets=3, expected_non_dets=3
+                            messages_produce, "1111111111", expected_dets=4, expected_non_dets=4
                         ),
-                        "Failed count validation for OID 661678953",
+                        "Failed count validation for OID 1111111111",
                     )
                     self.assertTrue(
                         self.output_expected_count(
-                            messages_produce, "879453281", expected_dets=6, expected_non_dets=6
+                            messages_produce, "2222222222", expected_dets=6, expected_non_dets=6
                         ),
-                        "Failed count validation for OID 879453281",
+                        "Failed count validation for OID 2222222222",
+                    )
+                    self.assertTrue(
+                        self.output_expected_count(
+                            messages_produce, "812282744", expected_dets=1, expected_non_dets=3
+                        ),
+                        "Failed count validation for OID 812282744",
                     )
 
         finally:
