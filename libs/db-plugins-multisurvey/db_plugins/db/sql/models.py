@@ -214,7 +214,7 @@ class ztf_ss(Base):
     ssnamenr = Column(REAL)
 
     __table_args__ = (
-        PrimaryKeyConstraint("oid", "measurement_id", name="pk_oid_measurement_id"),
+        PrimaryKeyConstraint("oid", "measurement_id", name="pk_oid_measurement_id_ss"),
         Index("ix_zrt_ss_oid", "oid", postgresql_using="btree"),
     )
 
@@ -248,7 +248,7 @@ class ztf_ps1(Base):
     nmtchps = Column(SmallInteger)
 
     __table_args__ = (
-        PrimaryKeyConstraint("oid", "measurement_id", name="pk_oid_measurement_id"),
+        PrimaryKeyConstraint("oid", "measurement_id", name="pk_oid_measurement_id_ps1"),
         Index("ix_ztf_ps1_oid", "oid", postgresql_using="btree"),
     )
 
