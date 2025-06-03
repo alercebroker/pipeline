@@ -63,7 +63,7 @@ class NoImprovementStopper:
             return False
 
 
-def train_model_and_save(hyperparameters, path_save_results):
+def train_model_and_save(hyperparameters, path_save_results, use_metadata, use_only_avro):
     layer_size_keys = sorted([k for k in hyperparameters.keys() if 'layer_' in k])
     layer_sizes = [hyperparameters[k] for k in layer_size_keys]
     batch_size = hyperparameters['batch_size']
@@ -73,18 +73,22 @@ def train_model_and_save(hyperparameters, path_save_results):
     learning_rate = hyperparameters['learning_rate']
 
     with tf.device('/cpu:0'):
-        training_dataset, validation_dataset, test_dataset, dict_mapping_classes \
-            = get_tf_datasets(batch_size=batch_size)
+        training_dataset, validation_dataset, test_dataset, dict_info_model \
+            = get_tf_datasets(batch_size, use_metadata, use_only_avro)
 
     stamp_classifier = StampModelFull(
         layer_sizes=layer_sizes, 
         dropout_rate=dropout_rate,
         with_batchnorm=with_batchnorm, 
         first_kernel_size=first_kernel_size, 
-        dict_mapping_classes=dict_mapping_classes)
+        dict_mapping_classes=dict_info_model['dict_mapping_classes'],
+        order_features=dict_info_model['order_features'],
+        norm_means=dict_info_model['norm_means'],
+        norm_stds=dict_info_model['norm_stds'],
+        )
 
-    for x, pos, y in test_dataset:
-        print(stamp_classifier((x[:10], pos[:10])))
+    for x, md, y in test_dataset:
+        print(stamp_classifier((x[:10], md[:10])))
         break
 
     for v in stamp_classifier.trainable_variables:
@@ -101,9 +105,9 @@ def train_model_and_save(hyperparameters, path_save_results):
     train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
 
     @tf.function()
-    def train_step(samples, positions, labels):
+    def train_step(samples, metadata, labels):
         with tf.GradientTape() as tape:
-            predictions = stamp_classifier((samples, positions), training=True)
+            predictions = stamp_classifier((samples, metadata), training=True)
             loss = loss_object(labels, predictions)
         gradients = tape.gradient(loss, stamp_classifier.trainable_variables)
         optimizer.apply_gradients(zip(gradients, stamp_classifier.trainable_variables))
@@ -119,8 +123,8 @@ def train_model_and_save(hyperparameters, path_save_results):
     def val_test_step(dataset, iteration, file_writer):
         prediction_list = []
         label_list = []
-        for samples, pos, labels in dataset:
-            predictions = stamp_classifier((samples, pos))
+        for samples, md, labels in dataset:
+            predictions = stamp_classifier((samples, md))
             prediction_list.append(predictions)
             label_list.append(labels)
 
@@ -143,8 +147,8 @@ def train_model_and_save(hyperparameters, path_save_results):
     stopper = NoImprovementStopper(5)
 
     for iteration, training_batch in enumerate(training_dataset):
-        x_batch, pos_batch, y_batch = training_batch
-        train_step(x_batch, pos_batch, y_batch)
+        x_batch, md_batch, y_batch = training_batch
+        train_step(x_batch, md_batch, y_batch)
         if iteration % log_frequency == 0 and iteration != 0:
             with train_writer.as_default():
                 tf.summary.scalar('loss', train_loss.result(), step=iteration)
@@ -167,10 +171,14 @@ def train_model_and_save(hyperparameters, path_save_results):
 
     stamp_classifier.save(f"{path_save_results}/model.keras")
 
+
+use_metadata = True
+use_only_avro = True
+
 date = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 ROOT = f'./results/{date}' 
 os.makedirs(ROOT, exist_ok=True)
 
 for i in range(5):
     print(f'run {i}/4')
-    train_model_and_save(hp_model_full, f'{ROOT}/run_{i}')
+    train_model_and_save(hp_model_full, f'{ROOT}/run_{i}', use_metadata, use_only_avro)

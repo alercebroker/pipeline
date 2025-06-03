@@ -81,7 +81,7 @@ def extract_x_pos_y_from_df(df, oids):
 
 def build_ndarrays(seed: int, path_load_data: str, path_save_data: str):
     #consolidated_dataset_df = pd.read_pickle(os.path.join(PROJECT_DIR, 'data/test_first_stamps_fixed.pkl'))
-    consolidated_dataset_df = pd.read_pickle(os.path.join(path_load_data, 'consolidated_dataset.pkl'))
+    consolidated_dataset_df = pd.read_pickle(os.path.join(path_load_data, 'consolidated_dataset_hasavro.pkl'))
     print('original shape', consolidated_dataset_df.shape)
     # 2869M
 
@@ -131,14 +131,14 @@ def build_ndarrays(seed: int, path_load_data: str, path_save_data: str):
     }
 
     #with open('data/test_first_stamps_fixed_ndarrays.pkl', 'wb') as f:
-    with open(os.path.join(path_save_data, 'consolidated_ndarrays.pkl'), 'wb') as f:
+    with open(os.path.join(path_save_data, 'consolidated_ndarrays_hasavro.pkl'), 'wb') as f:
         pickle.dump(d, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 
 def process_ndarrays(path_save_data: str):
     #with open('data/test_first_stamps_fixed_ndarrays.pkl', 'rb') as f:
-    with open(os.path.join(path_save_data, 'consolidated_ndarrays.pkl'), 'rb') as f:
+    with open(os.path.join(path_save_data, 'consolidated_ndarrays_hasavro.pkl'), 'rb') as f:
         d = pickle.load(f)
 
     x_train = d['x_train']
@@ -199,7 +199,7 @@ def process_ndarrays(path_save_data: str):
     }
 
     #with open('data/test_first_stamps_fixed_normalized_ndarrays.pkl', 'wb') as f:
-    with open(os.path.join(path_save_data, 'normalized_ndarrays.pkl'), 'wb') as f:
+    with open(os.path.join(path_save_data, 'normalized_ndarrays_hasavro.pkl'), 'wb') as f:
         pickle.dump(d, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 

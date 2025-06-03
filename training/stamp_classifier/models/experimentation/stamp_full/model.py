@@ -1,4 +1,5 @@
 import tensorflow as tf
+import pandas as pd
 
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization
 from tensorflow.keras import Model
@@ -13,6 +14,9 @@ class StampModelFull(Model):
             with_batchnorm: bool, 
             first_kernel_size: int, 
             dict_mapping_classes: int,
+            order_features: List[str] = None,
+            norm_means: pd.Series = None,
+            norm_stds: pd.Series = None,
             **kwargs):
         super().__init__(**kwargs)
 
@@ -21,6 +25,9 @@ class StampModelFull(Model):
         self.with_batchnorm = with_batchnorm
         self.first_kernel_size = first_kernel_size
         self.dict_mapping_classes = dict_mapping_classes
+        self.order_features = order_features if order_features is not None else []
+        self.norm_means = norm_means
+        self.norm_stds = norm_stds
         n_classes = len(dict_mapping_classes)
 
         self.conv_1 = Conv2D(
@@ -82,6 +89,7 @@ class StampModelFull(Model):
 
         if self.with_batchnorm:
             pos = self.bn(pos, training=training)
+
         x = tf.concat([x, pos], axis=1)
         x = self.dense_1(x)
         x = self.dense_2(x)
@@ -96,7 +104,10 @@ class StampModelFull(Model):
             "dropout_rate": self.dropout_rate,
             "with_batchnorm": self.with_batchnorm,
             "first_kernel_size": self.first_kernel_size,
-            "dict_mapping_classes": self.dict_mapping_classes
+            "dict_mapping_classes": self.dict_mapping_classes,
+            "order_features": self.order_features,
+            "norm_means": self.norm_means,
+            "norm_stds": self.norm_stds
         })
         return config
 

@@ -64,4 +64,4 @@ if __name__ == '__main__':
         ghosts[fields]
     ], axis=0)
 
-    test_first_detection_dataset.to_pickle(f'{path_data}test_first_stamps_dataset.pkl')
+    test_first_detection_dataset.to_pickle(f'{path_data}/test_first_stamps_dataset.pkl')
