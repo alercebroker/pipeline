@@ -68,9 +68,6 @@ class ZTFCorrectionCommand(Command):
         gaia_ztf
         """
 
-        print("NOW HERE")
-        print(data)
-        print("------")
         oid = data["oid"]
         candidate_measurement_id = data["measurement_id"][0]
 
@@ -93,9 +90,7 @@ class ZTFCorrectionCommand(Command):
                         candidate = detection
                     detections.append(parsed_detection)
         
-        print("Finally here")
-        print(candidate)
-        print("**********")
+
 
         parsed_ps1 = parse_ztf_ps1(candidate, oid)
         parsed_ss = parse_ztf_ss(candidate, oid)
@@ -156,9 +151,6 @@ class ZTFCorrectionCommand(Command):
             )
 
         # insert ps1_ztf
-        print("DEBUGIN!!!!!")
-        print(ps1)
-        print("+++++++++++++")
         if len(ps1) > 0:
             ps_stmt = insert(ZtfPS1)
             ps_result = session.connection().execute(

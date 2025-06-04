@@ -1,4 +1,4 @@
-FROM python:3.9-slim as python-base
+FROM python:3.10-slim AS python-base
 LABEL org.opencontainers.image.authors="ALeRCE"
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -10,7 +10,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
   POETRY_VIRTUALENVS_IN_PROJECT=true \
   POETRY_NO_INTERACTION=1
 
-FROM python-base as builder
+FROM python-base AS builder
 RUN apt-get update && \
   apt-get install -y --no-install-recommends git && \
   apt-get clean && \
@@ -18,27 +18,25 @@ RUN apt-get update && \
 
 RUN pip install poetry
 
-COPY scribe/poetry.lock scribe/pyproject.toml /app/
+COPY scribe_multisurvey/poetry.lock scribe_multisurvey/pyproject.toml /app/
 COPY libs/apf libs/apf
-COPY libs/db-plugins libs/db-plugins
+COPY libs/db-plugins-multisurvey libs/db-plugins-multisurvey
 COPY schemas/scribe_step /schemas/scribe_step
 
 WORKDIR /app
 RUN poetry install --no-root --without=dev --without=test
 
-
-FROM python:3.9-slim as production
+FROM python:3.10-slim AS production
 RUN pip install poetry
 
 COPY --from=builder /app /app
 COPY --from=builder /libs /libs
 COPY --from=builder /schemas /schemas
 
-COPY scribe/mongo_scribe /app/mongo_scribe
-COPY scribe/scripts /app/scripts
-COPY scribe/README.md \
-  scribe/settings.py \
-  scribe/credentials.py \
+COPY scribe_multisurvey/sql_scribe /app/sql_scribe
+COPY scribe_multisurvey/scripts /app/scripts
+COPY scribe_multisurvey/README.md \
+  scribe_multisurvey/credentials.py \
   /app/
 
 WORKDIR /app

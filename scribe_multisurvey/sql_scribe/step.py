@@ -18,7 +18,6 @@ class SqlScribe(GenericStep):
         super().__init__(consumer, config=config, **step_args)
 
         self.db_client = SQLCommandExecutor(config["PSQL_CONFIG"])
-        self.command_factory = sql_command_factory
 
     def execute(self, messages):
         """
@@ -26,6 +25,7 @@ class SqlScribe(GenericStep):
         DB Commands and executes them when they're valid.
         """
         logging.info("Processing messages...")
+        print(f"EN EXCUTE\n{messages}")
         valid_commands, n_invalid_commands = [], 0
         for message in messages:
             try:

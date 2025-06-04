@@ -128,21 +128,33 @@ def parse_ztf_ps1(candidate: dict, oid: str) -> dict:
     ps1 = {
         "oid": oid,
         "measurement_id": candidate["measurement_id"],
-        "objectidps1": candidate["extra_fields"]["objectidps1"],
+        "objectidps1": (
+            int(candidate["extra_fields"]["objectidps1"])
+            if candidate["extra_fields"]["objectidps1"] != "-999" or candidate["extra_fields"]["objectidps1"] is not None
+            else None
+        ),
         "sgmag1": candidate["extra_fields"]["sgmag1"],
         "srmag1": candidate["extra_fields"]["srmag1"],
         "simag1": candidate["extra_fields"]["simag1"],
         "szmag1": candidate["extra_fields"]["szmag1"],
         "sgscore1": candidate["extra_fields"]["sgscore1"],
         "distpsnr1": candidate["extra_fields"]["distpsnr1"],
-        "objectidps2": candidate["extra_fields"]["objectidps2"],
+        "objectidps2":(
+            int(candidate["extra_fields"]["objectidps2"])
+            if candidate["extra_fields"]["objectidps2"] != "-999" or candidate["extra_fields"]["objectidps2"] is not None
+            else None
+        ),
         "sgmag2": candidate["extra_fields"]["sgmag2"],
         "srmag2": candidate["extra_fields"]["srmag2"],
         "simag2": candidate["extra_fields"]["simag2"],
         "szmag2": candidate["extra_fields"]["szmag2"],
         "sgscore2": candidate["extra_fields"]["sgscore2"],
         "distpsnr2": candidate["extra_fields"]["distpsnr2"],
-        "objectidps3": candidate["extra_fields"]["objectidps3"],
+        "objectidps3":(
+            int(candidate["extra_fields"]["objectidps3"])
+            if candidate["extra_fields"]["objectidps3"] != "-999" or candidate["extra_fields"]["objectidps3"] is not None
+            else None
+        ),
         "sgmag3": candidate["extra_fields"]["sgmag3"],
         "srmag3": candidate["extra_fields"]["srmag3"],
         "simag3": candidate["extra_fields"]["simag3"],
