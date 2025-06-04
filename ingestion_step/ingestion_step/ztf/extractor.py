@@ -50,7 +50,14 @@ def _extract_candidates(
 
     for message_id, message in enumerate(messages):
         for col, value in message["candidate"].items():
-            candidates[col].append(value)
+            if col in ["objectidps1", "objectidps2", "objectidps3", "tblid"]:
+                if value is not None:
+                    candidates[col].append(str(value))
+                else:
+                    candidates[col].append(None)
+            else:
+                candidates[col].append(value)
+
         candidates["message_id"].append(message_id)
         candidates["objectId"].append(message["objectId"])
         candidates["parent_candid"].append(None)
@@ -80,6 +87,13 @@ def _extract_prv_candidates(
             continue
         for prv_candidate in message["prv_candidates"]:
             for col, value in prv_candidate.items():
+                if col in ["tblid"]:
+                    if value is not None:
+                        prv_candidates[col].append(str(value))
+                    else:
+                        prv_candidates[col].append(None)
+                else:
+                    prv_candidates[col].append(value)
                 prv_candidates[col].append(value)
             prv_candidates["message_id"].append(message_id)
             prv_candidates["objectId"].append(message["objectId"])
