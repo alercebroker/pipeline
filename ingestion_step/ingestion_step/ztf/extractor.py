@@ -94,7 +94,6 @@ def _extract_prv_candidates(
                         prv_candidates[col].append(None)
                 else:
                     prv_candidates[col].append(value)
-                prv_candidates[col].append(value)
             prv_candidates["message_id"].append(message_id)
             prv_candidates["objectId"].append(message["objectId"])
             prv_candidates["parent_candid"].append(message["candid"])
