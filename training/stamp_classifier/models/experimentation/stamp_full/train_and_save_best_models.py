@@ -8,6 +8,11 @@ from datetime import datetime
 
 from data_loader import get_tf_datasets
 from model import StampModelFull
+from model import StampModelModified
+
+import argparse
+from focal_loss import SparseCategoricalFocalLoss
+
 
 os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices'
 #os.environ["CUDA_VISIBLE_DEVICES"] = sys.argv[1]
@@ -25,10 +30,23 @@ hp_model_full = {
     'dropout_rate': 0.71726
 }
 
+hp_model_modified = {
+    'layer_1': 32,
+    'layer_2': 32,
+    'layer_3': 64,
+    'layer_4': 64,
+    'layer_5': 64,
+    'layer_6': 31,
+    'learning_rate': 0.0007589,
+    'dropout_rate': 0.71726
+}
+
 # This hp are always the best ones
-hp_model_full['with_batchnorm'] = False
-hp_model_full['first_kernel_size'] = 4#3
+hp_model_full['first_kernel_size'] = 3
 hp_model_full['batch_size'] = 256
+
+hp_model_modified['first_kernel_size'] = 4
+hp_model_modified['batch_size'] = 256
 
 
 def balanced_xentropy(labels, predicted_logits):
@@ -62,7 +80,6 @@ class NoImprovementStopper:
         else:
             return False
 
-from focal_loss import SparseCategoricalFocalLoss
 
 def train_model_and_save(hyperparameters, path_save_results, use_metadata, use_only_avro):
     layer_size_keys = sorted([k for k in hyperparameters.keys() if 'layer_' in k])
@@ -72,21 +89,40 @@ def train_model_and_save(hyperparameters, path_save_results, use_metadata, use_o
     with_batchnorm = hyperparameters['with_batchnorm']
     first_kernel_size = hyperparameters['first_kernel_size']
     learning_rate = hyperparameters['learning_rate']
+    crop = hyperparameters['crop']
+    model_ = hyperparameters['model']
+    focal_loss = hyperparameters['focal_loss']
 
     with tf.device('/cpu:0'):
         training_dataset, validation_dataset, test_dataset, dict_info_model \
             = get_tf_datasets(batch_size, use_metadata, use_only_avro)
 
-    stamp_classifier = StampModelFull(
-        layer_sizes=layer_sizes, 
-        dropout_rate=dropout_rate,
-        with_batchnorm=with_batchnorm, 
-        first_kernel_size=first_kernel_size, 
-        dict_mapping_classes=dict_info_model['dict_mapping_classes'],
-        order_features=dict_info_model['order_features'],
-        #norm_means=dict_info_model['norm_means'],
-        #norm_stds=dict_info_model['norm_stds'],
-        )
+    if model_ == 'full':
+        print('Using full model')
+        stamp_classifier = StampModelFull(
+            layer_sizes=layer_sizes, 
+            dropout_rate=dropout_rate,
+            with_batchnorm=with_batchnorm, 
+            first_kernel_size=first_kernel_size,
+            with_crop = crop, 
+            dict_mapping_classes=dict_info_model['dict_mapping_classes'],
+            order_features=dict_info_model['order_features'],
+            norm_means=dict_info_model['norm_means'],
+            norm_stds=dict_info_model['norm_stds'],
+            )
+    else:
+        print('Using modified model')
+        stamp_classifier = StampModelModified(
+            layer_sizes=layer_sizes, 
+            dropout_rate=dropout_rate,
+            with_batchnorm=with_batchnorm, 
+            first_kernel_size=first_kernel_size,
+            with_crop = crop, 
+            dict_mapping_classes=dict_info_model['dict_mapping_classes'],
+            order_features=dict_info_model['order_features'],
+            norm_means=dict_info_model['norm_means'],
+            norm_stds=dict_info_model['norm_stds'],
+            )
 
     for x, md, y in test_dataset:
         print(stamp_classifier((x[:10], md[:10])))
@@ -95,9 +131,16 @@ def train_model_and_save(hyperparameters, path_save_results, use_metadata, use_o
     for v in stamp_classifier.trainable_variables:
         print(v.name, v.shape, np.prod(v.shape))
 
-    loss_object = SparseCategoricalFocalLoss(
-        gamma=2,from_logits=True,
-        )
+    if focal_loss:
+        print('Using focal loss')
+        loss_object = SparseCategoricalFocalLoss(
+            gamma=2,from_logits=True,
+            )
+    else:
+        print('Using standard crossentropy loss')
+        loss_object = tf.keras.losses.SparseCategoricalCrossentropy(
+            from_logits=True)
+        
     optimizer = tf.keras.optimizers.Adam(
         learning_rate=learning_rate, beta_1=0.9, beta_2=0.999, amsgrad=False
         )
@@ -169,8 +212,18 @@ def train_model_and_save(hyperparameters, path_save_results, use_metadata, use_o
     train_writer.flush()
     val_writer.flush()
     test_writer.flush()
+    
+    str_ = ''
+    if use_metadata:
+        str_ += '_md'
+    if focal_loss:
+        str_ += '_focal'
+    if with_batchnorm:
+        str_ += '_bn'
+    if crop:
+        str_ += '_crop'    
 
-    stamp_classifier.save(f"{path_save_results}/model.keras")
+    stamp_classifier.save(f"{path_save_results}/model_{model_}{str_}.keras")
 
 
 use_metadata = True
@@ -180,6 +233,32 @@ date = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 ROOT = f'./results/{date}' 
 os.makedirs(ROOT, exist_ok=True)
 
+def parse_model_args(arg_dict=None):
+    """Parse command line arguments"""
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--stamp", type=str, default="full")
+    parser.add_argument("--bn", type=bool, default=True)
+    parser.add_argument("--crop", type=bool, default=False)
+    parser.add_argument("--use_metadata", type=bool, default=False)
+    parser.add_argument("--use_only_avro", type=bool, default=False)
+    parser.add_argument("--focal_loss", type=bool, default=False)
+
+    args = parser.parse_args(None if arg_dict is None else [])
+
+    return args
+
 for i in range(5):
     print(f'run {i}/4')
-    train_model_and_save(hp_model_full, f'{ROOT}/run_{i}', use_metadata, use_only_avro)
+    args = vars(parse_model_args(arg_dict=None))
+    #print(args)
+    model_ = args['stamp']
+    if model_ == 'full':
+        hp_model = hp_model_full
+    elif model_ == 'modified':
+        hp_model = hp_model_modified
+    hp_model["with_batchnorm"] = args['bn']
+    hp_model["crop"] = args['crop']
+    hp_model["model"] = model_
+    hp_model["focal_loss"] = args['focal_loss']
+
+    train_model_and_save(hp_model, f'{ROOT}/run_{i}', args["use_metadata"], args["use_only_avro"])
