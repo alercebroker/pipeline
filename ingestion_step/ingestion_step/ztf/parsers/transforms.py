@@ -150,7 +150,7 @@ def isdiffpos_to_int(df: pd.DataFrame):
     ('t', 'f', '1' or '-1').
     """
     df["isdiffpos"] = df["isdiffpos"].apply(
-        lambda x: 1 if x in ["t", "1"] else -1
+        lambda x: 1 if pd.notna(x) and x in ["t", "1"] else -1
     )
 
 
