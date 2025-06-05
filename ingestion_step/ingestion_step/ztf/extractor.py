@@ -24,8 +24,14 @@ def _has_stamp(message: dict[str, Any]) -> bool:
     """
     return (
         ("cutoutScience" in message and message["cutoutScience"] is not None)
-        and ("cutoutTemplate" in message and message["cutoutTemplate"] is not None)
-        and ("cutoutDifference" in message and message["cutoutDifference"] is not None)
+        and (
+            "cutoutTemplate" in message
+            and message["cutoutTemplate"] is not None
+        )
+        and (
+            "cutoutDifference" in message
+            and message["cutoutDifference"] is not None
+        )
     )
 
 

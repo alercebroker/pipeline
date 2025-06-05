@@ -28,14 +28,18 @@ def test_prv_candidates_parser(ztf_data: ZTFData):
     )
 
     try:
-        prv_candidates._parse_dets_from_prv_candidates(ztf_data["prv_candidates"])
+        prv_candidates._parse_dets_from_prv_candidates(
+            ztf_data["prv_candidates"]
+        )
     except Exception as exception:
         pytest.fail(
             f"Could not parse `detections` from `prv_candidates`.\n{exception=}"
         )
 
     try:
-        prv_candidates._parse_non_dets_from_prv_candidates(ztf_data["prv_candidates"])
+        prv_candidates._parse_non_dets_from_prv_candidates(
+            ztf_data["prv_candidates"]
+        )
     except Exception as exception:
         pytest.fail(
             f"Could not parse `non_detections` from `prv_candidates`.\n{exception=}"

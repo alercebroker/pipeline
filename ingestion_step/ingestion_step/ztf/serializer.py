@@ -6,7 +6,9 @@ import pandas as pd
 from ingestion_step.core.parser_interface import ParsedData
 
 
-def serialize_detections(detections: pd.DataFrame, forced_photometries: pd.DataFrame):
+def serialize_detections(
+    detections: pd.DataFrame, forced_photometries: pd.DataFrame
+):
     dets = pd.concat([detections, forced_photometries])
 
     needed_columns = [
@@ -65,7 +67,9 @@ def groupby_messageid(df: pd.DataFrame) -> dict[int, list[dict[str, Any]]]:
 
 def serialize_ztf(data: ParsedData) -> list[dict[str, Any]]:
     objects = data["objects"]
-    detections = serialize_detections(data["detections"], data["forced_photometries"])
+    detections = serialize_detections(
+        data["detections"], data["forced_photometries"]
+    )
     non_detections = serialize_non_detections(data["non_detections"])
 
     message_objects = groupby_messageid(objects)
