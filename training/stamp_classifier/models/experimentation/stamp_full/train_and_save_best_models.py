@@ -10,7 +10,7 @@ from data_loader import get_tf_datasets
 from model import StampModelFull
 
 os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices'
-os.environ["CUDA_VISIBLE_DEVICES"] = sys.argv[1]
+#os.environ["CUDA_VISIBLE_DEVICES"] = sys.argv[1]
 
 print("Num GPUs Available:", len(tf.config.list_physical_devices('GPU')))
 
@@ -26,8 +26,8 @@ hp_model_full = {
 }
 
 # This hp are always the best ones
-hp_model_full['with_batchnorm'] = True
-hp_model_full['first_kernel_size'] = 3
+hp_model_full['with_batchnorm'] = False
+hp_model_full['first_kernel_size'] = 4#3
 hp_model_full['batch_size'] = 256
 
 
@@ -62,6 +62,7 @@ class NoImprovementStopper:
         else:
             return False
 
+from focal_loss import SparseCategoricalFocalLoss
 
 def train_model_and_save(hyperparameters, path_save_results, use_metadata, use_only_avro):
     layer_size_keys = sorted([k for k in hyperparameters.keys() if 'layer_' in k])
@@ -83,8 +84,8 @@ def train_model_and_save(hyperparameters, path_save_results, use_metadata, use_o
         first_kernel_size=first_kernel_size, 
         dict_mapping_classes=dict_info_model['dict_mapping_classes'],
         order_features=dict_info_model['order_features'],
-        norm_means=dict_info_model['norm_means'],
-        norm_stds=dict_info_model['norm_stds'],
+        #norm_means=dict_info_model['norm_means'],
+        #norm_stds=dict_info_model['norm_stds'],
         )
 
     for x, md, y in test_dataset:
@@ -94,8 +95,8 @@ def train_model_and_save(hyperparameters, path_save_results, use_metadata, use_o
     for v in stamp_classifier.trainable_variables:
         print(v.name, v.shape, np.prod(v.shape))
 
-    loss_object = tf.keras.losses.SparseCategoricalCrossentropy(
-        from_logits=True
+    loss_object = SparseCategoricalFocalLoss(
+        gamma=2,from_logits=True,
         )
     optimizer = tf.keras.optimizers.Adam(
         learning_rate=learning_rate, beta_1=0.9, beta_2=0.999, amsgrad=False
@@ -173,7 +174,7 @@ def train_model_and_save(hyperparameters, path_save_results, use_metadata, use_o
 
 
 use_metadata = True
-use_only_avro = True
+use_only_avro = False
 
 date = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 ROOT = f'./results/{date}' 

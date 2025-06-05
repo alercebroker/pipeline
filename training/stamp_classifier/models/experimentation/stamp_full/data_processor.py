@@ -81,7 +81,7 @@ def extract_x_pos_y_from_df(df, oids):
 
 def build_ndarrays(seed: int, path_load_data: str, path_save_data: str):
     #consolidated_dataset_df = pd.read_pickle(os.path.join(PROJECT_DIR, 'data/test_first_stamps_fixed.pkl'))
-    consolidated_dataset_df = pd.read_pickle(os.path.join(path_load_data, 'consolidated_dataset_hasavro.pkl'))
+    consolidated_dataset_df = pd.read_pickle(os.path.join(path_load_data, 'consolidated_dataset.pkl'))
     print('original shape', consolidated_dataset_df.shape)
     # 2869M
 
@@ -131,14 +131,14 @@ def build_ndarrays(seed: int, path_load_data: str, path_save_data: str):
     }
 
     #with open('data/test_first_stamps_fixed_ndarrays.pkl', 'wb') as f:
-    with open(os.path.join(path_save_data, 'consolidated_ndarrays_hasavro.pkl'), 'wb') as f:
+    with open(os.path.join(path_save_data, 'consolidated_ndarrays.pkl'), 'wb') as f:
         pickle.dump(d, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 
 def process_ndarrays(path_save_data: str):
     #with open('data/test_first_stamps_fixed_ndarrays.pkl', 'rb') as f:
-    with open(os.path.join(path_save_data, 'consolidated_ndarrays_hasavro.pkl'), 'rb') as f:
+    with open(os.path.join(path_save_data, 'consolidated_ndarrays.pkl'), 'rb') as f:
         d = pickle.load(f)
 
     x_train = d['x_train']
@@ -199,7 +199,7 @@ def process_ndarrays(path_save_data: str):
     }
 
     #with open('data/test_first_stamps_fixed_normalized_ndarrays.pkl', 'wb') as f:
-    with open(os.path.join(path_save_data, 'normalized_ndarrays_hasavro.pkl'), 'wb') as f:
+    with open(os.path.join(path_save_data, 'normalized_ndarrays.pkl'), 'wb') as f:
         pickle.dump(d, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 
@@ -269,7 +269,7 @@ def save_stamp_as_png(stamp_series, output_folder):
 
 if __name__ == '__main__':
 
-    path_load_data = '../../../data_acquisition/data/processed'
+    path_load_data = '../../../data_acquisition/data/processed/multilevel_stamp_classifier_data_wo_carrasco_davis'
     path_save_data = './data'
 
     os.makedirs(path_save_data, exist_ok=True)

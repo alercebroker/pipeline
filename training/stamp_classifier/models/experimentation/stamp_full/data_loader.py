@@ -59,7 +59,7 @@ def preprocessing_features(metadata, oids_train, oids_val, oids_test):
 
 
 def get_tf_datasets(batch_size: int, use_metadata: bool, use_only_avro: bool):
-    d = pd.read_pickle('./data/normalized_ndarrays_hasavro.pkl')
+    d = pd.read_pickle('./data/normalized_ndarrays.pkl')
 
     x_train = d['x_train']
     pos_train = d['pos_train']
