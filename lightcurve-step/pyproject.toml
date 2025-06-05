@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "lightcurve-step"
-version = "27.5.7a18"
+version = "27.5.7a19"
 description = "Lightcurve Step"
 authors = []
 readme = "README.md"
