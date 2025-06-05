@@ -4,7 +4,7 @@ on existing columns.
 """
 
 import math
-from typing import Callable
+from typing import Any, Callable
 
 import numpy as np
 import pandas as pd
@@ -102,12 +102,17 @@ def sigmara_to_e_ra(df: pd.DataFrame):
     and uses them to calculate the new columns:
         - `e_ra`
     """
+
+    def _sigmara_to_e_ra(x: dict[str, Any]) -> float:
+        if "sigmara" in x:
+            return x["sigmara"]
+        if x["dec"] is not pd.NA and x["dec"] is not None:
+            return ERRORS[x["fid"]] / abs(math.cos(math.radians(x["dec"])))
+        else:
+            return float("nan")
+
     df["e_ra"] = df.apply(
-        lambda x: (
-            x["sigmara"]
-            if "sigmara" in x
-            else ERRORS[x["fid"]] / abs(math.cos(math.radians(x["dec"])))
-        ),
+        _sigmara_to_e_ra,
         axis=1,
     )
 
@@ -144,7 +149,9 @@ def isdiffpos_to_int(df: pd.DataFrame):
     Converts isdiffpos to an int representation (1 or -1) instead of a string
     ('t', 'f', '1' or '-1').
     """
-    df["isdiffpos"] = df["isdiffpos"].apply(lambda x: 1 if x in ["t", "1"] else -1)
+    df["isdiffpos"] = df["isdiffpos"].apply(
+        lambda x: 1 if pd.notna(x) and x in ["t", "1"] else -1
+    )
 
 
 def magpsf_to_mag(df: pd.DataFrame):
@@ -171,7 +178,10 @@ def _calculate_mag(
         e_mag = ZERO_MAG
     else:
         e_mag = (
-            1.0857 * forcediffimfluxunc * flux2uJy / np.abs(forcediffimflux * flux2uJy)
+            1.0857
+            * forcediffimfluxunc
+            * flux2uJy
+            / np.abs(forcediffimflux * flux2uJy)
         )
 
     return mag, e_mag
