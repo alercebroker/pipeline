@@ -22,9 +22,7 @@ def replace_fid_det(det: dict[str, Any]) -> dict[str, Any]:
 def replace_all_fids(alert: dict[str, Any]) -> dict[str, Any]:
     alert["candidate"] = replace_fid_det(alert["candidate"])
     if alert["prv_candidates"] is not None:
-        alert["prv_candidates"] = list(
-            map(replace_fid_det, alert["prv_candidates"])
-        )
+        alert["prv_candidates"] = list(map(replace_fid_det, alert["prv_candidates"]))
     if alert["fp_hists"] is not None:
         alert["fp_hists"] = list(map(replace_fid_det, alert["fp_hists"]))
     return alert
@@ -37,7 +35,7 @@ def replace_objectId(alert: dict[str, Any]) -> dict[str, Any]:
     return alert
 
 
-def generate_alerts(n: int = 10) -> Iterable[dict[str, Any]]:
+def generate_alerts(n: int = 30) -> Iterable[dict[str, Any]]:
     schema_path = str(base_schema_path.joinpath("alert.avsc"))
     schema = load_schema(schema_path)
     alerts = generate_many(schema, n)

@@ -4,7 +4,7 @@ on existing columns.
 """
 
 import math
-from typing import Callable
+from typing import Any, Callable
 
 import numpy as np
 import pandas as pd
@@ -102,12 +102,17 @@ def sigmara_to_e_ra(df: pd.DataFrame):
     and uses them to calculate the new columns:
         - `e_ra`
     """
+
+    def _sigmara_to_e_ra(x: dict[str, Any]) -> float:
+        if "sigmara" in x:
+            return x["sigmara"]
+        if x["dec"] is not pd.NA and x["dec"] is not None:
+            return ERRORS[x["fid"]] / abs(math.cos(math.radians(x["dec"])))
+        else:
+            return float("nan")
+
     df["e_ra"] = df.apply(
-        lambda x: (
-            x["sigmara"]
-            if "sigmara" in x
-            else ERRORS[x["fid"]] / abs(math.cos(math.radians(x["dec"])))
-        ),
+        _sigmara_to_e_ra,
         axis=1,
     )
 
