@@ -42,22 +42,6 @@ class ParsedCandidates(NamedTuple):
     detections: pd.DataFrame
 
 
-def _parse_objs_from_candidates(
-    candidates: pd.DataFrame,
-) -> pd.DataFrame:
-    objects = candidates.replace({np.nan: None})
-
-    return objects
-
-
-def _parse_dets_from_candidates(
-    candidates: pd.DataFrame,
-) -> pd.DataFrame:
-    detections = candidates.replace({np.nan: None})
-
-    return detections
-
-
 def parse_candidates(
     candidates: pd.DataFrame,
 ) -> ParsedCandidates:
@@ -69,10 +53,7 @@ def parse_candidates(
     """
     apply_transforms(candidates, CANDIDATES_TRANSFORMS)
 
-    objects = _parse_objs_from_candidates(candidates)
-    detections = _parse_dets_from_candidates(candidates)
-
     return ParsedCandidates(
-        objects=objects,
-        detections=detections,
+        objects=candidates,
+        detections=candidates,
     )

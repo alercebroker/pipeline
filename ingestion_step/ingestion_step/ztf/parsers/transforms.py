@@ -54,7 +54,7 @@ def candid_to_measurement_id(df: pd.DataFrame):
     and uses them to calculate the new columns:
         - `measurement_id`
     """
-    df["measurement_id"] = df["candid"].replace({np.nan: None}).astype("Int64")
+    df["measurement_id"] = df["candid"].astype("Int64")
 
 
 def add_tid(df: pd.DataFrame):
@@ -144,9 +144,7 @@ def isdiffpos_to_int(df: pd.DataFrame):
     Converts isdiffpos to an int representation (1 or -1) instead of a string
     ('t', 'f', '1' or '-1').
     """
-    df["isdiffpos"] = df["isdiffpos"].apply(
-        lambda x: 1 if x in ["t", "1"] else -1
-    )
+    df["isdiffpos"] = df["isdiffpos"].apply(lambda x: 1 if x in ["t", "1"] else -1)
 
 
 def magpsf_to_mag(df: pd.DataFrame):
@@ -173,10 +171,7 @@ def _calculate_mag(
         e_mag = ZERO_MAG
     else:
         e_mag = (
-            1.0857
-            * forcediffimfluxunc
-            * flux2uJy
-            / np.abs(forcediffimflux * flux2uJy)
+            1.0857 * forcediffimfluxunc * flux2uJy / np.abs(forcediffimflux * flux2uJy)
         )
 
     return mag, e_mag

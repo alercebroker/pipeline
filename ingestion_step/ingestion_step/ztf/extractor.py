@@ -1,8 +1,6 @@
 from typing import Any, TypedDict
 
-import numpy as np
 import pandas as pd
-from numpy.typing import NDArray
 
 from .schemas.candidate import candidate_schema
 from .schemas.fp_hist import fp_hist_schema
@@ -26,20 +24,14 @@ def _has_stamp(message: dict[str, Any]) -> bool:
     """
     return (
         ("cutoutScience" in message and message["cutoutScience"] is not None)
-        and (
-            "cutoutTemplate" in message
-            and message["cutoutTemplate"] is not None
-        )
-        and (
-            "cutoutDifference" in message
-            and message["cutoutDifference"] is not None
-        )
+        and ("cutoutTemplate" in message and message["cutoutTemplate"] is not None)
+        and ("cutoutDifference" in message and message["cutoutDifference"] is not None)
     )
 
 
 def _extract_candidates(
     messages: list[dict[str, Any]],
-) -> dict[str, NDArray[Any]]:
+) -> dict[str, Any]:
     """
     Extract all candidates for the list of messages.
 
@@ -65,14 +57,14 @@ def _extract_candidates(
         candidates["forced"].append(False)
 
     return {
-        col: np.array(candidates[col], dtype=dtype)
+        col: pd.Series(candidates[col], dtype=dtype())
         for col, dtype in candidate_schema.items()
     }
 
 
 def _extract_prv_candidates(
     messages: list[dict[str, Any]],
-) -> dict[str, NDArray[Any]]:
+) -> dict[str, Any]:
     """
     Extract all previous candidates for the list of messages.
 
@@ -101,14 +93,14 @@ def _extract_prv_candidates(
             prv_candidates["forced"].append(False)
 
     return {
-        col: np.array(prv_candidates[col], dtype=dtype)
+        col: pd.Series(prv_candidates[col], dtype=dtype())
         for col, dtype in prv_candidate_schema.items()
     }
 
 
 def _extract_fp_hists(
     messages: list[dict[str, Any]],
-) -> dict[str, NDArray[Any]]:
+) -> dict[str, Any]:
     """
     Extract all forced photometries for the list of messages.
 
@@ -133,7 +125,7 @@ def _extract_fp_hists(
             fp_hists["forced"].append(True)
 
     return {
-        col: np.array(fp_hists[col], dtype=dtype)
+        col: pd.Series(fp_hists[col], dtype=dtype())
         for col, dtype in fp_hist_schema.items()
     }
 

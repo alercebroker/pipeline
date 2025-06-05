@@ -39,12 +39,6 @@ subset of columns.
 """
 
 
-def _parse_fps_from_fp_hists(fp_hist: pd.DataFrame) -> pd.DataFrame:
-    forced_photometries = fp_hist.replace({np.nan: None})
-
-    return forced_photometries
-
-
 def parse_fp_hists(
     fp_hists: pd.DataFrame,
 ) -> pd.DataFrame:
@@ -57,6 +51,4 @@ def parse_fp_hists(
 
     apply_transforms(fp_hists, FP_TRANSFORMS)
 
-    forced_photometries = _parse_fps_from_fp_hists(fp_hists)
-
-    return forced_photometries
+    return fp_hists
