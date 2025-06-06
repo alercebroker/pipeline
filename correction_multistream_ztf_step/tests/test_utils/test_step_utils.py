@@ -10,8 +10,7 @@ psql_config = {
     "USER": "postgres",
     "PASSWORD": "postgres",
     "PORT": 5432,
-    "DB_NAME": "correction_test",
-    "SCHEMA": "multisurvey"
+    "DB_NAME": "postgres",
 }
 
 INSPECT = ['mag', 'e_mag', 'e_mag_corr', 
