@@ -5,7 +5,9 @@ import pickle
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+
 from tqdm import tqdm
+from datetime import datetime
 from sklearn import preprocessing
 from sklearn.model_selection import train_test_split
 
@@ -79,9 +81,12 @@ def extract_x_pos_y_from_df(df, oids):
 
     return x, position, y
 
-def build_ndarrays(seed: int, path_load_data: str, path_save_data: str):
+def build_ndarrays(seed: int, path_load_data: str, path_save_data: str, date: str, has_avro: bool):
     #consolidated_dataset_df = pd.read_pickle(os.path.join(PROJECT_DIR, 'data/test_first_stamps_fixed.pkl'))
-    consolidated_dataset_df = pd.read_pickle(os.path.join(path_load_data, 'consolidated_dataset.pkl'))
+    if has_avro:
+        consolidated_dataset_df = pd.read_pickle(os.path.join(path_load_data, 'consolidated_dataset_hasavro.pkl'))
+    else:
+        consolidated_dataset_df = pd.read_pickle(os.path.join(path_load_data, 'consolidated_dataset.pkl'))
     print('original shape', consolidated_dataset_df.shape)
     # 2869M
 
@@ -113,48 +118,68 @@ def build_ndarrays(seed: int, path_load_data: str, path_save_data: str):
     x_val, pos_val, y_val = extract_x_pos_y_from_df(consolidated_dataset_df, oid_val)
     x_test, pos_test, y_test = extract_x_pos_y_from_df(consolidated_dataset_df, oid_test)
 
+    # Para cada split, obtener el candid correspondiente al oid
+    candid_train = consolidated_dataset_df.loc[oid_train]['candid'].values
+    candid_val = consolidated_dataset_df.loc[oid_val]['candid'].values
+    candid_test = consolidated_dataset_df.loc[oid_test]['candid'].values
+
     d = {
         'x_train': x_train,
         'pos_train': pos_train,
         'y_train': y_train,
         'oid_train': oid_train,
+        'candid_train': candid_train,
 
         'x_val': x_val,
         'pos_val': pos_val,
         'y_val': y_val,
-        'oid_val': oid_val,
+        'oid_val': oid_val, 
+        'candid_val': candid_val,
 
         'x_test': x_test,
         'pos_test': pos_test,
         'y_test': y_test,
         'oid_test': oid_test,
+        'candid_test': candid_test,
     }
 
+
     #with open('data/test_first_stamps_fixed_ndarrays.pkl', 'wb') as f:
-    with open(os.path.join(path_save_data, 'consolidated_ndarrays.pkl'), 'wb') as f:
-        pickle.dump(d, f, protocol=pickle.HIGHEST_PROTOCOL)
+    if has_avro:
+        with open(os.path.join(path_save_data, f'consolidated_ndarrays_hasavro_{date}.pkl'), 'wb') as f:
+            pickle.dump(d, f, protocol=pickle.HIGHEST_PROTOCOL)
+    else:
+        with open(os.path.join(path_save_data, f'consolidated_ndarrays_{date}.pkl'), 'wb') as f:
+            pickle.dump(d, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 
-def process_ndarrays(path_save_data: str):
+def process_ndarrays(path_save_data: str, date: str, has_avro: bool):
     #with open('data/test_first_stamps_fixed_ndarrays.pkl', 'rb') as f:
-    with open(os.path.join(path_save_data, 'consolidated_ndarrays.pkl'), 'rb') as f:
-        d = pickle.load(f)
+    if has_avro:
+        with open(os.path.join(path_save_data, f'consolidated_ndarrays_hasavro_{date}.pkl'), 'rb') as f:
+            d = pickle.load(f)
+    else:
+        with open(os.path.join(path_save_data, f'consolidated_ndarrays_{date}.pkl'), 'rb') as f:
+            d = pickle.load(f)
 
     x_train = d['x_train']
     pos_train = d['pos_train']
     y_train = d['y_train']
     oid_train = d['oid_train']
+    candid_train = d['candid_train']
 
     x_val = d['x_val']
     pos_val = d['pos_val']
     y_val = d['y_val']
     oid_val = d['oid_val']
+    candid_val = d['candid_val']
 
     x_test = d['x_test']
     pos_test = d['pos_test']
     y_test = d['y_test']
     oid_test = d['oid_test']
+    candid_test = d['candid_test']
 
     label_encoder = preprocessing.LabelEncoder()
     label_encoder.fit(y_train)
@@ -184,23 +209,30 @@ def process_ndarrays(path_save_data: str):
         'pos_train': pos_train,
         'y_train': y_train,
         'oid_train': oid_train,
+        'candid_train': candid_train,
 
         'x_val': x_val,
         'pos_val': pos_val,
         'y_val': y_val,
         'oid_val': oid_val,
+        'candid_val': candid_val,
 
         'x_test': x_test,
         'pos_test': pos_test,
         'y_test': y_test,
         'oid_test': oid_test,
+        'candid_test': candid_test,
 
         'label_encoder': label_encoder
     }
 
     #with open('data/test_first_stamps_fixed_normalized_ndarrays.pkl', 'wb') as f:
-    with open(os.path.join(path_save_data, 'normalized_ndarrays.pkl'), 'wb') as f:
-        pickle.dump(d, f, protocol=pickle.HIGHEST_PROTOCOL)
+    if has_avro:
+        with open(os.path.join(path_save_data, f'normalized_ndarrays_hasavro_{date}.pkl'), 'wb') as f:
+            pickle.dump(d, f, protocol=pickle.HIGHEST_PROTOCOL)
+    else:
+        with open(os.path.join(path_save_data, f'normalized_ndarrays_{date}.pkl'), 'wb') as f:
+            pickle.dump(d, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 def dataset_as_png(output_folder, start, end):
@@ -269,12 +301,15 @@ def save_stamp_as_png(stamp_series, output_folder):
 
 if __name__ == '__main__':
 
-    path_load_data = '../../../data_acquisition/data/processed/multilevel_stamp_classifier_data_wo_carrasco_davis'
+    path_load_data = '../../../data_acquisition/data/processed'
     path_save_data = './data'
+    has_avro = True
+
+    date = datetime.now().strftime("%Y-%m-%d_%H-%M")
 
     os.makedirs(path_save_data, exist_ok=True)
-    build_ndarrays(0, path_load_data, path_save_data)
-    process_ndarrays(path_save_data)
+    build_ndarrays(0, path_load_data, path_save_data, date, has_avro)
+    process_ndarrays(path_save_data, date, has_avro)
     #crop_stamps(16)
     #low_res_stamps(4)
     #build_multiscale()

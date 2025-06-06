@@ -108,7 +108,7 @@ class StampModelModified(Model):
         self.order_features = order_features if order_features is not None else []
         self.norm_means = norm_means
         self.norm_stds = norm_stds
-        self.crop = with_crop
+        self.with_crop = with_crop
         n_classes = len(dict_mapping_classes)
 
         self.conv_1 = Conv2D(
@@ -155,7 +155,7 @@ class StampModelModified(Model):
 
         output_list = []
         for im in rot_list:
-            if self.crop:
+            if self.with_crop:
                 im = add_center_mask(im, center_size=23)
             x = self.conv_1(im)
             x = self.conv_2(x)
@@ -193,8 +193,9 @@ class StampModelModified(Model):
             "dict_mapping_classes": self.dict_mapping_classes,
             "order_features": self.order_features,
             "norm_means": self.norm_means,
-            "norm_stds": self.norm_stds
-        })
+            "norm_stds": self.norm_stds,
+            "with_crop": self.with_crop
+            })
         return config
 
     @classmethod
@@ -227,7 +228,7 @@ class StampModelFull(Model):
         self.order_features = order_features if order_features is not None else []
         self.norm_means = norm_means
         self.norm_stds = norm_stds
-        self.crop = with_crop
+        self.with_crop = with_crop
         n_classes = len(dict_mapping_classes)
 
         self.conv_1 = Conv2D(
@@ -268,7 +269,7 @@ class StampModelFull(Model):
 
         output_list = []
         for im in rot_list:
-            if self.crop:
+            if self.with_crop:
                 im = add_center_mask(im, center_size=23)
             x = self.conv_1(im)
             x = self.pool_1(x)
@@ -309,8 +310,9 @@ class StampModelFull(Model):
             "dict_mapping_classes": self.dict_mapping_classes,
             "order_features": self.order_features,
             "norm_means": self.norm_means,
-            "norm_stds": self.norm_stds
-        })
+            "norm_stds": self.norm_stds,
+            "with_crop": self.with_crop
+            })
         return config
 
     @classmethod

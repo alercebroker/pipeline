@@ -1,7 +1,9 @@
 import tensorflow as tf
 import numpy as np
+import yaml
 import os
 import sys
+import pickle
 
 from sklearn.metrics import precision_recall_fscore_support
 from datetime import datetime
@@ -81,7 +83,7 @@ class NoImprovementStopper:
             return False
 
 
-def train_model_and_save(hyperparameters, path_save_results, use_metadata, use_only_avro):
+def train_model_and_save(hyperparameters, path_save_results, args_general):
     layer_size_keys = sorted([k for k in hyperparameters.keys() if 'layer_' in k])
     layer_sizes = [hyperparameters[k] for k in layer_size_keys]
     batch_size = hyperparameters['batch_size']
@@ -95,7 +97,7 @@ def train_model_and_save(hyperparameters, path_save_results, use_metadata, use_o
 
     with tf.device('/cpu:0'):
         training_dataset, validation_dataset, test_dataset, dict_info_model \
-            = get_tf_datasets(batch_size, use_metadata, use_only_avro)
+            = get_tf_datasets(batch_size, args_general)
 
     if model_ == 'full':
         print('Using full model')
@@ -104,7 +106,7 @@ def train_model_and_save(hyperparameters, path_save_results, use_metadata, use_o
             dropout_rate=dropout_rate,
             with_batchnorm=with_batchnorm, 
             first_kernel_size=first_kernel_size,
-            with_crop = crop, 
+            with_crop=crop, 
             dict_mapping_classes=dict_info_model['dict_mapping_classes'],
             order_features=dict_info_model['order_features'],
             norm_means=dict_info_model['norm_means'],
@@ -191,6 +193,10 @@ def train_model_and_save(hyperparameters, path_save_results, use_metadata, use_o
     stopper = NoImprovementStopper(5)
 
     for iteration, training_batch in enumerate(training_dataset):
+        if iteration >= max_iterations:
+            print(f"Reached max_iterations = {max_iterations}, stopping training.")
+            break
+
         x_batch, md_batch, y_batch = training_batch
         train_step(x_batch, md_batch, y_batch)
         if iteration % log_frequency == 0 and iteration != 0:
@@ -214,41 +220,43 @@ def train_model_and_save(hyperparameters, path_save_results, use_metadata, use_o
     test_writer.flush()
     
     str_ = ''
-    if use_metadata:
+    if args_general['use_metadata']:
         str_ += '_md'
     if focal_loss:
         str_ += '_focal'
     if with_batchnorm:
         str_ += '_bn'
     if crop:
+        str_ += '_crop'  
+    if args_general['use_only_avro']:
         str_ += '_crop'    
 
     stamp_classifier.save(f"{path_save_results}/model_{model_}{str_}.keras")
 
 
-use_metadata = True
-use_only_avro = False
-
 date = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-ROOT = f'./results/{date}' 
+ROOT = f'./results_incremental/{date}' 
 os.makedirs(ROOT, exist_ok=True)
 
 def parse_model_args(arg_dict=None):
     """Parse command line arguments"""
     parser = argparse.ArgumentParser()
+    #parser.add_argument("--path_data", type=str, default="./data/normalized_ndarrays_2025-06-06_04-04.pkl")
+    parser.add_argument("--path_data", type=str, default="./data/normalized_ndarrays_hasavro_2025-06-06_04-26.pkl")
     parser.add_argument("--stamp", type=str, default="full")
     parser.add_argument("--bn", type=bool, default=True)
     parser.add_argument("--crop", type=bool, default=False)
-    parser.add_argument("--use_metadata", type=bool, default=False)
-    parser.add_argument("--use_only_avro", type=bool, default=False)
+    parser.add_argument("--use_metadata", type=bool, default=True)
     parser.add_argument("--focal_loss", type=bool, default=False)
 
     args = parser.parse_args(None if arg_dict is None else [])
 
     return args
 
-for i in range(5):
-    print(f'run {i}/4')
+max_iterations = 100000000
+num_runs = 1
+for i in range(num_runs):
+    print(f'run {i}/{num_runs-1}')
     args = vars(parse_model_args(arg_dict=None))
     #print(args)
     model_ = args['stamp']
@@ -261,4 +269,21 @@ for i in range(5):
     hp_model["model"] = model_
     hp_model["focal_loss"] = args['focal_loss']
 
-    train_model_and_save(hp_model, f'{ROOT}/run_{i}', args["use_metadata"], args["use_only_avro"])
+    args_general = {
+        "path_data": args["path_data"],
+        "use_metadata": args["use_metadata"],
+        "use_only_avro": args["path_data"].find('hasavro') != -1
+    }
+
+    train_model_and_save(hp_model, f'{ROOT}/run_{i}', args_general)
+
+
+    dict_config = {
+        'hp_model': hp_model,
+        'args_general': args_general
+    }
+    yaml_path = f'{ROOT}/run_{i}/config_used.yaml'
+    with open(yaml_path, 'w') as f:
+        yaml.dump(dict_config, f, sort_keys=False)
+
+    print(f"Config saved to: {yaml_path}")

@@ -11,7 +11,7 @@ import time
 
 import copy
 
-def preprocessing_features(metadata, oids_train, oids_val, oids_test):
+def preprocessing_features(metadata, oids_train, candid_train, oids_val, candid_val, oids_test, candid_test):
     print('\nProcessing Features...')
 
     metadata = metadata.fillna(-999)
@@ -37,9 +37,13 @@ def preprocessing_features(metadata, oids_train, oids_val, oids_test):
             if max_val is not None:
                 metadata[feature] = metadata[feature].clip(upper=max_val)
 
-    train_metadata = metadata.drop_duplicates(subset='oid', keep='first').set_index('oid').loc[oids_train]
-    val_metadata = metadata.drop_duplicates(subset='oid', keep='first').set_index('oid').loc[oids_val]
-    test_metadata = metadata.drop_duplicates(subset='oid', keep='first').set_index('oid').loc[oids_test]
+    index_train = list(zip(oids_train, candid_train))
+    index_val   = list(zip(oids_val, candid_val))
+    index_test  = list(zip(oids_test, candid_test))
+
+    train_metadata = metadata.set_index(['oid', 'candid']).loc[index_train].reset_index().drop_duplicates(subset='oid', keep='first').set_index('oid')
+    val_metadata   = metadata.set_index(['oid', 'candid']).loc[index_val].reset_index().drop_duplicates(subset='oid', keep='first').set_index('oid')
+    test_metadata  = metadata.set_index(['oid', 'candid']).loc[index_test].reset_index().drop_duplicates(subset='oid', keep='first').set_index('oid')
 
     order_features = metadata.columns.difference(['oid', 'candid'])
     order_features = sorted(order_features)
@@ -55,26 +59,34 @@ def preprocessing_features(metadata, oids_train, oids_val, oids_test):
 
     md_processed = pd.concat([train_metadata, val_metadata, test_metadata])[order_features]
     
-    return md_processed, order_features, norm_means, norm_stds
+    return md_processed, order_features, list(norm_means.values), list(norm_stds.values)
 
 
-def get_tf_datasets(batch_size: int, use_metadata: bool, use_only_avro: bool):
-    d = pd.read_pickle('./data/normalized_ndarrays.pkl')
+def get_tf_datasets(batch_size: int, args_general: dict):
+    use_only_avro = args_general['use_only_avro']
+    use_metadata = args_general['use_metadata']
+    path_data = args_general['path_data']
+
+
+    d = pd.read_pickle(path_data)
 
     x_train = d['x_train']
     pos_train = d['pos_train']
     y_train = d['y_train']
     oids_train = d['oid_train']
+    candid_train = d['candid_train']
 
     x_val = d['x_val']
     pos_val = d['pos_val']
     y_val = d['y_val']
     oids_val = d['oid_val']
+    candid_val = d['candid_val']
 
     x_test = d['x_test']
     pos_test = d['pos_test']
     y_test = d['y_test']
     oids_test = d['oid_test']
+    candid_test = d['candid_test']
 
     order_features = None
     norm_means, norm_stds = None, None
@@ -86,7 +98,7 @@ def get_tf_datasets(batch_size: int, use_metadata: bool, use_only_avro: bool):
             metadata_noavro = pd.read_parquet('data/full_stamp_classifier_metadata_noavro.parquet')
             metadata = pd.concat([metadata_hasavro, metadata_noavro])
 
-        metadata, order_features, norm_means, norm_stds = preprocessing_features(metadata, oids_train, oids_val, oids_test)
+        metadata, order_features, norm_means, norm_stds = preprocessing_features(metadata, oids_train, candid_train, oids_val, candid_val, oids_test, candid_test)
         print(f'Metadata columns: {list(metadata.columns)}')
 
         md_train = metadata.loc[oids_train]
