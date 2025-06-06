@@ -229,13 +229,13 @@ def train_model_and_save(hyperparameters, path_save_results, args_general):
     if crop:
         str_ += '_crop'  
     if args_general['use_only_avro']:
-        str_ += '_crop'    
+        str_ += '_avro'    
 
     stamp_classifier.save(f"{path_save_results}/model_{model_}{str_}.keras")
 
 
 date = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-ROOT = f'./results_incremental/{date}' 
+ROOT = f'./results_incremental_satbogus/{date}' 
 os.makedirs(ROOT, exist_ok=True)
 
 def parse_model_args(arg_dict=None):

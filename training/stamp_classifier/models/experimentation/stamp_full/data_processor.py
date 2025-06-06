@@ -81,12 +81,20 @@ def extract_x_pos_y_from_df(df, oids):
 
     return x, position, y
 
-def build_ndarrays(seed: int, path_load_data: str, path_save_data: str, date: str, has_avro: bool):
-    #consolidated_dataset_df = pd.read_pickle(os.path.join(PROJECT_DIR, 'data/test_first_stamps_fixed.pkl'))
+def build_ndarrays(seed: int, path_load_data: str, path_save_data: str, date: str, has_avro: bool, satellite_as_bogus: bool):
+    # Build suffix
+    suffix = ''
+    if has_avro:
+        suffix += '_hasavro'
+    if satellite_as_bogus:
+        suffix += '_satbogus'
+
+    # Load consolidated dataset
     if has_avro:
         consolidated_dataset_df = pd.read_pickle(os.path.join(path_load_data, 'consolidated_dataset_hasavro.pkl'))
     else:
         consolidated_dataset_df = pd.read_pickle(os.path.join(path_load_data, 'consolidated_dataset.pkl'))
+
     print('original shape', consolidated_dataset_df.shape)
     # 2869M
 
@@ -98,7 +106,11 @@ def build_ndarrays(seed: int, path_load_data: str, path_save_data: str, date: st
     # Ghost bogus have duplicates. We will drop them to avoid train-val-test info. leakage
     consolidated_dataset_df.drop_duplicates(subset=["oid"], keep='first', inplace=True)
     print('shape after drop_duplicates', consolidated_dataset_df.shape)
+
+    if satellite_as_bogus:
+        consolidated_dataset_df['class'] = consolidated_dataset_df['class'].replace('satellite', 'bogus')
     print(consolidated_dataset_df.groupby('class').count())
+
     # 2876M
 
     consolidated_dataset_df.set_index('oid', inplace=True)
@@ -145,23 +157,27 @@ def build_ndarrays(seed: int, path_load_data: str, path_save_data: str, date: st
 
 
     #with open('data/test_first_stamps_fixed_ndarrays.pkl', 'wb') as f:
+    # Save
+    filename = f'consolidated_ndarrays{suffix}_{date}.pkl'
+    with open(os.path.join(path_save_data, filename), 'wb') as f:
+        pickle.dump(d, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+    print(f"Saved: {filename}")
+
+
+
+def process_ndarrays(path_save_data: str, date: str, has_avro: bool, satellite_as_bogus: bool):
+    # Build suffix
+    suffix = ''
     if has_avro:
-        with open(os.path.join(path_save_data, f'consolidated_ndarrays_hasavro_{date}.pkl'), 'wb') as f:
-            pickle.dump(d, f, protocol=pickle.HIGHEST_PROTOCOL)
-    else:
-        with open(os.path.join(path_save_data, f'consolidated_ndarrays_{date}.pkl'), 'wb') as f:
-            pickle.dump(d, f, protocol=pickle.HIGHEST_PROTOCOL)
+        suffix += '_hasavro'
+    if satellite_as_bogus:
+        suffix += '_satbogus'
 
-
-
-def process_ndarrays(path_save_data: str, date: str, has_avro: bool):
-    #with open('data/test_first_stamps_fixed_ndarrays.pkl', 'rb') as f:
-    if has_avro:
-        with open(os.path.join(path_save_data, f'consolidated_ndarrays_hasavro_{date}.pkl'), 'rb') as f:
-            d = pickle.load(f)
-    else:
-        with open(os.path.join(path_save_data, f'consolidated_ndarrays_{date}.pkl'), 'rb') as f:
-            d = pickle.load(f)
+    # Load consolidated_ndarrays
+    filename = f'consolidated_ndarrays{suffix}_{date}.pkl'
+    with open(os.path.join(path_save_data, filename), 'rb') as f:
+        d = pickle.load(f)
 
     x_train = d['x_train']
     pos_train = d['pos_train']
@@ -227,12 +243,12 @@ def process_ndarrays(path_save_data: str, date: str, has_avro: bool):
     }
 
     #with open('data/test_first_stamps_fixed_normalized_ndarrays.pkl', 'wb') as f:
-    if has_avro:
-        with open(os.path.join(path_save_data, f'normalized_ndarrays_hasavro_{date}.pkl'), 'wb') as f:
-            pickle.dump(d, f, protocol=pickle.HIGHEST_PROTOCOL)
-    else:
-        with open(os.path.join(path_save_data, f'normalized_ndarrays_{date}.pkl'), 'wb') as f:
-            pickle.dump(d, f, protocol=pickle.HIGHEST_PROTOCOL)
+    # Save
+    filename = f'normalized_ndarrays{suffix}_{date}.pkl'
+    with open(os.path.join(path_save_data, filename), 'wb') as f:
+        pickle.dump(d, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+    print(f"Saved: {filename}")
 
 
 def dataset_as_png(output_folder, start, end):
@@ -303,13 +319,14 @@ if __name__ == '__main__':
 
     path_load_data = '../../../data_acquisition/data/processed'
     path_save_data = './data'
-    has_avro = True
+    has_avro = False
+    satellite_as_bogus = False
 
     date = datetime.now().strftime("%Y-%m-%d_%H-%M")
 
     os.makedirs(path_save_data, exist_ok=True)
-    build_ndarrays(0, path_load_data, path_save_data, date, has_avro)
-    process_ndarrays(path_save_data, date, has_avro)
+    build_ndarrays(0, path_load_data, path_save_data, date, has_avro, satellite_as_bogus)
+    process_ndarrays(path_save_data, date, has_avro, satellite_as_bogus)
     #crop_stamps(16)
     #low_res_stamps(4)
     #build_multiscale()
