@@ -28,7 +28,7 @@ class TestStep(unittest.TestCase):
         cls.step_params = {"config": cls.settings, "db_sql": cls.db_sql}
 
     def setUp(self):
-        self.settings = config_from_yaml_file("/home/alerce/Desktop/alerce/pipeline/correction_multistream_ztf_step/scripts/config.yaml")
+        self.settings = config_from_yaml_file("tests/test_utils/config_w_scribe.yaml")
         self.db_sql = PsqlDatabase(psql_config)
         self.step = self._step_creator()
 
