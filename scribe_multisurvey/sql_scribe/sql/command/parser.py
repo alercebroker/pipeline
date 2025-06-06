@@ -41,7 +41,33 @@ def multistream_detection_to_ztf(command: dict):
 
     return new_command
 
+"""
+def parse_ztf_pf(raw_detection: dict, oid: str):
+    forced_photometry = {
+        "b_oid": oid,
+        "b_measurement_id": raw_detection["measurement_id"],
+        "mag_corr": raw_detection["mag_corr"],
+        "e_mag_corr": raw_detection["e_mag_corr"],
+        "e_mag_corr_ext": raw_detection["e_mag_corr_ext"],
+        "corrected": raw_detection["corrected"],
+        "dubious": raw_detection["dubious"],
+        
+    }
+    return forced_photometry
 
+def parse_ztf_det(raw_detection: dict, oid: str) -> dict:
+    detection = {
+        "b_oid": oid,
+        "b_measurement_id": raw_detection["measurement_id"],
+        "magpsf_corr": raw_detection["mag_corr"],
+        "sigmapsf_corr": raw_detection["e_mag_corr"],
+        "sigmapsf_corr_ext": raw_detection["e_mag_corr_ext"],
+        "corrected": raw_detection["corrected"],
+        "dubious": raw_detection["dubious"],
+    }
+    return detection
+
+"""
 def parse_ztf_pf(raw_detection: dict, oid: str) -> dict:
     forced_photometry = {
         "oid": oid,
@@ -114,6 +140,7 @@ def parse_ztf_det(raw_detection: dict, oid: str) -> dict:
     }
     return detection
 
+    
 def parse_ztf_ss(candidate: dict, oid: str) -> dict:
     ss = {
         "oid": oid,

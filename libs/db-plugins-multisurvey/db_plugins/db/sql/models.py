@@ -205,7 +205,7 @@ class NonDetection(Base):
     )
 
 
-class ztf_ss(Base):
+class ZtfSS(Base):
     __tablename__ = "ztf_ss"
 
     oid = Column(BigInteger, nullable=False)
@@ -222,7 +222,7 @@ class ztf_ss(Base):
     )
 
 
-class ztf_ps1(Base):
+class ZtfPS1(Base):
     __tablename__ = "ztf_ps1"
 
     oid = Column(BigInteger, nullable=False)
@@ -258,7 +258,7 @@ class ztf_ps1(Base):
     )
 
 
-class gaia_ztf(Base):
+class ZtfGaia(Base):
     __tablename__ = "ztf_gaia"
 
     oid = Column(BigInteger, nullable=False)
@@ -288,8 +288,8 @@ class ZtfDataquality(Base):
     bimage = Column(REAL)
     aimagerat = Column(REAL)
     bimagerat = Column(REAL)
-    nneg = Column(REAL)
-    nbad = Column(REAL)
+    nneg = Column(Integer)
+    nbad = Column(Integer)
     sumrat = Column(REAL)
     scorr = Column(REAL)
     dsnrms = Column(REAL)
@@ -297,7 +297,7 @@ class ZtfDataquality(Base):
     magzpsci = Column(REAL)
     magzpsciunc = Column(REAL)
     magzpscirms = Column(REAL)
-    nmatches = Column(REAL)
+    nmatches = Column(Integer)
     clrcoeff = Column(REAL)
     clrcounc = Column(REAL)
     zpclrcov = Column(REAL)
@@ -319,7 +319,7 @@ class ZtfDataquality(Base):
     )
 
 
-class ztf_reference(Base):
+class ZtfReference(Base):
     __tablename__ = "ztf_reference"
 
     oid = Column(BigInteger, nullable=False)

@@ -1,7 +1,7 @@
 import logging
 from apf.core.step import GenericStep
 
-from .sql.command.decode import command_factory as sql_command_factory
+from .sql.command.decode import command_factory
 from .sql.db.executor import SQLCommandExecutor
 
 
@@ -29,7 +29,7 @@ class SqlScribe(GenericStep):
         valid_commands, n_invalid_commands = [], 0
         for message in messages:
             try:
-                new_command = self.command_factory(message["payload"])
+                new_command = command_factory(message["payload"])
                 valid_commands.append(new_command)
             except ValueError as e:
                 self.logger.debug(e)

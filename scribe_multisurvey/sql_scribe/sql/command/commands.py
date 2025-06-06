@@ -19,6 +19,7 @@ from db_plugins.db.sql.models import (
 from sqlalchemy import update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
+from sqlalchemy import bindparam
 
 from .parser import (
     parse_ztf_det,
@@ -85,9 +86,9 @@ class ZTFCorrectionCommand(Command):
                     forced_photometries.append(parse_ztf_pf(detection, oid))
                 # detection
                 else:
-                    parsed_detection = parse_ztf_det(detection, oid)
-                    if parsed_detection["measurement_id"] == candidate_measurement_id:
+                    if detection["measurement_id"] == candidate_measurement_id:
                         candidate = detection
+                    parsed_detection = parse_ztf_det(detection, oid)
                     detections.append(parsed_detection)
         
 
