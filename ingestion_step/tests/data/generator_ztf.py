@@ -37,7 +37,7 @@ def replace_objectId(alert: dict[str, Any]) -> dict[str, Any]:
     return alert
 
 
-def generate_alerts(n: int = 10) -> Iterable[dict[str, Any]]:
+def generate_alerts(n: int = 30) -> Iterable[dict[str, Any]]:
     schema_path = str(base_schema_path.joinpath("alert.avsc"))
     schema = load_schema(schema_path)
     alerts = generate_many(schema, n)

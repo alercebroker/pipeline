@@ -85,31 +85,31 @@ class Detection(Base):
 class ZtfDetection(Base):
     __tablename__ = "ztf_detection"
 
-    oid = Column(BigInteger, nullable=False) #int8,
-    measurement_id = Column(BigInteger, nullable=False) #int8,
-    pid = Column(BigInteger) #int8,
-    diffmaglim = Column(REAL) #float4,
-    isdiffpos = Column(Integer) #bool,
-    nid = Column(Integer) #int4,
-    magpsf = Column(REAL) #float4,
-    sigmapsf = Column(REAL) # float4,
-    magap = Column(REAL) # float4,
-    sigmagap = Column(REAL) # float4,
-    distnr= Column(REAL) # float4,
-    rb = Column(REAL)# float4,
-    rbversion = Column(VARCHAR)# varchar,
-    drb = Column(REAL)# float4,
-    drbversion = Column(VARCHAR)# varchar,
-    magapbig = Column(REAL)# float4,
-    sigmagapbig = Column(REAL)# float4,
-    rfid = Column(BigInteger)# int8,
-    magpsf_corr = Column(REAL)# float4,
-    sigmapsf_corr = Column(REAL)# float4,
-    sigmapsf_corr_ext = Column(REAL)# float4,
-    corrected = Column(Boolean)# bool,
-    dubious = Column(Boolean)# bool,
-    parent_candid = Column(BigInteger)# int8,
-    has_stamp = Column(Boolean)# bool,
+    oid = Column(BigInteger, nullable=False)  # int8,
+    measurement_id = Column(BigInteger, nullable=False)  # int8,
+    pid = Column(BigInteger)  # int8,
+    diffmaglim = Column(REAL)  # float4,
+    isdiffpos = Column(Integer)  # bool,
+    nid = Column(Integer)  # int4,
+    magpsf = Column(REAL)  # float4,
+    sigmapsf = Column(REAL)  # float4,
+    magap = Column(REAL)  # float4,
+    sigmagap = Column(REAL)  # float4,
+    distnr = Column(REAL)  # float4,
+    rb = Column(REAL)  # float4,
+    rbversion = Column(VARCHAR)  # varchar,
+    drb = Column(REAL)  # float4,
+    drbversion = Column(VARCHAR)  # varchar,
+    magapbig = Column(REAL)  # float4,
+    sigmagapbig = Column(REAL)  # float4,
+    rfid = Column(BigInteger)  # int8,
+    magpsf_corr = Column(Integer)  # float4,
+    sigmapsf_corr = Column(Integer)  # float4,
+    sigmapsf_corr_ext = Column(Integer)  # float4,
+    corrected = Column(Boolean)  # bool,
+    dubious = Column(Boolean)  # bool,
+    parent_candid = Column(BigInteger)  # int8,
+    has_stamp = Column(Boolean)  # bool,
 
     __table_args__ = (
         PrimaryKeyConstraint(
@@ -145,12 +145,12 @@ class ZtfForcedPhotometry(Base):
 
     oid = Column(BigInteger, nullable=False)  # int8,
     measurement_id = Column(BigInteger, nullable=False)  # int8,
-    pid = Column(BigInteger) # int8
-    mag = Column(REAL, nullable=False)  # float8,
-    e_mag = Column(REAL, nullable=False)  # float8,
-    mag_corr = Column(REAL)  # float8,
-    e_mag_corr = Column(REAL)  # float8,
-    e_mag_corr_ext = Column(REAL)  # float8,
+    pid = Column(BigInteger)  # int8
+    mag = Column(DOUBLE_PRECISION, nullable=False)  # float8,
+    e_mag = Column(DOUBLE_PRECISION, nullable=False)  # float8,
+    mag_corr = Column(DOUBLE_PRECISION)  # float8,
+    e_mag_corr = Column(DOUBLE_PRECISION)  # float8,
+    e_mag_corr_ext = Column(DOUBLE_PRECISION)  # float8,
     isdiffpos = Column(Integer, nullable=False)  # int4 NOT NULL,
     corrected = Column(Boolean, nullable=False)  # bool NOT NULL,
     dubious = Column(Boolean, nullable=False)  # bool NOT NULL,
@@ -204,7 +204,8 @@ class NonDetection(Base):
         Index("ix_non_detection_oid", "oid", postgresql_using="hash"),
     )
 
-class ZtfSS(Base):
+
+class ztf_ss(Base):
     __tablename__ = "ztf_ss"
 
     oid = Column(BigInteger, nullable=False)
@@ -214,13 +215,15 @@ class ZtfSS(Base):
     ssnamenr = Column(VARCHAR)
 
     __table_args__ = (
-        PrimaryKeyConstraint("oid", "measurement_id", name="pk_ztfss_oid_measurement_id"),
+        PrimaryKeyConstraint(
+            "oid", "measurement_id", name="pk_ztfss_oid_measurement_id"
+        ),
         Index("ix_zrt_ss_oid", "oid", postgresql_using="btree"),
     )
 
-class ZtfPS1(Base):
-    __tablename__ = "ztf_ps1"
 
+class ztf_ps1(Base):
+    __tablename__ = "ztf_ps1"
 
     oid = Column(BigInteger, nullable=False)
     measurement_id = Column(BigInteger, nullable=False)
@@ -248,11 +251,14 @@ class ZtfPS1(Base):
     nmtchps = Column(SmallInteger)
 
     __table_args__ = (
-        PrimaryKeyConstraint("oid", "measurement_id", name="pk_ztfps1_oid_measurement_id"),
+        PrimaryKeyConstraint(
+            "oid", "measurement_id", name="pk_ztfps1_oid_measurement_id"
+        ),
         Index("ix_ztf_ps1_oid", "oid", postgresql_using="btree"),
     )
 
-class ZtfGaia(Base):
+
+class gaia_ztf(Base):
     __tablename__ = "ztf_gaia"
 
     oid = Column(BigInteger, nullable=False)
@@ -262,9 +268,8 @@ class ZtfGaia(Base):
     maggaia = Column(REAL)
     maggaiabright = Column(REAL)
 
-    __table_args__ = (
-        PrimaryKeyConstraint("oid", name="pk_ztfgaia_oid"),
-    )
+    __table_args__ = (PrimaryKeyConstraint("oid", name="pk_ztfgaia_oid"),)
+
 
 class ZtfDataquality(Base):
     __tablename__ = "ztf_dataquality"
@@ -302,12 +307,19 @@ class ZtfDataquality(Base):
     exptime = Column(REAL)
 
     __table_args__ = (
-        PrimaryKeyConstraint("oid", "measurement_id", name="pk_ztfdataqualit_oid_measurement_id"),
+        PrimaryKeyConstraint(
+            "oid", "measurement_id", name="pk_ztfdataquality_oid_measurement_id"
+        ),
         Index("ix_ztf_dataquality_oid", "oid", postgresql_using="btree"),
-        Index("ix_ztf_dataquality_measurement_id", "measurement_id", postgresql_using="btree"),
+        Index(
+            "ix_ztf_dataquality_measurement_id",
+            "measurement_id",
+            postgresql_using="btree",
+        ),
     )
 
-class ZtfReference(Base):
+
+class ztf_reference(Base):
     __tablename__ = "ztf_reference"
 
     oid = Column(BigInteger, nullable=False)
