@@ -1,8 +1,9 @@
-
-
-
-
-OUTPUT = {'oids': [36028997823087042, 36028949634494332], 'mids': [3074303351515015000, 3074303351815015012], 'dets': [10,21], 'ndets': [11,3]}
+OUTPUT = {
+    "oids": [36028997823087042, 36028949634494332],
+    "mids": [3074303351515015000, 3074303351815015012],
+    "dets": [10, 21],
+    "ndets": [11, 3],
+}
 
 psql_config = {
     "ENGINE": "postgresql",
@@ -13,6 +14,13 @@ psql_config = {
     "DB_NAME": "postgres",
 }
 
-INSPECT = ['mag', 'e_mag', 'e_mag_corr', 
-           "e_mag_corr_ext", "mag_corr", 
-           "dubious", "corrected", "stellar"]
+INSPECT = [
+    "mag",
+    "e_mag",
+    "e_mag_corr",
+    "e_mag_corr_ext",
+    "mag_corr",
+    "dubious",
+    "corrected",
+    "stellar",
+]

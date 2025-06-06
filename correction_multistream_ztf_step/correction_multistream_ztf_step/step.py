@@ -13,13 +13,14 @@ from apf.core import get_class
 
 from core.parsers.scribe_parser import scribe_parser
 
-from .step_utils import ( 
+from .step_utils import (
     process_messages,
     fetch_database_data,
     merge_and_clean_data,
     apply_corrections,
-    build_result
+    build_result,
 )
+
 
 class CorrectionMultistreamZTFStep(GenericStep):
     def __init__(
@@ -39,11 +40,11 @@ class CorrectionMultistreamZTFStep(GenericStep):
     def execute(self, messages: List[dict]) -> dict:
 
         processed_data = process_messages(messages)
-        db_data = fetch_database_data(processed_data['oids'], self.db_sql)
+        db_data = fetch_database_data(processed_data["oids"], self.db_sql)
         merged_data = merge_and_clean_data(processed_data, db_data)
         corrected_data = apply_corrections(merged_data, self.config)
-            
-        return build_result(corrected_data, processed_data['msg_df'])
+
+        return build_result(corrected_data, processed_data["msg_df"])
 
     def post_execute(self, result: dict):
         self.produce_scribe(scribe_parser(result))

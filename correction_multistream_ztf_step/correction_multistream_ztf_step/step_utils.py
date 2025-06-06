@@ -1,4 +1,3 @@
-
 import pandas as pd
 import numpy as np
 
@@ -54,6 +53,7 @@ def split_dets(msg: list, all_detections: list, oid) -> list:
 
     return all_detections
 
+
 def split_nondets(msg: list, all_non_detections: list, oid) -> list:
 
     for non_detection in msg["non_detections"]:
@@ -62,6 +62,7 @@ def split_nondets(msg: list, all_non_detections: list, oid) -> list:
         all_non_detections.append(parsed_non_detection)
 
     return all_non_detections
+
 
 def split_det_nondets(messages: list[dict]) -> tuple[list, list, pd.DataFrame]:
 
@@ -82,8 +83,9 @@ def split_det_nondets(messages: list[dict]) -> tuple[list, list, pd.DataFrame]:
 
     return all_detections, all_non_detections, msg_df
 
+
 def det_to_df(all_detections) -> pd.DataFrame:
-     
+
     detections_df = pd.DataFrame(
         all_detections
     )  # We will always have detections BUT not always non_detections
@@ -106,6 +108,7 @@ def det_to_df(all_detections) -> pd.DataFrame:
 
     return detections_df
 
+
 def nondets_to_df(all_non_detections) -> pd.DataFrame:
 
     if all_non_detections:
@@ -117,6 +120,7 @@ def nondets_to_df(all_non_detections) -> pd.DataFrame:
 
     return non_detections_df
 
+
 def non_det_nan_replace(non_detections: pd.DataFrame):
 
     non_detections = (
@@ -127,81 +131,86 @@ def non_det_nan_replace(non_detections: pd.DataFrame):
 
     return non_detections
 
+
 def process_messages(messages: list[dict]) -> dict:
     all_detections, all_non_detections, msg_df = split_det_nondets(messages)
     detections_df = det_to_df(all_detections)
     non_detections_df = nondets_to_df(all_non_detections)
-    
+
     last_mjds = detections_df.groupby("oid")["mjd"].max().to_dict()
     oids = list(set(msg_df["oid"].unique()))
-    
+
     return {
-        'detections': detections_df.to_dict("records"),
-        'non_detections': non_detections_df.to_dict("records"),
-        'last_mjds': last_mjds,
-        'oids': oids,
-        'msg_df': msg_df
+        "detections": detections_df.to_dict("records"),
+        "non_detections": non_detections_df.to_dict("records"),
+        "last_mjds": last_mjds,
+        "oids": oids,
+        "msg_df": msg_df,
     }
+
 
 def fetch_database_data(oids: list, db_sql) -> dict:
     db_detections = _get_sql_detections(oids, db_sql, parse_sql_detection)
     db_non_detections = _get_sql_non_detections(oids, db_sql, parse_sql_non_detection)
     db_forced = _get_sql_forced_photometries(oids, db_sql, parse_sql_forced_photometry)
-    
+
     return {
-        'detections': db_detections,
-        'non_detections': db_non_detections,
-        'forced_photometries': db_forced
+        "detections": db_detections,
+        "non_detections": db_non_detections,
+        "forced_photometries": db_forced,
     }
+
 
 def merge_and_clean_data(processed_data: dict, db_data: dict) -> dict:
     detections = pd.DataFrame(
-        processed_data['detections'] + db_data['detections'] + db_data['forced_photometries']
+        processed_data["detections"] + db_data["detections"] + db_data["forced_photometries"]
     )
-    non_detections = pd.DataFrame(processed_data['non_detections'] + db_data['non_detections'])
-    
+    non_detections = pd.DataFrame(processed_data["non_detections"] + db_data["non_detections"])
+
     detections["measurement_id"] = detections["measurement_id"].astype(str)
     detections = detections.sort_values(["has_stamp", "new"], ascending=[False, False])
     detections = detections.drop_duplicates(["measurement_id", "oid"], keep="first")
     non_detections = non_detections.drop_duplicates(["oid", "band", "mjd"])
-    
+
     return {
-        'detections': detections,
-        'non_detections': non_detections,
-        'last_mjds': processed_data['last_mjds']
+        "detections": detections,
+        "non_detections": non_detections,
+        "last_mjds": processed_data["last_mjds"],
     }
 
+
 def apply_corrections(merged_data: dict, config: dict) -> dict:
-    detections = merged_data['detections']
-    non_detections = non_det_nan_replace(merged_data['non_detections'])
-    
+    detections = merged_data["detections"]
+    non_detections = non_det_nan_replace(merged_data["non_detections"])
+
     if not config["FEATURE_FLAGS"].get("SKIP_MJD_FILTER", False):
-        detections = detections[detections["mjd"] <= detections["oid"].map(merged_data['last_mjds'])]
-    
+        detections = detections[
+            detections["mjd"] <= detections["oid"].map(merged_data["last_mjds"])
+        ]
+
     corrector = Corrector(detections)
     corrected_detections = corrector.corrected_as_records()
     coords = corrector.coordinates_as_records()
     non_detections = non_detections.replace({float("nan"): None})
     non_detections = non_detections.drop_duplicates(["oid", "band", "mjd"])
-    
+
     return {
-        'detections': corrected_detections,
-        'non_detections': non_detections.to_dict("records"),
-        'coords': coords
+        "detections": corrected_detections,
+        "non_detections": non_detections.to_dict("records"),
+        "coords": coords,
     }
+
 
 def build_result(corrected_data: dict, msg_df: pd.DataFrame) -> dict:
     measurement_ids = (
-        msg_df.groupby("oid")["measurement_id"]
-        .apply(lambda x: [str(id) for id in x])
-        .to_dict()
+        msg_df.groupby("oid")["measurement_id"].apply(lambda x: [str(id) for id in x]).to_dict()
     )
-    
+
     result = {
-        "detections": corrected_data['detections'],
-        "non_detections": corrected_data['non_detections'],
-        "coords": corrected_data['coords'],
+        "detections": corrected_data["detections"],
+        "non_detections": corrected_data["non_detections"],
+        "coords": corrected_data["coords"],
         "measurement_ids": measurement_ids,
     }
-    
+
     return parse_output(result)
