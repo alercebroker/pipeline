@@ -4,7 +4,7 @@ on existing columns.
 """
 
 import math
-from typing import Callable
+from typing import Any, Callable
 
 import numpy as np
 import pandas as pd
@@ -54,7 +54,7 @@ def candid_to_measurement_id(df: pd.DataFrame):
     and uses them to calculate the new columns:
         - `measurement_id`
     """
-    df["measurement_id"] = df["candid"].replace({np.nan: None}).astype("Int64")
+    df["measurement_id"] = df["candid"].astype("Int64")
 
 
 def add_tid(df: pd.DataFrame):
@@ -102,12 +102,17 @@ def sigmara_to_e_ra(df: pd.DataFrame):
     and uses them to calculate the new columns:
         - `e_ra`
     """
+
+    def _sigmara_to_e_ra(x: dict[str, Any]) -> float:
+        if "sigmara" in x:
+            return x["sigmara"]
+        if x["dec"] is not pd.NA and x["dec"] is not None:
+            return ERRORS[x["fid"]] / abs(math.cos(math.radians(x["dec"])))
+        else:
+            return float("nan")
+
     df["e_ra"] = df.apply(
-        lambda x: (
-            x["sigmara"]
-            if "sigmara" in x
-            else ERRORS[x["fid"]] / abs(math.cos(math.radians(x["dec"])))
-        ),
+        _sigmara_to_e_ra,
         axis=1,
     )
 
@@ -145,7 +150,7 @@ def isdiffpos_to_int(df: pd.DataFrame):
     ('t', 'f', '1' or '-1').
     """
     df["isdiffpos"] = df["isdiffpos"].apply(
-        lambda x: 1 if x in ["t", "1"] else -1
+        lambda x: 1 if pd.notna(x) and x in ["t", "1"] else -1
     )
 
 

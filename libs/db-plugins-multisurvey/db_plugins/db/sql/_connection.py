@@ -17,15 +17,11 @@ class PsqlDatabase:
     def __init__(self, db_config: dict, engine=None) -> None:
         db_url = get_db_url(db_config)
         schema = db_config.get("SCHEMA", None)
-        if schema:         
+        if schema:
             self._engine = engine or create_engine(
                 db_url,
                 echo=False,
-                connect_args={
-                    "options": "-csearch_path={}".format(
-                        schema
-                    )
-                },
+                connect_args={"options": "-csearch_path={}".format(schema)},
             )
         else:
             self._engine = engine or create_engine(db_url, echo=False)

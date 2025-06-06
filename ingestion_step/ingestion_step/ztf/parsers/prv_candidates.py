@@ -53,9 +53,7 @@ def _parse_dets_from_prv_candidates(
 ) -> pd.DataFrame:
     det_prv_candidates = prv_candidates[prv_candidates["candid"].notnull()]
 
-    detections = det_prv_candidates.replace({np.nan: None})
-
-    return detections
+    return det_prv_candidates
 
 
 def _parse_non_dets_from_prv_candidates(
@@ -63,9 +61,7 @@ def _parse_non_dets_from_prv_candidates(
 ) -> pd.DataFrame:
     non_det_prv_candidates = prv_candidates[prv_candidates["candid"].isnull()]
 
-    non_detections = non_det_prv_candidates.replace({np.nan: None})
-
-    return non_detections
+    return non_det_prv_candidates
 
 
 def parse_prv_candidates(

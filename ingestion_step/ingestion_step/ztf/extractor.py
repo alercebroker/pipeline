@@ -1,8 +1,6 @@
 from typing import Any, TypedDict
 
-import numpy as np
 import pandas as pd
-from numpy.typing import NDArray
 
 from .schemas.candidate import candidate_schema
 from .schemas.fp_hist import fp_hist_schema
@@ -39,7 +37,7 @@ def _has_stamp(message: dict[str, Any]) -> bool:
 
 def _extract_candidates(
     messages: list[dict[str, Any]],
-) -> dict[str, NDArray[Any]]:
+) -> dict[str, Any]:
     """
     Extract all candidates for the list of messages.
 
@@ -50,7 +48,14 @@ def _extract_candidates(
 
     for message_id, message in enumerate(messages):
         for col, value in message["candidate"].items():
-            candidates[col].append(value)
+            if col in ["objectidps1", "objectidps2", "objectidps3", "tblid"]:
+                if value is not None:
+                    candidates[col].append(str(value))
+                else:
+                    candidates[col].append(None)
+            else:
+                candidates[col].append(value)
+
         candidates["message_id"].append(message_id)
         candidates["objectId"].append(message["objectId"])
         candidates["parent_candid"].append(None)
@@ -58,14 +63,14 @@ def _extract_candidates(
         candidates["forced"].append(False)
 
     return {
-        col: np.array(candidates[col], dtype=dtype)
+        col: pd.Series(candidates[col], dtype=dtype())
         for col, dtype in candidate_schema.items()
     }
 
 
 def _extract_prv_candidates(
     messages: list[dict[str, Any]],
-) -> dict[str, NDArray[Any]]:
+) -> dict[str, Any]:
     """
     Extract all previous candidates for the list of messages.
 
@@ -80,7 +85,13 @@ def _extract_prv_candidates(
             continue
         for prv_candidate in message["prv_candidates"]:
             for col, value in prv_candidate.items():
-                prv_candidates[col].append(value)
+                if col in ["tblid"]:
+                    if value is not None:
+                        prv_candidates[col].append(str(value))
+                    else:
+                        prv_candidates[col].append(None)
+                else:
+                    prv_candidates[col].append(value)
             prv_candidates["message_id"].append(message_id)
             prv_candidates["objectId"].append(message["objectId"])
             prv_candidates["parent_candid"].append(message["candid"])
@@ -88,14 +99,14 @@ def _extract_prv_candidates(
             prv_candidates["forced"].append(False)
 
     return {
-        col: np.array(prv_candidates[col], dtype=dtype)
+        col: pd.Series(prv_candidates[col], dtype=dtype())
         for col, dtype in prv_candidate_schema.items()
     }
 
 
 def _extract_fp_hists(
     messages: list[dict[str, Any]],
-) -> dict[str, NDArray[Any]]:
+) -> dict[str, Any]:
     """
     Extract all forced photometries for the list of messages.
 
@@ -120,7 +131,7 @@ def _extract_fp_hists(
             fp_hists["forced"].append(True)
 
     return {
-        col: np.array(fp_hists[col], dtype=dtype)
+        col: pd.Series(fp_hists[col], dtype=dtype())
         for col, dtype in fp_hist_schema.items()
     }
 
