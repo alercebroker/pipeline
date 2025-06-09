@@ -60,7 +60,8 @@ def generate():
     }
 
     pd_schemas = {
-        name: process_schema(base_path + schema) for name, schema in schemas.items()
+        name: process_schema(base_path + schema)
+        for name, schema in schemas.items()
     }
 
     print("import pandas as pd")

@@ -1,10 +1,6 @@
 # pyright: reportPrivateUsage=false
 from typing import Any
 
-import fastavro
-import numpy as np
-import pandas as pd
-
 import ingestion_step.ztf.extractor as extractor
 
 

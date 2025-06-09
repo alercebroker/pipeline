@@ -3,14 +3,20 @@ from typing import Any
 
 import pytest
 
-from tests.data.generator_ztf import generate_alerts
+import tests.data.generator_lsst as lsst
+import tests.data.generator_ztf as ztf
 
 random.seed(42)
 
 
 @pytest.fixture
 def ztf_alerts() -> list[dict[str, Any]]:
-    return list(generate_alerts())
+    return list(ztf.generate_alerts())
+
+
+@pytest.fixture
+def lsst_alerts() -> list[dict[str, Any]]:
+    return list(lsst.generate_alerts())
 
 
 # Adds a better assertion message for subset comparison
