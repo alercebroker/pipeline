@@ -250,7 +250,7 @@ def calculate_isdiffpos(df: pd.DataFrame):
 def filter_by_forcediffimflux(df: pd.DataFrame):
     df.drop(
         df[
-            (df["forcediffimflux"] == None)
+            (df["forcediffimflux"] is None)
             | (df["forcediffimflux"] == 0)
             | (np.isclose(df["forcediffimflux"], -99999))
         ].index,
@@ -259,7 +259,7 @@ def filter_by_forcediffimflux(df: pd.DataFrame):
 
     df.drop(
         df[
-            (df["forcediffimfluxunc"] == None)
+            (df["forcediffimfluxunc"] is None)
             | (df["forcediffimfluxunc"] == 0)
             | (np.isclose(df["forcediffimfluxunc"], -99999))
         ].index,

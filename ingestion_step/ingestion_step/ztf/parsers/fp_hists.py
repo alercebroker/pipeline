@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 
 from ingestion_step.ztf.parsers.transforms import (
