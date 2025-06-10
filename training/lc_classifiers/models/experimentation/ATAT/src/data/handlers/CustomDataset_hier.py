@@ -1,0 +1,425 @@
+import numpy as np
+import logging
+import os
+import h5py
+import random
+import torch
+
+import pandas as pd
+
+from sklearn.preprocessing import QuantileTransformer
+from torch.utils.data import Dataset
+from joblib import load, dump
+
+def normalizing_time(time_fid):
+    mask_min = 9999999999 * (time_fid == 0).astype(
+        float
+    )  # Enmascara el PAD generado en separate_by_filter
+    t_min = np.min(time_fid + mask_min)
+    return (time_fid - t_min) * (~(time_fid == 0)).astype(
+        float
+    )
+
+class ATATDataset(Dataset):
+    def __init__(
+        self,
+        path_results,
+        data_root="data/final/ZTF_ff/LC_MD_FEAT_v2",
+        set_type="train",
+        use_lightcurves=True,
+        use_lightcurves_err=False,
+        use_metadata=False,
+        use_features=False,
+        fold=0,
+        force_online_opt=False,
+        per_init_time=0.2,
+        online_opt_tt=False,
+        norm_type='None',
+        use_QT=False,
+        qt_type='qt_global',
+        feat_cols=None,
+        top_n_feats=None,
+        use_only_det=False,
+        list_time_to_eval=[16, 32, 64, 128, 256, 512, 1024, 'all'],
+        mta_strategy=[16, 32, 64, 128, 256, 512, 1024, 'all'],
+        bands=['g', 'r'],
+        **kwargs,
+    ):
+        """loading dataset from H5 file"""
+        """ dataset is composed for all samples, where self.these_idx dart to samples for each partition"""
+
+        name = (
+            "training"
+            if set_type == "train" else "validation"
+        )
+
+        h5_ = h5py.File("{}/dataset.h5".format(data_root))
+
+        self.these_idx = (
+            h5_.get("test")[:]
+            if set_type == "test"
+            else h5_.get("%s_%s" % (name, fold))[:]
+        )
+
+        print(
+            f"using set {set_type} total of idx : {len(self.these_idx)}, \
+                use_lightcurves {use_lightcurves}, use_metadata {use_metadata}, use_features {use_features}, \
+                    use MTA {online_opt_tt}"
+        )
+
+        self.path_results = path_results
+        self.bands = bands
+        self.n_bands = len(self.bands)
+        self.lcid = h5_.get("SNID")[:][self.these_idx]
+
+        self.lc_data = dict()
+        for band in self.bands: 
+            self.lc_data[f'time_{band}'] = h5_.get(f"time_{band}")[:][self.these_idx]
+            self.lc_data[f'brightness_{band}'] = h5_.get(f"brightness_{band}")[:][self.these_idx]
+            self.lc_data[f'e_brightness_{band}'] = h5_.get(f"e_brightness_{band}")[:][self.these_idx]
+            self.lc_data[f'detected_{band}'] = h5_.get(f"detected_{band}")[:][self.these_idx]
+        
+        self.labels = h5_.get("labels")[:][self.these_idx]
+        self.class_name = h5_.get("class_name")[:][self.these_idx]
+
+        self.use_lightcurves = use_lightcurves
+        self.use_lightcurves_err = use_lightcurves_err
+        self.use_metadata = use_metadata
+        self.use_features = use_features
+        self.use_QT = use_QT
+        self.qt_type = qt_type
+
+        self.set_type = set_type
+        self.force_online_opt = force_online_opt
+        self.per_init_time = per_init_time
+        self.online_opt_tt = online_opt_tt
+
+        self.list_time_to_eval = list_time_to_eval
+
+        if self.use_lightcurves:
+            self.apply_normalization(norm_type)
+
+        if self.use_metadata or self.use_features:
+            self.metadata_feat = None
+            self.extracted_feat = None
+            self.mask_metadata = None
+            self.mask_feat = None
+            self.get_tabular_data(h5_, set_type, feat_cols, fold)
+
+        logging.info(f"Processing partition: {fold} - with set type: {set_type}...")
+
+    def __len__(self):
+        """length of the dataset, is necessary for consistent getitem values"""
+        return len(self.labels)
+
+    def __getitem__(self, idx):
+        """idx is used for pytorch to select samples to construct its batch"""
+        """ idx_ is to map a valid index over all samples in dataset  """
+
+        data_dict = {
+            'idx': idx,
+            "id": self.lcid[idx],
+            "labels": self.labels[idx],
+        }
+
+        if self.use_lightcurves:
+            band_times = [self.lc_data[f'time_{band}'][idx] for band in self.bands]
+            max_len = max(len(arr) for arr in band_times)
+
+            time = np.zeros((max_len, self.n_bands), dtype=np.float32)
+            brightness = np.zeros((max_len, self.n_bands), dtype=np.float32)
+            detected = np.zeros((max_len, self.n_bands), dtype=bool)
+            mask = np.zeros((max_len, self.n_bands), dtype=bool)
+
+            for i, band in enumerate(self.bands):
+                l = len(band_times[i])
+                time[:l, i] = band_times[i]
+                brightness[:l, i] = self.lc_data[f'brightness_{band}'][idx]
+                detected[:l, i] = self.lc_data[f'detected_{band}'][idx]
+                mask[:l, i] = True
+
+            if True:
+                time = normalizing_time(time)
+                scaling_factor = 1.0
+                brightness = np.arcsinh(brightness / scaling_factor)
+
+            data_dict.update({
+                "time": time,
+                "brightness": brightness,
+                "detected": detected,
+                "mask": mask,
+            })
+
+        if self.use_lightcurves_err:
+            e_brightness = np.zeros((max_len, self.n_bands), dtype=np.float32)
+            for i, band in enumerate(self.bands):
+                arr = self.lc_data[f'e_brightness_{band}'][idx]
+                l = len(arr)
+                e_brightness[:l, i] = arr
+            
+            if True:
+                e_brightness = e_brightness / np.sqrt((brightness / scaling_factor) ** 2 + 1)
+
+            data_dict["e_brightness"] = e_brightness
+
+        if self.use_metadata:
+            data_dict.update({
+                "metadata_feat": self.metadata_feat[idx],
+                "mask_metadata": self.mask_metadata[idx],
+                })
+
+        if self.use_features:
+            data_dict.update({
+                "extracted_feat": self.extracted_feat[self.list_time_to_eval[-1]][idx],
+                "mask_feat": self.mask_feat[self.list_time_to_eval[-1]][idx],
+                })
+            
+        if self.set_type == "train":
+            data_dict = self.three_time_mask(data_dict, idx)
+            
+        return data_dict
+
+
+    def three_time_mask(self, sample: dict, idx: int):
+        """Aplica una máscara a la muestra en función de un límite de tiempo aleatorio."""
+        detected = sample["detected"]
+        time = sample["time"]
+        mask = sample["mask"]
+
+        detected_mask = detected & mask
+        t_min = np.min(time[detected_mask])
+        time_rel = time - t_min
+        time_rel[~mask] = np.inf
+
+        time_eval = np.random.choice([16, 128, 'all']) 
+        
+        if time_eval != 'all':
+            if self.use_lightcurves:
+                time_eval = float(time_eval)
+                mask_time = (time_rel >= 0) & (time_rel <= time_eval) & mask
+                sample["mask"] = mask_time
+            if self.use_features:
+                sample["extracted_feat"] = self.extracted_feat[time_eval][idx]
+        else:
+            if self.use_features:
+                sample["extracted_feat"] = self.extracted_feat['all'][idx]
+        
+        return sample
+
+    #def three_time_mask(self, sample: dict, idx: int):
+    #    """Aplica una máscara a la muestra en función de un límite de tiempo aleatorio."""
+    #    detected = sample["detected"]
+    #    time = sample["time"]
+    #    mask = sample["mask"]
+#
+    #    detected_mask = detected & mask
+    #    t_min = np.min(time[detected_mask])
+#
+    #    time_eval = np.random.choice([16, 128, 'all']) 
+    #    
+    #    if time_eval != 'all':
+    #        t_start = t_min - 30
+    #        t_end = t_min + time_eval
+    #        mask_time = (time >= t_start) & (time <= t_end) & mask
+    #        sample["mask"] = mask_time
+    #        if self.use_features:
+    #            sample["extracted_feat"] = self.extracted_feat[time_eval][idx]
+    #    else:
+    #        if self.use_features:
+    #            sample["extracted_feat"] = self.extracted_feat['all'][idx]
+    #    
+    #    return sample
+
+    def update_mask(self, sample: dict, timeat: int):
+        sample.update(
+            {
+                "mask": sample["mask"]
+                * (sample["time_alert"] - sample["time_alert"][0, :].min() < timeat)
+                * (sample["time_photo"] - sample["time_photo"][0, :].min() < timeat)
+            }
+        )
+
+        return sample
+
+    def apply_normalization(self, norm_type):
+        if norm_type == 'None':
+            pass
+        elif norm_type == 'zero_mean':
+            self.data = self.data - self.data.mean(dim=1, keepdim=True)
+            self.data_err = self.data_err - self.data_err.mean(dim=1, keepdim=True)
+        elif norm_type == 'arcsinh':
+            scaling_factor = 1.0
+            self.data_err = self.data_err / torch.sqrt((self.data / scaling_factor) ** 2 + 1)
+            self.data = torch.arcsinh(self.data / scaling_factor)
+        else:
+            raise ValueError(f"Unsupported normalization type: {norm_type}. "
+                             f"Valid options are: 'None', 'zero_mean', 'arcsinh'.")
+
+    def calculate_and_save_QT(self, tabular_data, path_QT):
+        qt = QuantileTransformer(
+            n_quantiles=1000, random_state=0, output_distribution="uniform"
+        )
+        qt.fit(tabular_data)
+        dump(qt, f"{path_QT}")
+
+    def apply_QT(self, tabular_data, path_QT, tab_type):
+        logging.info(f"Loading and procesing {tab_type}. Using QT: {self.use_QT}")
+        QT = load(path_QT)
+        transformed_values = QT.transform(tabular_data)
+        tabular_data[:] = transformed_values
+        tabular_data += 0.1
+        return tabular_data
+
+    def manage_bias_periodic_others(self, tabular_data, feat_cols):   
+        df_objid_label = pd.read_parquet('../../../data_acquisition/ztf_forced_photometry/raw/objects.parquet').reset_index()
+        coordinate_cols = [f"Coordinate_{x}" for x in "xyz"]
+        tabular_data = {
+            "lcid": self.lcid,
+            "oid": [oid.split(b'_')[0].decode('utf-8') for oid in self.lcid], 
+            **{col: tabular_data[:, idx] for idx, col in enumerate(feat_cols)},
+        }
+        tabular_data = pd.DataFrame(tabular_data)
+
+        lcids_po_tp = self.lcid[self.class_name == b"Periodic-Other"]
+        training_po_oids = list(set([oid.split(b'_')[0].decode('utf-8') for oid in lcids_po_tp]))
+        po_tp_coords = df_objid_label[df_objid_label["oid"].isin(training_po_oids)]
+        southern = po_tp_coords["dec"] < -20
+
+        # Estimates how many southern objects should not be replaced based on a scaling factor 
+        # that considers geographical bounds (declination ranges) and the proportions of northern objects.
+        n_not_to_be_replaced = ((~southern).astype(float).sum()) / (54 - (-20)) * (28 - 20)
+        n_not_to_be_replaced = int(np.ceil(n_not_to_be_replaced))
+
+        southern_po_oids = po_tp_coords[southern]["oid"].values
+        northern_po_oids = po_tp_coords[~southern]["oid"].values
+
+        np.random.seed(0)
+        southern_not_to_be_replaced = np.random.choice(
+            southern_po_oids, size=n_not_to_be_replaced, replace=False
+        )
+        not_to_be_replaced = np.concatenate([northern_po_oids, southern_not_to_be_replaced])
+        to_be_replaced = list(set(training_po_oids) - set(not_to_be_replaced))
+
+        # We replace the same coordinates for all the windows of the same object.
+        df_reduced = (
+            tabular_data 
+            .groupby("oid") 
+            [coordinate_cols] 
+            .mean() 
+            .reset_index()
+        )
+        tbr_feature_mask = df_reduced["oid"].isin(to_be_replaced)
+        n_replacement_needed = tbr_feature_mask.astype(int).sum()
+        replacement_coords = (
+            df_reduced[df_reduced["oid"].isin(not_to_be_replaced)][
+                coordinate_cols
+            ]
+            .sample(n_replacement_needed, replace=True, random_state=0)
+            .values
+        )
+        df_reduced = df_reduced.set_index("oid")
+        df_reduced.loc[
+            to_be_replaced, coordinate_cols
+        ] = replacement_coords
+
+        tabular_data.set_index("oid", inplace=True)
+        tabular_data = tabular_data.drop(['lcid'] + coordinate_cols, axis=1)
+        tabular_data = pd.merge(tabular_data, df_reduced, on='oid')[feat_cols].values
+
+        return tabular_data
+
+    def get_metadata(self, h5_, set_type, fold, tab_type):
+        metadata_feat = h5_.get("metadata_feat")[:][self.these_idx]
+        metadata_feat = np.where(np.isinf(metadata_feat), np.nan, metadata_feat) ############ <---- np.nan
+
+        if self.use_QT:
+            path_QT = self._get_qt_path(tab_type, fold)
+            if set_type == 'train':
+                self.calculate_and_save_QT(tabular_data=metadata_feat, path_QT=path_QT)
+
+            metadata_feat = self.apply_QT(metadata_feat, path_QT, tab_type)
+
+        self.mask_metadata = ~np.isnan(metadata_feat)
+        self.metadata_feat = np.nan_to_num(metadata_feat, nan=0.0) 
+
+    def get_features(self, h5_, set_type, feat_cols, fold, tab_type):
+        time_eval = self.list_time_to_eval[-1]
+        extracted_feat = h5_.get("extracted_feat_{}days".format(time_eval))[:][
+            self.these_idx
+        ]
+        extracted_feat = np.where(np.isinf(extracted_feat), np.nan, extracted_feat)  ############ <---- np.nan
+        
+        if set_type == "train":
+            extracted_feat = self.manage_bias_periodic_others(extracted_feat, feat_cols)
+        
+        if self.use_QT:
+            time_eval = 'all' if set_type == 'test' else time_eval
+            path_QT = self._get_qt_path(tab_type, fold, time_eval)
+            if set_type == 'train':
+                self.calculate_and_save_QT(tabular_data=extracted_feat, path_QT=path_QT)
+
+        self.extracted_feat = dict()
+        self.mask_feat = dict()
+        # Aqui podria dejar que list_time_to_eval se carguen solo para test y mta_strategy se cargue para train considerando el ultimo valor.
+        for time_eval in self.list_time_to_eval:
+            extracted_feat = h5_.get("extracted_feat_{}days".format(time_eval))[:][
+                self.these_idx
+            ]
+            extracted_feat = np.where(np.isinf(extracted_feat), np.nan, extracted_feat) ############ <---- np.nan
+
+            if set_type == "train":
+                extracted_feat = self.manage_bias_periodic_others(extracted_feat, feat_cols)
+
+            if self.use_QT:
+                if self.qt_type == 'qt_global':
+                    extracted_feat = self.apply_QT(extracted_feat, path_QT, f"{tab_type}_{time_eval}days")
+                elif self.qt_type == 'qt_per_day':
+                    path_QT = self._get_qt_path(tab_type, fold, time_eval)
+                    if set_type == 'train':
+                        self.calculate_and_save_QT(tabular_data=extracted_feat, path_QT=path_QT)
+                    extracted_feat = self.apply_QT(extracted_feat, path_QT, f"{tab_type}_{time_eval}days")
+
+            mask_feat = ~np.isnan(extracted_feat)
+            self.mask_feat.update({time_eval: mask_feat})
+
+            extracted_feat = np.nan_to_num(extracted_feat, nan=0.0)
+            self.extracted_feat.update({time_eval: extracted_feat})
+
+    def get_tabular_data(self, h5_, set_type, feat_cols, fold):
+        if self.use_metadata:
+            self.get_metadata(h5_, set_type, fold, tab_type='metadata')
+
+        if self.use_features:
+            self.get_features(h5_, set_type, feat_cols, fold, tab_type='features')
+
+    def _get_qt_path(self, tab_type, fold, time_eval=None):
+        """
+        Constructs the path for the Quantile Transformer based on parameters.
+        """
+        if tab_type == 'metadata':
+            qt_dir = os.path.join(self.path_results, "quantiles", tab_type)
+        elif tab_type == 'features':
+            qt_dir = os.path.join(self.path_results, "quantiles", tab_type, f"{time_eval}_days")
+        os.makedirs(qt_dir, exist_ok=True)
+        return os.path.join(qt_dir, f"fold_{fold}.joblib")
+
+    def obtain_valid_mask(self, sample, time_eval, idx):
+        detected = sample["detected"]
+        time = sample["time"]
+        mask = sample["mask"]
+
+        detected_mask = detected & mask
+        t_min = np.min(time[detected_mask])
+        time_rel = time - t_min
+        time_rel[~mask] = np.inf
+
+        if time_eval != 'all':
+            mask_time = (time_rel >= 0) & (time_rel <= time_eval) & mask
+            sample["mask"] = mask_time
+            if self.use_features:
+                sample["extracted_feat"] = self.extracted_feat[time_eval][idx]
+        else:
+            if self.use_features:
+                sample["extracted_feat"] = self.extracted_feat['all'][idx]
+        
+        return sample
