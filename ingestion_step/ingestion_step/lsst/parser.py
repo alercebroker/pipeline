@@ -36,7 +36,12 @@ class ZTFParser(ParserInterface):
 
         return ParsedData(
             objects=objects,
-            detections=pd.concat([detections, prv_detections]),
+            detections=pd.concat(
+                [detections, prv_detections],
+                join="outer",
+                ignore_index=True,
+                sort=False,
+            ),
             non_detections=non_detections,
             forced_photometries=forced_photometries,
         )

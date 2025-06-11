@@ -2,6 +2,8 @@ from typing import Any, TypedDict
 
 import pandas as pd
 
+from ingestion_step.core.extractor_interface import BaseExtractor
+
 from .schemas import (
     dia_forced_source_schema,
     dia_non_detection_limit_schema,
@@ -25,38 +27,64 @@ class LSSTData(TypedDict):
     ss_object: pd.DataFrame
 
 
-def _extract_sources_from_field(
-    messages: list[dict[str, Any]],
-    field: str,
-    schema: dict[str, Any],
-) -> dict[str, Any]:
-    """
-    Extract all sources for the list of messages.
-
-    Returns a dictionary of list with the content of `field` of each
-    alert and add some extra necessary fields from the alert to each one.
-    """
-    source_schema = schema | {
-        "message_id": pd.Int32Dtype(),
-        "alertId": pd.Int64Dtype(),
+class LsstSourceExtractor(BaseExtractor):
+    field = "diaSource"
+    schema = dia_source_schema
+    extra_columns_schema = BaseExtractor.extra_columns_schema | {
+        "has_stamp": pd.BooleanDtype()
     }
-    sources = {col: [] for col in source_schema}
 
-    for message_id, message in enumerate(messages):
-        if message[field] is None:
-            message[field] = []
-        if type(message[field]) is not list:
-            message[field] = [message[field]]
-        for source in message[field]:
-            for col, value in source.items():
-                sources[col].append(value)
-            sources["message_id"].append(message_id)
-            sources["alertId"].append(message["alertId"])
+    @staticmethod
+    def _has_stamp(message: dict[str, Any]) -> bool:
+        return (
+            message["cutoutDifference"] is not None
+            and message["cutoutScience"] is not None
+            and message["cutoutTemplate"] is not None
+        )
 
-    return {
-        col: pd.Series(sources[col], dtype=dtype)
-        for col, dtype in source_schema.items()
+    @classmethod
+    def _extra_columns(
+        cls,
+        message: dict[str, Any],
+        measurements: list[dict[str, Any]],
+    ) -> dict[str, list[Any]]:
+        return {"has_stamp": [cls._has_stamp(message)]}
+
+
+class LsstPrvSourceExtractor(BaseExtractor):
+    field = "prvDiaSources"
+    schema = dia_source_schema
+    extra_columns_schema = BaseExtractor.extra_columns_schema | {
+        "has_stamp": pd.BooleanDtype()
     }
+
+    @classmethod
+    def _extra_columns(
+        cls,
+        message: dict[str, Any],
+        measurements: list[dict[str, Any]],
+    ) -> dict[str, list[Any]]:
+        return {"has_stamp": [False] * len(measurements)}
+
+
+class LsstForcedSourceExtractor(BaseExtractor):
+    field = "prvDiaForcedSources"
+    schema = dia_forced_source_schema
+
+
+class LsstNonDetectionsExtractor(BaseExtractor):
+    field = "prvDiaNondetectionLimits"
+    schema = dia_non_detection_limit_schema
+
+
+class LsstDiaObjectExtractor(BaseExtractor):
+    field = "diaObject"
+    schema = dia_object_schema
+
+
+class LsstSsObjectExtractor(BaseExtractor):
+    field = "ssObject"
+    schema = ss_object_schema
 
 
 def extract(messages: list[dict[str, Any]]):
@@ -69,34 +97,10 @@ def extract(messages: list[dict[str, Any]]):
     duplicated between dataframes)
     """
     return LSSTData(
-        sources=pd.DataFrame(
-            _extract_sources_from_field(
-                messages, "diaSource", dia_source_schema
-            )
-        ),
-        previous_sources=pd.DataFrame(
-            _extract_sources_from_field(
-                messages, "prvDiaSources", dia_source_schema
-            )
-        ),
-        forced_sources=pd.DataFrame(
-            _extract_sources_from_field(
-                messages, "prvDiaForcedSources", dia_forced_source_schema
-            )
-        ),
-        non_detections=pd.DataFrame(
-            _extract_sources_from_field(
-                messages,
-                "prvDiaNondetectionLimits",
-                dia_non_detection_limit_schema,
-            )
-        ),
-        dia_object=pd.DataFrame(
-            _extract_sources_from_field(
-                messages, "diaObject", dia_object_schema
-            )
-        ),
-        ss_object=pd.DataFrame(
-            _extract_sources_from_field(messages, "ssObject", ss_object_schema)
-        ),
+        sources=LsstSourceExtractor.extract(messages),
+        previous_sources=LsstPrvSourceExtractor.extract(messages),
+        forced_sources=LsstForcedSourceExtractor.extract(messages),
+        non_detections=LsstNonDetectionsExtractor.extract(messages),
+        dia_object=LsstDiaObjectExtractor.extract(messages),
+        ss_object=LsstSsObjectExtractor.extract(messages),
     )
