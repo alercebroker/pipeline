@@ -8,7 +8,8 @@ packages = [{ include = "ingestion_step" }]
 
 [tool.poetry.scripts]
 step = { callable = "scripts.run_step:step" }
-generate_pd_schemas = { callable = "scripts.generate_pd_schemas:generate" }
+generate_lsst_schemas = { callable = "scripts.generate_pd_schemas:generate_lsst" }
+generate_ztf_schemas = { callable = "scripts.generate_pd_schemas:generate_ztf" }
 
 [tool.poetry.dependencies]
 python = ">=3.10, <3.11"

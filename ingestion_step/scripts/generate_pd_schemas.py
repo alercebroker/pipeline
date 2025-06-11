@@ -49,7 +49,17 @@ def process_schema(path: str) -> dict[str, DTypes]:
     return schema
 
 
-def generate():
+def print_schemas(pd_schemas: dict[str, dict[str, DTypes]]):
+    print("import pandas as pd")
+    for name, schema in pd_schemas.items():
+        print()
+        print(f"{name}_schema = {{")
+        for schema_field, schema_type in schema.items():
+            print(f'    "{schema_field}": {schema_type},')
+        print("}")
+
+
+def generate_lsst():
     base_path = "../schemas/surveys/lsst/"
     schemas = {
         "dia_forced_source": "v7_4_diaForcedSource.avsc",
@@ -60,14 +70,22 @@ def generate():
     }
 
     pd_schemas = {
-        name: process_schema(base_path + schema)
-        for name, schema in schemas.items()
+        name: process_schema(base_path + schema) for name, schema in schemas.items()
     }
 
-    print("import pandas as pd")
-    for name, schema in pd_schemas.items():
-        print()
-        print(f"{name}_schema = {{")
-        for schema_field, schema_type in schema.items():
-            print(f'    "{schema_field}": {schema_type},')
-        print("}")
+    print_schemas(pd_schemas)
+
+
+def generate_ztf():
+    base_path = "../schemas/ztf/"
+    schemas = {
+        "candidate": "candidate.avsc",
+        "fp_hist": "fp_hist.avsc",
+        "prv_candidate": "prv_candidate.avsc",
+    }
+
+    pd_schemas = {
+        name: process_schema(base_path + schema) for name, schema in schemas.items()
+    }
+
+    print_schemas(pd_schemas)
