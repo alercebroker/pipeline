@@ -21,10 +21,10 @@ class IngestionStep(GenericStep):
 
     def __init__(
         self,
-        config,  # pyright: ignore
+        config: dict[str, Any],
         **kwargs: Any,
     ):
-        super().__init__(config=config, **kwargs)  # pyright: ignore
+        super().__init__(config=config, **kwargs)
         self.parser = select_parser(config["SURVEY_STRATEGY"])
         self.psql_driver = PsqlDatabase(config["PSQL_CONFIG"])
 
@@ -36,9 +36,9 @@ class IngestionStep(GenericStep):
         self.metrics["tid"] = alerts["tid"].tolist()
         self.metrics["aid"] = alerts["aid"].tolist()
 
-    def execute(
+    def execute(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, messages: list[dict[str, Any]]
-    ) -> ParsedData:  # pyright: ignore
+    ) -> ParsedData:
         self.logger.info(f"Processing {len(messages)} alerts")
 
         self.ingestion_timestamp = int(datetime.now().timestamp())
@@ -58,7 +58,9 @@ class IngestionStep(GenericStep):
 
         return parsed_data
 
-    def pre_produce(self, result: ParsedData):  # pyright: ignore
+    def pre_produce(
+        self, result: ParsedData
+    ):  # pyright: ignore[reportIncompatibleMethodOverride]
         self.set_producer_key_field("oid")
         messages = serialize_ztf(result)
 

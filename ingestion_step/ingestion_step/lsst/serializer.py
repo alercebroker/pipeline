@@ -8,7 +8,12 @@ from ingestion_step.core.parser_interface import ParsedData
 def serialize_detections(
     detections: pd.DataFrame, forced_photometries: pd.DataFrame
 ):
-    dets = pd.concat([detections, forced_photometries])
+    dets = pd.concat(
+        [detections, forced_photometries],
+        join="outer",
+        ignore_index=True,
+        sort=False,
+    )
 
     needed_columns = [
         "message_id",
