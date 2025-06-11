@@ -10,7 +10,7 @@ sys.path.append(PACKAGE_PATH)
 
 from apf.core.settings import config_from_yaml_file
 
-STEP_CONFIG = config_from_yaml_file("/home/alex/Work/Projects/pipeline/scribe_multisurvey/scripts/config.yaml")
+STEP_CONFIG = config_from_yaml_file("/config/config.yaml")
 
 level = logging.INFO
 if STEP_CONFIG.get("LOGGING_DEBUG", False):
