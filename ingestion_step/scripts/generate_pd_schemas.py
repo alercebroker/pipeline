@@ -70,7 +70,8 @@ def generate_lsst():
     }
 
     pd_schemas = {
-        name: process_schema(base_path + schema) for name, schema in schemas.items()
+        name: process_schema(base_path + schema)
+        for name, schema in schemas.items()
     }
 
     print_schemas(pd_schemas)
@@ -85,7 +86,8 @@ def generate_ztf():
     }
 
     pd_schemas = {
-        name: process_schema(base_path + schema) for name, schema in schemas.items()
+        name: process_schema(base_path + schema)
+        for name, schema in schemas.items()
     }
 
     print_schemas(pd_schemas)

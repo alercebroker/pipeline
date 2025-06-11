@@ -39,6 +39,8 @@ class BaseExtractor:
         return pd.DataFrame(
             {
                 col: pd.Series(data[col], dtype=dtype)
-                for col, dtype in (cls.schema | cls.extra_columns_schema).items()
+                for col, dtype in (
+                    cls.schema | cls.extra_columns_schema
+                ).items()
             }
         )
