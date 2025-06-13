@@ -1,5 +1,6 @@
 from apf.producers.generic import GenericProducer
 
+
 class TestProducer(GenericProducer):
 
     def __init__(self, config):

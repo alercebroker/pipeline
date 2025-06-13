@@ -3,6 +3,8 @@ import logging
 import pytest
 from apf.core.settings import config_from_yaml_file
 
+# from libs.apf.apf.producers.test_producer import TestProducer
+
 import json
 
 from db_plugins.db.sql._connection import PsqlDatabase
@@ -24,6 +26,8 @@ from tests.integration.data.ztf_messages import (
     objects,
 )
 from sqlalchemy import insert
+from apf.core import get_class
+from core.parsers.scribe_parser import scribe_parser
 
 psql_config = {
     "ENGINE": "postgresql",
@@ -45,13 +49,16 @@ class TestCorrectionMultistreamZTF(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up the test environment once for all test methods."""
-        cls.settings = config_from_yaml_file("tests/test_utils/config.yaml")
+        cls.settings = config_from_yaml_file("tests/test_utils/config_w_scribe.yaml")
         cls.logger = cls._set_logger(cls.settings)
         cls.db_sql = PsqlDatabase(psql_config)
         cls.step_params = {"config": cls.settings, "db_sql": cls.db_sql}
 
     def setUp(self):
         # crear db
+        self.settings = config_from_yaml_file("tests/test_utils/config_w_scribe.yaml")
+        self.scribe_enabled = self.settings.get("SCRIBE_ENABLED", False)
+
         self.db_sql = PsqlDatabase(psql_config)
         self.db_sql.create_db()
         self.insert_test_data()
@@ -270,6 +277,28 @@ class TestCorrectionMultistreamZTF(unittest.TestCase):
         len_non_detections = len(matching_dict["non_detections"])
         return len_detections == expected_dets and len_non_detections == expected_non_dets
 
+    @staticmethod
+    def structure_comp(result: list[dict]):
+
+        result = scribe_parser(result)
+
+        KEYS_RESULT = ["step", "survey", "payload"]
+
+        KEYS_PAYLOAD = ["oid", "measurement_id", "detections"]
+        for oid_dict in result:
+            for key in list(oid_dict.keys()):
+
+                if not key in KEYS_RESULT:
+                    return False
+
+        for oid_dict in result:
+            for key in list(oid_dict["payload"].keys()):
+
+                if not key in KEYS_PAYLOAD:
+                    return False
+
+        return True
+
     def test_correction_step_execution(self):
         """Test the full execution of the correction step."""
 
@@ -293,15 +322,18 @@ class TestCorrectionMultistreamZTF(unittest.TestCase):
 
                 try:
                     result = self.step.execute(preprocessed_msg)
-                    result = self.step._post_execute(result)
-                    result = self.step._pre_produce(result)
                     self.step.producer.produce(result)
+                    result = self.step._post_execute(result)
+                    assert self.structure_comp(result)
                     processed_messages.extend(result)
+                    result = self.step._pre_produce(result)
+
                 except Exception as error:
                     self.logger.error(f"Error during execution: {error}")
                     raise
 
-            # If the coe get here without errors, the basic test passed
+            # If the code get here without errors, the basic test passed
+            assert len(self.step.producer.pre_produce_message) == 3
             print("processed_messages", len(processed_messages))
             self.assertTrue(len(processed_messages) > 0, "No se procesaron mensajes")
 
@@ -309,6 +341,7 @@ class TestCorrectionMultistreamZTF(unittest.TestCase):
             if (
                 hasattr(self.step.producer, "pre_produce_message")
                 and self.step.producer.pre_produce_message
+                and not self.scribe_enabled
             ):
                 messages_produce = self.step.producer.pre_produce_message[0]
 

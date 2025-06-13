@@ -31,7 +31,7 @@ class Corrector:
     _ZERO_MAG = 100.0
 
     def __init__(self, detections):
-        """Creates objet that handles detection corrections.
+        """Creates object that handles detection corrections.
 
         Duplicate `measurement_ids` are dropped from all calculations and outputs.
 
@@ -40,39 +40,50 @@ class Corrector:
                 from generic alert (must include `extra_fields`)
         """
         self.logger = logging.getLogger(f"alerce.{self.__class__.__name__}")
+
         self._detections = detections.drop_duplicates(subset=["measurement_id", "oid"])
-        self._detections = self._detections.drop_duplicates(["measurement_id", "oid"])
-        self._detections = self._detections.set_index(
+        index_key = (
             self._detections["measurement_id"].astype(str)
             + "_"
             + self._detections["oid"].astype(str)
         )
+        self._detections = self._detections.set_index(index_key)
 
-        import ast
+        self.__extras = self._extract_extra_fields(detections)
+        extras = self._create_extras_dataframe()
 
-        self.__extras = [
-            dict(
-                list(row["extra_fields"].items()) if isinstance(row["extra_fields"], dict) else [],
-                measurement_id=row["measurement_id"],
-                oid=row["oid"],
-            )
-            for _, row in detections.iterrows()
-        ]
+        self._detections = self._detections.join(extras, how="left")
 
-        extras = pd.DataFrame(
-            self.__extras,
-            columns=self._EXTRA_FIELDS_NEW_DET
-            + self._EXTRA_FIELDS_OLD_DET
-            + ["measurement_id", "oid"],
+    def _extract_extra_fields(self, detections) -> list[dict]:
+        """Extract extra fields from detections DataFrame."""
+        extras = []
+        for _, row in detections.iterrows():
+            extra_dict = {
+                "measurement_id": row["measurement_id"],
+                "oid": row["oid"],
+            }
+
+            if isinstance(row["extra_fields"], dict):
+                extra_dict.update(row["extra_fields"])
+
+            extras.append(extra_dict)
+
+        return extras
+
+    def _create_extras_dataframe(self) -> pd.DataFrame:
+        """Create and process extras DataFrame."""
+        all_columns = (
+            self._EXTRA_FIELDS_NEW_DET + self._EXTRA_FIELDS_OLD_DET + ["measurement_id", "oid"]
         )
-        extras = extras.drop_duplicates(["measurement_id", "oid"]).set_index(
-            self._detections["measurement_id"].astype(str)
-            + "_"
-            + self._detections["oid"].astype(str)
-        )
-        self._detections = self._detections.join(extras, how="left", rsuffix="_extra")
-        self._detections = self._detections.drop("oid_extra", axis=1)
-        self._detections = self._detections.drop("measurement_id_extra", axis=1)
+
+        extras = pd.DataFrame(self.__extras, columns=all_columns)
+        extras = extras.drop_duplicates(["measurement_id", "oid"])
+
+        index_key = extras["measurement_id"].astype(str) + "_" + extras["oid"].astype(str)
+        extras = extras.set_index(index_key)
+        extras = extras.drop(columns=["oid", "measurement_id"], errors="ignore")
+
+        return extras
 
     @property
     def corrected(self) -> pd.Series:
@@ -96,97 +107,34 @@ class Corrector:
         # NaN for non-corrected magnitudes
         return corrected_df.where(self.corrected)
 
-    def corrected_as_records(self) -> list[dict]:
-        """Corrected alerts as records.
+    def corrected_as_dataframe(self) -> pd.DataFrame:
+        """Corrected alerts as DataFrame.
 
         The output is the same as the input passed on creation,
         with additional generic fields corresponding to the corrections
         (`mag_corr`, `e_mag_corr`, `e_mag_corr_ext`, `corrected`, `dubious`, `stellar`).
 
-        The records are a list of mappings with the original input pairs and the new pairs together.
+        Returns DataFrame with all the corrected data and proper types preserved.
         """
-
-        def find_extra_fields(oid, measurement_id):
-            for i, extra in enumerate(self.__extras):
-                if extra["oid"] == oid and extra["measurement_id"] == measurement_id:
-                    return self.__extras.pop(i)
-            return {}
-
-        def reorder_record(record):
-            # Schema order of fields
-            schema_fields = [
-                "oid",
-                "sid",
-                "pid",
-                "tid",
-                "band",
-                "measurement_id",
-                "mjd",
-                "ra",
-                "e_ra",
-                "dec",
-                "e_dec",
-                "mag",
-                "e_mag",
-                "mag_corr",
-                "e_mag_corr",
-                "e_mag_corr_ext",
-                "isdiffpos",
-                "corrected",
-                "dubious",
-                "stellar",
-                "has_stamp",
-                "forced",
-                "new",
-                "parent_candid",
-                "extra_fields",
-            ]
-
-            # Reorder fields of records according to schema
-            reordered = {
-                "oid": record.get("oid"),
-                "sid": record.get("sid"),
-                "pid": record.get("pid"),
-                "tid": record.get("tid"),
-                "band": record.get("band"),
-                "measurement_id": [record.get("measurement_id")],
-                "mjd": record.get("mjd"),
-                "ra": record.get("ra"),
-                "e_ra": record.get("e_ra"),
-                "dec": record.get("dec"),
-                "e_dec": record.get("e_dec"),
-                "mag": record.get("mag"),
-                "e_mag": record.get("e_mag"),
-                "mag_corr": record.get("mag_corr", None),
-                "e_mag_corr": record.get("e_mag_corr", None),
-                "e_mag_corr_ext": record.get("e_mag_corr_ext", None),
-                "isdiffpos": record.get("isdiffpos"),
-                "corrected": record.get("corrected"),
-                "dubious": record.get("dubious"),
-                "stellar": record.get("stellar"),
-                "has_stamp": record.get("has_stamp"),
-                "forced": record.get("forced"),
-                "new": record.get("new"),
-                "parent_candid": record.get("parent_candid", None),
-                "extra_fields": record.get("extra_fields", {}),
-            }
-
-            return reordered
-
         self.logger.debug("Correcting %s detections...", len(self._detections))
+
         corrected = self.corrected_magnitudes().replace(np.inf, self._ZERO_MAG)
         corrected = corrected.assign(
             corrected=self.corrected, dubious=self.dubious, stellar=self.stellar
         )
 
-        detections = self._detections.drop(columns=self._EXTRA_FIELDS_OLD_DET)
-        corrected = detections.join(corrected).replace(np.nan, None).replace("nan", None)
-        corrected = corrected.drop(columns=self._EXTRA_FIELDS_NEW_DET)
-        corrected = corrected.replace(-np.inf, None)
+        detections = self._detections.drop(columns=self._EXTRA_FIELDS_OLD_DET, errors="ignore")
+        corrected = detections.join(corrected)
+
+        # Clean NaN values but preserve DataFrame structure
+        corrected = corrected.replace([np.nan, "nan", -np.inf], None).drop(
+            columns=self._EXTRA_FIELDS_NEW_DET, errors="ignore"
+        )
+
         self.logger.debug("Corrected %s", corrected["corrected"].sum())
 
-        # Reorder the DataFrame columns to match the schema
-        desired_order = [
+        # Reorder columns to match schema
+        schema_output_order = [
             "oid",
             "sid",
             "pid",
@@ -212,18 +160,33 @@ class Corrector:
             "new",
             "parent_candid",
         ]
-        corrected = corrected[desired_order]
 
-        corrected = corrected.reset_index(drop=True).to_dict("records")
-        for record in corrected:
-            record["extra_fields"] = find_extra_fields(record["oid"], record["measurement_id"])
-            record["extra_fields"].pop("measurement_id", None)
-            record["extra_fields"].pop("oid", None)
+        corrected = corrected[schema_output_order]
 
-            for key, value in list(record["extra_fields"].items()):
-                if isinstance(value, float) and np.isnan(value):
-                    record["extra_fields"][key] = None
+        # Add extra_fields as a column instead of converting to records
+        extras_lookup = {(extra["oid"], extra["measurement_id"]): extra for extra in self.__extras}
 
+        def get_extra_fields(row):
+            key = (row["oid"], row["measurement_id"])
+            extra_fields = extras_lookup.get(key, {}).copy()
+
+            # Remove oid and measurement_id from extra_fields
+            extra_fields.pop("measurement_id", None)
+            extra_fields.pop("oid", None)
+
+            # Clean NaN values in extra_fields
+            for k, v in list(extra_fields.items()):
+                if isinstance(v, float) and np.isnan(v):
+                    extra_fields[k] = None
+
+            return extra_fields
+
+        # Add extra_fields as a column
+        corrected = corrected.reset_index(drop=True)
+        corrected["extra_fields"] = corrected.apply(get_extra_fields, axis=1)
+
+        # Return the column measurement id back to its original format after changes necessary for corrector
+        corrected["measurement_id"] = corrected["measurement_id"].astype("Int64")
         return corrected
 
     @staticmethod
@@ -263,10 +226,14 @@ class Corrector:
         """
         non_forced = self._detections[~self._detections["forced"]]
 
+        if non_forced.empty:
+            return {f"mean{label}": pd.Series(dtype=float)}
+
+        sigmas = self.arcsec2dec(non_forced[f"e_{label}"])
+
         def _average(series):
             return self.weighted_mean(series, sigmas.loc[series.index])
 
-        sigmas = self.arcsec2dec(non_forced[f"e_{label}"])
         return {f"mean{label}": non_forced.groupby("oid")[label].agg(_average)}
 
     def mean_coordinates(self) -> pd.DataFrame:
@@ -275,7 +242,8 @@ class Corrector:
         coords.update(self._calculate_coordinates("dec"))
         return pd.DataFrame(coords)
 
-    def coordinates_as_records(self) -> dict:
-        """Weighted mean coordinates as records
-        (mapping from OID to a mapping of mean coordinates)"""
-        return self.mean_coordinates().to_dict("index")
+    def coordinates_as_dataframe(self) -> pd.DataFrame:
+        """Weighted mean coordinates as DataFrame with OID as a column"""
+        coords_df = self.mean_coordinates()
+        coords_df = coords_df.reset_index()
+        return coords_df

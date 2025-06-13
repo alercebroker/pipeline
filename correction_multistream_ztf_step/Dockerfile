@@ -27,6 +27,7 @@ COPY libs/survey_parser_plugins libs/survey_parser_plugins
 
 COPY schemas/ingestion_step schemas/ingestion_step
 COPY schemas/correction_ms_ztf schemas/correction_ms_ztf
+COPY schemas/scribe_step schemas/scribe_step
 
 WORKDIR /app
 RUN poetry install --no-root --without=dev --without=test;

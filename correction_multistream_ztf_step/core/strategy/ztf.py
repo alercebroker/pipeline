@@ -111,28 +111,36 @@ def correct(detections: pd.DataFrame) -> pd.DataFrame:
             detections_that_dont_need_corr[col] = []
 
     corrected_mags_db_observations = detections_that_dont_need_corr[corr_mag_column_names]
-    aux1 = 10 ** (-0.4 * detections_that_need_corr["magnr"].astype(float))
-    aux2 = 10 ** (-0.4 * detections_that_need_corr["mag"].astype(float))
+    aux1 = 10 ** (-0.4 * detections_that_need_corr["magnr"])
+    aux2 = 10 ** (-0.4 * detections_that_need_corr["mag"])
     aux3 = np.maximum(aux1 + detections_that_need_corr["isdiffpos"] * aux2, 0.0)
     with warnings.catch_warnings():
         # possible log10 of 0; this is expected and returned inf is correct value
         warnings.filterwarnings("ignore", category=RuntimeWarning)
         mag_corr = -2.5 * np.log10(aux3)
 
-    aux4 = (aux2 * detections_that_need_corr["e_mag"].astype(float)) ** 2 - (
-        aux1 * detections_that_need_corr["sigmagnr"].astype(float)
+    aux4 = (aux2 * detections_that_need_corr["e_mag"]) ** 2 - (
+        aux1 * detections_that_need_corr["sigmagnr"]
     ) ** 2
+
     with warnings.catch_warnings():
         # possible sqrt of negative and division by 0; this is expected and returned inf is correct value
         warnings.filterwarnings("ignore", category=RuntimeWarning)
-        e_mag_corr = np.where(aux4 < 0, np.inf, np.sqrt(aux4) / aux3)
-        e_mag_corr_ext = aux2 * detections_that_need_corr["e_mag"].astype(float) / aux3
+        e_mag_corr = pd.Series(np.sqrt(aux4) / aux3).where(aux4 >= 0, np.inf)  # Handle NA condition
+        e_mag_corr_ext = aux2 * detections_that_need_corr["e_mag"] / aux3
 
-    mask = np.array(np.isclose(detections_that_need_corr["mag"].astype(float), _ZERO_MAG))
+    mask = (
+        detections_that_need_corr["mag"].notna()
+        & np.isclose(detections_that_need_corr["mag"].astype(float), _ZERO_MAG)
+    ).to_numpy()
     mag_corr[mask] = np.inf
     e_mag_corr[mask] = np.inf
     e_mag_corr_ext[mask] = np.inf
-    mask = np.array(np.isclose(detections_that_need_corr["e_mag"].astype(float), _ZERO_MAG))
+
+    mask = (
+        detections_that_need_corr["e_mag"].notna()
+        & np.isclose(detections_that_need_corr["e_mag"].astype(float), _ZERO_MAG)
+    ).to_numpy()
     e_mag_corr[mask] = np.inf
     e_mag_corr_ext[mask] = np.inf
 
