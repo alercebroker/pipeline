@@ -124,9 +124,15 @@ spec:
                   name: kafka-auth
                   key: producer-password
             - name: PRODUCER_SECURITY_PROTOCOL
-              value: "SASL_SSL"
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "early-classifier.fullname" . }}
+                  key: producer-security-protocol
             - name: PRODUCER_SASL_MECHANISM
-              value: "SCRAM-SHA-512"
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "early-classifier.fullname" . }}
+                  key: producer-sasl-mechanism
             {{- end }}
             {{- if .Values.secrets.kafkaAuth.metrics.enabled }}
             - name: METRICS_KAFKA_USERNAME
