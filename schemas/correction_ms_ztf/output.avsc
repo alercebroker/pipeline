@@ -64,7 +64,7 @@
             },
             {
               "name": "e_ra",
-              "type": "float"
+              "type": ["float", "null"]
             },
             {
               "name": "dec",
@@ -72,7 +72,7 @@
             },
             {
               "name": "e_dec",
-              "type": "float"
+              "type": ["float", "null"]
             },
             {
               "name": "mag",

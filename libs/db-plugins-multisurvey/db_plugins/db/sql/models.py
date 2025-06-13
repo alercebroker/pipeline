@@ -59,6 +59,10 @@ class ZtfObject(Base):
     g_r_max_corr = Column(REAL)
     g_r_mean = Column(REAL)
     g_r_mean_corr = Column(REAL)
+    # Added these two here, might be subject to changes tho 
+    reference_change = Column(Boolean)
+    diffpos = Column(Boolean)
+
 
     __table_args__ = (PrimaryKeyConstraint("oid", name="pk_ztfobject_oid"),)
 
@@ -341,4 +345,67 @@ class ztf_reference(Base):
     __table_args__ = (
         PrimaryKeyConstraint("oid", "rfid", name="pk_ztfreference_oid_rfid"),
         Index("ix_ztf_reference_oid", "oid", postgresql_using="btree"),
+    )
+
+
+class MagStats(Base):
+    __tablename__ = "magstats"
+
+    oid = Column(VARCHAR, nullable=False)
+    band = Column(Integer, nullable=False)
+    ndet = Column(Integer, nullable=False)
+    firstmjd = Column(DOUBLE_PRECISION)
+    lastmjd = Column(DOUBLE_PRECISION)
+    
+    __table_args__ = (
+        PrimaryKeyConstraint(
+            "oid", "band", name="pk_magstats_oid_band"
+        ),
+        ForeignKeyConstraint([oid], [Object.oid]),
+        Index("ix_magstats_dmdt_first", "dmdt_first", postgresql_using="btree"),
+        Index("ix_magstats_firstmjd", "firstmjd", postgresql_using="btree"),
+        Index("ix_magstats_lastmjd", "lastmjd", postgresql_using="btree"),
+        Index("ix_magstats_ndet", "ndet", postgresql_using="btree"),
+        Index("ix_magstats_oid", "oid", postgresql_using="hash"),
+    )
+
+
+class ztf_MagStats(Base):
+    __tablename__ = "ztf_magstats"
+
+    oid = Column(VARCHAR, nullable=False)
+    band = Column(Integer, primary_key=True)
+    stellar = Column(Boolean, nullable=False)
+    corrected = Column(Boolean, nullable=False)
+    ndubious = Column(Integer, nullable=False)
+    magmean = Column(REAL)
+    magmedian = Column(REAL)
+    magmax = Column(REAL)
+    magmin = Column(REAL)
+    magsigma = Column(REAL)
+    maglast = Column(REAL)
+    magfirst = Column(REAL)
+    magmean_corr = Column(REAL)
+    magmedian_corr = Column(REAL)
+    magmax_corr = Column(REAL)
+    magmin_corr = Column(REAL)
+    magsigma_corr = Column(REAL)
+    maglast_corr = Column(REAL)
+    magfirst_corr = Column(REAL)
+    saturation_rate = Column(REAL)
+    dmdt_first = Column(REAL)
+    dm_first = Column(REAL)
+    sigmadm_first = Column(REAL)
+    dt_first = Column(REAL)
+    
+    __table_args__ = (
+        PrimaryKeyConstraint(
+            "oid", "band", name="pk_ztf_magstats_oid_band"
+        ),
+        ForeignKeyConstraint([oid], [Object.oid]),
+        Index("ix_magstats_magmean", "magmean", postgresql_using="btree"),
+        Index("ix_magstats_magmin", "magmin", postgresql_using="btree"),
+        Index("ix_magstats_magfirst", "magfirst", postgresql_using="btree"),
+        Index("ix_magstats_maglast", "maglast", postgresql_using="btree"),
+        Index("ix_magstats_oid", "oid", postgresql_using="hash"),
     )
