@@ -68,7 +68,19 @@ def parse_ztf_det(raw_detection: dict, oid: str) -> dict:
     return detection
 
 """
-def parse_ztf_pf(raw_detection: dict, oid: str) -> dict:
+
+def parse_fp(raw_detection: dict, oid: str) -> dict:
+    forced_photometry = {
+        "oid": oid,
+        "measurement_id": raw_detection["measurement_id"],
+        "mjd": raw_detection["mjd"],
+        "ra": raw_detection["ra"],
+        "dec": raw_detection["dec"],
+        "band": raw_detection["band"],
+    }
+    return forced_photometry
+
+def parse_ztf_fp(raw_detection: dict, oid: str) -> dict:
     forced_photometry = {
         "oid": oid,
         "measurement_id": raw_detection["measurement_id"],
@@ -109,6 +121,18 @@ def parse_ztf_pf(raw_detection: dict, oid: str) -> dict:
         "sharpnr": raw_detection["extra_fields"]["sharpnr"],
     }
     return forced_photometry
+
+def parse_det(raw_detection: dict, oid: str) -> dict:
+    detection = {
+        "oid": oid,
+        "measurement_id": raw_detection["measurement_id"],
+        "mjd": raw_detection["mjd"],
+        "ra": raw_detection["ra"],
+        "dec": raw_detection["dec"],
+        "band": raw_detection["band"],
+    }
+
+    return detection
 
 def parse_ztf_det(raw_detection: dict, oid: str) -> dict:
     detection = {

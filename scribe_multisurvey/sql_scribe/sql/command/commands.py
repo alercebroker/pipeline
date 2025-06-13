@@ -8,7 +8,9 @@ import logging
 ## En el import desde los models se deben traer todos los modelos que se modififiquen en los steps. 
 ## Al menos desde correction hacia atras.
 from db_plugins.db.sql.models import (
+    Detection,
     ZtfDetection,
+    ForcedPhotometry,
     ZtfForcedPhotometry,
     ZtfSS,
     ZtfPS1,
@@ -22,9 +24,11 @@ from sqlalchemy.orm import Session
 from sqlalchemy import bindparam
 
 from .parser import (
+    parse_det,
     parse_ztf_det,
     parse_ztf_gaia,
-    parse_ztf_pf,
+    parse_fp,
+    parse_ztf_fp,
     parse_ztf_ps1,
     parse_ztf_ss,
     parse_ztf_dq,
@@ -61,7 +65,7 @@ class ZTFCorrectionCommand(Command):
 
     def _format_data(self, data):
         """
-        Generate a dictionary with  data for the tables:
+        Generate a dictionary with  data for the tables:f
         ztf_detection
         ztf_forced photometry
         ps1_ztf
@@ -76,20 +80,23 @@ class ZTFCorrectionCommand(Command):
         candidate = {}        
         ## potential issue, deduplicate candidates inside detections and forced
         detections = []
+        ztf_detections = []
         forced_photometries = []
+        ztf_forced_photometries = []
 
         for detection in data["detections"]:
             if detection["new"]:
                 # forced photometry
                 # correct! if detection["forced"]: 
                 if detection["extra_fields"].get("forcediffimflux", None):
-                    forced_photometries.append(parse_ztf_pf(detection, oid))
+                    forced_photometries.append(parse_fp(detection, oid))
+                    ztf_forced_photometries.append(parse_ztf_fp(detection, oid))
                 # detection
                 else:
                     if detection["measurement_id"] == candidate_measurement_id:
                         candidate = detection
-                    parsed_detection = parse_ztf_det(detection, oid)
-                    detections.append(parsed_detection)
+                    detections.append(parse_det(detection, oid))
+                    ztf_detections.append(parse_ztf_det(detection, oid))
         
 
 
@@ -101,7 +108,9 @@ class ZTFCorrectionCommand(Command):
 
         return {
             "detections": detections,
+            "ztf_detections": ztf_detections,
             "forced_photometries": forced_photometries,
+            "ztf_forced_photometries": ztf_forced_photometries,
             "ps1": parsed_ps1,
             "ss": parsed_ss,
             "gaia": parsed_gaia,
@@ -113,7 +122,9 @@ class ZTFCorrectionCommand(Command):
     def db_operation(session: Session, data: List):
         # forget deduplication!!!! :D
         detections = []
+        ztf_detections = []
         forced_pothometries = []
+        ztf_forced_pothometries = []
         ps1 = []
         ss = []
         gaia = []
@@ -122,7 +133,9 @@ class ZTFCorrectionCommand(Command):
 
         for single_data in data:
             detections.extend(single_data["detections"])
+            ztf_detections.extend(single_data["ztf_detections"])
             forced_pothometries.extend(single_data["forced_photometries"])
+            ztf_forced_pothometries.extend(single_data["ztf_forced_photometries"])
             ps1.append(single_data["ps1"])
             ss.append(single_data["ss"])
             gaia.append(single_data["gaia"])
@@ -131,24 +144,44 @@ class ZTFCorrectionCommand(Command):
         
         # insert detections
         if len(detections) > 0:
-            detections_stmt = insert(ZtfDetection)
+            detections_stmt = insert(Detection)
             detections_result = session.connection().execute(
                 detections_stmt.on_conflict_do_update(
-                    constraint="pk_ztfdetection_oid_measurementid",
+                    constraint="pk_detection_oid_measurementid",
                     set_=detections_stmt.excluded
                 ),
                 detections
             )
+        
+        if len(ztf_detections) > 0:
+            ztf_detections_stmt = insert(ZtfDetection)
+            ztf_detections_result = session.connection().execute(
+                ztf_detections_stmt.on_conflict_do_update(
+                    constraint="pk_ztfdetection_oid_measurementid",
+                    set_=ztf_detections_stmt.excluded
+                ),
+                ztf_detections
+            )
 
         # insert forced photometry
         if len(forced_pothometries) > 0:
-            fp_stmt = insert(ZtfForcedPhotometry)
+            fp_stmt = insert(ForcedPhotometry)
             fp_result = session.connection().execute(
                 fp_stmt.on_conflict_do_update(
-                    constraint="pk_ztfforcedphotometry_oid_measurementid",
+                    constraint="pk_forcedphotometry_oid_measurementid",
                     set_=fp_stmt.excluded
                 ),
-                forced_pothometries
+                ztf_forced_pothometries
+            )
+
+        if len(ztf_forced_pothometries) > 0:
+            ztf_fp_stmt = insert(ZtfForcedPhotometry)
+            ztf_fp_result = session.connection().execute(
+                ztf_fp_stmt.on_conflict_do_update(
+                    constraint="pk_ztfforcedphotometry_oid_measurementid",
+                    set_=ztf_fp_stmt.excluded
+                ),
+                ztf_forced_pothometries
             )
 
         # insert ps1_ztf
