@@ -282,3 +282,54 @@ def parse_ztf_refernece(candidate: dict, oid: str) -> dict:
         "nframesref": candidate["extra_fields"]["nframesref"],
     }
     return reference
+
+def parse_obj_stats(raw_magstats, oid: str) -> dict:
+    obj = {
+        "oid": oid,
+        "tid": raw_magstats[""],
+        "meanra": raw_magstats[""],
+        "meandec": raw_magstats[""],
+        "sigmara": raw_magstats[""],
+        "sigmadec": raw_magstats[""],
+        "firstmjd": raw_magstats[""],
+        "lastmjd": raw_magstats[""],
+        "deltamjd": raw_magstats[""],
+        "n_det": raw_magstats[""],
+        "n_forced": raw_magstats[""],
+        "n_non_det": raw_magstats[""],
+        "corrected": raw_magstats[""],
+        "stellar": raw_magstats[""],
+    }
+
+    return obj
+
+def parse_magstats(raw_magstats: dict, oid: str) -> dict:
+    sub_magstats = raw_magstats["magstats"]
+    magstats = {
+        "oid": oid,
+        "band": sub_magstats[""], 
+        "stellar": sub_magstats[""], 
+        "corrected": sub_magstats[""], 
+        "ndubious": sub_magstats[""], 
+        "dmdt_first": sub_magstats[""], 
+        "dm_first": sub_magstats[""], 
+        "sigmadm_first": sub_magstats[""], 
+        "dt_first": sub_magstats[""], 
+        "magmean": sub_magstats[""], 
+        "magmedian": sub_magstats[""], 
+        "magmax": sub_magstats[""], 
+        "magmin": sub_magstats[""], 
+        "magsigma": sub_magstats[""], 
+        "maglast": sub_magstats[""], 
+        "magfirst": sub_magstats[""], 
+        "magmean_corr": sub_magstats[""], 
+        "magmedian_corr": sub_magstats[""], 
+        "magmax_corr": sub_magstats[""], 
+        "magmin_corr": sub_magstats[""], 
+        "magsigma_corr": sub_magstats[""], 
+        "maglast_corr": sub_magstats[""], 
+        "magfirst_corr": sub_magstats[""], 
+        "saturation_rate": sub_magstats[""], 
+    }
+
+    return magstats
