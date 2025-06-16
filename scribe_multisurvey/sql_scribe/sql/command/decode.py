@@ -2,7 +2,8 @@ from json import loads
 from .exceptions import WrongFormatCommandException
 from .commands import (
     Command,
-    ZTFCorrectionCommand
+    ZTFCorrectionCommand,
+    ZTFMagstatCommand,
 )
 
 
@@ -36,12 +37,12 @@ def decode_message(encoded_message: str) -> dict:
 
 def command_factory(msg: str) -> Command:
     message = decode_message(msg)
-    print("HERE")
-    print(message)
     survey = message.pop("survey")
     step = message.pop("step")
 
     # here it comes
     if survey == "ztf" and step == "correction":
         return ZTFCorrectionCommand(**message)
+    if survey == "ztf" and step == "magstat":
+        return ZTFMagstatCommand(**message)
     raise ValueError(f"Unrecognized command type {survey} in table {step}.")

@@ -18,12 +18,11 @@ from db_plugins.db.sql.models import (
     ZtfGaia,
     ZtfDataquality,
     ZtfReference,
-    Magstat,
+    MagStat,
 )
-from sqlalchemy import update
+from sqlalchemy import update, bindparam
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
-from sqlalchemy import bindparam
 
 from .parser import (
     parse_det,
@@ -175,7 +174,7 @@ class ZTFCorrectionCommand(Command):
                     constraint="pk_forcedphotometry_oid_measurementid",
                     set_=fp_stmt.excluded
                 ),
-                ztf_forced_pothometries
+                forced_pothometries
             )
 
         if len(ztf_forced_pothometries) > 0:
@@ -244,16 +243,19 @@ class ZTFCorrectionCommand(Command):
             )
 
 
-class Command(ABC):
+class ZTFMagstatCommand(Command):
     type = "ZTFMagstatCommand"
 
     def _format_data(self, data):
         oid = list(data.keys())[0]
+        print(f"OID : {oid}")
 
-        object_stats = parse_obj_stats(data, oid)
+        print(f"Data: {data[oid]}")
+
+        object_stats = parse_obj_stats(data[oid], oid)
         magstats_list = [
             parse_magstats(ms, oid)
-            for ms in data["magstats"]
+            for ms in data[oid]["magstats"]
         ]
 
         return {
@@ -262,7 +264,6 @@ class Command(ABC):
         }
 
     @staticmethod
-    @abstractmethod
     def db_operation(session: Session, data: List):
         objectstat_list = []
         magstat_list = []
@@ -273,15 +274,31 @@ class Command(ABC):
         
         # update object
         if len(objectstat_list) > 0:
-            object_stmt = update(Detection)
+            object_stmt = update(Object)
             object_result = session.connection().execute(
-                object_stmt,
+                object_stmt
+                .where(Object.oid == bindparam('_oid'))
+                .values({
+                    "oid": bindparam("oid"),
+                    "meanra": bindparam("meanra"),
+                    "meandec": bindparam("meandec"),
+                    "sigmara": bindparam("sigmara"),
+                    "sigmadec": bindparam("sigmadec"),
+                    "firstmjd": bindparam("firstmjd"),
+                    "lastmjd": bindparam("lastmjd"),
+                    "deltamjd": bindparam("deltamjd"),
+                    "n_det": bindparam("n_det"),
+                    "n_forced": bindparam("n_forced"),
+                    "n_non_det": bindparam("n_non_det"),
+                    "corrected": bindparam("corrected"),
+                    "stellar": bindparam("stellar"),
+                }),
                 objectstat_list
             )
         
         # insert magstats
         if len(magstat_list) > 0:
-            magstats_stmt = insert(Magstat)
+            magstats_stmt = insert(MagStat)
             magstats_result = session.connection().execute(
                 magstats_stmt.on_conflict_do_update(
                     constraint="pk_magstat_oid_band",

@@ -25,7 +25,6 @@ class SqlScribe(GenericStep):
         DB Commands and executes them when they're valid.
         """
         logging.info("Processing messages...")
-        print(f"EN EXCUTE\n{messages}")
         valid_commands, n_invalid_commands = [], 0
         for message in messages:
             try:
