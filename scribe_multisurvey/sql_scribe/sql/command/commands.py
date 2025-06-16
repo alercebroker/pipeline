@@ -8,6 +8,7 @@ import logging
 ## En el import desde los models se deben traer todos los modelos que se modififiquen en los steps. 
 ## Al menos desde correction hacia atras.
 from db_plugins.db.sql.models import (
+    Object,
     Detection,
     ZtfDetection,
     ForcedPhotometry,
@@ -17,6 +18,7 @@ from db_plugins.db.sql.models import (
     ZtfGaia,
     ZtfDataquality,
     ZtfReference,
+    Magstat,
 )
 from sqlalchemy import update
 from sqlalchemy.dialects.postgresql import insert
@@ -33,6 +35,8 @@ from .parser import (
     parse_ztf_ss,
     parse_ztf_dq,
     parse_ztf_refernece,
+    parse_obj_stats,
+    parse_magstats,
 )
 
 
@@ -238,6 +242,55 @@ class ZTFCorrectionCommand(Command):
                 ),
                 reference
             )
+
+
+class Command(ABC):
+    type = "ZTFMagstatCommand"
+
+    def _format_data(self, data):
+        oid = list(data.keys())[0]
+
+        object_stats = parse_obj_stats(data, oid)
+        magstats_list = [
+            parse_magstats(ms, oid)
+            for ms in data["magstats"]
+        ]
+
+        return {
+            "object_stats": object_stats,
+            "magstats": magstats_list
+        }
+
+    @staticmethod
+    @abstractmethod
+    def db_operation(session: Session, data: List):
+        objectstat_list = []
+        magstat_list = []
+
+        for single_data in data:
+            objectstat_list.append(single_data["object_stats"])
+            magstat_list.extend(single_data["magstats"])      
+        
+        # update object
+        if len(objectstat_list) > 0:
+            object_stmt = update(Detection)
+            object_result = session.connection().execute(
+                object_stmt,
+                objectstat_list
+            )
+        
+        # insert magstats
+        if len(magstat_list) > 0:
+            magstats_stmt = insert(Magstat)
+            magstats_result = session.connection().execute(
+                magstats_stmt.on_conflict_do_update(
+                    constraint="pk_magstat_oid_band",
+                    set_=magstats_stmt.excluded
+                ),
+                magstat_list
+            )
+
+
 
 ### ###### ###
 ### LEGACY ###
