@@ -294,9 +294,9 @@ def parse_obj_stats(raw_magstats, oid: str) -> dict:
         "firstmjd": raw_magstats["firstmjd"],
         "lastmjd": raw_magstats["lastmjd"],
         "deltamjd": raw_magstats["deltajd"],
-        "n_det": 0, #raw_magstats["n_det"],
-        "n_forced": 0, #raw_magstats["n_forced"],
-        "n_non_det": 0, #raw_magstats["n_non_det"],
+        "n_det": raw_magstats["n_det"],
+        "n_forced": raw_magstats["n_fphot"] if raw_magstats["n_fphot"] else 0,
+        "n_non_det": raw_magstats["n_ndet"] if raw_magstats["n_ndet"] else 0,
         "corrected": raw_magstats["corrected"],
         "stellar": raw_magstats["stellar"],
     }

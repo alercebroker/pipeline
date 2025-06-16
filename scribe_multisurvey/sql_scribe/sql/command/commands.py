@@ -247,15 +247,13 @@ class ZTFMagstatCommand(Command):
     type = "ZTFMagstatCommand"
 
     def _format_data(self, data):
-        oid = list(data.keys())[0]
-        print(f"OID : {oid}")
+        
+        oid = data["oid"]
 
-        print(f"Data: {data[oid]}")
-
-        object_stats = parse_obj_stats(data[oid], oid)
+        object_stats = parse_obj_stats(data, oid)
         magstats_list = [
             parse_magstats(ms, oid)
-            for ms in data[oid]["magstats"]
+            for ms in data["magstats"]
         ]
 
         return {
