@@ -136,14 +136,27 @@ class MultiScaleStampClassifier(GenericStep):
     def _extract_metadata_from_message(self, msg: dict) -> dict:
         return {
             "oid": msg["objectId"],
+            "candid": msg["candidate"]["candid"],
             "jd": msg["candidate"]["jd"],
             "ra": msg["candidate"]["ra"],
             "dec": msg["candidate"]["dec"],
             "ssdistnr": msg["candidate"]["ssdistnr"],
             "isdiffpos": self._mapper_isdiffpos[msg["candidate"]["isdiffpos"]],
+            "magpsf": msg["candidate"]["magpsf"],
+            "sigmapsf": msg["candidate"]["sigmapsf"],
+            "diffmaglim": msg["candidate"]["diffmaglim"],
+            "classtar": msg["candidate"]["classtar"],
+            "fwhm": msg["candidate"]["fwhm"],
             "sgscore1": msg["candidate"]["sgscore1"],
+            "sgscore2": msg["candidate"]["sgscore2"],
+            "sgscore3": msg["candidate"]["sgscore3"],
             "distpsnr1": msg["candidate"]["distpsnr1"],
-            "candid": msg["candidate"]["candid"],
+            "distpsnr2": msg["candidate"]["distpsnr2"],
+            "distpsnr3": msg["candidate"]["distpsnr3"],
+            "ndethist": msg["candidate"]["ndethist"],
+            "ncovhist": msg["candidate"]["ncovhist"],
+            "chinr": msg["candidate"]["chinr"],
+            "sharpnr": msg["candidate"]["sharpnr"],
         }
 
     def _pad_matrices(self, matrix: np.ndarray, target_shape: tuple) -> np.ndarray:
