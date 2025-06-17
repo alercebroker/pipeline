@@ -15,7 +15,7 @@ from db_plugins.db.sql.models import (
 )
 from sqlalchemy import insert, select
 
-from ingestion_step.utils.database import (
+from ingestion_step.ztf.database import (
     insert_detections,
     insert_forced_photometry,
     insert_non_detections,
@@ -44,15 +44,11 @@ class BaseDbTests(unittest.TestCase):
 
         with self.psql_db.session() as session:
             session.execute(insert(Object).values(msgs.existing_object_dict))
-            session.execute(
-                insert(Detection).values(msgs.existing_detections_dict)
-            )
+            session.execute(insert(Detection).values(msgs.existing_detections_dict))
             session.execute(
                 insert(ZtfDetection).values(msgs.existing_ztf_detections_dict)
             )
-            session.execute(
-                insert(ForcedPhotometry).values(msgs.existing_fp_dict)
-            )
+            session.execute(insert(ForcedPhotometry).values(msgs.existing_fp_dict))
             session.execute(
                 insert(ZtfForcedPhotometry).values(msgs.existing_ztf_fp_dict)
             )
@@ -97,9 +93,7 @@ class BaseDbTests(unittest.TestCase):
         for res, exp in self.ziped_lists(result, msgs.objects_expected, "oid"):
             self.assertDictEqual(res, exp)
 
-        for res, exp in self.ziped_lists(
-            result_ztf, msgs.ztf_objects_expected, "oid"
-        ):
+        for res, exp in self.ziped_lists(result_ztf, msgs.ztf_objects_expected, "oid"):
             self.assertDictEqual(res, exp)
 
     def test_detection(self):
@@ -126,9 +120,7 @@ class BaseDbTests(unittest.TestCase):
         result_fp = self.query_data(ForcedPhotometry)
         result_ztf_fp = self.query_data(ZtfForcedPhotometry)
 
-        for res, exp in self.ziped_lists(
-            result_fp, msgs.fp_expected, "measurement_id"
-        ):
+        for res, exp in self.ziped_lists(result_fp, msgs.fp_expected, "measurement_id"):
             self.assertDictEqual(res, exp)
 
         for res, exp in self.ziped_lists(
@@ -147,7 +139,5 @@ class BaseDbTests(unittest.TestCase):
 
         result = self.query_data(NonDetection)
 
-        for res, exp in self.ziped_lists(
-            result, msgs.non_detections_expected, "mjd"
-        ):
+        for res, exp in self.ziped_lists(result, msgs.non_detections_expected, "mjd"):
             self.assertDictEqual(res, exp)

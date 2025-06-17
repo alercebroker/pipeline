@@ -1,6 +1,16 @@
 import pandas as pd
 
-dia_forced_source_schema = {
+
+DType = (
+    pd.Int32Dtype
+    | pd.Int64Dtype
+    | pd.Float32Dtype
+    | pd.Float64Dtype
+    | pd.BooleanDtype
+    | pd.StringDtype
+)
+
+dia_forced_source_schema: dict[str, DType] = {
     "diaForcedSourceId": pd.Int64Dtype(),
     "diaObjectId": pd.Int64Dtype(),
     "ra": pd.Float64Dtype(),
@@ -13,14 +23,14 @@ dia_forced_source_schema = {
     "band": pd.StringDtype(),
 }
 
-dia_non_detection_limit_schema = {
+dia_non_detection_limit_schema: dict[str, DType] = {
     "ccdVisitId": pd.Int64Dtype(),
     "midpointMjdTai": pd.Float64Dtype(),
     "band": pd.StringDtype(),
     "diaNoise": pd.Float32Dtype(),
 }
 
-dia_source_schema = {
+dia_source_schema: dict[str, DType] = {
     "diaSourceId": pd.Int64Dtype(),
     "visit": pd.Int64Dtype(),
     "detector": pd.Int32Dtype(),
@@ -163,7 +173,7 @@ dia_source_schema = {
     "pixelFlags_injected_templateCenter": pd.BooleanDtype(),
 }
 
-dia_object_schema = {
+dia_object_schema: dict[str, DType] = {
     "diaObjectId": pd.Int64Dtype(),
     "ra": pd.Float64Dtype(),
     "raErr": pd.Float32Dtype(),
@@ -248,7 +258,7 @@ dia_object_schema = {
     "y_psfFluxErrMean": pd.Float32Dtype(),
 }
 
-ss_object_schema = {
+ss_object_schema: dict[str, DType] = {
     "ssObjectId": pd.Int64Dtype(),
     "discoverySubmissionDate": pd.Float64Dtype(),
     "firstObservationDate": pd.Float64Dtype(),

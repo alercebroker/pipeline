@@ -4,11 +4,13 @@ on existing columns.
 """
 
 import math
-from typing import Any, Callable
+from typing import Any
 
 import numpy as np
 import pandas as pd
 from idmapper.mapper import catalog_oid_to_masterid
+
+from ingestion_step.core.utils import add_constant_column
 
 ERRORS = {
     1: 0.065,
@@ -55,16 +57,6 @@ def candid_to_measurement_id(df: pd.DataFrame):
         - `measurement_id`
     """
     df["measurement_id"] = df["candid"].astype("Int64")
-
-
-def add_tid(df: pd.DataFrame):
-    """Adds a tid of zeroes."""
-    df["tid"] = 0
-
-
-def add_sid(df: pd.DataFrame):
-    """Adds a sid of zeroes."""
-    df["sid"] = 0
 
 
 def fid_to_band(df: pd.DataFrame):
@@ -134,16 +126,6 @@ def sigmadec_to_e_dec(df: pd.DataFrame):
     )
 
 
-def add_zero_e_ra(df: pd.DataFrame):
-    """Adds a e_ra of zeroes."""
-    df["e_ra"] = 0.0
-
-
-def add_zero_e_dec(df: pd.DataFrame):
-    """Adds a e_dec of zeroes."""
-    df["e_dec"] = 0.0
-
-
 def isdiffpos_to_int(df: pd.DataFrame):
     """
     Converts isdiffpos to an int representation (1 or -1) instead of a string
@@ -178,10 +160,7 @@ def _calculate_mag(
         e_mag = ZERO_MAG
     else:
         e_mag = (
-            1.0857
-            * forcediffimfluxunc
-            * flux2uJy
-            / np.abs(forcediffimflux * flux2uJy)
+            1.0857 * forcediffimfluxunc * flux2uJy / np.abs(forcediffimflux * flux2uJy)
         )
 
     return mag, e_mag
@@ -222,21 +201,6 @@ def forcediffimflux_to_e_mag(df: pd.DataFrame):
     )
 
 
-def add_drb(df: pd.DataFrame):
-    """Adds a drb of None"""
-    df["drb"] = None
-
-
-def add_drbversion(df: pd.DataFrame):
-    """Adds a drbversion of None"""
-    df["drbversion"] = None
-
-
-def add_rfid(df: pd.DataFrame):
-    """Adds a rfid of None"""
-    df["rfid"] = None
-
-
 def calculate_isdiffpos(df: pd.DataFrame):
     """
     Takes a `DataFrame` containing the columns:
@@ -267,9 +231,49 @@ def filter_by_forcediffimflux(df: pd.DataFrame):
     )
 
 
-def apply_transforms(
-    df: pd.DataFrame, transforms: list[Callable[[pd.DataFrame], None]]
-):
-    """Applies a list of transforms to the given dataframe"""
-    for transform in transforms:
-        transform(df)
+CANDIDATES_TRANSFORMS = [
+    objectId_to_oid,
+    candid_to_measurement_id,
+    add_constant_column("tid", 0, pd.Int32Dtype()),
+    add_constant_column("sid", 0, pd.Int32Dtype()),
+    isdiffpos_to_int,
+    fid_to_band,
+    jd_to_mjd,
+    sigmara_to_e_ra,
+    sigmadec_to_e_dec,
+    magpsf_to_mag,
+    sigmapsf_to_e_mag,
+]
+
+PRV_CANDIDATES_TRANSFORMS = [
+    objectId_to_oid,
+    candid_to_measurement_id,
+    add_constant_column("tid", 0, pd.Int32Dtype()),
+    add_constant_column("sid", 0, pd.Int32Dtype()),
+    sigmara_to_e_ra,
+    sigmadec_to_e_dec,
+    fid_to_band,
+    jd_to_mjd,
+    magpsf_to_mag,
+    sigmapsf_to_e_mag,
+    isdiffpos_to_int,
+    add_constant_column("drb", None, pd.Float32Dtype()),
+    add_constant_column("drbversion", None, pd.StringDtype()),
+    add_constant_column("rfid", None, pd.Int64Dtype()),
+]
+
+FP_TRANSFORMS = [
+    filter_by_forcediffimflux,
+    objectId_to_oid,
+    add_candid_fp,
+    candid_to_measurement_id,
+    add_constant_column("tid", 0, pd.Int32Dtype()),
+    add_constant_column("sid", 0, pd.Int32Dtype()),
+    fid_to_band,
+    jd_to_mjd,
+    forcediffimflux_to_mag,
+    forcediffimflux_to_e_mag,
+    add_constant_column("e_ra", 0.0, pd.Float64Dtype()),
+    add_constant_column("e_dec", 0.0, pd.Float64Dtype()),
+    calculate_isdiffpos,
+]

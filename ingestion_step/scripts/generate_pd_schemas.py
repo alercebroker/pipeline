@@ -6,7 +6,7 @@ from fastavro.schema import load_schema as _load_schema
 # Overwrite type as it is wrongly infered as `Unknown`
 load_schema = cast(Callable[[str], Any], _load_schema)
 
-DTypes = (
+DType = (
     pd.Int32Dtype
     | pd.Int64Dtype
     | pd.Float32Dtype
@@ -25,7 +25,7 @@ type_mappings = {
 }
 
 
-def process_schema(path: str) -> dict[str, DTypes]:
+def process_schema(path: str) -> dict[str, DType]:
     parsed_schema = load_schema(path)
     fields: list[dict[str, str | list[str]]] = parsed_schema["fields"]
 
@@ -49,11 +49,21 @@ def process_schema(path: str) -> dict[str, DTypes]:
     return schema
 
 
-def print_schemas(pd_schemas: dict[str, dict[str, DTypes]]):
-    print("import pandas as pd")
+def print_schemas(pd_schemas: dict[str, dict[str, DType]]):
+    print("""import pandas as pd
+
+
+DType = (
+    pd.Int32Dtype
+    | pd.Int64Dtype
+    | pd.Float32Dtype
+    | pd.Float64Dtype
+    | pd.BooleanDtype
+    | pd.StringDtype
+)""")
+
     for name, schema in pd_schemas.items():
-        print()
-        print(f"{name}_schema = {{")
+        print(f"\n{name}_schema: dict[str, DType] = {{")
         for schema_field, schema_type in schema.items():
             print(f'    "{schema_field}": {schema_type},')
         print("}")
@@ -70,8 +80,7 @@ def generate_lsst():
     }
 
     pd_schemas = {
-        name: process_schema(base_path + schema)
-        for name, schema in schemas.items()
+        name: process_schema(base_path + schema) for name, schema in schemas.items()
     }
 
     print_schemas(pd_schemas)
@@ -86,8 +95,7 @@ def generate_ztf():
     }
 
     pd_schemas = {
-        name: process_schema(base_path + schema)
-        for name, schema in schemas.items()
+        name: process_schema(base_path + schema) for name, schema in schemas.items()
     }
 
     print_schemas(pd_schemas)

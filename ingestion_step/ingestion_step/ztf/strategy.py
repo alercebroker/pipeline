@@ -1,0 +1,101 @@
+import pandas as pd
+from db_plugins.db.sql._connection import PsqlDatabase
+
+from ingestion_step.core.strategy import ParsedData, StrategyInterface
+from ingestion_step.core.types import Message
+from ingestion_step.core.utils import apply_transforms, groupby_messageid
+from ingestion_step.ztf import extractor
+from ingestion_step.ztf.database import (
+    insert_detections,
+    insert_forced_photometry,
+    insert_non_detections,
+    insert_objects,
+)
+from ingestion_step.ztf.serializer import (
+    serialize_detections,
+    serialize_non_detections,
+)
+from ingestion_step.ztf.transforms import (
+    CANDIDATES_TRANSFORMS,
+    FP_TRANSFORMS,
+    PRV_CANDIDATES_TRANSFORMS,
+)
+
+
+class ZtfData(ParsedData):
+    objects: pd.DataFrame
+    detections: pd.DataFrame
+    non_detections: pd.DataFrame
+    forced_photometries: pd.DataFrame
+
+
+class ZtfStrategy(StrategyInterface[ZtfData]):
+    @classmethod
+    def parse(cls, messages: list[Message]) -> ZtfData:
+        candidates = extractor.ZtfCandidatesExtractor.extract(messages)
+        prv_candidates = extractor.ZtfPrvCandidatesExtractor.extract(messages)
+        fp_hists = extractor.ZtfFpHistsExtractor.extract(messages)
+
+        apply_transforms(candidates, CANDIDATES_TRANSFORMS)
+        apply_transforms(prv_candidates, PRV_CANDIDATES_TRANSFORMS)
+        apply_transforms(fp_hists, FP_TRANSFORMS)
+
+        objects = candidates  # Uses a subsets of the fields from candidate
+        detections = candidates
+        prv_detections = prv_candidates[prv_candidates["candid"].notnull()]
+        non_detections = prv_candidates[prv_candidates["candid"].isnull()]
+        forced_photometries = fp_hists
+
+        # print("parse det", detections.dtypes)
+        # print("parse prv_det", prv_detections.dtypes)
+        # print("parse fp", forced_photometries.dtypes)
+
+        return ZtfData(
+            objects=objects,
+            detections=pd.concat(
+                [detections, prv_detections],
+                join="outer",
+                ignore_index=True,
+                sort=False,
+            ),
+            non_detections=non_detections,
+            forced_photometries=forced_photometries,
+        )
+
+    @classmethod
+    def insert_into_db(cls, driver: PsqlDatabase, parsed_data: ZtfData):
+        insert_objects(driver, parsed_data["objects"])
+        insert_detections(driver, parsed_data["detections"])
+        insert_non_detections(driver, parsed_data["non_detections"])
+        insert_forced_photometry(driver, parsed_data["forced_photometries"])
+
+    @classmethod
+    def serialize(cls, parsed_data: ZtfData) -> list[Message]:
+        objects = parsed_data["objects"]
+        detections = serialize_detections(
+            parsed_data["detections"], parsed_data["forced_photometries"]
+        )
+        non_detections = serialize_non_detections(parsed_data["non_detections"])
+
+        message_objects = groupby_messageid(objects)
+        message_detections = groupby_messageid(detections)
+        message_non_detections = groupby_messageid(non_detections)
+
+        messages: list[Message] = []
+        for message_id, objects in message_objects.items():
+            detections = message_detections.get(message_id, [])
+            non_detections = message_non_detections.get(message_id, [])
+
+            assert len(objects) == 1
+            obj = objects[0]
+
+            messages.append(
+                {
+                    "oid": obj["oid"],
+                    "measurement_id": obj["measurement_id"],
+                    "detections": detections,
+                    "non_detections": non_detections,
+                }
+            )
+
+        return messages
