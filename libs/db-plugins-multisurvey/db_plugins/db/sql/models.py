@@ -141,14 +141,14 @@ class LsstDetection(Base):
 
     oid = Column(BigInteger, nullable=False)  # int8,
     measurement_id = Column(BigInteger, nullable=False)  # int8,
-    parent_measurement_id = Column(BigInteger)
+    parentDiaSourceId = Column(BigInteger)
 
-    psf_flux = Column(REAL, nullable=False)
-    psf_flux_err = Column(REAL, nullable=False)
+    psfFlux = Column(REAL, nullable=False)
+    psfFluxErr = Column(REAL, nullable=False)
 
-    psf_flux_flag = Column(Boolean, nullable=False)
-    psf_flux_flag_edge = Column(Boolean, nullable=False)
-    psf_flux_flag_no_good_pixels = Column(Boolean, nullable=False)
+    psfFlux_flag = Column(Boolean, nullable=False)
+    psfFlux_flag_edge = Column(Boolean, nullable=False)
+    psfFlux_flag_noGoodPixels = Column(Boolean, nullable=False)
 
     __table_args__ = (
         PrimaryKeyConstraint(
@@ -234,11 +234,11 @@ class LsstForcedPhotometry(Base):
     oid = Column(BigInteger, nullable=False)  # int8,
     measurement_id = Column(BigInteger, nullable=False)  # int8,
 
-    visit_id = Column(BigInteger, nullable=False)
-    detector_id = Column(Integer, nullable=False)
+    visit = Column(BigInteger, nullable=False)
+    detector = Column(Integer, nullable=False)
 
-    psf_flux = Column(REAL, nullable=False)
-    psf_flux_err = Column(REAL, nullable=False)
+    psfFlux = Column(REAL, nullable=False)
+    psfFluxErr = Column(REAL, nullable=False)
 
     __table_args__ = (
         PrimaryKeyConstraint(
@@ -268,10 +268,10 @@ class LsstNonDetection(Base):
     __tablename__ = "lsst_non_detection"
 
     oid = Column(BigInteger, nullable=False)  # int8,
-    ccd_visit_id = Column(BigInteger, nullable=False)
+    ccdVisitId = Column(BigInteger, nullable=False)
     band = Column(SmallInteger, nullable=False)
     mjd = Column(DOUBLE_PRECISION, nullable=False)
-    noise = Column(REAL, nullable=False)
+    diaNoise = Column(REAL, nullable=False)
 
     __table_args__ = (
         PrimaryKeyConstraint("oid", "mjd", name="pk_lsstnondetection_oid_mjd"),
