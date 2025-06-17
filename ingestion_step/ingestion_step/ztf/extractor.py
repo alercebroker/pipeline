@@ -24,8 +24,14 @@ class ZtfCandidatesExtractor(BaseExtractor):
     @staticmethod
     def _has_stamp(message: Message) -> bool:
         return (
-            ("cutoutScience" in message and message["cutoutScience"] is not None)
-            and ("cutoutTemplate" in message and message["cutoutTemplate"] is not None)
+            (
+                "cutoutScience" in message
+                and message["cutoutScience"] is not None
+            )
+            and (
+                "cutoutTemplate" in message
+                and message["cutoutTemplate"] is not None
+            )
             and (
                 "cutoutDifference" in message
                 and message["cutoutDifference"] is not None

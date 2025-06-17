@@ -12,7 +12,9 @@ def test_extract_candidates(ztf_alerts: list[Message]):
 
     fields = {"objectId", "candid", "parent_candid", "has_stamp"}
     assert fields <= set(candidates.keys())
-    assert not any(candidates["forced"]), "`forced` should be false on candidates"
+    assert not any(
+        candidates["forced"]
+    ), "`forced` should be false on candidates"
 
 
 def test_extract_prv_candidates(ztf_alerts: list[Message]):

@@ -160,7 +160,10 @@ def _calculate_mag(
         e_mag = ZERO_MAG
     else:
         e_mag = (
-            1.0857 * forcediffimfluxunc * flux2uJy / np.abs(forcediffimflux * flux2uJy)
+            1.0857
+            * forcediffimfluxunc
+            * flux2uJy
+            / np.abs(forcediffimflux * flux2uJy)
         )
 
     return mag, e_mag

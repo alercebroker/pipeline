@@ -50,7 +50,8 @@ def process_schema(path: str) -> dict[str, DType]:
 
 
 def print_schemas(pd_schemas: dict[str, dict[str, DType]]):
-    print("""import pandas as pd
+    print(
+        """import pandas as pd
 
 
 DType = (
@@ -60,7 +61,8 @@ DType = (
     | pd.Float64Dtype
     | pd.BooleanDtype
     | pd.StringDtype
-)""")
+)"""
+    )
 
     for name, schema in pd_schemas.items():
         print(f"\n{name}_schema: dict[str, DType] = {{")
@@ -80,7 +82,8 @@ def generate_lsst():
     }
 
     pd_schemas = {
-        name: process_schema(base_path + schema) for name, schema in schemas.items()
+        name: process_schema(base_path + schema)
+        for name, schema in schemas.items()
     }
 
     print_schemas(pd_schemas)
@@ -95,7 +98,8 @@ def generate_ztf():
     }
 
     pd_schemas = {
-        name: process_schema(base_path + schema) for name, schema in schemas.items()
+        name: process_schema(base_path + schema)
+        for name, schema in schemas.items()
     }
 
     print_schemas(pd_schemas)

@@ -24,7 +24,9 @@ def select_parser(strategy: str) -> Type[StrategyInterface[ParsedData]]:
     try:
         # Casting the Strategy into its more generic base type (the implementation)
         # shouldn't matter to the step.
-        return cast(type[StrategyInterface[ParsedData]], strategy_registry[strategy])
+        return cast(
+            type[StrategyInterface[ParsedData]], strategy_registry[strategy]
+        )
     except KeyError:
         raise SelectorException(
             f"Invalid 'SURVEY_STRATEGY', must be one of: {strategy_registry.keys()}"

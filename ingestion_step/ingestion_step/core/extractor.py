@@ -20,7 +20,11 @@ class BaseExtractor:
 
     @classmethod
     def extract(cls, messages: Iterable[Message]) -> pd.DataFrame:
-        schema = cls.schema | cls.extra_columns_schema | {"message_id": pd.Int32Dtype()}
+        schema = (
+            cls.schema
+            | cls.extra_columns_schema
+            | {"message_id": pd.Int32Dtype()}
+        )
         data = {col: [] for col in schema}
 
         for message_id, message in enumerate(messages):
@@ -40,5 +44,8 @@ class BaseExtractor:
                 data[name] += col
 
         return pd.DataFrame(
-            {col: pd.Series(data[col], dtype=dtype) for col, dtype in schema.items()}
+            {
+                col: pd.Series(data[col], dtype=dtype)
+                for col, dtype in schema.items()
+            }
         )

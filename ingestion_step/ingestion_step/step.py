@@ -40,13 +40,17 @@ class IngestionStep(GenericStep):
         parsed_data = self.Strategy.parse(messages)
 
         for key in parsed_data:
-            self.logger.info(f"Parsed {len(parsed_data[key])} objects form {key}")
+            self.logger.info(
+                f"Parsed {len(parsed_data[key])} objects form {key}"
+            )
 
         self.Strategy.insert_into_db(self.psql_driver, parsed_data)
 
         return parsed_data
 
-    def pre_produce(self, result: ParsedData):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def pre_produce(
+        self, result: ParsedData
+    ):  # pyright: ignore[reportIncompatibleMethodOverride]
         self.set_producer_key_field("oid")
         messages = serialize_ztf(result)
 

@@ -1,7 +1,9 @@
 import pandas as pd
 
 
-def serialize_detections(detections: pd.DataFrame, forced_photometries: pd.DataFrame):
+def serialize_detections(
+    detections: pd.DataFrame, forced_photometries: pd.DataFrame
+):
     dets = pd.concat(
         [detections, forced_photometries],
         join="outer",

@@ -1,6 +1,10 @@
 import pandas as pd
 
-from ingestion_step.core.utils import add_constant_column, copy_column, rename_column
+from ingestion_step.core.utils import (
+    add_constant_column,
+    copy_column,
+    rename_column,
+)
 
 DIA_SID = 1
 SS_SID = 2

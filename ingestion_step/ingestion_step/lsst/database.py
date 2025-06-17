@@ -69,7 +69,9 @@ def insert_sources(driver: PsqlDatabase, sources: pd.DataFrame):
     ].to_dict("records")
 
     detections_sql_stmt = db_statement_builder(Detection, detections_dict)
-    detections_lsst_sql_stmt = db_statement_builder(LsstDetection, detections_lsst_dict)
+    detections_lsst_sql_stmt = db_statement_builder(
+        LsstDetection, detections_lsst_dict
+    )
 
     with driver.session() as session:
         session.execute(detections_sql_stmt)
@@ -81,7 +83,9 @@ def insert_forced_sources(driver: PsqlDatabase, forced_sources: pd.DataFrame):
     if len(forced_sources) == 0:
         return
 
-    forced_detections_dict = forced_sources[FORCED_DETECTION_COLUMNS].to_dict("records")
+    forced_detections_dict = forced_sources[FORCED_DETECTION_COLUMNS].to_dict(
+        "records"
+    )
     forced_detections_lsst_dict = forced_sources[
         [
             "visit",

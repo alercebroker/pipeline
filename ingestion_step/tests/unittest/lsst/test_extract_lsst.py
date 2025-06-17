@@ -11,7 +11,9 @@ from ingestion_step.lsst.extractor import (
 
 def test_extract_dia_object(lsst_alerts: list[Message]):
     objects = LsstDiaObjectExtractor.extract(lsst_alerts)
-    assert len(objects) == sum(alert["diaObject"] is not None for alert in lsst_alerts)
+    assert len(objects) == sum(
+        alert["diaObject"] is not None for alert in lsst_alerts
+    )
 
     fields = {"message_id", "midpointMjdTai"}
     assert fields <= set(objects.keys())
@@ -19,7 +21,9 @@ def test_extract_dia_object(lsst_alerts: list[Message]):
 
 def test_extract_ss_object(lsst_alerts: list[Message]):
     objects = LsstSsObjectExtractor.extract(lsst_alerts)
-    assert len(objects) == sum(alert["ssObject"] is not None for alert in lsst_alerts)
+    assert len(objects) == sum(
+        alert["ssObject"] is not None for alert in lsst_alerts
+    )
 
     fields = {"message_id", "ra", "dec", "midpointMjdTai"}
     assert fields <= set(objects.keys())
@@ -36,7 +40,9 @@ def test_extract_source(lsst_alerts: list[Message]):
 def test_extract_prv_source(lsst_alerts: list[Message]):
     prv_sources = LsstPrvSourceExtractor.extract(lsst_alerts)
     assert len(prv_sources) == sum(
-        len(alert["prvDiaSources"]) for alert in lsst_alerts if alert["prvDiaSources"]
+        len(alert["prvDiaSources"])
+        for alert in lsst_alerts
+        if alert["prvDiaSources"]
     )
 
     fields = {"message_id", "has_stamp"}
