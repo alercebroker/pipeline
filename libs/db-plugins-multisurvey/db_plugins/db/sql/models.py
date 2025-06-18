@@ -143,12 +143,12 @@ class LsstDetection(Base):
     measurement_id = Column(BigInteger, nullable=False)  # int8,
     parentDiaSourceId = Column(BigInteger)
 
-    psfFlux = Column(REAL, nullable=False)
-    psfFluxErr = Column(REAL, nullable=False)
+    psfFlux = Column(REAL)
+    psfFluxErr = Column(REAL)
 
-    psfFlux_flag = Column(Boolean, nullable=False)
-    psfFlux_flag_edge = Column(Boolean, nullable=False)
-    psfFlux_flag_noGoodPixels = Column(Boolean, nullable=False)
+    psfFlux_flag = Column(Boolean)
+    psfFlux_flag_edge = Column(Boolean)
+    psfFlux_flag_noGoodPixels = Column(Boolean)
 
     __table_args__ = (
         PrimaryKeyConstraint(
