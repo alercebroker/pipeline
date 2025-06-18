@@ -65,16 +65,11 @@ class LsstStrategy(StrategyInterface[LsstData]):
 
     @classmethod
     def insert_into_db(cls, driver: PsqlDatabase, parsed_data: LsstData):
-        detections = pd.concat(
-            [parsed_data["sources"], parsed_data["previous_sources"]],
-            join="outer",
-            ignore_index=True,
-            sort=False,
-        )
-
         insert_dia_objects(driver, parsed_data["dia_object"])
         insert_ss_objects(driver, parsed_data["ss_object"])
-        insert_sources(driver, detections)
+
+        insert_sources(driver, parsed_data["sources"])
+        insert_sources(driver, parsed_data["previous_sources"])
         insert_forced_sources(driver, parsed_data["forced_sources"])
         insert_non_detections(driver, parsed_data["non_detections"])
 
