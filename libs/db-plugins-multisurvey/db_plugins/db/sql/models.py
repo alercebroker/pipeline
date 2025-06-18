@@ -160,27 +160,27 @@ class ZtfForcedPhotometry(Base):
     field = Column(Integer, nullable=False)  # int4,
     rcid = Column(Integer, nullable=False)  # int4,
     rfid = Column(BigInteger, nullable=False)  # int8,
-    sciinpseeing = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    scibckgnd = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    scisigpix = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    magzpsci = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    magzpsciunc = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    magzpscirms = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    clrcoeff = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    clrcounc = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    exptime = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    adpctdif1 = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    adpctdif2 = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    diffmaglim = Column(DOUBLE_PRECISION, nullable=False)  # float8,
+    sciinpseeing = Column(REAL, nullable=False)  # float8,
+    scibckgnd = Column(REAL, nullable=False)  # float8,
+    scisigpix = Column(REAL, nullable=False)  # float8,
+    magzpsci = Column(REAL, nullable=False)  # float8,
+    magzpsciunc = Column(REAL, nullable=False)  # float8,
+    magzpscirms = Column(REAL, nullable=False)  # float8,
+    clrcoeff = Column(REAL, nullable=False)  # float8,
+    clrcounc = Column(REAL, nullable=False)  # float8,
+    exptime = Column(REAL, nullable=False)  # float8,
+    adpctdif1 = Column(REAL, nullable=False)  # float8,
+    adpctdif2 = Column(REAL, nullable=False)  # float8,
+    diffmaglim = Column(REAL, nullable=False)  # float8,
     programid = Column(Integer, nullable=False)  # int4,
     procstatus = Column(VARCHAR, nullable=False)  # varchar,
-    distnr = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    ranr = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    decnr = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    magnr = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    sigmagnr = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    chinr = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    sharpnr = Column(DOUBLE_PRECISION, nullable=False)  # float8
+    distnr = Column(REAL, nullable=False)  # float8,
+    ranr = Column(DOUBLE_PRECISION, nullable=False)  # float8,<---
+    decnr = Column(DOUBLE_PRECISION, nullable=False)  # float8,<---
+    magnr = Column(REAL, nullable=False)  # float8,
+    sigmagnr = Column(REAL, nullable=False)  # float8,
+    chinr = Column(REAL, nullable=False)  # float8,
+    sharpnr = Column(REAL, nullable=False)  # float8
 
     __table_args__ = (
         PrimaryKeyConstraint(
@@ -206,14 +206,14 @@ class NonDetection(Base):
     )
 
 
-class ztf_ss(Base):
+class ZtfSS(Base):
     __tablename__ = "ztf_ss"
 
     oid = Column(BigInteger, nullable=False)
     measurement_id = Column(BigInteger, nullable=False)
     ssdistnr = Column(REAL)
     ssmagnr = Column(REAL)
-    ssnamenr = Column(REAL)
+    ssnamenr = Column(VARCHAR)
 
     __table_args__ = (
         PrimaryKeyConstraint(
@@ -223,7 +223,7 @@ class ztf_ss(Base):
     )
 
 
-class ztf_ps1(Base):
+class ZtfPS1(Base):
     __tablename__ = "ztf_ps1"
 
     oid = Column(BigInteger, nullable=False)
@@ -259,7 +259,7 @@ class ztf_ps1(Base):
     )
 
 
-class gaia_ztf(Base):
+class ZtfGaia(Base):
     __tablename__ = "ztf_gaia"
 
     oid = Column(BigInteger, nullable=False)
@@ -272,7 +272,7 @@ class gaia_ztf(Base):
     __table_args__ = (PrimaryKeyConstraint("oid", name="pk_ztfgaia_oid"),)
 
 
-class ztf_dataquality(Base):
+class ZtfDataquality(Base):
     __tablename__ = "ztf_dataquality"
 
     oid = Column(BigInteger, nullable=False)
@@ -289,8 +289,8 @@ class ztf_dataquality(Base):
     bimage = Column(REAL)
     aimagerat = Column(REAL)
     bimagerat = Column(REAL)
-    nneg = Column(REAL)
-    nbad = Column(REAL)
+    nneg = Column(Integer)
+    nbad = Column(Integer)
     sumrat = Column(REAL)
     scorr = Column(REAL)
     dsnrms = Column(REAL)
@@ -298,7 +298,7 @@ class ztf_dataquality(Base):
     magzpsci = Column(REAL)
     magzpsciunc = Column(REAL)
     magzpscirms = Column(REAL)
-    nmatches = Column(REAL)
+    nmatches = Column(Integer)
     clrcoeff = Column(REAL)
     clrcounc = Column(REAL)
     zpclrcov = Column(REAL)
@@ -320,12 +320,12 @@ class ztf_dataquality(Base):
     )
 
 
-class ztf_reference(Base):
+class ZtfReference(Base):
     __tablename__ = "ztf_reference"
 
     oid = Column(BigInteger, nullable=False)
     rfid = Column(BigInteger, nullable=False)
-    measurement_ic = Column(BigInteger, nullable=False)
+    measurement_id = Column(BigInteger, nullable=False)
     band = Column(Integer)
     rcid = Column(Integer)
     field = Column(Integer)
