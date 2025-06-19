@@ -1,5 +1,6 @@
 import numpy as np
 import psycopg2
+from psycopg2 import sql
 
 
 def encode_lsst_to_masterid_without_survey_without_db(
@@ -80,7 +81,9 @@ def encode_lsst_to_masterid_without_survey_with_db(
 
     # Check if the LSST object ID is already in the database
     db_cursor.execute(
-        "SELECT lsst_id_serial FROM lsst_idmapper WHERE lsst_diaObjectId = %s",
+        sql.SQL(
+            'SELECT lsst_id_serial FROM lsst_idmapper WHERE "lsst_diaObjectId" = %s'
+        ),
         (lsst_oid,),
     )
     result = db_cursor.fetchone()
@@ -89,7 +92,9 @@ def encode_lsst_to_masterid_without_survey_with_db(
     else:
         # If it doesn't exist, insert it into the database
         db_cursor.execute(
-            "INSERT INTO lsst_idmapper (lsst_diaObjectId) VALUES (%s) RETURNING lsst_id_serial",
+            sql.SQL(
+                'INSERT INTO lsst_idmapper ("lsst_diaObjectId") VALUES (%s) RETURNING lsst_id_serial'
+            ),
             (lsst_oid,),
         )
         lsst_id_serial = np.int64(db_cursor.fetchone()[0])

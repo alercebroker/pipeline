@@ -1,22 +1,40 @@
+from itertools import count
+from unittest.mock import MagicMock
+
 import pytest
 
-from ingestion_step.core.parser_interface import ParsedData
-from ingestion_step.ztf import extractor, parser
-from tests.data.generator_ztf import generate_alerts
+from ingestion_step.lsst.strategy import LsstData, LsstStrategy
+from ingestion_step.ztf.strategy import ZtfData, ZtfStrategy
+from tests.data.generator_lsst import generate_alerts as generate_alerts_lsst
+from tests.data.generator_ztf import generate_alerts as generate_alerts_ztf
 
 
 @pytest.fixture
-def ztf_data() -> extractor.ZTFData:
-    ztf_data = extractor.extract(list(generate_alerts()))
+def ztf_parsed_data() -> ZtfData:
+    msgs = list(generate_alerts_ztf())
+    parsed_data = ZtfStrategy.parse(msgs)
 
-    return ztf_data
+    return parsed_data
 
 
 @pytest.fixture
-def parsed_ztf_data() -> ParsedData:
-    ztf_parser = parser.ZTFParser()
+def mock_driver() -> MagicMock:
+    seq_gen = count(1)
+    driver = MagicMock()
 
-    msgs = list(generate_alerts())
-    parsed_ztf_data = ztf_parser.parse(msgs)
+    with driver.session() as session:
+        with session.connection() as conn:
+            with conn.connection.cursor() as cursor:
+                cursor.execute()
+                cursor.fetchone = lambda: (next(seq_gen),)
 
-    return parsed_ztf_data
+    return driver
+
+
+@pytest.fixture
+def lsst_parsed_data(mock_driver: MagicMock) -> LsstData:
+    msgs = list(generate_alerts_lsst())
+
+    parsed_data = LsstStrategy.parse(msgs, mock_driver)
+
+    return parsed_data

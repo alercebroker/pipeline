@@ -1,9 +1,6 @@
-from typing import Any, Hashable
-
 import pandas as pd
 from db_plugins.db.sql._connection import PsqlDatabase
 from db_plugins.db.sql.models import (
-    DeclarativeBase,
     Detection,
     ForcedPhotometry,
     NonDetection,
@@ -12,14 +9,13 @@ from db_plugins.db.sql.models import (
     ZtfForcedPhotometry,
     ZtfObject,
 )
-from sqlalchemy.dialects.postgresql import insert
 
-
-def _db_statement_builder(
-    model: type[DeclarativeBase], data: list[dict[Hashable, Any]]
-):
-    stmt = insert(model).values(data).on_conflict_do_nothing()
-    return stmt
+from ingestion_step.core.database import (
+    DETECTION_COLUMNS,
+    FORCED_DETECTION_COLUMNS,
+    OBJECT_COLUMNS,
+    db_statement_builder,
+)
 
 
 def insert_objects(connection: PsqlDatabase, objects_df: pd.DataFrame):
@@ -45,25 +41,7 @@ def insert_objects(connection: PsqlDatabase, objects_df: pd.DataFrame):
 
     objects_df = objects_df.reset_index()
 
-    objects_df_parsed = objects_df[
-        [
-            "oid",
-            "tid",
-            "sid",
-            "meanra",
-            "meandec",
-            "sigmara",
-            "sigmadec",
-            "firstmjd",
-            "lastmjd",
-            "deltamjd",
-            "n_det",
-            "n_forced",
-            "n_non_det",
-            "corrected",
-            "stellar",
-        ]
-    ]
+    objects_df_parsed = objects_df[OBJECT_COLUMNS]
     objects_dict = objects_df_parsed.to_dict("records")
     objects_ztf_df_parsed = objects_df[
         [
@@ -76,8 +54,8 @@ def insert_objects(connection: PsqlDatabase, objects_df: pd.DataFrame):
     ]
     objects_ztf_dict = objects_ztf_df_parsed.to_dict("records")
 
-    object_sql_stmt = _db_statement_builder(Object, objects_dict)
-    object_ztf_sql_stmt = _db_statement_builder(ZtfObject, objects_ztf_dict)
+    object_sql_stmt = db_statement_builder(Object, objects_dict)
+    object_ztf_sql_stmt = db_statement_builder(ZtfObject, objects_ztf_dict)
 
     with connection.session() as session:
         session.execute(object_sql_stmt)
@@ -97,16 +75,7 @@ def insert_detections(connection: PsqlDatabase, detections_df: pd.DataFrame):
 
     detections_df = detections_df.reset_index()
 
-    detections_df_parsed = detections_df[
-        [
-            "oid",
-            "measurement_id",
-            "mjd",
-            "ra",
-            "dec",
-            "band",
-        ]
-    ]
+    detections_df_parsed = detections_df[DETECTION_COLUMNS]
     detections_dict = detections_df_parsed.to_dict("records")
     detections_ztf_df_parsed = detections_df[
         [
@@ -139,8 +108,8 @@ def insert_detections(connection: PsqlDatabase, detections_df: pd.DataFrame):
     ]
     detections_ztf_dict = detections_ztf_df_parsed.to_dict("records")
 
-    detection_sql_stmt = _db_statement_builder(Detection, detections_dict)
-    detection_ztf_sql_stmt = _db_statement_builder(
+    detection_sql_stmt = db_statement_builder(Detection, detections_dict)
+    detection_ztf_sql_stmt = db_statement_builder(
         ZtfDetection, detections_ztf_dict
     )
 
@@ -165,14 +134,7 @@ def insert_forced_photometry(
     forced_photometry_df = forced_photometry_df.reset_index()
 
     forced_photometry_df_parsed = forced_photometry_df[
-        [
-            "oid",
-            "measurement_id",
-            "mjd",
-            "ra",
-            "dec",
-            "band",
-        ]
+        FORCED_DETECTION_COLUMNS
     ]
     forced_photometry_dict = forced_photometry_df_parsed.to_dict("records")
     forced_photometry_ztf_df_parsed = forced_photometry_df[
@@ -220,10 +182,10 @@ def insert_forced_photometry(
         "records"
     )
 
-    forced_photometry_sql_stmt = _db_statement_builder(
+    forced_photometry_sql_stmt = db_statement_builder(
         ForcedPhotometry, forced_photometry_dict
     )
-    forced_photometry_ztf_sql_stmt = _db_statement_builder(
+    forced_photometry_ztf_sql_stmt = db_statement_builder(
         ZtfForcedPhotometry, forced_photometry_ztf_dict
     )
 
@@ -248,7 +210,7 @@ def insert_non_detections(
         ]
     ].to_dict("records")
 
-    non_detection_sql_stmt = _db_statement_builder(
+    non_detection_sql_stmt = db_statement_builder(
         NonDetection, non_detections_dict
     )
 

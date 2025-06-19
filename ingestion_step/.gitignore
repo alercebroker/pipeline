@@ -137,3 +137,7 @@ dmypy.json
 
 config.yaml
 config.yml
+
+config_ztf.yaml
+config_lsst.yaml
+config.produce_sample.yaml
