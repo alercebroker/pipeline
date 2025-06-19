@@ -20,11 +20,11 @@ from ingestion_step.lsst.extractor import (
     LsstSsObjectExtractor,
 )
 from ingestion_step.lsst.transforms import (
-    DIA_OBJECT_TRANSFORMS,
-    FORCED_SOURCE_TRANSFORMS,
-    NON_DETECTION_TRANSFORMS,
-    SOURCE_TRANSFORMS,
-    SS_OBJECT_TRANSFORMS,
+    get_dia_object_transforms,
+    get_forced_source_transforms,
+    get_non_detection_transforms,
+    get_source_transforms,
+    get_ss_object_transforms,
 )
 
 
@@ -39,7 +39,7 @@ class LsstData(ParsedData):
 
 class LsstStrategy(StrategyInterface[LsstData]):
     @classmethod
-    def parse(cls, messages: list[Message]) -> LsstData:
+    def parse(cls, messages: list[Message], driver: PsqlDatabase) -> LsstData:
         sources = LsstSourceExtractor.extract(messages)
         previous_sources = LsstPrvSourceExtractor.extract(messages)
         forced_sources = LsstForcedSourceExtractor.extract(messages)
@@ -47,13 +47,18 @@ class LsstStrategy(StrategyInterface[LsstData]):
         dia_object = LsstDiaObjectExtractor.extract(messages)
         ss_object = LsstSsObjectExtractor.extract(messages)
 
-        apply_transforms(sources, SOURCE_TRANSFORMS)
-        apply_transforms(previous_sources, SOURCE_TRANSFORMS)
-        apply_transforms(forced_sources, FORCED_SOURCE_TRANSFORMS)
-        apply_transforms(non_detections, NON_DETECTION_TRANSFORMS)
-        apply_transforms(dia_object, DIA_OBJECT_TRANSFORMS)
-        apply_transforms(ss_object, SS_OBJECT_TRANSFORMS)
+        source_transforms = get_source_transforms(driver)
+        forced_source_transforms = get_forced_source_transforms(driver)
+        non_detection_transforms = get_non_detection_transforms(driver)
+        dia_object_transforms = get_dia_object_transforms(driver)
+        ss_object_transforms = get_ss_object_transforms(driver)
 
+        apply_transforms(sources, source_transforms)
+        apply_transforms(previous_sources, source_transforms)
+        apply_transforms(forced_sources, forced_source_transforms)
+        apply_transforms(non_detections, non_detection_transforms)
+        apply_transforms(dia_object, dia_object_transforms)
+        apply_transforms(ss_object, ss_object_transforms)
         return LsstData(
             sources=sources,
             previous_sources=previous_sources,
@@ -113,3 +118,7 @@ class LsstStrategy(StrategyInterface[LsstData]):
             )
 
         return messages
+
+    @classmethod
+    def get_key(cls) -> str:
+        return "alertId"

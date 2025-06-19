@@ -1,3 +1,4 @@
+import sys
 from typing import Any, Callable, cast
 
 import pandas as pd
@@ -71,35 +72,31 @@ DType = (
         print("}")
 
 
-def generate_lsst():
-    base_path = "../schemas/surveys/lsst/"
-    schemas = {
-        "dia_forced_source": "v7_4_diaForcedSource.avsc",
-        "dia_non_detection_limit": "v7_4_diaNondetectionLimit.avsc",
-        "dia_source": "v7_4_diaSource.avsc",
-        "dia_object": "v7_4_diaObject.avsc",
-        "ss_object": "v7_4_ssObject.avsc",
-    }
+sruvey_schemas = {
+    "lsst": {
+        "dia_forced_source": "../schemas/surveys/lsst/v7_4_diaForcedSource.avsc",
+        "dia_non_detection_limit": "../schemas/surveys/lsst/v7_4_diaNondetectionLimit.avsc",
+        "dia_source": "../schemas/surveys/lsst/v7_4_diaSource.avsc",
+        "dia_object": "../schemas/surveys/lsst/v7_4_diaObject.avsc",
+        "ss_object": "../schemas/surveys/lsst/v7_4_ssObject.avsc",
+    },
+    "ztf": {
+        "candidate": "../schemas/ztf/candidate.avsc",
+        "fp_hist": "../schemas/ztf/fp_hist.avsc",
+        "prv_candidate": "../schemas/ztf/prv_candidate.avsc",
+    },
+}
+
+
+def generate(args: list[str] = sys.argv):
+    assert len(args) == len(sruvey_schemas)
+    assert args[1] in sruvey_schemas.keys()
+    survey = args[1]
+
+    schemas = sruvey_schemas[survey]
 
     pd_schemas = {
-        name: process_schema(base_path + schema)
-        for name, schema in schemas.items()
-    }
-
-    print_schemas(pd_schemas)
-
-
-def generate_ztf():
-    base_path = "../schemas/ztf/"
-    schemas = {
-        "candidate": "candidate.avsc",
-        "fp_hist": "fp_hist.avsc",
-        "prv_candidate": "prv_candidate.avsc",
-    }
-
-    pd_schemas = {
-        name: process_schema(base_path + schema)
-        for name, schema in schemas.items()
+        name: process_schema(schema) for name, schema in schemas.items()
     }
 
     print_schemas(pd_schemas)

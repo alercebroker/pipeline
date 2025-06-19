@@ -8,7 +8,6 @@ from db_plugins.db.sql._connection import PsqlDatabase
 from ingestion_step.core.select_parser import select_parser
 from ingestion_step.core.strategy import ParsedData
 from ingestion_step.core.types import Message
-from ingestion_step.ztf.serializer import serialize_ztf
 
 
 class IngestionStep(GenericStep):
@@ -37,7 +36,7 @@ class IngestionStep(GenericStep):
         self.logger.info(f"Processing {len(messages)} alerts")
         self.ingestion_timestamp = int(datetime.now().timestamp())
 
-        parsed_data = self.Strategy.parse(messages)
+        parsed_data = self.Strategy.parse(messages, self.psql_driver)
 
         for key in parsed_data:
             self.logger.info(
@@ -48,10 +47,10 @@ class IngestionStep(GenericStep):
 
         return parsed_data
 
-    def pre_produce(
+    def pre_produce(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, result: ParsedData
-    ):  # pyright: ignore[reportIncompatibleMethodOverride]
-        self.set_producer_key_field("oid")
-        messages = serialize_ztf(result)
+    ):
+        self.set_producer_key_field(self.Strategy.get_key())
+        messages = self.Strategy.serialize(result)
 
         return messages

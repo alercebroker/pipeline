@@ -31,7 +31,9 @@ class ZtfData(ParsedData):
 
 class ZtfStrategy(StrategyInterface[ZtfData]):
     @classmethod
-    def parse(cls, messages: list[Message]) -> ZtfData:
+    def parse(
+        cls, messages: list[Message], driver: PsqlDatabase | None = None
+    ) -> ZtfData:
         candidates = extractor.ZtfCandidatesExtractor.extract(messages)
         prv_candidates = extractor.ZtfPrvCandidatesExtractor.extract(messages)
         fp_hists = extractor.ZtfFpHistsExtractor.extract(messages)
@@ -101,3 +103,7 @@ class ZtfStrategy(StrategyInterface[ZtfData]):
             )
 
         return messages
+
+    @classmethod
+    def get_key(cls) -> str:
+        return "oid"

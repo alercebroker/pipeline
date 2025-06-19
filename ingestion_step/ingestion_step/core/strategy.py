@@ -28,7 +28,7 @@ class StrategyInterface(ABC, Generic[T]):
 
     @classmethod
     @abstractmethod
-    def parse(cls, messages: list[Message]) -> T:
+    def parse(cls, messages: list[Message], driver: PsqlDatabase) -> T:
         """
         Parses a list of messages into a `ParsedData` dict of pandas DataFrames.
         """
@@ -48,4 +48,9 @@ class StrategyInterface(ABC, Generic[T]):
         """
         Serializes the data to a format ready to send to Kafka.
         """
+        raise NotImplementedError
+
+    @classmethod
+    @abstractmethod
+    def get_key(cls) -> str:
         raise NotImplementedError

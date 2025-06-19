@@ -4,10 +4,10 @@ import pandas as pd
 
 from ingestion_step.core.types import DType
 
+Transform = Callable[[pd.DataFrame], None]
 
-def apply_transforms(
-    df: pd.DataFrame, transforms: list[Callable[[pd.DataFrame], None]]
-):
+
+def apply_transforms(df: pd.DataFrame, transforms: list[Transform]):
     """Applies a list of transforms to the given dataframe"""
     for transform in transforms:
         transform(df)
