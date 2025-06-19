@@ -1,5 +1,6 @@
 from sqlalchemy import (
     VARCHAR,
+    TIMESTAMP,
     BigInteger,
     Boolean,
     Column,
@@ -416,4 +417,39 @@ class ztf_reference(Base):
     __table_args__ = (
         PrimaryKeyConstraint("oid", "rfid", name="pk_ztfreference_oid_rfid"),
         Index("ix_ztf_reference_oid", "oid", postgresql_using="btree"),
+    )
+
+class MagStat(Base):
+    __tablename__ = "magstat"
+
+    oid = Column(BigInteger, nullable=False)  # int8
+    band = Column(SmallInteger, nullable=False)  # int2
+    stellar = Column(Boolean)  # bool
+    corrected = Column(Boolean)  # bool
+    ndubious = Column(BigInteger)  # int8
+    dmdt_first = Column(BigInteger)  # int8
+    dm_first = Column(BigInteger)  # int8
+    sigmadm_first = Column(BigInteger)  # int8
+    dt_first = Column(BigInteger)  # int8
+    magmean = Column(DOUBLE_PRECISION)  # float8
+    magmedian = Column(DOUBLE_PRECISION)  # float8
+    magmax = Column(DOUBLE_PRECISION)  # float8
+    magmin = Column(DOUBLE_PRECISION)  # float8
+    magsigma = Column(DOUBLE_PRECISION)  # float8
+    maglast = Column(BigInteger)  # int8
+    magfirst = Column(BigInteger)  # int8
+    magmean_corr = Column(DOUBLE_PRECISION)  # float8
+    magmedian_corr = Column(DOUBLE_PRECISION)  # float8
+    magmax_corr = Column(DOUBLE_PRECISION)  # float8
+    magmin_corr = Column(DOUBLE_PRECISION)  # float8
+    magsigma_corr = Column(DOUBLE_PRECISION)  # float8
+    maglast_corr = Column(DOUBLE_PRECISION)  # float8
+    magfirst_corr = Column(DOUBLE_PRECISION)  # float8
+    step_id_corr = Column(VARCHAR)  # varchar
+    saturation_rate = Column(DOUBLE_PRECISION)  # float8
+    last_update = Column(TIMESTAMP)  # timestamp
+
+    __table_args__ = (
+        PrimaryKeyConstraint("oid", "band", name="pk_magstat_oid_band"),
+        ForeignKeyConstraint([oid], [Object.oid]),
     )
