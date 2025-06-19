@@ -1,6 +1,6 @@
 from sqlalchemy import (
-    VARCHAR,
     TIMESTAMP,
+    VARCHAR,
     BigInteger,
     Boolean,
     Column,
@@ -419,6 +419,7 @@ class ztf_reference(Base):
         Index("ix_ztf_reference_oid", "oid", postgresql_using="btree"),
     )
 
+
 class MagStat(Base):
     __tablename__ = "magstat"
 
@@ -453,3 +454,15 @@ class MagStat(Base):
         PrimaryKeyConstraint("oid", "band", name="pk_magstat_oid_band"),
         ForeignKeyConstraint([oid], [Object.oid]),
     )
+
+
+class LsstIdMapper(Base):
+    __tablename__ = "lsst_idmapper"
+
+    lsst_id_serial = Column(BigInteger, autoincrement=True)
+    lsst_diaObjectId = Column(BigInteger)
+
+    __table_args__ = (
+        PrimaryKeyConstraint("lsst_id_serial", name="pk_lsst_idmapper_serial"),
+    )
+
