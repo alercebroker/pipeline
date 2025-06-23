@@ -1,0 +1,99 @@
+# Default values for step_starter.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+namespace: ingestion-step
+
+image:
+  repository: ghcr.io/alercebroker/ingestion_step
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets:
+  - name: "image-pull-access"
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations: {}
+
+resources: {}
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 4
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: nodegroup
+              operator: In
+              ## Override this value with the NodeGroup tag accordingly
+              values: []
+
+imageCredentials:
+  registry: ""
+  username: ""
+  password: ""
+  email: ""
+
+envVariables:
+  - name: CONFIG_FROM_YAML
+    value: "yes"
+
+configYaml:
+  enabled: true
+  CONSUMER_CONFIG:
+    CLASS: "apf.consumers.KafkaConsumer"
+    SCHEMA_PATH: "/schemas/ztf/alert.avsc"
+    TOPICS: ["ztf"]
+    consume.messages: 100
+    consume.timeout: 10
+    PARAMS:
+      bootstrap.servers: ""
+      security.protocol: "SASL_SSL"
+      sasl.mechanism: "SCRAM-SHA-512"
+      auto.offset.reset: "beginning"
+      enable.partition.eof: false
+      group.id: "sorting-hat-setp-ingestion"
+      sasl.username: ""
+      sasl.password: ""
+  PRODUCER_CONFIG:
+    CLASS: "apf.producers.KafkaSchemalessProducer"
+    SCHEMA_PATH: "/schemas/ingestion_step/output.avsc"
+    TOPIC: "ztf-ingestion"
+    STRICT: false
+    PARAMS:
+      bootstrap.servers: ""
+      security.protocol: "SASL_SSL"
+      sasl.mechanism: "SCRAM-SHA-512"
+      sasl.username: ""
+      sasl.password: ""
+      message.max.bytes: 67108864
+  METRICS_CONFIG:
+    CLASS: "apf.metrics.KafkaMetricsProducer"
+    SCHEMA_PATH: "/schemas/lc_classification_step/metrics.json"
+    TOPIC: "metrics"
+    PARAMS:
+      PARAMS:
+        bootstrap.servers: ""
+        security.protocol: "SASL_SSL"
+        sasl.mechanism: "SCRAM-SHA-512"
+        sasl.username: ""
+        sasl.password: ""
+  SURVEY_STRATEGY: "ztf"
+  FEATURE_FLAGS:
+    USE_PROFILING: false
+    PROMETHEUS: false
+  PSQL_CONFIG:
+    HOST: ""
+    USER: ""
+    PASSWORD: ""
+    PORT: ""
+    DB_NAME: ""
+    SCHEMA: ""

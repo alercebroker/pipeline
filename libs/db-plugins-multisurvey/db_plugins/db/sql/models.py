@@ -1,19 +1,16 @@
 from sqlalchemy import (
-    Column,
-    Integer,
+    VARCHAR,
+    TIMESTAMP,
     BigInteger,
-    String,
-    ForeignKey,
-    Float,
     Boolean,
-    ARRAY,
-    Index,
-    UniqueConstraint,
-    DateTime,
-    JSON,
+    Column,
     ForeignKeyConstraint,
+    Index,
+    Integer,
+    PrimaryKeyConstraint,
+    SmallInteger,
 )
-
+from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, REAL
 from sqlalchemy.orm import DeclarativeBase
 
 
@@ -26,466 +23,358 @@ class Commons:
         return self.__dict__[field]
 
 
-class Step(Base):
-    __tablename__ = "step"
-
-    step_id = Column(String, primary_key=True)
-    name = Column(String, nullable=False)
-    version = Column(String, nullable=False)
-    comments = Column(String, nullable=False)
-    date = Column(DateTime, nullable=False)
-
-
 class Object(Base):
     __tablename__ = "object"
 
-    oid = Column(String, primary_key=True)
-    ndethist = Column(Integer, nullable=False)
-    ncovhist = Column(Integer, nullable=False)
-    mjdstarthist = Column(Float(precision=53))
-    mjdendhist = Column(Float(precision=53))
-    corrected = Column(Boolean, nullable=False, default=False)
-    stellar = Column(Boolean, nullable=False, default=False)
-    ndet = Column(Integer, nullable=False, default=1)
-    g_r_max = Column(Float)
-    g_r_max_corr = Column(Float)
-    g_r_mean = Column(Float)
-    g_r_mean_corr = Column(Float)
-    meanra = Column(Float(precision=53), nullable=False)
-    meandec = Column(Float(precision=53), nullable=False)
-    sigmara = Column(Float(precision=53))
-    sigmadec = Column(Float(precision=53))
-    deltajd = Column(Float(precision=53), nullable=False)
-    firstmjd = Column(Float(precision=53), nullable=False)
-    lastmjd = Column(Float(precision=53), nullable=False)
-    step_id_corr = Column(String, nullable=False)
-    diffpos = Column(Boolean)
-    reference_change = Column(Boolean)
+    oid = Column(BigInteger, nullable=False)
+    tid = Column(SmallInteger, nullable=False)
+    sid = Column(SmallInteger, nullable=False)
+    meanra = Column(DOUBLE_PRECISION, nullable=False)
+    meandec = Column(DOUBLE_PRECISION, nullable=False)
+    sigmara = Column(DOUBLE_PRECISION)
+    sigmadec = Column(DOUBLE_PRECISION)
+    firstmjd = Column(DOUBLE_PRECISION, nullable=False)
+    lastmjd = Column(DOUBLE_PRECISION, nullable=False)
+    deltamjd = Column(DOUBLE_PRECISION, nullable=False)
+    n_det = Column(Integer, nullable=False)
+    n_forced = Column(Integer, nullable=False)
+    n_non_det = Column(Integer, nullable=False)
+    corrected = Column(Boolean, nullable=False)
+    stellar = Column(Boolean, nullable=False)
 
     __table_args__ = (
-        Index("ix_object_ndet", "ndet", postgresql_using="btree"),
+        PrimaryKeyConstraint("oid", name="pk_object_oid"),
+        Index("ix_object_n_det", "n_det", postgresql_using="btree"),
         Index("ix_object_firstmjd", "firstmjd", postgresql_using="btree"),
-        Index("ix_object_g_r_max", "g_r_max", postgresql_using="btree"),
-        Index("ix_object_g_r_mean_corr", "g_r_mean_corr", postgresql_using="btree"),
+        Index("ix_object_lastmjd", "lastmjd", postgresql_using="btree"),
         Index("ix_object_meanra", "meanra", postgresql_using="btree"),
         Index("ix_object_meandec", "meandec", postgresql_using="btree"),
     )
 
-    def __repr__(self):
-        return "<Object(oid='%s')>" % (self.oid)
+
+class ZtfObject(Base):
+    __tablename__ = "ztf_object"
+
+    oid = Column(BigInteger, nullable=False)
+    g_r_max = Column(REAL)
+    g_r_max_corr = Column(REAL)
+    g_r_mean = Column(REAL)
+    g_r_mean_corr = Column(REAL)
+
+    __table_args__ = (PrimaryKeyConstraint("oid", name="pk_ztfobject_oid"),)
 
 
-class Taxonomy(Base):
-    __tablename__ = "taxonomy"
-    classifier_name = Column(String, primary_key=True)
-    classifier_version = Column(String, primary_key=True)
-    classes = Column(ARRAY(String), nullable=False)
+class Detection(Base):
+    __tablename__ = "detection"
 
-
-class Probability(Base):
-    __tablename__ = "probability"
-    oid = Column(String, ForeignKey(Object.oid), primary_key=True)
-    class_name = Column(String, primary_key=True)
-    classifier_name = Column(String, primary_key=True)
-    classifier_version = Column(String, primary_key=True)
-    probability = Column(Float, nullable=False)
-    ranking = Column(Integer, nullable=False)
+    oid = Column(BigInteger, nullable=False)  # int8,
+    measurement_id = Column(BigInteger, nullable=False)  # int8,
+    mjd = Column(DOUBLE_PRECISION, nullable=False)  # float8,
+    ra = Column(DOUBLE_PRECISION, nullable=False)  # float8,
+    dec = Column(DOUBLE_PRECISION, nullable=False)  # float8,
+    band = Column(SmallInteger, nullable=False)  # int2,
 
     __table_args__ = (
-        Index("ix_probabilities_oid", "oid", postgresql_using="hash"),
-        Index("ix_probabilities_probability", "probability", postgresql_using="btree"),
-        Index("ix_probabilities_ranking", "ranking", postgresql_using="btree"),
+        PrimaryKeyConstraint(
+            "oid", "measurement_id", name="pk_detection_oid_measurementid"
+        ),
+        ForeignKeyConstraint([oid], [Object.oid]),
+        Index("ix_detection_oid", "oid", postgresql_using="hash"),
+    )
+
+
+class ZtfDetection(Base):
+    __tablename__ = "ztf_detection"
+
+    oid = Column(BigInteger, nullable=False)  # int8,
+    measurement_id = Column(BigInteger, nullable=False)  # int8,
+    pid = Column(BigInteger)  # int8,
+    diffmaglim = Column(REAL)  # float4,
+    isdiffpos = Column(Integer)  # bool,
+    nid = Column(Integer)  # int4,
+    magpsf = Column(REAL)  # float4,
+    sigmapsf = Column(REAL)  # float4,
+    magap = Column(REAL)  # float4,
+    sigmagap = Column(REAL)  # float4,
+    distnr = Column(REAL)  # float4,
+    rb = Column(REAL)  # float4,
+    rbversion = Column(VARCHAR)  # varchar,
+    drb = Column(REAL)  # float4,
+    drbversion = Column(VARCHAR)  # varchar,
+    magapbig = Column(REAL)  # float4,
+    sigmagapbig = Column(REAL)  # float4,
+    rfid = Column(BigInteger)  # int8,
+    magpsf_corr = Column(Integer)  # float4,
+    sigmapsf_corr = Column(Integer)  # float4,
+    sigmapsf_corr_ext = Column(Integer)  # float4,
+    corrected = Column(Boolean)  # bool,
+    dubious = Column(Boolean)  # bool,
+    parent_candid = Column(BigInteger)  # int8,
+    has_stamp = Column(Boolean)  # bool,
+
+    __table_args__ = (
+        PrimaryKeyConstraint(
+            "oid", "measurement_id", name="pk_ztfdetection_oid_measurementid"
+        ),
+        ForeignKeyConstraint([oid], [Object.oid]),
+        Index("ix_ztfdetection_oid", "oid", postgresql_using="hash"),
+    )
+
+
+class ForcedPhotometry(Base):
+
+    __tablename__ = "forced_photometry"
+
+    oid = Column(BigInteger, nullable=False)  # int8,
+    measurement_id = Column(BigInteger, nullable=False)  # int8,
+    mjd = Column(DOUBLE_PRECISION, nullable=False)  # float8,
+    ra = Column(DOUBLE_PRECISION, nullable=False)  # float8,
+    dec = Column(DOUBLE_PRECISION, nullable=False)  # float8,
+    band = Column(SmallInteger, nullable=False)  # int2,
+
+    __table_args__ = (
+        PrimaryKeyConstraint(
+            "oid", "measurement_id", name="pk_forcedphotometry_oid_measurementid"
+        ),
+        ForeignKeyConstraint([oid], [Object.oid]),
+        Index("ix_forced_photometry_oid", "oid", postgresql_using="hash"),
+    )
+
+
+class ZtfForcedPhotometry(Base):
+    __tablename__ = "ztf_forced_photometry"
+
+    oid = Column(BigInteger, nullable=False)  # int8,
+    measurement_id = Column(BigInteger, nullable=False)  # int8,
+    pid = Column(BigInteger)  # int8
+    mag = Column(DOUBLE_PRECISION, nullable=False)  # float8,
+    e_mag = Column(DOUBLE_PRECISION, nullable=False)  # float8,
+    mag_corr = Column(DOUBLE_PRECISION)  # float8,
+    e_mag_corr = Column(DOUBLE_PRECISION)  # float8,
+    e_mag_corr_ext = Column(DOUBLE_PRECISION)  # float8,
+    isdiffpos = Column(Integer, nullable=False)  # int4 NOT NULL,
+    corrected = Column(Boolean, nullable=False)  # bool NOT NULL,
+    dubious = Column(Boolean, nullable=False)  # bool NOT NULL,
+    parent_candid = Column(BigInteger)  # varchar,
+    has_stamp = Column(Boolean, nullable=False)  # bool NOT NULL,
+    field = Column(Integer, nullable=False)  # int4,
+    rcid = Column(Integer, nullable=False)  # int4,
+    rfid = Column(BigInteger, nullable=False)  # int8,
+    sciinpseeing = Column(DOUBLE_PRECISION, nullable=False)  # float8,
+    scibckgnd = Column(DOUBLE_PRECISION, nullable=False)  # float8,
+    scisigpix = Column(DOUBLE_PRECISION, nullable=False)  # float8,
+    magzpsci = Column(DOUBLE_PRECISION, nullable=False)  # float8,
+    magzpsciunc = Column(DOUBLE_PRECISION, nullable=False)  # float8,
+    magzpscirms = Column(DOUBLE_PRECISION, nullable=False)  # float8,
+    clrcoeff = Column(DOUBLE_PRECISION, nullable=False)  # float8,
+    clrcounc = Column(DOUBLE_PRECISION, nullable=False)  # float8,
+    exptime = Column(DOUBLE_PRECISION, nullable=False)  # float8,
+    adpctdif1 = Column(DOUBLE_PRECISION, nullable=False)  # float8,
+    adpctdif2 = Column(DOUBLE_PRECISION, nullable=False)  # float8,
+    diffmaglim = Column(DOUBLE_PRECISION, nullable=False)  # float8,
+    programid = Column(Integer, nullable=False)  # int4,
+    procstatus = Column(VARCHAR, nullable=False)  # varchar,
+    distnr = Column(DOUBLE_PRECISION, nullable=False)  # float8,
+    ranr = Column(DOUBLE_PRECISION, nullable=False)  # float8,
+    decnr = Column(DOUBLE_PRECISION, nullable=False)  # float8,
+    magnr = Column(DOUBLE_PRECISION, nullable=False)  # float8,
+    sigmagnr = Column(DOUBLE_PRECISION, nullable=False)  # float8,
+    chinr = Column(DOUBLE_PRECISION, nullable=False)  # float8,
+    sharpnr = Column(DOUBLE_PRECISION, nullable=False)  # float8
+
+    __table_args__ = (
+        PrimaryKeyConstraint(
+            "oid", "measurement_id", name="pk_ztfforcedphotometry_oid_measurementid"
+        ),
+        ForeignKeyConstraint([oid], [Object.oid]),
+        Index("ix_ztf_forced_photometry_oid", "oid", postgresql_using="hash"),
+    )
+
+
+class NonDetection(Base):
+    __tablename__ = "non_detection"
+
+    oid = Column(BigInteger, nullable=False)  # int8,
+    band = Column(SmallInteger, nullable=False)  # int2,
+    mjd = Column(DOUBLE_PRECISION, nullable=False)  # float8,
+    diffmaglim = Column(REAL, nullable=False)  # float4,
+
+    __table_args__ = (
+        PrimaryKeyConstraint("oid", "mjd", name="pk_oid_mjd"),
+        ForeignKeyConstraint([oid], [Object.oid]),
+        Index("ix_non_detection_oid", "oid", postgresql_using="hash"),
+    )
+
+
+class ztf_ss(Base):
+    __tablename__ = "ztf_ss"
+
+    oid = Column(BigInteger, nullable=False)
+    measurement_id = Column(BigInteger, nullable=False)
+    ssdistnr = Column(REAL)
+    ssmagnr = Column(REAL)
+    ssnamenr = Column(REAL)
+
+    __table_args__ = (
+        PrimaryKeyConstraint(
+            "oid", "measurement_id", name="pk_ztfss_oid_measurement_id"
+        ),
+        Index("ix_zrt_ss_oid", "oid", postgresql_using="btree"),
+    )
+
+
+class ztf_ps1(Base):
+    __tablename__ = "ztf_ps1"
+
+    oid = Column(BigInteger, nullable=False)
+    measurement_id = Column(BigInteger, nullable=False)
+    objectidps1 = Column(BigInteger)
+    sgmag1 = Column(REAL)
+    srmag1 = Column(REAL)
+    simag1 = Column(REAL)
+    szmag1 = Column(REAL)
+    sgscore1 = Column(REAL)
+    distpsnr1 = Column(REAL)
+    objectidps2 = Column(BigInteger)
+    sgmag2 = Column(REAL)
+    srmag2 = Column(REAL)
+    simag2 = Column(REAL)
+    szmag2 = Column(REAL)
+    sgscore2 = Column(REAL)
+    distpsnr2 = Column(REAL)
+    objectidps3 = Column(BigInteger)
+    sgmag3 = Column(REAL)
+    srmag3 = Column(REAL)
+    simag3 = Column(REAL)
+    szmag3 = Column(REAL)
+    sgscore3 = Column(REAL)
+    distpsnr3 = Column(REAL)
+    nmtchps = Column(SmallInteger)
+
+    __table_args__ = (
+        PrimaryKeyConstraint(
+            "oid", "measurement_id", name="pk_ztfps1_oid_measurement_id"
+        ),
+        Index("ix_ztf_ps1_oid", "oid", postgresql_using="btree"),
+    )
+
+
+class gaia_ztf(Base):
+    __tablename__ = "ztf_gaia"
+
+    oid = Column(BigInteger, nullable=False)
+    measurement_id = Column(BigInteger, nullable=False)
+    neargaia = Column(REAL)
+    neargaiabright = Column(REAL)
+    maggaia = Column(REAL)
+    maggaiabright = Column(REAL)
+
+    __table_args__ = (PrimaryKeyConstraint("oid", name="pk_ztfgaia_oid"),)
+
+
+class ztf_dataquality(Base):
+    __tablename__ = "ztf_dataquality"
+
+    oid = Column(BigInteger, nullable=False)
+    measurement_id = Column(BigInteger, nullable=False)
+    xpos = Column(REAL)
+    ypos = Column(REAL)
+    chipsf = Column(REAL)
+    sky = Column(REAL)
+    fwhm = Column(REAL)
+    classtar = Column(REAL)
+    mindtoedge = Column(REAL)
+    seeratio = Column(REAL)
+    aimage = Column(REAL)
+    bimage = Column(REAL)
+    aimagerat = Column(REAL)
+    bimagerat = Column(REAL)
+    nneg = Column(REAL)
+    nbad = Column(REAL)
+    sumrat = Column(REAL)
+    scorr = Column(REAL)
+    dsnrms = Column(REAL)
+    ssnrms = Column(REAL)
+    magzpsci = Column(REAL)
+    magzpsciunc = Column(REAL)
+    magzpscirms = Column(REAL)
+    nmatches = Column(REAL)
+    clrcoeff = Column(REAL)
+    clrcounc = Column(REAL)
+    zpclrcov = Column(REAL)
+    zpmed = Column(REAL)
+    clrmed = Column(REAL)
+    clrrms = Column(REAL)
+    exptime = Column(REAL)
+
+    __table_args__ = (
+        PrimaryKeyConstraint(
+            "oid", "measurement_id", name="pk_ztfdataquality_oid_measurement_id"
+        ),
+        Index("ix_ztf_dataquality_oid", "oid", postgresql_using="btree"),
         Index(
-            "ix_classification_rank1",
-            "ranking",
-            postgresql_where=ranking == 1,
+            "ix_ztf_dataquality_measurement_id",
+            "measurement_id",
             postgresql_using="btree",
         ),
     )
 
 
-class Score(Base):
-    __tablename__ = "score"
-    oid = Column(String, ForeignKey(Object.oid), primary_key=True)
-    detector_name = Column(String, primary_key=True)
-    detector_version = Column(String, primary_key=True)
-    category_name = Column(String, primary_key=True)
-    score = Column(Float, nullable=False)
-    __table_args__ = (
-        Index("ix_scores_oid", "oid", postgresql_using="hash"),
-        Index("ix_scores_score", "score", postgresql_using="btree"),
-    )
+class ztf_reference(Base):
+    __tablename__ = "ztf_reference"
 
-
-class ScoreDistribution(Base):
-    __tablename__ = "score_distribution"
-    detector_name = Column(String, primary_key=True)
-    distribution_version = Column(String, primary_key=True)
-    creation_date = Column(DateTime)
-    category_name = Column(String, primary_key=True)
-    distribution_name = Column(String, primary_key=True)
-    distribution_value = Column(Float, nullable=False)
-    __table_args__ = (
-        Index(
-            "ix_scoredistribution_distribution_name",
-            "distribution_name",
-            postgresql_using="hash",
-        ),
-        Index(
-            "ix_scoredistribution_category_name",
-            "category_name",
-            postgresql_using="hash",
-        ),
-        Index(
-            "ix_scoredistribution_detector_name",
-            "category_name",
-            postgresql_using="hash",
-        ),
-    )
-
-
-class FeatureVersion(Base):
-    __tablename__ = "feature_version"
-    version = Column(String, primary_key=True)
-    step_id_feature = Column(String, ForeignKey(Step.step_id))
-    step_id_preprocess = Column(String, ForeignKey(Step.step_id))
-
-    # __table_args__ = (ForeignKeyConstraint([step_id_feature, step_id_preprocess],
-    #                                        [Step.step_id, Step.step_id]),
-    #                   {})
-
-
-class Feature(Base):
-    __tablename__ = "feature"
-
-    oid = Column(String, ForeignKey("object.oid"), primary_key=True)
-    name = Column(String, primary_key=True, nullable=False)
-    value = Column(Float(precision=53))
-    fid = Column(Integer, primary_key=True)
-    version = Column(String, primary_key=True, nullable=False)
-
-    __table_args__ = (Index("ix_feature_oid_2", "oid", postgresql_using="hash"),)
-
-
-class Xmatch(Base):
-    __tablename__ = "xmatch"
-
-    oid = Column(String, ForeignKey("object.oid"), primary_key=True)
-    catid = Column(String, primary_key=True)
-    oid_catalog = Column(String, nullable=False)
-    dist = Column(Float(precision=53), nullable=False)
-    class_catalog = Column(String)
-    period = Column(Float(precision=53))
-
-
-class Allwise(Base):
-    __tablename__ = "allwise"
-
-    oid_catalog = Column(String, primary_key=True)
-    ra = Column(Float(precision=53), nullable=False)
-    dec = Column(Float(precision=53), nullable=False)
-    w1mpro = Column(Float(precision=53))
-    w2mpro = Column(Float(precision=53))
-    w3mpro = Column(Float(precision=53))
-    w4mpro = Column(Float(precision=53))
-    w1sigmpro = Column(Float(precision=53))
-    w2sigmpro = Column(Float(precision=53))
-    w3sigmpro = Column(Float(precision=53))
-    w4sigmpro = Column(Float(precision=53))
-    j_m_2mass = Column(Float(precision=53))
-    h_m_2mass = Column(Float(precision=53))
-    k_m_2mass = Column(Float(precision=53))
-    j_msig_2mass = Column(Float(precision=53))
-    h_msig_2mass = Column(Float(precision=53))
-    k_msig_2mass = Column(Float(precision=53))
+    oid = Column(BigInteger, nullable=False)
+    rfid = Column(BigInteger, nullable=False)
+    measurement_ic = Column(BigInteger, nullable=False)
+    band = Column(Integer)
+    rcid = Column(Integer)
+    field = Column(Integer)
+    magnr = Column(REAL)
+    sigmagnr = Column(REAL)
+    chinr = Column(REAL)
+    sharpnr = Column(REAL)
+    ranr = Column(DOUBLE_PRECISION)
+    decnr = Column(DOUBLE_PRECISION)
+    mjdstartref = Column(DOUBLE_PRECISION)
+    mjdendref = Column(DOUBLE_PRECISION)
+    nframesref = Column(Integer)
 
     __table_args__ = (
-        Index("ix_allwise_dec", "dec", postgresql_using="btree"),
-        Index("ix_allwise_ra", "ra", postgresql_using="btree"),
+        PrimaryKeyConstraint("oid", "rfid", name="pk_ztfreference_oid_rfid"),
+        Index("ix_ztf_reference_oid", "oid", postgresql_using="btree"),
     )
 
-
-class MagStats(Base):
+class MagStat(Base):
     __tablename__ = "magstat"
 
-    oid = Column(String, ForeignKey("object.oid"), primary_key=True)
-    fid = Column(Integer, primary_key=True)
-    stellar = Column(Boolean, nullable=False)
-    corrected = Column(Boolean, nullable=False)
-    ndet = Column(Integer, nullable=False)
-    ndubious = Column(Integer, nullable=False)
-    dmdt_first = Column(Float)
-    dm_first = Column(Float)
-    sigmadm_first = Column(Float)
-    dt_first = Column(Float)
-    magmean = Column(Float)
-    magmedian = Column(Float)
-    magmax = Column(Float)
-    magmin = Column(Float)
-    magsigma = Column(Float)
-    maglast = Column(Float)
-    magfirst = Column(Float)
-    magmean_corr = Column(Float)
-    magmedian_corr = Column(Float)
-    magmax_corr = Column(Float)
-    magmin_corr = Column(Float)
-    magsigma_corr = Column(Float)
-    maglast_corr = Column(Float)
-    magfirst_corr = Column(Float)
-    firstmjd = Column(Float(precision=53))
-    lastmjd = Column(Float(precision=53))
-    step_id_corr = Column(String, nullable=False)
-    saturation_rate = Column(Float(precision=53))
+    oid = Column(BigInteger, nullable=False)  # int8
+    band = Column(SmallInteger, nullable=False)  # int2
+    stellar = Column(Boolean)  # bool
+    corrected = Column(Boolean)  # bool
+    ndubious = Column(BigInteger)  # int8
+    dmdt_first = Column(BigInteger)  # int8
+    dm_first = Column(BigInteger)  # int8
+    sigmadm_first = Column(BigInteger)  # int8
+    dt_first = Column(BigInteger)  # int8
+    magmean = Column(DOUBLE_PRECISION)  # float8
+    magmedian = Column(DOUBLE_PRECISION)  # float8
+    magmax = Column(DOUBLE_PRECISION)  # float8
+    magmin = Column(DOUBLE_PRECISION)  # float8
+    magsigma = Column(DOUBLE_PRECISION)  # float8
+    maglast = Column(BigInteger)  # int8
+    magfirst = Column(BigInteger)  # int8
+    magmean_corr = Column(DOUBLE_PRECISION)  # float8
+    magmedian_corr = Column(DOUBLE_PRECISION)  # float8
+    magmax_corr = Column(DOUBLE_PRECISION)  # float8
+    magmin_corr = Column(DOUBLE_PRECISION)  # float8
+    magsigma_corr = Column(DOUBLE_PRECISION)  # float8
+    maglast_corr = Column(DOUBLE_PRECISION)  # float8
+    magfirst_corr = Column(DOUBLE_PRECISION)  # float8
+    step_id_corr = Column(VARCHAR)  # varchar
+    saturation_rate = Column(DOUBLE_PRECISION)  # float8
+    last_update = Column(TIMESTAMP)  # timestamp
 
     __table_args__ = (
-        Index("ix_magstats_dmdt_first", "dmdt_first", postgresql_using="btree"),
-        Index("ix_magstats_firstmjd", "firstmjd", postgresql_using="btree"),
-        Index("ix_magstats_lastmjd", "lastmjd", postgresql_using="btree"),
-        Index("ix_magstats_magmean", "magmean", postgresql_using="btree"),
-        Index("ix_magstats_magmin", "magmin", postgresql_using="btree"),
-        Index("ix_magstats_magfirst", "magfirst", postgresql_using="btree"),
-        Index("ix_magstats_ndet", "ndet", postgresql_using="btree"),
-        Index("ix_magstats_maglast", "maglast", postgresql_using="btree"),
-        Index("ix_magstats_oid", "oid", postgresql_using="hash"),
+        PrimaryKeyConstraint("oid", "band", name="pk_magstat_oid_band"),
+        ForeignKeyConstraint([oid], [Object.oid]),
     )
-
-
-class NonDetection(Base, Commons):
-    __tablename__ = "non_detection"
-
-    oid = Column(String, ForeignKey("object.oid"), primary_key=True)
-    fid = Column(Integer, primary_key=True)
-    mjd = Column(Float(precision=53), primary_key=True)
-    diffmaglim = Column(Float)
-    __table_args__ = (Index("ix_non_detection_oid", "oid", postgresql_using="hash"),)
-
-
-class Detection(Base, Commons):
-    __tablename__ = "detection"
-
-    candid = Column(BigInteger, primary_key=True)
-    oid = Column(String, ForeignKey("object.oid"), primary_key=True)
-    mjd = Column(Float(precision=53), nullable=False)
-    fid = Column(Integer, nullable=False)
-    pid = Column(Float, nullable=False)
-    diffmaglim = Column(Float)
-    isdiffpos = Column(Integer, nullable=False)
-    nid = Column(Integer)
-    ra = Column(Float(precision=53), nullable=False)
-    dec = Column(Float(precision=53), nullable=False)
-    magpsf = Column(Float, nullable=False)
-    sigmapsf = Column(Float, nullable=False)
-    magap = Column(Float)
-    sigmagap = Column(Float)
-    distnr = Column(Float)
-    rb = Column(Float)
-    rbversion = Column(String)
-    drb = Column(Float)
-    drbversion = Column(String)
-    magapbig = Column(Float)
-    sigmagapbig = Column(Float)
-    rfid = Column(Integer)
-    magpsf_corr = Column(Float)
-    sigmapsf_corr = Column(Float)
-    sigmapsf_corr_ext = Column(Float)
-    corrected = Column(Boolean, nullable=False)
-    dubious = Column(Boolean, nullable=False)
-    parent_candid = Column(BigInteger)
-    has_stamp = Column(Boolean, nullable=False)
-    step_id_corr = Column(String, nullable=False)
-
-    __table_args__ = (Index("ix_ndetection_oid", "oid", postgresql_using="hash"),)
-
-    def __repr__(self):
-        return "<Detection(candid='%i', fid='%i', oid='%s')>" % (
-            self.candid,
-            self.fid,
-            self.oid,
-        )
-
-
-class ForcedPhotometry(Base):
-    __tablename__ = "forced_photometry"
-
-    pid = Column(BigInteger, primary_key=True)
-    oid = Column(String, primary_key=True)
-    mjd = Column(Float(precision=53), nullable=False)
-    fid = Column(Integer, nullable=False)
-    ra = Column(Float(precision=53), nullable=False)
-    dec = Column(Float(precision=53), nullable=False)
-    e_ra = Column(Float)
-    e_dec = Column(Float)
-    mag = Column(Float)
-    e_mag = Column(Float)
-    mag_corr = Column(Float)
-    e_mag_corr = Column(Float)
-    e_mag_corr_ext = Column(Float)
-    isdiffpos = Column(Integer, nullable=False)
-    corrected = Column(Boolean, nullable=False)
-    dubious = Column(Boolean, nullable=False)
-    parent_candid = Column(String)
-    has_stamp = Column(Boolean, nullable=False)
-    # extra fields
-    field = Column(Integer)
-    rcid = Column(Integer)
-    rfid = Column(BigInteger)
-    sciinpseeing = Column(Float)
-    scibckgnd = Column(Float)
-    scisigpix = Column(Float)
-    magzpsci = Column(Float)
-    magzpsciunc = Column(Float)
-    magzpscirms = Column(Float)
-    clrcoeff = Column(Float)
-    clrcounc = Column(Float)
-    exptime = Column(Float)
-    adpctdif1 = Column(Float)
-    adpctdif2 = Column(Float)
-    diffmaglim = Column(Float)
-    programid = Column(Integer)
-    procstatus = Column(String)
-    distnr = Column(Float)
-    ranr = Column(Float(precision=53))
-    decnr = Column(Float(precision=53))
-    magnr = Column(Float)
-    sigmagnr = Column(Float)
-    chinr = Column(Float)
-    sharpnr = Column(Float)
-
-    __table_args__ = (
-        Index("ix_forced_photometry_oid", "oid", postgresql_using="hash"),
-    )
-
-
-class Dataquality(Base):
-    __tablename__ = "dataquality"
-
-    candid = Column(BigInteger, primary_key=True)
-    oid = Column(String, primary_key=True)
-    fid = Column(Integer, nullable=False)
-    xpos = Column(Float)
-    ypos = Column(Float)
-    chipsf = Column(Float)
-    sky = Column(Float)
-    fwhm = Column(Float)
-    classtar = Column(Float)
-    mindtoedge = Column(Float)
-    seeratio = Column(Float)
-    aimage = Column(Float)
-    bimage = Column(Float)
-    aimagerat = Column(Float)
-    bimagerat = Column(Float)
-    nneg = Column(Integer)
-    nbad = Column(Integer)
-    sumrat = Column(Float)
-    scorr = Column(Float)
-    dsnrms = Column(Float)
-    ssnrms = Column(Float)
-    magzpsci = Column(Float)
-    magzpsciunc = Column(Float)
-    magzpscirms = Column(Float)
-    nmatches = Column(Integer)
-    clrcoeff = Column(Float)
-    clrcounc = Column(Float)
-    zpclrcov = Column(Float)
-    zpmed = Column(Float)
-    clrmed = Column(Float)
-    clrrms = Column(Float)
-    exptime = Column(Float)
-
-    __table_args__ = (
-        ForeignKeyConstraint([candid, oid], [Detection.candid, Detection.oid]),
-        {},
-    )
-
-
-class Gaia_ztf(Base):
-    __tablename__ = "gaia_ztf"
-
-    oid = Column(String, ForeignKey("object.oid"), primary_key=True)
-    candid = Column(BigInteger, nullable=False)
-    neargaia = Column(Float)
-    neargaiabright = Column(Float)
-    maggaia = Column(Float)
-    maggaiabright = Column(Float)
-    unique1 = Column(Boolean, nullable=False)
-
-
-class Ss_ztf(Base):
-    __tablename__ = "ss_ztf"
-
-    oid = Column(String, ForeignKey("object.oid"), primary_key=True)
-    candid = Column(BigInteger, nullable=False)
-    ssdistnr = Column(Float)
-    ssmagnr = Column(Float)
-    ssnamenr = Column(String)
-
-    __table_args__ = (
-        Index("ix_ss_ztf_candid", "candid", postgresql_using="btree"),
-        Index("ix_ss_ztf_ssnamenr", "ssnamenr", postgresql_using="btree"),
-    )
-
-
-class Ps1_ztf(Base):
-    __tablename__ = "ps1_ztf"
-
-    oid = Column(String, ForeignKey("object.oid"), primary_key=True)
-    candid = Column(BigInteger, primary_key=True)
-    objectidps1 = Column(Float)
-    sgmag1 = Column(Float)
-    srmag1 = Column(Float)
-    simag1 = Column(Float)
-    szmag1 = Column(Float)
-    sgscore1 = Column(Float)
-    distpsnr1 = Column(Float)
-    objectidps2 = Column(Float)
-    sgmag2 = Column(Float)
-    srmag2 = Column(Float)
-    simag2 = Column(Float)
-    szmag2 = Column(Float)
-    sgscore2 = Column(Float)
-    distpsnr2 = Column(Float)
-    objectidps3 = Column(Float)
-    sgmag3 = Column(Float)
-    srmag3 = Column(Float)
-    simag3 = Column(Float)
-    szmag3 = Column(Float)
-    sgscore3 = Column(Float)
-    distpsnr3 = Column(Float)
-    nmtchps = Column(Integer, nullable=False)
-    unique1 = Column(Boolean, nullable=False)
-    unique2 = Column(Boolean, nullable=False)
-    unique3 = Column(Boolean, nullable=False)
-
-
-class Reference(Base):
-    __tablename__ = "reference"
-
-    oid = Column(String, ForeignKey("object.oid"), primary_key=True)
-    rfid = Column(BigInteger, primary_key=True)
-    candid = Column(BigInteger, nullable=False)
-    fid = Column(Integer, nullable=False)
-    rcid = Column(Integer)
-    field = Column(Integer)
-    magnr = Column(Float)
-    sigmagnr = Column(Float)
-    chinr = Column(Float)
-    sharpnr = Column(Float)
-    ranr = Column(Float(precision=53), nullable=False)
-    decnr = Column(Float(precision=53), nullable=False)
-    mjdstartref = Column(Float(precision=53), nullable=False)
-    mjdendref = Column(Float(precision=53), nullable=False)
-    nframesref = Column(Integer, nullable=False)
-
-    __table_args__ = (Index("ix_reference_fid", "fid", postgresql_using="btree"),)
-
-
-class Pipeline(Base):
-    __tablename__ = "pipeline"
-
-    pipeline_id = Column(String, primary_key=True)
-    step_id_corr = Column(String)
-    step_id_feat = Column(String)
-    step_id_clf = Column(String)
-    step_id_out = Column(String)
-    step_id_stamp = Column(String)
-    date = Column(DateTime, nullable=False)
