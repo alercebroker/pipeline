@@ -81,19 +81,37 @@ def extract_x_pos_y_from_df(df, oids):
 
     return x, position, y
 
-def build_ndarrays(seed: int, path_load_data: str, path_save_data: str, date: str, has_avro: bool, satellite_as_bogus: bool):
+def build_ndarrays(seed: int, path_load_data: str, path_save_data: str, date: str, has_avro: bool, satellite_as_bogus: bool, add_new_sats_sn: bool, add_new_sats: bool):
     # Build suffix
     suffix = ''
     if has_avro:
         suffix += '_hasavro'
     if satellite_as_bogus:
         suffix += '_satbogus'
+    if add_new_sats_sn:
+        suffix += '_addnewsatssn'
+        if add_new_sats:
+            suffix = suffix.replace('ssn', '')
 
     # Load consolidated dataset
     if has_avro:
         consolidated_dataset_df = pd.read_pickle(os.path.join(path_load_data, 'consolidated_dataset_hasavro.pkl'))
     else:
         consolidated_dataset_df = pd.read_pickle(os.path.join(path_load_data, 'consolidated_dataset.pkl'))
+
+    print(consolidated_dataset_df.shape)
+
+    if add_new_sats_sn:
+        new_sats_sne_250610_stamps = pd.read_pickle('data/new_sats_sne_250610/new_sats_sne_250610_stamps.pkl')
+        new_sats_sne_250610_stamps.candid = new_sats_sne_250610_stamps.candid.astype(str)
+
+        if add_new_sats:
+            new_sats_sne_250610_stamps = new_sats_sne_250610_stamps[new_sats_sne_250610_stamps['class'] != 'SN']
+
+        consolidated_dataset_df = pd.concat([consolidated_dataset_df, new_sats_sne_250610_stamps])
+        consolidated_dataset_df['class'] = consolidated_dataset_df['class'].replace({'SN': 'sn'})
+    
+    print(consolidated_dataset_df.dtypes)
 
     print('original shape', consolidated_dataset_df.shape)
     # 2869M
@@ -166,13 +184,17 @@ def build_ndarrays(seed: int, path_load_data: str, path_save_data: str, date: st
 
 
 
-def process_ndarrays(path_save_data: str, date: str, has_avro: bool, satellite_as_bogus: bool):
+def process_ndarrays(path_save_data: str, date: str, has_avro: bool, satellite_as_bogus: bool, add_new_sats_sn: bool, add_new_sats: bool):
     # Build suffix
     suffix = ''
     if has_avro:
         suffix += '_hasavro'
     if satellite_as_bogus:
         suffix += '_satbogus'
+    if add_new_sats_sn:
+        suffix += '_addnewsatssn'
+        if add_new_sats:
+            suffix = suffix.replace('ssn', '')
 
     # Load consolidated_ndarrays
     filename = f'consolidated_ndarrays{suffix}_{date}.pkl'
@@ -319,14 +341,16 @@ if __name__ == '__main__':
 
     path_load_data = '../../../data_acquisition/data/processed'
     path_save_data = './data'
-    has_avro = False
+    has_avro = True
     satellite_as_bogus = False
+    add_new_sats_sn = True
+    add_only_sats = True
 
     date = datetime.now().strftime("%Y-%m-%d_%H-%M")
 
     os.makedirs(path_save_data, exist_ok=True)
-    build_ndarrays(0, path_load_data, path_save_data, date, has_avro, satellite_as_bogus)
-    process_ndarrays(path_save_data, date, has_avro, satellite_as_bogus)
+    build_ndarrays(0, path_load_data, path_save_data, date, has_avro, satellite_as_bogus, add_new_sats_sn, add_only_sats)
+    process_ndarrays(path_save_data, date, has_avro, satellite_as_bogus, add_new_sats_sn, add_only_sats)
     #crop_stamps(16)
     #low_res_stamps(4)
     #build_multiscale()

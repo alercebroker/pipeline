@@ -1,20 +1,20 @@
+import matplotlib.pyplot as plt
 import tensorflow as tf
+import seaborn as sns
 import numpy as np
+import argparse
+import joblib
 import yaml
 import os
 import sys
 import pickle
 
-from sklearn.metrics import precision_recall_fscore_support
+from sklearn.metrics import precision_recall_fscore_support, confusion_matrix, classification_report
+from focal_loss import SparseCategoricalFocalLoss
 from datetime import datetime
 
 from data_loader import get_tf_datasets
-from model import StampModelFull
-from model import StampModelModified
-
-import argparse
-from focal_loss import SparseCategoricalFocalLoss
-
+from model import StampModelFull, StampModelModified
 
 os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices'
 #os.environ["CUDA_VISIBLE_DEVICES"] = sys.argv[1]
@@ -64,23 +64,82 @@ def balanced_xentropy(labels, predicted_logits):
 
 
 class NoImprovementStopper:
-    def __init__(self, num_steps: int):
+    def __init__(self, num_steps: int, mode: str = 'max'):
         self.num_steps = num_steps
-        self.historic_max = 0.0
+        self.mode = mode
+        self.historic_best = -float('inf') if mode == 'max' else float('inf')
         self.steps_without_improvement = 0
 
     def should_break(self, current_value):
-        if current_value > self.historic_max:
-            self.historic_max = current_value
+        if (self.mode == 'max' and current_value > self.historic_best) or \
+           (self.mode == 'min' and current_value < self.historic_best):
+            self.historic_best = current_value
             self.steps_without_improvement = 0
             return False
         else:
             self.steps_without_improvement += 1
 
-        if self.steps_without_improvement >= self.num_steps:
-            return True
-        else:
-            return False
+        return self.steps_without_improvement >= self.num_steps
+
+
+def eval_step(model, dataset):
+    predictions, labels_list = [], []
+    for samples, md, labels in dataset:
+        logits = model((samples, md), training=False)
+        predictions.append(logits)
+        labels_list.append(labels)
+
+    predictions = tf.concat(predictions, axis=0)
+    labels = tf.concat(labels_list, axis=0)
+
+    precision, recall, f1, _ = precision_recall_fscore_support(
+        labels.numpy(), predictions.numpy().argmax(axis=1), average='macro')
+    xentropy = balanced_xentropy(labels, predictions)
+
+    return precision, recall, f1, xentropy, labels.numpy(), predictions.numpy().argmax(axis=1)
+
+
+def save_confusion_matrix_and_report(labels, predictions, save_dir, class_names):
+    os.makedirs(save_dir, exist_ok=True)
+
+    # Original confusion matrix
+    cm = confusion_matrix(labels, predictions, labels=class_names)
+    _plot_confusion_matrix(cm, class_names, "Confusion Matrix", os.path.join(save_dir, "confusion_matrix.png"))
+
+    # Normalized confusion matrix (row-wise)
+    cm_normalized = cm.astype('float') / cm.sum(axis=1, keepdims=True)
+    cm_normalized = np.nan_to_num(cm_normalized)  # Replace NaNs in case of division by zero
+    _plot_confusion_matrix(cm_normalized, class_names, "Normalized Confusion Matrix",
+                           os.path.join(save_dir, "confusion_matrix_normalized.png"),
+                           fmt=".2f")
+
+    # Classification report
+    report = classification_report(labels, predictions, target_names=class_names)
+    with open(os.path.join(save_dir, "classification_report.txt"), "w") as f:
+        f.write(report)
+
+
+def _plot_confusion_matrix(cm, class_names, title, filepath, fmt='d'):
+    num_classes = len(class_names)
+
+    cell_size = 0.8
+    width = max(6, cell_size * num_classes)
+    height = max(5, cell_size * num_classes)
+    plt.figure(figsize=(width, height))
+
+    sns.heatmap(cm, annot=True, fmt=fmt, cmap='Blues',
+                xticklabels=class_names, yticklabels=class_names,
+                annot_kws={"size": 14})
+
+    plt.xlabel('Predicted Label', fontsize=16)
+    plt.ylabel('True Label', fontsize=16)
+    plt.title(title, fontsize=18)
+    plt.xticks(ha='right', fontsize=12, rotation='vertical')
+    plt.yticks(fontsize=12, rotation='horizontal')
+    plt.tight_layout()
+    plt.savefig(filepath)
+    plt.close()
+
 
 
 def train_model_and_save(hyperparameters, path_save_results, args_general):
@@ -108,9 +167,6 @@ def train_model_and_save(hyperparameters, path_save_results, args_general):
             first_kernel_size=first_kernel_size,
             with_crop=crop, 
             dict_mapping_classes=dict_info_model['dict_mapping_classes'],
-            order_features=dict_info_model['order_features'],
-            norm_means=dict_info_model['norm_means'],
-            norm_stds=dict_info_model['norm_stds'],
             )
     else:
         print('Using modified model')
@@ -136,12 +192,13 @@ def train_model_and_save(hyperparameters, path_save_results, args_general):
     if focal_loss:
         print('Using focal loss')
         loss_object = SparseCategoricalFocalLoss(
-            gamma=2,from_logits=True,
+            gamma=2, from_logits=True,
             )
     else:
         print('Using standard crossentropy loss')
         loss_object = tf.keras.losses.SparseCategoricalCrossentropy(
-            from_logits=True)
+            from_logits=True
+            )
         
     optimizer = tf.keras.optimizers.Adam(
         learning_rate=learning_rate, beta_1=0.9, beta_2=0.999, amsgrad=False
@@ -187,10 +244,15 @@ def train_model_and_save(hyperparameters, path_save_results, args_general):
             tf.summary.scalar('f1', f1, step=iteration)
             tf.summary.scalar('loss', xentropy_test, step=iteration)
 
-        return f1
+        return f1, xentropy_test
+
+    stop_metric_type = args["stop_metric_type"] 
+    stopper_mode = 'min' if stop_metric_type == 'loss' else 'max'
 
     log_frequency = 50
-    stopper = NoImprovementStopper(5)
+    stopper = NoImprovementStopper(num_steps=5, mode=stopper_mode)
+    best_weights = None
+    best_metric = float('inf') if stopper_mode == 'min' else -float('inf')
 
     for iteration, training_batch in enumerate(training_dataset):
         if iteration >= max_iterations:
@@ -205,10 +267,16 @@ def train_model_and_save(hyperparameters, path_save_results, args_general):
                 tf.summary.scalar('accuracy', train_accuracy.result(), step=iteration)
 
         if iteration % 500 == 0:
-            val_f1 = val_test_step(validation_dataset, iteration, val_writer)
+            val_f1, val_loss = val_test_step(validation_dataset, iteration, val_writer)
+            val_metric = val_loss if stop_metric_type == 'loss' else val_f1
             val_test_step(test_dataset, iteration, test_writer)
             print(f"Validation F1-score at iteration {iteration}: {val_f1}")
-            if stopper.should_break(val_f1):
+
+            if (stopper_mode == 'min' and val_metric < best_metric) or (stopper_mode == 'max' and val_metric > best_metric):
+                best_metric = val_metric
+                best_weights = stamp_classifier.get_weights()
+
+            if stopper.should_break(val_metric):
                 break
 
         # Reset the metrics for the next iteration
@@ -218,72 +286,123 @@ def train_model_and_save(hyperparameters, path_save_results, args_general):
     train_writer.flush()
     val_writer.flush()
     test_writer.flush()
+
+    if best_weights is not None:
+        stamp_classifier.set_weights(best_weights)
     
-    str_ = ''
-    if args_general['use_metadata']:
-        str_ += '_md'
-    if focal_loss:
-        str_ += '_focal'
-    if with_batchnorm:
-        str_ += '_bn'
-    if crop:
-        str_ += '_crop'  
-    if args_general['use_only_avro']:
-        str_ += '_avro'    
+    _, _, _, _, test_labels, test_predictions = eval_step(stamp_classifier, test_dataset)
+    test_labels = [dict_info_model['dict_mapping_classes'][x] for x in test_labels]
+    test_predictions = [dict_info_model['dict_mapping_classes'][x] for x in test_predictions]
+    class_names = list(dict_info_model['dict_mapping_classes'].values())
+    save_confusion_matrix_and_report(test_labels, test_predictions, path_save_results, class_names=class_names)
 
-    stamp_classifier.save(f"{path_save_results}/model_{model_}{str_}.keras")
+    stamp_classifier.save(f"{path_save_results}/model.keras")
 
+    name_qt_file = None
+    if args_general['norm_type'] == 'QT':
+        name_qt_file = 'quantile_transformer.pkl'
+        joblib.dump(dict_info_model['qt'], f"{path_save_results}/quantile_transformer.pkl")
 
-date = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-ROOT = f'./results_incremental_satbogus/{date}' 
-os.makedirs(ROOT, exist_ok=True)
+    output_dict = {
+        'hp_model': hp_model,
+        'args_general': args_general,
+        'structure': {
+            'order_features': dict_info_model['order_features'],
+            'dict_mapping_classes': dict_info_model['dict_mapping_classes']
+        },
+        'normalization_stats': {
+            'norm_means': dict_info_model['norm_means'],
+            'norm_stds': dict_info_model['norm_stds'],
+            'qt_name_file': name_qt_file
+        }
+    }
+
+    with open(f"{path_save_results}/config_used.yaml", 'w') as f:
+        yaml.dump(output_dict, f)
+
 
 def parse_model_args(arg_dict=None):
     """Parse command line arguments"""
     parser = argparse.ArgumentParser()
-    #parser.add_argument("--path_data", type=str, default="./data/normalized_ndarrays_2025-06-06_04-04.pkl")
-    parser.add_argument("--path_data", type=str, default="./data/normalized_ndarrays_hasavro_2025-06-06_04-26.pkl")
-    parser.add_argument("--stamp", type=str, default="full")
-    parser.add_argument("--bn", type=bool, default=True)
-    parser.add_argument("--crop", type=bool, default=False)
-    parser.add_argument("--use_metadata", type=bool, default=True)
-    parser.add_argument("--focal_loss", type=bool, default=False)
+
+    # Argumentos generales
+    parser.add_argument("--path_data", type=str,
+                        default="./data/normalized_ndarrays_hasavro_2025-06-06_04-26.pkl")
+    parser.add_argument("--results_folder", type=str,
+                        default="./results_incremental_satbogus")
+    parser.add_argument("--coord_type", type=str, default="cartesian",
+                        choices=["cartesian", "spherical"],
+                        help="Coordinate type to use")
+    parser.add_argument("--norm_type", type=str, default="QT",
+                        choices=["QT", "z-score", "none"],
+                        help="Normalization method to apply")
+    parser.add_argument("--stop_metric_type", type=str, default="loss", 
+                        choices=["loss", "f1"],
+                        help="Metric type used for early stopping (loss or f1)")
+
+    parser.add_argument("--use_metadata", action='store_true')
+    parser.add_argument("--add_new_sats_sn", action='store_true')
+
+    # Hiperparámetros del modelo
+    parser.add_argument("--stamp", type=str, default="full",
+                        choices=["full", "modified"],
+                        help="Model type to use")
+    parser.add_argument("--bn", action='store_true')
+    parser.add_argument("--crop", action='store_true')
+    parser.add_argument("--focal_loss", action='store_true')
 
     args = parser.parse_args(None if arg_dict is None else [])
+    return vars(args)
 
-    return args
+# ==== Main Script ====
 
-max_iterations = 100000000
+args = parse_model_args()
+results_folder = args["results_folder"]
+date = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+ROOT = os.path.join(results_folder, date)
+os.makedirs(ROOT, exist_ok=True)
+
+# Separar hp_model y args_general automáticamente
+hp_model = {
+    "model": args["stamp"],
+    "with_batchnorm": args["bn"],
+    "crop": args["crop"],
+    "focal_loss": args["focal_loss"],
+}
+
+args_general = {
+    "path_data": args["path_data"],
+    "use_metadata": args["use_metadata"],
+    "use_only_avro": "hasavro" in args["path_data"],
+    "add_new_sats_sn": args["add_new_sats_sn"],
+    "coord_type": args["coord_type"],
+    "norm_type": args["norm_type"],
+}
+
+# Lógica para seleccionar configuración del modelo
+if hp_model["model"] == "full":
+    hp_model_base = hp_model_full  # Define esto en tu entorno
+elif hp_model["model"] == "modified":
+    hp_model_base = hp_model_modified  # Define esto también
+
+# Mezclar los valores actualizados en hp_model_base
+hp_model_base.update(hp_model)
+
+# Entrenamiento
+max_iterations = 10000000
 num_runs = 1
+
 for i in range(num_runs):
     print(f'run {i}/{num_runs-1}')
-    args = vars(parse_model_args(arg_dict=None))
-    #print(args)
-    model_ = args['stamp']
-    if model_ == 'full':
-        hp_model = hp_model_full
-    elif model_ == 'modified':
-        hp_model = hp_model_modified
-    hp_model["with_batchnorm"] = args['bn']
-    hp_model["crop"] = args['crop']
-    hp_model["model"] = model_
-    hp_model["focal_loss"] = args['focal_loss']
+    train_model_and_save(hp_model_base, f'{ROOT}/run_{i}', args_general)
 
-    args_general = {
-        "path_data": args["path_data"],
-        "use_metadata": args["use_metadata"],
-        "use_only_avro": args["path_data"].find('hasavro') != -1
-    }
+    #dict_config = {
+    #    'hp_model': hp_model_base,
+    #    'args_general': args_general
+    #}
 
-    train_model_and_save(hp_model, f'{ROOT}/run_{i}', args_general)
+    #yaml_path = f'{ROOT}/run_{i}/config_used.yaml'
+    #with open(yaml_path, 'w') as f:
+    #    yaml.dump(dict_config, f, sort_keys=False)
 
-
-    dict_config = {
-        'hp_model': hp_model,
-        'args_general': args_general
-    }
-    yaml_path = f'{ROOT}/run_{i}/config_used.yaml'
-    with open(yaml_path, 'w') as f:
-        yaml.dump(dict_config, f, sort_keys=False)
-
-    print(f"Config saved to: {yaml_path}")
+    #print(f"Config saved to: {yaml_path}")
