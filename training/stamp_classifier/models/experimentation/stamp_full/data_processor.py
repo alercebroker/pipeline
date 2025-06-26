@@ -343,8 +343,8 @@ if __name__ == '__main__':
     path_save_data = './data'
     has_avro = True
     satellite_as_bogus = False
-    add_new_sats_sn = True
-    add_only_sats = True
+    add_new_sats_sn = False
+    add_only_sats = False
 
     date = datetime.now().strftime("%Y-%m-%d_%H-%M")
 
