@@ -39,8 +39,8 @@ class Object(Base):
     n_det = Column(Integer, nullable=False)
     n_forced = Column(Integer, nullable=False)
     n_non_det = Column(Integer, nullable=False)
-    corrected = Column(Boolean, nullable=False)
-    stellar = Column(Boolean, nullable=False)
+    corrected = Column(Boolean, nullable=False, default=False)
+    stellar = Column(Boolean, nullable=False, default=None)
 
     __table_args__ = (
         PrimaryKeyConstraint("oid", "sid", name="pk_object_oid"),
