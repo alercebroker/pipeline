@@ -7,6 +7,7 @@ from db_plugins.db.sql.models import (
     LsstDiaObject,
     LsstForcedPhotometry,
     LsstNonDetection,
+    LsstSsObject,
     Object,
 )
 
@@ -38,7 +39,7 @@ def insert_ss_objects(driver: PsqlDatabase, ss_objects: pd.DataFrame):
     objects_ss_lsst_dict = ss_objects[["oid"]].to_dict("records")
 
     objects_sql_stmt = db_statement_builder(Object, objects_dict)
-    objects_ss_lsst_sql_stmt = db_statement_builder(LsstDiaObject, objects_ss_lsst_dict)
+    objects_ss_lsst_sql_stmt = db_statement_builder(LsstSsObject, objects_ss_lsst_dict)
 
     with driver.session() as session:
         session.execute(objects_sql_stmt)

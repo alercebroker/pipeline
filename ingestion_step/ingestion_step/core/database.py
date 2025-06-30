@@ -17,16 +17,8 @@ OBJECT_COLUMNS = [
     "sid",
     "meanra",
     "meandec",
-    "sigmara",
-    "sigmadec",
     "firstmjd",
     "lastmjd",
-    "deltamjd",
-    "n_det",
-    "n_forced",
-    "n_non_det",
-    "corrected",
-    "stellar",
 ]
 
 DETECTION_COLUMNS = [

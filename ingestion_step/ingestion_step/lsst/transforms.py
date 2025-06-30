@@ -84,14 +84,6 @@ def get_dia_object_transforms() -> list[Transform]:
         copy_column("mjd", "lastmjd"),
         copy_column("ra", "meanra"),
         copy_column("dec", "meandec"),
-        add_constant_column("sigmara", None, pd.Float64Dtype()),
-        add_constant_column("sigmadec", None, pd.Float64Dtype()),
-        add_constant_column("deltamjd", 0.0, pd.Float64Dtype()),
-        add_constant_column("n_det", 1, pd.Int32Dtype()),
-        add_constant_column("n_forced", 1, pd.Int32Dtype()),
-        add_constant_column("n_non_det", 1, pd.Int32Dtype()),
-        add_constant_column("corrected", False, pd.BooleanDtype()),
-        add_constant_column("stellar", False, pd.BooleanDtype()),
     ]
 
 
@@ -105,12 +97,4 @@ def get_ss_object_transforms() -> list[Transform]:
         copy_column("mjd", "lastmjd"),
         rename_column("ra", "meanra"),
         rename_column("dec", "meandec"),
-        add_constant_column("sigmara", None, pd.Float64Dtype()),
-        add_constant_column("sigmadec", None, pd.Float64Dtype()),
-        add_constant_column("deltamjd", 0.0, pd.Float64Dtype()),
-        add_constant_column("n_det", 1, pd.Int32Dtype()),
-        add_constant_column("n_forced", 1, pd.Int32Dtype()),
-        add_constant_column("n_non_det", 1, pd.Int32Dtype()),
-        add_constant_column("corrected", False, pd.BooleanDtype()),
-        add_constant_column("stellar", False, pd.BooleanDtype()),
     ]
