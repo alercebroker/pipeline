@@ -30,8 +30,9 @@ def generate_bands(alert: Message) -> Message:
     return alert
 
 
-def generate_objects(alert: Message) -> Message:
-    obj = choice(["dia", "ss"])
+def generate_objects(alert: Message, obj: str | None = None) -> Message:
+    if obj is None:
+        obj = choice(["dia", "ss"])
 
     if obj == "dia":
         diaObjectId = randint(0, 2**63 - 1)
@@ -60,10 +61,10 @@ def generate_objects(alert: Message) -> Message:
     return alert
 
 
-def generate_alerts(n: int = 30) -> Iterable[Message]:
+def generate_alerts(n: int = 30, obj: str | None = None) -> Iterable[Message]:
     alerts = generate_many(alert_schema, n)
 
-    alerts = map(generate_objects, alerts)
+    alerts = map(lambda alert: generate_objects(alert, obj), alerts)
     alerts = map(generate_bands, alerts)
 
     return alerts

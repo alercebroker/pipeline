@@ -15,6 +15,14 @@ psql_config = {
 
 
 @pytest.mark.usefixtures("psql_db")
-def test_process_alerts_ztf(lsst_alerts: list[Message], psql_db: PsqlDatabase):
+def test_process_alerts_lsst(lsst_alerts: list[Message], psql_db: PsqlDatabase):
     parsed_data = LsstStrategy.parse(lsst_alerts)
+    LsstStrategy.insert_into_db(psql_db, parsed_data)
+
+
+@pytest.mark.usefixtures("psql_db")
+def test_process_alerts_lsst_dia_only(
+    lsst_alerts_dia_only: list[Message], psql_db: PsqlDatabase
+):
+    parsed_data = LsstStrategy.parse(lsst_alerts_dia_only)
     LsstStrategy.insert_into_db(psql_db, parsed_data)
