@@ -31,16 +31,16 @@ class Object(Base):
     sid = Column(SmallInteger, nullable=False)
     meanra = Column(DOUBLE_PRECISION, nullable=False)
     meandec = Column(DOUBLE_PRECISION, nullable=False)
-    sigmara = Column(DOUBLE_PRECISION)
-    sigmadec = Column(DOUBLE_PRECISION)
+    sigmara = Column(DOUBLE_PRECISION, nullable=True)
+    sigmadec = Column(DOUBLE_PRECISION, nullable=True)
     firstmjd = Column(DOUBLE_PRECISION, nullable=False)
     lastmjd = Column(DOUBLE_PRECISION, nullable=False)
-    deltamjd = Column(DOUBLE_PRECISION, nullable=False)
-    n_det = Column(Integer, nullable=False)
-    n_forced = Column(Integer, nullable=False)
-    n_non_det = Column(Integer, nullable=False)
+    deltamjd = Column(DOUBLE_PRECISION, nullable=False, default=0.0)
+    n_det = Column(Integer, nullable=False, default=1)
+    n_forced = Column(Integer, nullable=False, default=1)
+    n_non_det = Column(Integer, nullable=False, default=1)
     corrected = Column(Boolean, nullable=False, default=False)
-    stellar = Column(Boolean, nullable=False, default=None)
+    stellar = Column(Boolean, nullable=True, default=None)
 
     __table_args__ = (
         PrimaryKeyConstraint("oid", "sid", name="pk_object_oid"),
@@ -474,4 +474,3 @@ class LsstIdMapper(Base):
     __table_args__ = (
         PrimaryKeyConstraint("lsst_id_serial", name="pk_lsst_idmapper_serial"),
     )
-
