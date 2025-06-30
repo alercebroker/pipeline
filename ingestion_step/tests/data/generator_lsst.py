@@ -18,13 +18,14 @@ ssObject_schema = load_schema(str(base_schema_path / "v7_4_ssObject.avsc"))
 
 
 def generate_bands(alert: Message) -> Message:
-    alert["diaSource"]["band"] = choice("gr")
+    bands = ("u", "g", "r", "i", "z", "y")
+    alert["diaSource"]["band"] = choice(bands)
     for prv_source in alert["prvDiaSources"] or []:
-        prv_source["band"] = choice("gr")
+        prv_source["band"] = choice(bands)
     for forced_source in alert["prvDiaForcedSources"] or []:
-        forced_source["band"] = choice("gr")
+        forced_source["band"] = choice(bands)
     for non_detection in alert["prvDiaNondetectionLimits"] or []:
-        non_detection["band"] = choice("gr")
+        non_detection["band"] = choice(bands)
 
     return alert
 

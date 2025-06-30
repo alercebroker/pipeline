@@ -10,7 +10,7 @@ from ingestion_step.core.utils import (
 DIA_SID = 1
 SS_SID = 2
 
-band_map = {"g": 1, "r": 2}
+band_map = {"u": 0, "g": 1, "r": 2, "i": 3, "z": 4, "y": 5}
 
 
 def dia_object_id_to_oid(df: pd.DataFrame):

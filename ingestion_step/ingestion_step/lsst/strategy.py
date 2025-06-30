@@ -121,4 +121,4 @@ class LsstStrategy(StrategyInterface[LsstData]):
 
     @classmethod
     def get_key(cls) -> str:
-        return "alertId"
+        return "oid"
