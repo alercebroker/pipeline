@@ -36,14 +36,12 @@ class IngestionStep(GenericStep):
         self.logger.info(f"Processing {len(messages)} alerts")
         self.ingestion_timestamp = int(datetime.now().timestamp())
 
-        parsed_data = self.Strategy.parse(messages, self.psql_driver)
+        parsed_data = self.Strategy.parse(messages)
 
         for key in parsed_data:
-            self.logger.info(
-                f"Parsed {len(parsed_data[key])} objects form {key}"
-            )
+            self.logger.info(f"Parsed {len(parsed_data[key])} objects form {key}")
 
-        self.Strategy.insert_into_db(self.psql_driver, parsed_data)
+        # self.Strategy.insert_into_db(self.psql_driver, parsed_data)
 
         return parsed_data
 

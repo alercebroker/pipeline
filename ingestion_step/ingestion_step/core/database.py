@@ -6,9 +6,7 @@ from db_plugins.db.sql.models import (
 from sqlalchemy.dialects.postgresql import insert
 
 
-def db_statement_builder(
-    model: type[DeclarativeBase], data: list[dict[Hashable, Any]]
-):
+def db_statement_builder(model: type[DeclarativeBase], data: list[dict[Hashable, Any]]):
     stmt = insert(model).values(data).on_conflict_do_nothing()
     return stmt
 
@@ -33,6 +31,7 @@ OBJECT_COLUMNS = [
 
 DETECTION_COLUMNS = [
     "oid",
+    "sid",
     "measurement_id",
     "mjd",
     "ra",
@@ -42,6 +41,7 @@ DETECTION_COLUMNS = [
 
 FORCED_DETECTION_COLUMNS = [
     "oid",
+    "sid",
     "measurement_id",
     "mjd",
     "ra",

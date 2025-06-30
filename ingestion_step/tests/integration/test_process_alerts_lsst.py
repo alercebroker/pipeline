@@ -16,5 +16,5 @@ psql_config = {
 
 @pytest.mark.usefixtures("psql_db")
 def test_process_alerts_ztf(lsst_alerts: list[Message], psql_db: PsqlDatabase):
-    parsed_data = LsstStrategy.parse(lsst_alerts, psql_db)
+    parsed_data = LsstStrategy.parse(lsst_alerts)
     LsstStrategy.insert_into_db(psql_db, parsed_data)

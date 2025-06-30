@@ -1,8 +1,4 @@
-from typing import Literal
-
 import pandas as pd
-from db_plugins.db.sql._connection import PsqlDatabase
-from idmapper.mapper import catalog_oid_to_masterid
 
 from ingestion_step.core.utils import (
     Transform,
@@ -17,43 +13,26 @@ SS_SID = 2
 band_map = {"g": 1, "r": 2}
 
 
-def add_oid_to_object(driver: PsqlDatabase, objectType: Literal["dia", "ss"]):
-    def _add_oid_to_object(df: pd.DataFrame):
-        with driver.session() as session:
-            with session.connection() as conn:
-                with conn.connection.cursor() as cursor:
-                    df["oid"] = df[f"{objectType}ObjectId"].apply(
-                        lambda x: int(
-                            catalog_oid_to_masterid(
-                                "LSST", x, db_cursor=cursor
-                            )
-                        ),
-                    )
-                conn.commit()
-
-    return _add_oid_to_object
+def dia_object_id_to_oid(df: pd.DataFrame):
+    df["oid"] = df["diaObjectId"]
 
 
-def add_oid_to_source(driver: PsqlDatabase):
-    def _add_oid_to_source(df: pd.DataFrame):
-        df["oid"] = df["diaObjectId"]
-        if "ssObjectId" in df.columns:
-            mask = df["ssObjectId"].notnull()
-            df.loc[mask, "oid"] = df["ssObjectId"]
+def ss_object_id_to_oid(df: pd.DataFrame):
+    df["oid"] = df["ssObjectId"]
 
-        with driver.session() as session:
-            with session.connection() as conn:
-                with conn.connection.cursor() as cursor:
-                    df["oid"] = df["oid"].apply(
-                        lambda x: int(
-                            catalog_oid_to_masterid(
-                                "LSST", x, db_cursor=cursor
-                            )
-                        ),
-                    )
-                conn.commit()
 
-    return _add_oid_to_source
+def add_oid(df: pd.DataFrame):
+    df["oid"] = df["diaObjectId"]
+    if "ssObjectId" in df.columns:
+        mask = df["ssObjectId"].notnull()
+        df.loc[mask, "oid"] = df["ssObjectId"]
+
+
+def add_sid(df: pd.DataFrame):
+    df["sid"] = DIA_SID
+    if "ssObjectId" in df.columns:
+        mask = df["ssObjectId"].notnull()
+        df.loc[mask, "sid"] = SS_SID
 
 
 def mjdtai_to_mjd(df: pd.DataFrame):
@@ -66,31 +45,38 @@ def band_to_int(df: pd.DataFrame):
     df.drop(columns=["_band"])
 
 
-def get_source_transforms(driver: PsqlDatabase) -> list[Transform]:
+def get_source_transforms() -> list[Transform]:
     return [
-        add_oid_to_source(driver),
+        add_oid,
+        add_sid,
         copy_column("diaSourceId", "measurement_id"),
         mjdtai_to_mjd,
         band_to_int,
     ]
 
 
-def get_forced_source_transforms(driver: PsqlDatabase) -> list[Transform]:
+def get_forced_source_transforms() -> list[Transform]:
     return [
-        add_oid_to_source(driver),
+        add_oid,
+        add_sid,
         copy_column("diaForcedSourceId", "measurement_id"),
         mjdtai_to_mjd,
         band_to_int,
     ]
 
 
-def get_non_detection_transforms(driver: PsqlDatabase) -> list[Transform]:
-    return [add_oid_to_source(driver), mjdtai_to_mjd, band_to_int]
-
-
-def get_dia_object_transforms(driver: PsqlDatabase) -> list[Transform]:
+def get_non_detection_transforms() -> list[Transform]:
     return [
-        add_oid_to_object(driver, "dia"),
+        add_oid,
+        add_sid,
+        mjdtai_to_mjd,
+        band_to_int,
+    ]
+
+
+def get_dia_object_transforms() -> list[Transform]:
+    return [
+        dia_object_id_to_oid,
         add_constant_column("tid", 0, pd.Int32Dtype()),
         add_constant_column("sid", DIA_SID, pd.Int32Dtype()),
         mjdtai_to_mjd,
@@ -109,9 +95,9 @@ def get_dia_object_transforms(driver: PsqlDatabase) -> list[Transform]:
     ]
 
 
-def get_ss_object_transforms(driver: PsqlDatabase) -> list[Transform]:
+def get_ss_object_transforms() -> list[Transform]:
     return [
-        add_oid_to_object(driver, "ss"),
+        ss_object_id_to_oid,
         add_constant_column("tid", 0, pd.Int32Dtype()),
         add_constant_column("sid", SS_SID, pd.Int32Dtype()),
         mjdtai_to_mjd,

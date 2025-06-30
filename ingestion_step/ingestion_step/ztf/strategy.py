@@ -31,9 +31,7 @@ class ZtfData(ParsedData):
 
 class ZtfStrategy(StrategyInterface[ZtfData]):
     @classmethod
-    def parse(
-        cls, messages: list[Message], driver: PsqlDatabase | None = None
-    ) -> ZtfData:
+    def parse(cls, messages: list[Message]) -> ZtfData:
         candidates = extractor.ZtfCandidatesExtractor.extract(messages)
         prv_candidates = extractor.ZtfPrvCandidatesExtractor.extract(messages)
         fp_hists = extractor.ZtfFpHistsExtractor.extract(messages)
@@ -77,9 +75,7 @@ class ZtfStrategy(StrategyInterface[ZtfData]):
         detections = serialize_detections(
             parsed_data["detections"], parsed_data["forced_photometries"]
         )
-        non_detections = serialize_non_detections(
-            parsed_data["non_detections"]
-        )
+        non_detections = serialize_non_detections(parsed_data["non_detections"])
 
         message_objects = groupby_messageid(objects)
         message_detections = groupby_messageid(detections)

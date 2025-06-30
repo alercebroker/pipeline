@@ -1,6 +1,3 @@
-from itertools import count
-from unittest.mock import MagicMock
-
 import pytest
 
 from ingestion_step.lsst.strategy import LsstData, LsstStrategy
@@ -18,23 +15,9 @@ def ztf_parsed_data() -> ZtfData:
 
 
 @pytest.fixture
-def mock_driver() -> MagicMock:
-    seq_gen = count(1)
-    driver = MagicMock()
-
-    with driver.session() as session:
-        with session.connection() as conn:
-            with conn.connection.cursor() as cursor:
-                cursor.execute()
-                cursor.fetchone = lambda: (next(seq_gen),)
-
-    return driver
-
-
-@pytest.fixture
-def lsst_parsed_data(mock_driver: MagicMock) -> LsstData:
+def lsst_parsed_data() -> LsstData:
     msgs = list(generate_alerts_lsst())
 
-    parsed_data = LsstStrategy.parse(msgs, mock_driver)
+    parsed_data = LsstStrategy.parse(msgs)
 
     return parsed_data
