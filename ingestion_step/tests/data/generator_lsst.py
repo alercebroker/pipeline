@@ -35,14 +35,14 @@ def generate_objects(alert: Message, obj: str | None = None) -> Message:
         obj = choice(["dia", "ss"])
 
     if obj == "dia":
-        diaObjectId = randint(0, 2**63 - 1)
+        diaObjectId = randint(1, 2**63 - 1)
         ssObjectId = None
         alert["diaObject"] = generate_one(diaObject_schema)
         alert["diaObject"]["diaObjectId"] = diaObjectId
         alert["ssObject"] = None
     else:
         diaObjectId = None
-        ssObjectId = randint(0, 2**63 - 1)
+        ssObjectId = randint(1, 2**63 - 1)
         alert["diaObject"] = None
         alert["ssObject"] = generate_one(ssObject_schema)
         alert["ssObject"]["ssObjectId"] = ssObjectId

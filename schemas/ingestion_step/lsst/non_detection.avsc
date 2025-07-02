@@ -1,12 +1,30 @@
 {
-	"name": "non_detection",
-	"type": "record",
-	"fields": [
- 		{ "name": "oid", "type": "long" },
-  		{ "name" : "mjd", "type": "double" },
-		{ "name": "band", "type": "int" },
-		{"name": "ccdVisitId",  "type": "long"},
-		{"name": "midpointMjdTai", "type": "double"},
-		{"name": "diaNoise", "type": "float"}
-	]
+  "name": "non_detection",
+  "type": "record",
+  "fields": [
+    {
+      "name": "oid",
+      "type": "long"
+    },
+    {
+      "name": "mjd",
+      "type": "double"
+    },
+    {
+      "name": "band",
+      "type": "int"
+    },
+    {
+      "name": "ccdVisitId",
+      "type": "long"
+    },
+    {
+      "name": "midpointMjdTai",
+      "type": "double"
+    },
+    {
+      "name": "diaNoise",
+      "type": "float"
+    }
+  ]
 }
