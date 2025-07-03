@@ -23,4 +23,4 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-run-step = { callable = "scripts.run_step:run_step" }
+step = { callable = "scripts.run_step:step" }
