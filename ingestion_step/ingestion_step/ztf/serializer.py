@@ -29,7 +29,9 @@ def serialize_detections(detections: pd.DataFrame):
     ]
 
     extra_fields_cols = detections.columns.difference(needed_columns)
-    detections["extra_fields"] = detections[extra_fields_cols].to_dict("records")
+    detections["extra_fields"] = detections[extra_fields_cols].to_dict(
+        "records"
+    )
     dets = detections[needed_columns]
 
     return dets

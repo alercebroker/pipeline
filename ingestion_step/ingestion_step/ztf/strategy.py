@@ -69,7 +69,9 @@ class ZtfStrategy(StrategyInterface[ZtfData]):
         detections = serialize_detections(parsed_data["detections"])
         prv_detections = serialize_detections(parsed_data["prv_detections"])
         forced = serialize_detections(parsed_data["forced_photometries"])
-        non_detections = serialize_non_detections(parsed_data["non_detections"])
+        non_detections = serialize_non_detections(
+            parsed_data["non_detections"]
+        )
 
         message_objects = groupby_messageid(objects)
         message_detections = groupby_messageid(detections)

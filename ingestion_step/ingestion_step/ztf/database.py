@@ -103,7 +103,9 @@ def insert_detections(connection: PsqlDatabase, detections_df: pd.DataFrame):
     detections_ztf_dict = detections_ztf_df_parsed.to_dict("records")
 
     detection_sql_stmt = db_statement_builder(Detection, detections_dict)
-    detection_ztf_sql_stmt = db_statement_builder(ZtfDetection, detections_ztf_dict)
+    detection_ztf_sql_stmt = db_statement_builder(
+        ZtfDetection, detections_ztf_dict
+    )
 
     with connection.session() as session:
         session.execute(detection_sql_stmt)
@@ -125,7 +127,9 @@ def insert_forced_photometry(
 
     forced_photometry_df = forced_photometry_df.reset_index()
 
-    forced_photometry_df_parsed = forced_photometry_df[FORCED_DETECTION_COLUMNS]
+    forced_photometry_df_parsed = forced_photometry_df[
+        FORCED_DETECTION_COLUMNS
+    ]
     forced_photometry_dict = forced_photometry_df_parsed.to_dict("records")
     forced_photometry_ztf_df_parsed = forced_photometry_df[
         [
@@ -169,7 +173,9 @@ def insert_forced_photometry(
             "sharpnr",
         ]
     ]
-    forced_photometry_ztf_dict = forced_photometry_ztf_df_parsed.to_dict("records")
+    forced_photometry_ztf_dict = forced_photometry_ztf_df_parsed.to_dict(
+        "records"
+    )
 
     forced_photometry_sql_stmt = db_statement_builder(
         ForcedPhotometry, forced_photometry_dict
@@ -184,7 +190,9 @@ def insert_forced_photometry(
         session.commit()
 
 
-def insert_non_detections(connection: PsqlDatabase, non_detections_df: pd.DataFrame):
+def insert_non_detections(
+    connection: PsqlDatabase, non_detections_df: pd.DataFrame
+):
     if len(non_detections_df) == 0:
         return
     non_detections_df = non_detections_df.reset_index()
@@ -198,7 +206,9 @@ def insert_non_detections(connection: PsqlDatabase, non_detections_df: pd.DataFr
         ]
     ].to_dict("records")
 
-    non_detection_sql_stmt = db_statement_builder(NonDetection, non_detections_dict)
+    non_detection_sql_stmt = db_statement_builder(
+        NonDetection, non_detections_dict
+    )
 
     with connection.session() as session:
         session.execute(non_detection_sql_stmt)
