@@ -1,19 +1,10 @@
 import pandas as pd
 
 
-def serialize_detections(
-    detections: pd.DataFrame, forced_photometries: pd.DataFrame
-):
-    dets = pd.concat(
-        [detections, forced_photometries],
-        join="outer",
-        ignore_index=True,
-        sort=False,
-    )
-
+def serialize_detections(detections: pd.DataFrame):
     # Bad fix for precision loss in kafka
-    for bad_column in ["objectidps1", "objectidps2", "objectidps3", "tblid"]:
-        dets[bad_column] = dets[bad_column].astype(pd.StringDtype())
+    # for bad_column in ["objectidps1", "objectidps2", "objectidps3", "tblid"]:
+    #     detections[bad_column] = detections[bad_column].astype(pd.StringDtype())
 
     needed_columns = [
         "message_id",
@@ -37,9 +28,9 @@ def serialize_detections(
         "extra_fields",
     ]
 
-    extra_fields_cols = dets.columns.difference(needed_columns)
-    dets["extra_fields"] = dets[extra_fields_cols].to_dict("records")
-    dets = dets[needed_columns]
+    extra_fields_cols = detections.columns.difference(needed_columns)
+    detections["extra_fields"] = detections[extra_fields_cols].to_dict("records")
+    dets = detections[needed_columns]
 
     return dets
 

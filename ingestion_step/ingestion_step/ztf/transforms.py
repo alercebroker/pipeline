@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from idmapper.mapper import catalog_oid_to_masterid
 
-from ingestion_step.core.utils import add_constant_column
+from ingestion_step.core.utils import add_constant_column, copy_column
 
 ERRORS = {
     1: 0.065,
@@ -34,41 +34,6 @@ def objectId_to_oid(df: pd.DataFrame):
         lambda x: int(catalog_oid_to_masterid("ZTF", x["objectId"])),
         axis=1,
     )
-
-
-def add_candid_fp(df: pd.DataFrame):
-    """
-    Adds a candid to forced_photometries equal to the pid.
-
-    The pair (oid, pid) should be unique between forced_photometries
-    """
-
-    # WARN: Use a more appropriate conversion!
-    df["candid"] = df["pid"].astype("Float64")
-
-
-def candid_to_measurement_id(df: pd.DataFrame):
-    """
-    Adds a measurement_id equal to the candid.
-
-    Takes a `DataFrame` containing the columns:
-        - `candid`
-    and uses them to calculate the new columns:
-        - `measurement_id`
-    """
-    df["measurement_id"] = df["candid"].astype("Int64")
-
-
-def fid_to_band(df: pd.DataFrame):
-    """
-    Computes the band str from the fid number.
-
-    Takes a `DataFrame` containing the columns:
-        - `fid`
-    and uses them to calculate the new columns:
-        - `band`
-    """
-    df["band"] = df["fid"].astype("Int64")
 
 
 def jd_to_mjd(df: pd.DataFrame):
@@ -136,14 +101,6 @@ def isdiffpos_to_int(df: pd.DataFrame):
     )
 
 
-def magpsf_to_mag(df: pd.DataFrame):
-    df["mag"] = df["magpsf"].astype("Float64")
-
-
-def sigmapsf_to_e_mag(df: pd.DataFrame):
-    df["e_mag"] = df["sigmapsf"].astype("Float64")
-
-
 # TODO: Check that the results are correct and add a small explanation.
 # Currently this function is a copy of the one implemented in prv_candidates_step
 def _calculate_mag(
@@ -160,10 +117,7 @@ def _calculate_mag(
         e_mag = ZERO_MAG
     else:
         e_mag = (
-            1.0857
-            * forcediffimfluxunc
-            * flux2uJy
-            / np.abs(forcediffimflux * flux2uJy)
+            1.0857 * forcediffimfluxunc * flux2uJy / np.abs(forcediffimflux * flux2uJy)
         )
 
     return mag, e_mag
@@ -217,7 +171,7 @@ def calculate_isdiffpos(df: pd.DataFrame):
 def filter_by_forcediffimflux(df: pd.DataFrame):
     df.drop(
         df[
-            (df["forcediffimflux"] is None)
+            (df["forcediffimflux"].isna())
             | (df["forcediffimflux"] == 0)
             | (np.isclose(df["forcediffimflux"], -99999))
         ].index,
@@ -226,7 +180,7 @@ def filter_by_forcediffimflux(df: pd.DataFrame):
 
     df.drop(
         df[
-            (df["forcediffimfluxunc"] is None)
+            (df["forcediffimfluxunc"].isna())
             | (df["forcediffimfluxunc"] == 0)
             | (np.isclose(df["forcediffimfluxunc"], -99999))
         ].index,
@@ -236,30 +190,30 @@ def filter_by_forcediffimflux(df: pd.DataFrame):
 
 CANDIDATES_TRANSFORMS = [
     objectId_to_oid,
-    candid_to_measurement_id,
+    copy_column("candid", "measurement_id"),
     add_constant_column("tid", 0, pd.Int32Dtype()),
     add_constant_column("sid", 0, pd.Int32Dtype()),
     isdiffpos_to_int,
-    fid_to_band,
     jd_to_mjd,
     sigmara_to_e_ra,
     sigmadec_to_e_dec,
-    magpsf_to_mag,
-    sigmapsf_to_e_mag,
+    copy_column("fid", "band"),
+    copy_column("magpsf", "mag"),
+    copy_column("sigmapsf", "e_mag"),
 ]
 
 PRV_CANDIDATES_TRANSFORMS = [
     objectId_to_oid,
-    candid_to_measurement_id,
+    copy_column("candid", "measurement_id"),
     add_constant_column("tid", 0, pd.Int32Dtype()),
     add_constant_column("sid", 0, pd.Int32Dtype()),
+    isdiffpos_to_int,
+    jd_to_mjd,
     sigmara_to_e_ra,
     sigmadec_to_e_dec,
-    fid_to_band,
-    jd_to_mjd,
-    magpsf_to_mag,
-    sigmapsf_to_e_mag,
-    isdiffpos_to_int,
+    copy_column("fid", "band"),
+    copy_column("magpsf", "mag"),
+    copy_column("sigmapsf", "e_mag"),
     add_constant_column("drb", None, pd.Float32Dtype()),
     add_constant_column("drbversion", None, pd.StringDtype()),
     add_constant_column("rfid", None, pd.Int64Dtype()),
@@ -268,14 +222,14 @@ PRV_CANDIDATES_TRANSFORMS = [
 FP_TRANSFORMS = [
     filter_by_forcediffimflux,
     objectId_to_oid,
-    add_candid_fp,
-    candid_to_measurement_id,
+    copy_column("pid", "candid"),
+    copy_column("candid", "measurement_id"),
     add_constant_column("tid", 0, pd.Int32Dtype()),
     add_constant_column("sid", 0, pd.Int32Dtype()),
-    fid_to_band,
     jd_to_mjd,
     forcediffimflux_to_mag,
     forcediffimflux_to_e_mag,
+    copy_column("fid", "band"),
     add_constant_column("e_ra", 0.0, pd.Float64Dtype()),
     add_constant_column("e_dec", 0.0, pd.Float64Dtype()),
     calculate_isdiffpos,
