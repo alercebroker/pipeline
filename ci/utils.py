@@ -122,7 +122,7 @@ async def build(
         dockerfile=f"{package_dir}/Dockerfile",
         build_args=bargs,
     )
-    tags = await get_tags(client, package_dir)
+    tags = ["anomaly"]
     print(f"Built image with tag: {tags}")
 
     if not dry_run:
@@ -169,26 +169,7 @@ async def publish_lib(client: dagger.Client, package_dir, dry_run: bool):
 
 
 async def get_tags(client: dagger.Client, package_dir: str) -> list:
-    path = pathlib.Path().cwd().parent.absolute()
-    # get build context directory
-    source = (
-        client.container()
-        .from_("python:3.11-slim")
-        .with_exec(["pip", "install", "poetry"])
-        .with_directory(
-            "/pipeline",
-            client.host().directory(
-                str(path),
-                exclude=[".venv/", "**/.venv/", ".terraform/",
-                         "**/.terraform", "tests/", "**/tests/",]
-            ),
-        )
-    )
-    runner = source.with_workdir(f"/pipeline/{package_dir}").with_exec(
-        ["poetry", "version", "--short"]
-    )
-    out = await runner.stdout()
-    return ["rc", out.strip("\n")]
+    return ["anomaly"]
 
 
 def update_chart(
