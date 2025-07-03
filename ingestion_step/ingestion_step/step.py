@@ -1,3 +1,4 @@
+import time
 from datetime import datetime
 from typing import Any
 
@@ -33,10 +34,7 @@ class IngestionStep(GenericStep):
     def execute(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, messages: list[Message]
     ) -> ParsedData:
-        self.logger.info(f"Processing {len(messages)} alerts")
-        self.ingestion_timestamp = int(datetime.now().timestamp())
-
-        parsed_data = self.Strategy.parse(messages, self.psql_driver)
+        parsed_data = self.Strategy.parse(messages)
 
         for key in parsed_data:
             self.logger.info(

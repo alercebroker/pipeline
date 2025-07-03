@@ -1,29 +1,29 @@
 {
-  "name": "non_detection",
   "type": "record",
+  "name": "non_detection",
   "fields": [
     {
       "name": "oid",
       "type": "long"
     },
     {
-      "name": "mjd",
-      "type": "double"
+      "name": "sid",
+      "type": "int"
+    },
+    {
+      "name": "tid",
+      "type": "int"
     },
     {
       "name": "band",
       "type": "int"
     },
     {
-      "name": "ccdVisitId",
-      "type": "long"
-    },
-    {
-      "name": "midpointMjdTai",
+      "name": "mjd",
       "type": "double"
     },
     {
-      "name": "diaNoise",
+      "name": "diffmaglim",
       "type": "float"
     }
   ]

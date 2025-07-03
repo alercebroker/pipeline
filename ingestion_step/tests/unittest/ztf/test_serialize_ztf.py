@@ -5,41 +5,46 @@ from fastavro.validation import validate_many
 from ingestion_step.ztf import serializer
 from ingestion_step.ztf.strategy import ZtfData, ZtfStrategy
 
-output_schema = load_schema("../schemas/ingestion_step/output.avsc")
+output_schema = load_schema("../schemas/ingestion_step/ztf/output.avsc")
 
 
 def test_serialize(ztf_parsed_data: ZtfData):
     msgs = ZtfStrategy.serialize(ztf_parsed_data)
 
-    expected_keys = ["oid", "measurement_id", "detections", "non_detections"]
+    expected_keys = [
+        "oid",
+        "measurement_id",
+        "detections",
+        "prv_detections",
+        "forced_photometries",
+        "non_detections",
+    ]
 
-    assert all([list(msg.keys()) == expected_keys for msg in msgs])
-    assert sum(map(lambda msg: len(msg["detections"]), msgs)) == len(
-        ztf_parsed_data["detections"]
-    ) + len(ztf_parsed_data["forced_photometries"])
+    for msg in msgs:
+        assert set(msg.keys()) == set(expected_keys)
 
-    assert sum(map(lambda msg: len(msg["non_detections"]), msgs)) == len(
-        ztf_parsed_data["non_detections"]
-    )
+    for key in expected_keys[2:]:
+        total_length = 0
+        for msg in msgs:
+            total_length += len(msg[key])
+        assert total_length == len(ztf_parsed_data[key])
 
     validate_many(msgs, output_schema, raise_errors=True)
 
 
 def test_serialize_detections(ztf_parsed_data: ZtfData):
-    detections = serializer.serialize_detections(
-        ztf_parsed_data["detections"], ztf_parsed_data["forced_photometries"]
-    )
+    detections = serializer.serialize_detections(ztf_parsed_data["detections"])
+    prv_detections = serializer.serialize_detections(ztf_parsed_data["prv_detections"])
+    forced = serializer.serialize_detections(ztf_parsed_data["forced_photometries"])
 
     assert "extra_fields" in detections
-    assert len(detections) == len(ztf_parsed_data["detections"]) + len(
-        ztf_parsed_data["forced_photometries"]
-    )
-    assert len(detections[detections["forced"]]) == len(
-        ztf_parsed_data["forced_photometries"]
-    ), (
-        "Number of detections with `forced = True` should be equal to the "
-        "number of forced_photometries."
-    )
+    assert len(detections) == len(ztf_parsed_data["detections"])
+    assert len(prv_detections) == len(ztf_parsed_data["prv_detections"])
+    assert len(forced) == len(ztf_parsed_data["forced_photometries"])
+
+    assert not any(detections["forced"])
+    assert not any(prv_detections["forced"])
+    assert all(forced["forced"])
 
     assert detections.dtypes["parent_candid"] == pd.Int64Dtype()
 

@@ -2,9 +2,18 @@
   "type": "record",
   "name": "forced_source",
   "fields": [
-    { "name": "oid", "type": "long" },
-    { "name": "measurement_id", "type": "long" },
-    { "name" : "mjd", "type": "double" },
+    {
+      "name": "oid",
+      "type": "long"
+    },
+    {
+      "name": "measurement_id",
+      "type": "long"
+    },
+    {
+      "name": "mjd",
+      "type": "double"
+    },
     {
       "doc": "Filter band this source was observed with. ALeRCE: Changed from string to int",
       "default": null,

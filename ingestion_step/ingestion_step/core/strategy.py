@@ -28,7 +28,7 @@ class StrategyInterface(ABC, Generic[T]):
 
     @classmethod
     @abstractmethod
-    def parse(cls, messages: list[Message], driver: PsqlDatabase) -> T:
+    def parse(cls, messages: list[Message]) -> T:
         """
         Parses a list of messages into a `ParsedData` dict of pandas DataFrames.
         """

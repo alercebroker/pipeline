@@ -39,7 +39,7 @@ class LsstData(ParsedData):
 
 class LsstStrategy(StrategyInterface[LsstData]):
     @classmethod
-    def parse(cls, messages: list[Message], driver: PsqlDatabase) -> LsstData:
+    def parse(cls, messages: list[Message]) -> LsstData:
         sources = LsstSourceExtractor.extract(messages)
         previous_sources = LsstPrvSourceExtractor.extract(messages)
         forced_sources = LsstForcedSourceExtractor.extract(messages)
@@ -47,11 +47,11 @@ class LsstStrategy(StrategyInterface[LsstData]):
         dia_object = LsstDiaObjectExtractor.extract(messages)
         ss_object = LsstSsObjectExtractor.extract(messages)
 
-        source_transforms = get_source_transforms(driver)
-        forced_source_transforms = get_forced_source_transforms(driver)
-        non_detection_transforms = get_non_detection_transforms(driver)
-        dia_object_transforms = get_dia_object_transforms(driver)
-        ss_object_transforms = get_ss_object_transforms(driver)
+        source_transforms = get_source_transforms()
+        forced_source_transforms = get_forced_source_transforms()
+        non_detection_transforms = get_non_detection_transforms()
+        dia_object_transforms = get_dia_object_transforms()
+        ss_object_transforms = get_ss_object_transforms()
 
         apply_transforms(sources, source_transforms)
         apply_transforms(previous_sources, source_transforms)
@@ -121,4 +121,4 @@ class LsstStrategy(StrategyInterface[LsstData]):
 
     @classmethod
     def get_key(cls) -> str:
-        return "alertId"
+        return "oid"

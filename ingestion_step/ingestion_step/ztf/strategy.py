@@ -25,15 +25,14 @@ from ingestion_step.ztf.transforms import (
 class ZtfData(ParsedData):
     objects: pd.DataFrame
     detections: pd.DataFrame
+    prv_detections: pd.DataFrame
     non_detections: pd.DataFrame
     forced_photometries: pd.DataFrame
 
 
 class ZtfStrategy(StrategyInterface[ZtfData]):
     @classmethod
-    def parse(
-        cls, messages: list[Message], driver: PsqlDatabase | None = None
-    ) -> ZtfData:
+    def parse(cls, messages: list[Message]) -> ZtfData:
         candidates = extractor.ZtfCandidatesExtractor.extract(messages)
         prv_candidates = extractor.ZtfPrvCandidatesExtractor.extract(messages)
         fp_hists = extractor.ZtfFpHistsExtractor.extract(messages)
@@ -48,18 +47,10 @@ class ZtfStrategy(StrategyInterface[ZtfData]):
         non_detections = prv_candidates[prv_candidates["candid"].isnull()]
         forced_photometries = fp_hists
 
-        # print("parse det", detections.dtypes)
-        # print("parse prv_det", prv_detections.dtypes)
-        # print("parse fp", forced_photometries.dtypes)
-
         return ZtfData(
             objects=objects,
-            detections=pd.concat(
-                [detections, prv_detections],
-                join="outer",
-                ignore_index=True,
-                sort=False,
-            ),
+            detections=detections,
+            prv_detections=prv_detections,
             non_detections=non_detections,
             forced_photometries=forced_photometries,
         )
@@ -68,26 +59,29 @@ class ZtfStrategy(StrategyInterface[ZtfData]):
     def insert_into_db(cls, driver: PsqlDatabase, parsed_data: ZtfData):
         insert_objects(driver, parsed_data["objects"])
         insert_detections(driver, parsed_data["detections"])
+        insert_detections(driver, parsed_data["prv_detections"])
         insert_non_detections(driver, parsed_data["non_detections"])
         insert_forced_photometry(driver, parsed_data["forced_photometries"])
 
     @classmethod
     def serialize(cls, parsed_data: ZtfData) -> list[Message]:
         objects = parsed_data["objects"]
-        detections = serialize_detections(
-            parsed_data["detections"], parsed_data["forced_photometries"]
-        )
-        non_detections = serialize_non_detections(
-            parsed_data["non_detections"]
-        )
+        detections = serialize_detections(parsed_data["detections"])
+        prv_detections = serialize_detections(parsed_data["prv_detections"])
+        forced = serialize_detections(parsed_data["forced_photometries"])
+        non_detections = serialize_non_detections(parsed_data["non_detections"])
 
         message_objects = groupby_messageid(objects)
         message_detections = groupby_messageid(detections)
+        message_prv_detections = groupby_messageid(prv_detections)
+        message_forced = groupby_messageid(forced)
         message_non_detections = groupby_messageid(non_detections)
 
         messages: list[Message] = []
         for message_id, objects in message_objects.items():
             detections = message_detections.get(message_id, [])
+            prv_detections = message_prv_detections.get(message_id, [])
+            forced = message_forced.get(message_id, [])
             non_detections = message_non_detections.get(message_id, [])
 
             assert len(objects) == 1
@@ -98,6 +92,8 @@ class ZtfStrategy(StrategyInterface[ZtfData]):
                     "oid": obj["oid"],
                     "measurement_id": obj["measurement_id"],
                     "detections": detections,
+                    "prv_detections": prv_detections,
+                    "forced_photometries": forced,
                     "non_detections": non_detections,
                 }
             )

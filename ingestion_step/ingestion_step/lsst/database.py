@@ -7,6 +7,7 @@ from db_plugins.db.sql.models import (
     LsstDiaObject,
     LsstForcedPhotometry,
     LsstNonDetection,
+    LsstSsObject,
     Object,
 )
 
@@ -19,6 +20,9 @@ from ingestion_step.core.database import (
 
 
 def insert_dia_objects(driver: PsqlDatabase, dia_objects: pd.DataFrame):
+    if len(dia_objects) == 0:
+        return
+
     objects_dict = dia_objects[OBJECT_COLUMNS].to_dict("records")
     objects_dia_lsst_dict = dia_objects[["oid"]].to_dict("records")
 
@@ -34,12 +38,14 @@ def insert_dia_objects(driver: PsqlDatabase, dia_objects: pd.DataFrame):
 
 
 def insert_ss_objects(driver: PsqlDatabase, ss_objects: pd.DataFrame):
+    if len(ss_objects) == 0:
+        return
     objects_dict = ss_objects[OBJECT_COLUMNS].to_dict("records")
     objects_ss_lsst_dict = ss_objects[["oid"]].to_dict("records")
 
     objects_sql_stmt = db_statement_builder(Object, objects_dict)
     objects_ss_lsst_sql_stmt = db_statement_builder(
-        LsstDiaObject, objects_ss_lsst_dict
+        LsstSsObject, objects_ss_lsst_dict
     )
 
     with driver.session() as session:
@@ -49,10 +55,13 @@ def insert_ss_objects(driver: PsqlDatabase, ss_objects: pd.DataFrame):
 
 
 def insert_sources(driver: PsqlDatabase, sources: pd.DataFrame):
+    if len(sources) == 0:
+        return
     detections_dict = sources[DETECTION_COLUMNS].to_dict("records")
     detections_lsst_dict = sources[
         [
             "oid",
+            "sid",
             "measurement_id",
             "parentDiaSourceId",
             "psfFlux",
@@ -75,12 +84,15 @@ def insert_sources(driver: PsqlDatabase, sources: pd.DataFrame):
 
 
 def insert_forced_sources(driver: PsqlDatabase, forced_sources: pd.DataFrame):
+    if len(forced_sources) == 0:
+        return
     forced_detections_dict = forced_sources[FORCED_DETECTION_COLUMNS].to_dict(
         "records"
     )
     forced_detections_lsst_dict = forced_sources[
         [
             "oid",
+            "sid",
             "measurement_id",
             "visit",
             "detector",
@@ -103,9 +115,12 @@ def insert_forced_sources(driver: PsqlDatabase, forced_sources: pd.DataFrame):
 
 
 def insert_non_detections(driver: PsqlDatabase, non_detections: pd.DataFrame):
+    if len(non_detections) == 0:
+        return
     non_detections_lsst_dict = non_detections[
         [
             "oid",
+            "sid",
             "ccdVisitId",
             "band",
             "mjd",
