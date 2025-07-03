@@ -1,0 +1,42 @@
+{
+  "type": "record",
+  "name": "ingestion_ztf",
+  "fields": [
+    {
+      "name": "oid",
+      "type": "long"
+    },
+    {
+      "name": "measurement_id",
+      "type": "long"
+    },
+    {
+      "name": "detections",
+      "type": {
+        "type": "array",
+        "items": "detection"
+      }
+    },
+    {
+      "name": "prv_detections",
+      "type": {
+        "type": "array",
+        "items": "detection"
+      }
+    },
+    {
+      "name": "forced_photometries",
+      "type": {
+        "type": "array",
+        "items": "detection"
+      }
+    },
+    {
+      "name": "non_detections",
+      "type": {
+        "type": "array",
+        "items": "non_detection"
+      }
+    }
+  ]
+}

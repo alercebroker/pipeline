@@ -60,7 +60,7 @@ configYaml:
       sasl.mechanism: "SCRAM-SHA-512"
       auto.offset.reset: "beginning"
       enable.partition.eof: false
-      group.id: "sorting-hat-setp-ingestion"
+      group.id: "sorting-hat-step-ingestion"
       sasl.username: ""
       sasl.password: ""
   PRODUCER_CONFIG:

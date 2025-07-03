@@ -35,7 +35,7 @@ def is_responsive_psql(host, port):
         conn.close()
         return True
     except Exception as e:
-        print(f"Connection failed: {e}")
+        # print(f"Connection failed: {e}")
         return False
 
 

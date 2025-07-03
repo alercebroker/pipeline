@@ -15,7 +15,7 @@ from db_plugins.db.sql.models import (
 )
 from sqlalchemy import insert, select
 
-from ingestion_step.utils.database import (
+from ingestion_step.ztf.database import (
     insert_detections,
     insert_forced_photometry,
     insert_non_detections,
@@ -134,11 +134,12 @@ class BaseDbTests(unittest.TestCase):
         for res, exp in self.ziped_lists(
             result_ztf_fp, msgs.ztf_fp_expected, "measurement_id"
         ):
-            print(f"HERE ---- \n {res} \n {exp} \n")
+            # print(f"HERE ---- \n {res} \n {exp} \n")
 
             for key in res.keys():
                 if res[key] != exp[key]:
-                    print(f"LLAVE MALA {key} {res[key]} != {exp[key]}f")
+                    pass
+                    # print(f"LLAVE MALA {key} {res[key]} != {exp[key]}f")
             self.assertDictEqual(res, exp)
 
     def test_non_detections(self):
