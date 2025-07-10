@@ -277,7 +277,6 @@ class ZTFMagstatCommand(Command):
                 object_stmt
                 .where(Object.oid == bindparam('_oid'))
                 .values({
-                    "oid": bindparam("oid"),
                     "meanra": bindparam("meanra"),
                     "meandec": bindparam("meandec"),
                     "sigmara": bindparam("sigmara"),
@@ -305,6 +304,69 @@ class ZTFMagstatCommand(Command):
                 magstat_list
             )
 
+
+class LSSTMagstatCommand(Command):
+    type = "LSSTMagstatCommand"
+
+    def _format_data(self, data):
+        
+        oid = data["oid"]
+
+        object_stats = parse_obj_stats(data, oid)
+        magstats_list = [
+            parse_magstats(ms, oid)
+            for ms in data["magstats"]
+        ]
+
+        return {
+            "object_stats": object_stats,
+            "magstats": magstats_list
+        }
+
+    @staticmethod
+    def db_operation(session: Session, data: List):
+        objectstat_list = []
+        magstat_list = []
+
+        for single_data in data:
+            objectstat_list.append(single_data["object_stats"])
+            magstat_list.extend(single_data["magstats"])      
+        
+        # update object
+        if len(objectstat_list) > 0:
+            object_stmt = update(Object)
+            object_result = session.connection().execute(
+                object_stmt
+                .where(Object.oid == bindparam('_oid'))
+                .values({
+                    "meanra": bindparam("meanra"),
+                    "meandec": bindparam("meandec"),
+                    "sigmara": bindparam("sigmara"),
+                    "sigmadec": bindparam("sigmadec"),
+                    "firstmjd": bindparam("firstmjd"),
+                    "lastmjd": bindparam("lastmjd"),
+                    "deltamjd": bindparam("deltamjd"),
+                    "n_det": bindparam("n_det"),
+                    "n_forced": bindparam("n_forced"),
+                    "n_non_det": bindparam("n_non_det"),
+                    "corrected": bindparam("corrected"),
+                    "stellar": bindparam("stellar"),
+                }),
+                objectstat_list
+            )
+        
+        # insert magstats => TODO in the future 
+        """
+        if len(magstat_list) > 0:
+            magstats_stmt = insert(MagStat)
+            magstats_result = session.connection().execute(
+                magstats_stmt.on_conflict_do_update(
+                    constraint="pk_magstat_oid_band",
+                    set_=magstats_stmt.excluded
+                ),
+                magstat_list
+            )
+        """
 
 
 ### ###### ###

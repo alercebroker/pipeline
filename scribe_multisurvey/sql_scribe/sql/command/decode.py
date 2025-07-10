@@ -4,6 +4,7 @@ from .commands import (
     Command,
     ZTFCorrectionCommand,
     ZTFMagstatCommand,
+    LSSTMagstatCommand
 )
 
 
@@ -45,4 +46,6 @@ def command_factory(msg: str) -> Command:
         return ZTFCorrectionCommand(**message)
     if survey == "ztf" and step == "magstat":
         return ZTFMagstatCommand(**message)
+    if survey == "lsst" and step == "magstat":
+        return LSSTMagstatCommand(**message)
     raise ValueError(f"Unrecognized command type {survey} in table {step}.")
