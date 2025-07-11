@@ -313,10 +313,7 @@ class LSSTMagstatCommand(Command):
         oid = data["oid"]
 
         object_stats = parse_obj_stats(data, oid)
-        magstats_list = [
-            parse_magstats(ms, oid)
-            for ms in data["magstats"]
-        ]
+        magstats_list = []
 
         return {
             "object_stats": object_stats,
