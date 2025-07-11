@@ -1,0 +1,76 @@
+hydra:
+  run:
+    dir: .
+  output_subdir: null 
+
+stamp_classifier:
+  results_dir: 'results'
+  exp_description: ''
+  
+  # General Configuration
+  model_name: 'stamp_full' # no usado
+  name_dataset_version: 'rubin_AGN_vs_VS'
+  dir_data: './../../../data_acquisition/rubin/data/processed/rubin_AGN_vs_VS'
+  path_partition: './../../../data_acquisition/rubin/data/processed/partitions/rubin_AGN_vs_VS/partitions.parquet'
+  list_folds: [0] # [0, 1, 2 , 3]
+  debug: false
+  is_searching_hyperparameters: false
+
+  # Loaders Configuration
+  loader:
+    id_col: 'diaObjectId'
+    candid_col: 'diaSourceId'
+    ra_col: 'coord_ra'
+    dec_col: 'coord_dec'
+    class_col: 'class'
+    stamps_cols: ['visit_image', 'difference_image', 'reference_image']
+    cropping: {
+      use: false,
+      crop_size: 21
+    }
+    num_workers: 12 # No lo estoy usando
+    coord_type: 'spherical' # ['spherical', 'cartesian']
+    norm_type: 'z-score' # ['qt', 'z-score']
+    batch_size: 256
+    
+  arch:
+    conv_config:
+      - filters: 32
+        kernel_size: [5, 5]
+        activation: relu
+        pool: true
+        pool_size: [2, 2]
+
+      - filters: 64
+        kernel_size: [3, 3]
+        activation: relu
+        pool: true
+        pool_size: [2, 2]
+
+      - filters: 128
+        kernel_size: [3, 3]
+        activation: relu
+        pool: true
+        pool_size: [2, 2]
+
+      - filters: 256
+        kernel_size: [3, 3]
+        activation: relu
+        pool: false
+        batchnorm: true
+
+    dense_config:
+      - units: 256
+        activation: tanh
+
+    dropout_rate: 0.71726
+    use_batchnorm_metadata: false
+
+  # Training Configuration
+  training:
+    lr: 0.0007589
+    use_focal: false    
+    patience: 10
+    num_epochs: 10000
+    monitor: 'loss'
+  
