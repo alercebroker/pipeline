@@ -18,10 +18,8 @@ class CustomMirrormaker(GenericStep):
 
     def __init__(self, config=None, **step_args):
         super().__init__(config=config)
-        self.keep_original_timestamp = step_args.get(
-            "keep_original_timestamp", False
-        )
-        self.use_message_topic = step_args.get("use_message_topic", False)
+        self.keep_original_timestamp = step_args.get("keep_original_timestamp")
+        self.use_message_topic = step_args.get("use_message_topic")
 
     def produce(self, messages):
         to_produce = [messages] if isinstance(messages, dict) else messages
