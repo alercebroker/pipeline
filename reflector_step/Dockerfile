@@ -34,9 +34,8 @@ COPY --from=builder /libs /libs
 
 COPY reflector_step/reflector_step /app/reflector_step
 COPY reflector_step/scripts /app/scripts
-COPY reflector_step/README.md \
-  reflector_step/settings.py \
-  /app/
+COPY reflector_step/README.md /app/
+COPY schemas/surveys /schemas/surveys
 
 WORKDIR /app
 RUN poetry install --only-root
