@@ -43,7 +43,7 @@ class Object(Base):
     stellar = Column(Boolean, nullable=True, default=None)
 
     __table_args__ = (
-        PrimaryKeyConstraint("oid", "sid", name="pk_object_oid"),
+        PrimaryKeyConstraint("oid", "sid", name="pk_object_oid_sid"),
         Index("ix_object_n_det", "n_det", postgresql_using="btree"),
         Index("ix_object_firstmjd", "firstmjd", postgresql_using="btree"),
         Index("ix_object_lastmjd", "lastmjd", postgresql_using="btree"),
@@ -153,6 +153,9 @@ class LsstDetection(Base):
     psfFlux_flag = Column(Boolean)
     psfFlux_flag_edge = Column(Boolean)
     psfFlux_flag_noGoodPixels = Column(Boolean)
+
+    raErr = Column(REAL)
+    decErr = Column(REAL)
 
     __table_args__ = (
         PrimaryKeyConstraint(
