@@ -69,6 +69,8 @@ def insert_sources(driver: PsqlDatabase, sources: pd.DataFrame):
             "psfFlux_flag",
             "psfFlux_flag_edge",
             "psfFlux_flag_noGoodPixels",
+            "raErr",
+            "decErr",
         ]
     ].to_dict("records")
 

@@ -154,6 +154,9 @@ class LsstDetection(Base):
     psfFlux_flag_edge = Column(Boolean)
     psfFlux_flag_noGoodPixels = Column(Boolean)
 
+    raErr = Column(REAL)
+    decErr = Column(REAL)
+
     __table_args__ = (
         PrimaryKeyConstraint(
             "oid", "measurement_id", name="pk_lsstdetection_oid_measurementid"

@@ -1,8 +1,8 @@
 from sqlalchemy import select, cast, Float
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
 from db_plugins.db.sql.models import (
-    Detection, LSSTDetection, LSSTForcedPhotometry, 
-    ForcedPhotometry, LSSTNonDetection
+    Detection, LsstDetection, LsstForcedPhotometry, 
+    ForcedPhotometry, LsstNonDetection
 )
 from typing import List, Dict, Any
 from .database_strategy import DatabaseStrategy
@@ -58,16 +58,16 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
         with self.db_connection.session() as session:
             # Query LSST-specific detection data with casting
             lsst_stmt = select(
-                LSSTDetection.oid,
-                LSSTDetection.sid,
-                LSSTDetection.measurement_id,
-                LSSTDetection.parentDiaSourceId,
-                cast(LSSTDetection.psfFlux, DOUBLE_PRECISION).label('psfFlux'),
-                cast(LSSTDetection.psfFluxErr, DOUBLE_PRECISION).label('psfFluxErr'),
-                LSSTDetection.psfFlux_flag,
-                LSSTDetection.psfFlux_flag_edge,
-                LSSTDetection.psfFlux_flag_noGoodPixels
-            ).where(LSSTDetection.oid.in_(oids))
+                LsstDetection.oid,
+                LsstDetection.sid,
+                LsstDetection.measurement_id,
+                LsstDetection.parentDiaSourceId,
+                cast(LsstDetection.psfFlux, DOUBLE_PRECISION).label('psfFlux'),
+                cast(LsstDetection.psfFluxErr, DOUBLE_PRECISION).label('psfFluxErr'),
+                LsstDetection.psfFlux_flag,
+                LsstDetection.psfFlux_flag_edge,
+                LsstDetection.psfFlux_flag_noGoodPixels
+            ).where(LsstDetection.oid.in_(oids))
             
             lsst_detections = session.execute(lsst_stmt).all()
             
@@ -90,14 +90,14 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
         with self.db_connection.session() as session:
             # Query LSST-specific forced photometry with casting
             lsst_stmt = select(
-                LSSTForcedPhotometry.oid,
-                LSSTForcedPhotometry.measurement_id,
-                LSSTForcedPhotometry.sid,
-                LSSTForcedPhotometry.visit,
-                LSSTForcedPhotometry.detector,
-                cast(LSSTForcedPhotometry.psfFlux, DOUBLE_PRECISION).label('psfFlux'),
-                cast(LSSTForcedPhotometry.psfFluxErr, DOUBLE_PRECISION).label('psfFluxErr')
-            ).where(LSSTForcedPhotometry.oid.in_(oids))
+                LsstForcedPhotometry.oid,
+                LsstForcedPhotometry.measurement_id,
+                LsstForcedPhotometry.sid,
+                LsstForcedPhotometry.visit,
+                LsstForcedPhotometry.detector,
+                cast(LsstForcedPhotometry.psfFlux, DOUBLE_PRECISION).label('psfFlux'),
+                cast(LsstForcedPhotometry.psfFluxErr, DOUBLE_PRECISION).label('psfFluxErr')
+            ).where(LsstForcedPhotometry.oid.in_(oids))
             
             lsst_forced = session.execute(lsst_stmt).all()
             
@@ -120,13 +120,13 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
         with self.db_connection.session() as session:
             # Query with casting for precision fields
             stmt = select(
-                LSSTNonDetection.oid,
-                LSSTNonDetection.sid,
-                LSSTNonDetection.ccdVisitId,
-                LSSTNonDetection.band,
-                LSSTNonDetection.mjd,
-                cast(LSSTNonDetection.diaNoise, DOUBLE_PRECISION).label('diaNoise')
-            ).where(LSSTNonDetection.oid.in_(oids))
+                LsstNonDetection.oid,
+                LsstNonDetection.sid,
+                LsstNonDetection.ccdVisitId,
+                LsstNonDetection.band,
+                LsstNonDetection.mjd,
+                cast(LsstNonDetection.diaNoise, DOUBLE_PRECISION).label('diaNoise')
+            ).where(LsstNonDetection.oid.in_(oids))
             
             non_detections = session.execute(stmt).all()
             
