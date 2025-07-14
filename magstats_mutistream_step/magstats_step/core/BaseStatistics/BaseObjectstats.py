@@ -107,7 +107,7 @@ class BaseObjectStatistics(BaseStatistics):
 
     def calculate_ndet(self) -> pd.DataFrame:
         return pd.DataFrame({
-            "ndet": self._detections.value_counts(subset=self._JOIN, sort=False)
+            "n_det": self._detections.value_counts(subset=self._JOIN, sort=False)
         })
 
     
