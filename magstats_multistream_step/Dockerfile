@@ -18,10 +18,10 @@ RUN apt-get update && \
 
 RUN pip install poetry
 
-COPY magstats_step/poetry.lock magstats_step/pyproject.toml /app/
+COPY magstats_multistream_step/poetry.lock magstats_multistream_step/pyproject.toml /app/
 COPY libs/apf libs/apf
-COPY schemas/magstats_step /schemas/magstats_step
-COPY schemas/correction_step /schemas/correction_step
+COPY schemas/magstats_ms_step /schemas/magstats_ms_step
+COPY schemas/correction_ms_step /schemas/correction_ms_step
 COPY schemas/scribe_step /schemas/scribe_step
 
 WORKDIR /app
@@ -34,12 +34,13 @@ COPY --from=builder /app /app
 COPY --from=builder /libs /libs
 COPY --from=builder /schemas /schemas
 
-COPY magstats_step/README.md /app/README.md
-COPY magstats_step/scripts /app/scripts
-COPY magstats_step/settings.py /app/settings.py
-COPY magstats_step/magstats_step /app/magstats_step
+COPY magstats_multistream_step/README.md /app/README.md
+COPY magstats_multistream_step/scripts /app/scripts
+COPY magstats_multistream_step/settings.py /app/settings.py
+COPY magstats_multistream_step/magstats_multistream_step /app/magstats_multistream_step
 
 WORKDIR /app
+
 RUN poetry install --only-root
 
 CMD ["poetry", "run", "python", "scripts/run_step.py"]

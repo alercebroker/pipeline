@@ -1,10 +1,10 @@
 [tool.poetry]
-name = "magstats-step"
+name = "magstats-multistream-step"
 version = "27.5.7a21"
 description = ""
 authors = ["ASHuenchuleo <arsepulh@gmail.com>", "Pablo Castellanos"]
 readme = "README.md"
-packages = [{include = "magstats_step"}]
+packages = [{include = "magstats_multistream_step"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"

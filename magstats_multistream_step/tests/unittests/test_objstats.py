@@ -3,7 +3,7 @@ from unittest import mock
 import numpy as np
 import pandas as pd
 from pandas.testing import assert_series_equal
-from magstats_step.core import ObjectStatistics
+from magstats_multistream_step.core import ObjectStatistics
 
 
 def test_arcsec_to_degree_conversion():

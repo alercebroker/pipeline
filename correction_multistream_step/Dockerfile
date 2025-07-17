@@ -18,15 +18,15 @@ RUN apt-get update && \
 
 RUN pip install poetry;
 
-COPY correction_multistream_ztf_step/pyproject.toml /app/
-COPY correction_multistream_ztf_step/poetry.lock /app/
+COPY correction_multistream_step/pyproject.toml /app/
+COPY correction_multistream_step/poetry.lock /app/
 COPY libs/apf libs/apf
 COPY libs/db-plugins-multisurvey libs/db-plugins-multisurvey
 COPY libs/idmapper libs/idmapper
 COPY libs/survey_parser_plugins libs/survey_parser_plugins
 
 COPY schemas/ingestion_step schemas/ingestion_step
-COPY schemas/correction_ms_ztf schemas/correction_ms_ztf
+COPY schemas/correction_ms_step schemas/correction_ms_step
 COPY schemas/scribe_step schemas/scribe_step
 
 WORKDIR /app
@@ -39,16 +39,16 @@ COPY --from=builder /app /app
 COPY --from=builder /libs /libs
 COPY --from=builder /schemas /schemas
 
-COPY correction_multistream_ztf_step/README.md \
+COPY correction_multistream_step/README.md \
   /app/
 
-COPY correction_multistream_ztf_step/README.md /app/
-COPY correction_multistream_ztf_step/correction_multistream_ztf_step /app/correction_multistream_ztf_step
-COPY correction_multistream_ztf_step/core /app/core
-COPY correction_multistream_ztf_step/settings.py /app/settings.py
+COPY correction_multistream_step/README.md /app/
+COPY correction_multistream_step/correction_multistream_step /app/correction_multistream_step
+COPY correction_multistream_step/core /app/core
+COPY correction_multistream_step/settings.py /app/settings.py
 
-COPY correction_multistream_ztf_step/scripts /app/scripts
-COPY correction_multistream_ztf_step/credentials.py /app/
+COPY correction_multistream_step/scripts /app/scripts
+COPY correction_multistream_step/credentials.py /app/
 WORKDIR /app
 RUN poetry install --only-root;
 

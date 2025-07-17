@@ -3,7 +3,7 @@ from unittest import mock
 import numpy as np
 import pandas as pd
 from pandas.testing import assert_frame_equal
-from magstats_step.core import MagnitudeStatistics
+from magstats_multistream_step.core import MagnitudeStatistics
 
 
 def test_calculate_uncorrected_stats_gives_statistics_for_magnitudes_per_oid_and_fid():

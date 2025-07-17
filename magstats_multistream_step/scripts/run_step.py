@@ -28,7 +28,7 @@ def set_logger(config):
 
 
 def step_factory():
-    from magstats_step.step import MagstatsStep_Multistream
+    from magstats_multistream_step.step import MagstatsStep_Multistream
 
     if os.getenv("CONFIG_FROM_YAML"):
         step_config = config_from_yaml_file("/config/config.yaml")

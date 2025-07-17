@@ -1,4 +1,4 @@
-# MagStats Step
+# MagStats MS Step
 
 ## Development
 Tests are yet to do and the project is not yet on a working state.
