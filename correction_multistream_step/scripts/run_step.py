@@ -31,7 +31,7 @@ def set_logger(settings):
 
 def step_creator():
     if os.getenv("CONFIG_FROM_YAML", False):
-        settings = config_from_yaml_file("config/config.yaml")
+        settings = config_from_yaml_file("/config/config.yaml")
     else:
         from settings import settings_creator
 
@@ -39,15 +39,7 @@ def step_creator():
 
     logger = set_logger(settings)
 
-    db_sql = None
-    if settings["FEATURE_FLAGS"]["USE_SQL"]:
-        if settings.get("SQL_SECRET_NAME"):
-            db_sql = PSQLConnection(
-                get_credentials(settings["SQL_SECRET_NAME"], "sql"),
-                echo=settings["LOGGING_DEBUG"],
-            )
-        else:
-            db_sql = PSQLConnection(settings["PSQL_CONFIG"])
+    db_sql = PSQLConnection(settings["PSQL_CONFIG"])
 
     step_params = {"config": settings, "db_sql": db_sql}
 

@@ -23,10 +23,12 @@ COPY ingestion_step/poetry.lock ingestion_step/pyproject.toml /app/
 COPY libs/apf libs/apf
 COPY libs/db-plugins-multisurvey libs/db-plugins-multisurvey
 COPY libs/idmapper libs/idmapper
+COPY libs/test_utils libs/test_utils
 COPY libs/survey_parser_plugins libs/survey_parser_plugins
 
 COPY schemas/ztf schemas/ztf
 COPY schemas/ingestion_step schemas/ingestion_step
+COPY schemas/surveys schemas/surveys
 
 WORKDIR /app
 RUN poetry install --no-root --without=dev --without=test;

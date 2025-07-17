@@ -97,6 +97,7 @@ configYaml:
   FEATURE_FLAGS:
     USE_PROFILING: false
     PROMETHEUS: false
+    SKIP_MJD_FILTER: true
   PSQL_CONFIG:
     HOST: ""
     USER: ""
