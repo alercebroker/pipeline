@@ -41,7 +41,7 @@ class SPMExtractor(FeatureExtractor):
             "r": 6223.0,
             "i": 7546.0,
             "z": 8691.0,
-            "y": 9712.0, # NEW
+            "y": 9712.0,
         }
         for band in bands:
             if band not in self.cws.keys():
@@ -151,7 +151,7 @@ class SPMExtractor(FeatureExtractor):
                 extinction_color_excess,
                 redshift,
             )
-            
+
             self.sn_model.fit(times, flux, e_flux, bands)
 
             model_parameters = self.sn_model.get_model_parameters()
@@ -214,7 +214,7 @@ class SNModel:
         # Parameter guess
         tol = 1e-2
 
-        prefered_order = list("irzygu") # NEW
+        prefered_order = list("irzygu")
         for c in prefered_order:
             if c in available_bands:
                 best_available_band = c
@@ -261,7 +261,7 @@ class SNModel:
 
             initial_guess.append(p0)
         initial_guess = np.concatenate(initial_guess, axis=0)
-        band_mapper = dict(zip("ugrizy", range(6))) # NEW
+        band_mapper = dict(zip("ugrizy", range(6)))
 
         # debugging
         # for g, b in zip(initial_guess, bounds):
