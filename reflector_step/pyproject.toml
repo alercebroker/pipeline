@@ -2,7 +2,7 @@
 line-length = 79
 [tool.poetry]
 name = "reflector-step"
-version = "6.1.1a34"
+version = "27.5.7a25"
 description = "Copy data between Kafka topics"
 authors = ["alercebroker"]
 readme = "README.md"
