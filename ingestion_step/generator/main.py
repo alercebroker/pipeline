@@ -1,8 +1,7 @@
 from random import Random
 
 from fastavro.schema import load_schema
-
-# from fastavro.validation import validate
+from fastavro.validation import validate
 from fastavro.write import writer
 
 from generator.lsst_alert import LsstAlertGenerator
@@ -17,9 +16,16 @@ def main():
 
     schema = load_schema(schema_path + "/v7_4_alert.avsc")
 
-    alerts = [generator.generate_alert() for _ in range(10_000)]
-    # for alert in alerts:
-    #     validate(alert, schema)
+    alerts = [generator.generate_alert() for _ in range(100)]
+    for alert in alerts:
+        validate(alert, schema)
+
+    from pprint import pprint
+
+    pprint(alerts)
+
+    print("---- objstats ----")
+    pprint(generator.get_objstats())
 
     # with open(data_path + "/alerts.avro", "wb") as f:
     #     writer(f, schema, alerts)
