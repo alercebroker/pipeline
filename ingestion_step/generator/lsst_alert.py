@@ -35,20 +35,30 @@ class ObjectStats:
 
     oid: int
     sid: int
-    tid: int = 0
-    n_det: int = 0
-    n_non_det: int = 0
-    n_fphot: int = 0
-    ras: list[float] = []
-    decs: list[float] = []
-    e_ras: list[float | None] = []
-    e_decs: list[float | None] = []
-    first_mjd: float = 0
-    last_mjd: float = 0
+    tid: int
+    n_det: int
+    n_non_det: int
+    n_fphot: int
+    ras: list[float]
+    decs: list[float]
+    e_ras: list[float | None]
+    e_decs: list[float | None]
+    first_mjd: float
+    last_mjd: float
 
     def __init__(self, oid: int, sid: int):
         self.oid = oid
         self.sid = sid
+        self.tid = 0
+        self.n_det = 0
+        self.n_non_det = 0
+        self.n_fphot = 0
+        self.ras = []
+        self.decs = []
+        self.e_ras = []
+        self.e_decs = []
+        self.first_mjd = float("inf")
+        self.last_mjd = -float("inf")
 
     def to_objstats_dict(self) -> dict[str, Any]:
         """Returns a dict format, similar to how it is stored in the DB"""
@@ -133,9 +143,7 @@ class LsstAlertGenerator:
 
     def get_objstats(self) -> list[dict[str, Any]]:
         """Return al objstats as a list of dicts"""
-        objstats = [objstats.to_objstats_dict() for objstats in self.objstats.values()]
-
-        return objstats
+        return [objstat.to_objstats_dict() for objstat in self.objstats.values()]
 
     def generate_alert(self):
         """
@@ -162,7 +170,7 @@ class LsstAlertGenerator:
         objstats.e_ras.append(source["raErr"])
         objstats.e_decs.append(source["decErr"])
         objstats.first_mjd = min(objstats.first_mjd, source["midpointMjdTai"])
-        objstats.last_mjd = min(objstats.last_mjd, source["midpointMjdTai"])
+        objstats.last_mjd = max(objstats.last_mjd, source["midpointMjdTai"])
 
         if self.rng.random() < self.new_prv_source_rate:
             n_new_prv_sources = self.rng.randint(1, 3)
@@ -186,7 +194,7 @@ class LsstAlertGenerator:
                 objstats.first_mjd = min(
                     objstats.first_mjd, new_prv_source["midpointMjdTai"]
                 )
-                objstats.last_mjd = min(
+                objstats.last_mjd = max(
                     objstats.last_mjd, new_prv_source["midpointMjdTai"]
                 )
 
