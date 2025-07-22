@@ -2,7 +2,7 @@ import os
 import sys
 from typing import Any, Iterable
 from random import Random
-
+import pandas as pd
 
 from apf.core import get_class
 from apf.core.settings import config_from_yaml_file
@@ -18,7 +18,7 @@ from data.generator_ztf import (  # pyright: ignore
 )
 
 PRODUCE_SAMPLE_CONFIG: dict[str, Any] = config_from_yaml_file(
-    os.getenv("CONFIG_PRODUCE_SAMPLE_YAML_PATH", "config.produce_sample.yaml")
+    os.getenv("CONFIG_PRODUCE_SAMPLE_YAML_PATH", "/home/vex/Documentos/alerce/staging/generator_pipeline/pipeline/ingestion_step/scripts/config-sample-generator.yaml")
 )
 
 rng = Random(42)
@@ -57,7 +57,10 @@ def produce():
     generator = GENERATORS[survey]
     producer = SampleProducer(PRODUCE_SAMPLE_CONFIG["PRODUCER_CONFIG"])
     alerts = [generator.generate_alert() for _ in range(n_messages)]
-
+    objectstats = generator.get_objstats()
+    path_parquet = PRODUCE_SAMPLE_CONFIG.get("PARQUET_PATH_OBJSTATS", "objstats.parquet")
+    dataframe_objectstats = pd.DataFrame(objectstats)
+    dataframe_objectstats.to_parquet(path_parquet, index=False)
     batch_size = PRODUCE_SAMPLE_CONFIG.get("BATCH_SIZE", 100)
     for i in range(0, len(alerts), batch_size):
         batch = alerts[i:i + batch_size]
