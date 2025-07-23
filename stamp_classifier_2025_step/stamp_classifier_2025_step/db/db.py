@@ -50,13 +50,7 @@ def store_probability(
         data = _format_data(classifier_name, classifier_version, output_dto)
 
         insert_stmt = insert(Probability)
-        insert_stmt = insert_stmt.on_conflict_do_update(
-            constraint="probability_pkey",
-            set_=dict(
-                ranking=insert_stmt.excluded.ranking,
-                probability=insert_stmt.excluded.probability,
-            ),
-        )
+        insert_stmt = insert_stmt.on_conflict_do_nothing()
 
         session.execute(insert_stmt, data)
         session.commit()

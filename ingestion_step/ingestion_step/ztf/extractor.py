@@ -2,6 +2,10 @@ from typing import Any, TypedDict
 
 import pandas as pd
 
+from .schemas.candidate import candidate_schema
+from .schemas.fp_hist import fp_hist_schema
+from .schemas.prv_candidate import prv_candidate_schema
+
 
 class ZTFData(TypedDict):
     """
@@ -33,86 +37,103 @@ def _has_stamp(message: dict[str, Any]) -> bool:
 
 def _extract_candidates(
     messages: list[dict[str, Any]],
-) -> list[dict[str, Any]]:
+) -> dict[str, Any]:
     """
     Extract all candidates for the list of messages.
 
-    Returns a list with the content of 'candidate' of each alert and add some
-    extra necessary fields from the alert to each one.
+    Returns a dictionary of list with the content of 'candidate' of each
+    alert and add some extra necessary fields from the alert to each one.
     """
-    return [
-        {
-            "message_id": message_id,
-            "objectId": message["objectId"],
-            "candid": message["candid"],
-            "parent_candid": None,
-            "has_stamp": _has_stamp(message),
-            "forced": False,
-            **message["candidate"],
-        }
-        for message_id, message in enumerate(messages)
-    ]
+    candidates = {col: [] for col in candidate_schema}
+
+    for message_id, message in enumerate(messages):
+        for col, value in message["candidate"].items():
+            if col in ["objectidps1", "objectidps2", "objectidps3", "tblid"]:
+                if value is not None:
+                    candidates[col].append(str(value))
+                else:
+                    candidates[col].append(None)
+            else:
+                candidates[col].append(value)
+
+        candidates["message_id"].append(message_id)
+        candidates["objectId"].append(message["objectId"])
+        candidates["parent_candid"].append(None)
+        candidates["has_stamp"].append(_has_stamp(message))
+        candidates["forced"].append(False)
+
+    return {
+        col: pd.Series(candidates[col], dtype=dtype())
+        for col, dtype in candidate_schema.items()
+    }
 
 
 def _extract_prv_candidates(
     messages: list[dict[str, Any]],
-) -> list[dict[str, Any]]:
+) -> dict[str, Any]:
     """
     Extract all previous candidates for the list of messages.
 
-    Returns a flat list with the content of 'prv_candidates' of each alert where it
-    exists and add some extra necessary fields from the alert to each one.
+    Returns a dictionary of list with the content of 'prv_candidates' of
+    each alert where it exists and add some extra necessary fields from
+    the alert to each one.
     """
-    prv_candidates = []
+    prv_candidates = {col: [] for col in prv_candidate_schema}
+
     for message_id, message in enumerate(messages):
-        if (
-            "prv_candidates" not in message
-            or message["prv_candidates"] is None
-        ):
+        if message["prv_candidates"] is None:
             continue
         for prv_candidate in message["prv_candidates"]:
-            prv_candidates.append(
-                {
-                    "message_id": message_id,
-                    "objectId": message["objectId"],
-                    "parent_candid": message["candid"],
-                    "has_stamp": _has_stamp(message),
-                    "forced": False,
-                    **prv_candidate,
-                }
-            )
+            for col, value in prv_candidate.items():
+                if col in ["tblid"]:
+                    if value is not None:
+                        prv_candidates[col].append(str(value))
+                    else:
+                        prv_candidates[col].append(None)
+                else:
+                    prv_candidates[col].append(value)
+            prv_candidates["message_id"].append(message_id)
+            prv_candidates["objectId"].append(message["objectId"])
+            prv_candidates["parent_candid"].append(message["candid"])
+            prv_candidates["has_stamp"].append(False)
+            prv_candidates["forced"].append(False)
 
-    return prv_candidates
+    return {
+        col: pd.Series(prv_candidates[col], dtype=dtype())
+        for col, dtype in prv_candidate_schema.items()
+    }
 
 
-def _extract_fp_hists(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _extract_fp_hists(
+    messages: list[dict[str, Any]],
+) -> dict[str, Any]:
     """
     Extract all forced photometries for the list of messages.
 
-    Returns a flat list with the content of 'fp_hists' of each alert where it
-    exists and add some extra necessary fields from the alert to each one.
+    Returns a dictionary of lists with the content of 'fp_hists' of each
+    alert where it exists and add some extra necessary fields from the
+    alert to each one.
     """
+    fp_hists = {col: [] for col in fp_hist_schema}
 
-    fp_hists = []
     for message_id, message in enumerate(messages):
-        if "fp_hists" not in message or message["fp_hists"] is None:
+        if message["fp_hists"] is None:
             continue
         for fp_hist in message["fp_hists"]:
-            fp_hists.append(
-                {
-                    "message_id": message_id,
-                    "objectId": message["objectId"],
-                    "ra": message["candidate"]["ra"],
-                    "dec": message["candidate"]["dec"],
-                    "magzpsci": message["candidate"]["magzpsci"],
-                    "parent_candid": message["candid"],
-                    "has_stamp": _has_stamp(message),
-                    "forced": True,
-                    **fp_hist,
-                }
-            )
+            for col, value in fp_hist.items():
+                fp_hists[col].append(value)
+            fp_hists["ra"].append(message["candidate"]["ra"])
+            fp_hists["dec"].append(message["candidate"]["dec"])
+            fp_hists["message_id"].append(message_id)
+            fp_hists["objectId"].append(message["objectId"])
+            fp_hists["parent_candid"].append(message["candid"])
+            fp_hists["has_stamp"].append(False)
+            fp_hists["forced"].append(True)
 
-    return fp_hists
+    return {
+        col: pd.Series(fp_hists[col], dtype=dtype())
+        for col, dtype in fp_hist_schema.items()
+    }
 
 
 def extract(messages: list[dict[str, Any]]):
@@ -120,7 +141,7 @@ def extract(messages: list[dict[str, Any]]):
     Returns the `ZTFData` of the batch of messages.
 
     Extracts from each message it's 'candidates', 'prv_candidates' and 'fp_hists'
-    and adds to each neccesary fields from the alert itself (so some data is
+    and adds to each necessary fields from the alert itself (so some data is
     duplicated between dataframes)
 
     'prv_candidates' and 'fp_hists' are flattened and *may be empty*, as

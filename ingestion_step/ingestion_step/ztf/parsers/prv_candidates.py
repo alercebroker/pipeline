@@ -10,7 +10,7 @@ from ingestion_step.ztf.parsers.transforms import (
     add_sid,
     add_tid,
     apply_transforms,
-    candid_to_measurment_id,
+    candid_to_measurement_id,
     fid_to_band,
     isdiffpos_to_int,
     jd_to_mjd,
@@ -23,7 +23,7 @@ from ingestion_step.ztf.parsers.transforms import (
 
 PRV_CANDIDATES_TRANSFORMS = [
     objectId_to_oid,
-    candid_to_measurment_id,
+    candid_to_measurement_id,
     add_tid,
     add_sid,
     sigmara_to_e_ra,
@@ -52,60 +52,16 @@ def _parse_dets_from_prv_candidates(
     prv_candidates: pd.DataFrame,
 ) -> pd.DataFrame:
     det_prv_candidates = prv_candidates[prv_candidates["candid"].notnull()]
-    cols = [
-        "message_id",
-        "oid",
-        "sid",
-        "tid",
-        "measurement_id",
-        "ra",
-        "e_ra",
-        "dec",
-        "e_dec",
-        "band",
-        "mjd",
-        "pid",
-        "diffmaglim",
-        "isdiffpos",
-        "nid",
-        "mag",
-        "e_mag",
-        "magpsf",
-        "sigmapsf",
-        "magap",
-        "sigmagap",
-        "distnr",
-        "rb",
-        "rbversion",
-        "drb",
-        "drbversion",
-        "magapbig",
-        "sigmagapbig",
-        "parent_candid",
-        "rfid",
-        # "magpsf_corr",
-        # "sigmapsf_corr",
-        # "sigmapsf_corr_ext",
-        # "corrected",
-        # "dubious",
-        "has_stamp",
-        # "step_id_corr",
-    ]
 
-    detections = det_prv_candidates[cols].replace({np.nan: None})
-
-    return detections
+    return det_prv_candidates
 
 
 def _parse_non_dets_from_prv_candidates(
     prv_candidates: pd.DataFrame,
 ) -> pd.DataFrame:
     non_det_prv_candidates = prv_candidates[prv_candidates["candid"].isnull()]
-    cols = ["message_id", "oid", "sid", "tid", "band", "mjd", "diffmaglim"]
 
-    non_detections = non_det_prv_candidates[cols].replace({np.nan: None})
-
-    return non_detections
+    return non_det_prv_candidates
 
 
 def parse_prv_candidates(

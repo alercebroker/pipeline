@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "correction_multistream_ztf_step-step"
-version = "25.0.0"
+version = "25.0.5"
 description = "Correction multistream ZTF Step"
 authors = []
 readme = "README.md"
@@ -27,8 +27,8 @@ pytest-cov = "^4.0.0"
 pytest-docker = "^1.0.1"
 
 [tool.poetry.scripts]
-step = { callable = "correction._step:run_step" }
-profile = { callable = "correction._step:memray_profile" }
+step = { callable = "scripts.run_step:step" }
+
 
 [tool.black]
 line-length = 100

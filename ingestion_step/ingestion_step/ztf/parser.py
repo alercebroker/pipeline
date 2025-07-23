@@ -19,7 +19,7 @@ class ZTFParser(ParserInterface):
         Parser method for ZTF.
 
         Extracts `candidates`, `prv_candidates` y `fp_hists`, then parses
-        each of those into its respectives `objects`, `detections`,
+        each of those into its respective `objects`, `detections`,
         `non_detections` and `forced_photometries`.
         """
         msg_data = extractor.extract(messages)
@@ -29,6 +29,10 @@ class ZTFParser(ParserInterface):
             msg_data["prv_candidates"]
         )
         forced_photometries = parse_fp_hists(msg_data["fp_hists"])
+        #
+        # print("parse det", detections.dtypes)
+        # print("parse prv_det", prv_detections.dtypes)
+        # print("parse fp", forced_photometries.dtypes)
 
         return ParsedData(
             objects=objects,

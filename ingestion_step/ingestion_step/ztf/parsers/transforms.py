@@ -4,7 +4,7 @@ on existing columns.
 """
 
 import math
-from typing import Callable
+from typing import Any, Callable
 
 import numpy as np
 import pandas as pd
@@ -29,35 +29,32 @@ def objectId_to_oid(df: pd.DataFrame):
         - `oid`
     """
     df["oid"] = df.apply(
-        lambda x: int(catalog_oid_to_masterid("ZTF", x["objectId"])), axis=1
+        lambda x: int(catalog_oid_to_masterid("ZTF", x["objectId"])),
+        axis=1,
     )
 
 
-def add_candid(df: pd.DataFrame):
+def add_candid_fp(df: pd.DataFrame):
     """
-    Computes a candid by adding the objectId and the pid.
+    Adds a candid to forced_photometries equal to the pid.
 
-    Takes a `DataFrame` containing the columns:
-        - `objectId`
-        - `pid`
-    and uses them to calculate the new columns:
-        - `candid`
+    The pair (oid, pid) should be unique between forced_photometries
     """
 
-    # WARN: Use a more appropiate conversion!
-    df["candid"] = df.apply(lambda x: x["oid"] ^ x["pid"], axis=1)
+    # WARN: Use a more appropriate conversion!
+    df["candid"] = df["pid"].astype("Float64")
 
 
-def candid_to_measurment_id(df: pd.DataFrame):
+def candid_to_measurement_id(df: pd.DataFrame):
     """
-    Adds a measurment_id equal to the candid.
+    Adds a measurement_id equal to the candid.
 
     Takes a `DataFrame` containing the columns:
         - `candid`
     and uses them to calculate the new columns:
         - `measurement_id`
     """
-    df["measurement_id"] = df["candid"]
+    df["measurement_id"] = df["candid"].astype("Int64")
 
 
 def add_tid(df: pd.DataFrame):
@@ -79,7 +76,7 @@ def fid_to_band(df: pd.DataFrame):
     and uses them to calculate the new columns:
         - `band`
     """
-    df["band"] = df["fid"]
+    df["band"] = df["fid"].astype("Int64")
 
 
 def jd_to_mjd(df: pd.DataFrame):
@@ -89,7 +86,7 @@ def jd_to_mjd(df: pd.DataFrame):
     and uses them to calculate the new columns:
         - `mjd`
     """
-    df["mjd"] = df["jd"] - 2400000.5
+    df["mjd"] = (df["jd"] - 2400000.5).astype("Float64")
 
 
 # TODO: Update to use numpy vectorized function instead of element wise
@@ -105,20 +102,25 @@ def sigmara_to_e_ra(df: pd.DataFrame):
     and uses them to calculate the new columns:
         - `e_ra`
     """
+
+    def _sigmara_to_e_ra(x: dict[str, Any]) -> float:
+        if "sigmara" in x:
+            return x["sigmara"]
+        if x["dec"] is not pd.NA and x["dec"] is not None:
+            return ERRORS[x["fid"]] / abs(math.cos(math.radians(x["dec"])))
+        else:
+            return float("nan")
+
     df["e_ra"] = df.apply(
-        lambda x: (
-            x["sigmara"]
-            if "sigmara" in x
-            else ERRORS[x["fid"]] / abs(math.cos(math.radians(x["dec"])))
-        ),
+        _sigmara_to_e_ra,
         axis=1,
     )
 
 
 def sigmadec_to_e_dec(df: pd.DataFrame):
     """
-    If there is a sigmadec renames it to e_ra, otherwise it uses the fid errores
-    pre defined.
+    If there is a sigmadec renames it to e_ra, otherwise it uses the fid errors
+    pre-defined.
 
     Takes a `DataFrame` containing the columns:
         - `sigmadec`
@@ -134,30 +136,30 @@ def sigmadec_to_e_dec(df: pd.DataFrame):
 
 def add_zero_e_ra(df: pd.DataFrame):
     """Adds a e_ra of zeroes."""
-    df["e_ra"] = 0
+    df["e_ra"] = 0.0
 
 
 def add_zero_e_dec(df: pd.DataFrame):
     """Adds a e_dec of zeroes."""
-    df["e_dec"] = 0
+    df["e_dec"] = 0.0
 
 
 def isdiffpos_to_int(df: pd.DataFrame):
     """
-    Converts isdiffpos to a int representation (1 or -1) instead of a string
+    Converts isdiffpos to an int representation (1 or -1) instead of a string
     ('t', 'f', '1' or '-1').
     """
     df["isdiffpos"] = df["isdiffpos"].apply(
-        lambda x: 1 if x in ["t", "1"] else -1
+        lambda x: 1 if pd.notna(x) and x in ["t", "1"] else -1
     )
 
 
 def magpsf_to_mag(df: pd.DataFrame):
-    df["mag"] = df["magpsf"]
+    df["mag"] = df["magpsf"].astype("Float64")
 
 
 def sigmapsf_to_e_mag(df: pd.DataFrame):
-    df["e_mag"] = df["sigmapsf"]
+    df["e_mag"] = df["sigmapsf"].astype("Float64")
 
 
 # TODO: Check that the results are correct and add a small explanation.
@@ -243,6 +245,26 @@ def calculate_isdiffpos(df: pd.DataFrame):
         - `isdiffpos`
     """
     df["isdiffpos"] = np.choose(df["forcediffimflux"] > 0, [-1, 1])
+
+
+def filter_by_forcediffimflux(df: pd.DataFrame):
+    df.drop(
+        df[
+            (df["forcediffimflux"] == None)
+            | (df["forcediffimflux"] == 0)
+            | (np.isclose(df["forcediffimflux"], -99999))
+        ].index,
+        inplace=True,
+    )
+
+    df.drop(
+        df[
+            (df["forcediffimfluxunc"] == None)
+            | (df["forcediffimfluxunc"] == 0)
+            | (np.isclose(df["forcediffimfluxunc"], -99999))
+        ].index,
+        inplace=True,
+    )
 
 
 def apply_transforms(

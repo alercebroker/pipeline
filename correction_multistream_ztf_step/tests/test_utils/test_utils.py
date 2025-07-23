@@ -26,9 +26,7 @@ def set_logger(settings):
 
 
 def step_creator():
-    settings = config_from_yaml_file(
-        "/tests/test_utils/config.yaml"
-    )
+    settings = config_from_yaml_file("/tests/test_utils/config.yaml")
     logger = set_logger(settings)
 
     db_sql = PSQLConnection(settings["PSQL_CONFIG"])
@@ -227,7 +225,7 @@ if __name__ == "__main__":
         # Third thing to test! Verify that the number of detections and forced photometry corresponds to the expected number
         # This can be done since we know the exact message tested and the data inside the ddbb, so we already know the expected number
         assert output_expected_count(
-            messages_produce, 661678953, expected_dets=3, expected_non_dets=3
+            messages_produce, 1111111111, expected_dets=3, expected_non_dets=3
         )
         assert output_expected_count(
             messages_produce, 879453281, expected_dets=6, expected_non_dets=6

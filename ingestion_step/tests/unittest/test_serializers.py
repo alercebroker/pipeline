@@ -1,3 +1,5 @@
+import pandas as pd
+
 from ingestion_step.core.parser_interface import ParsedData
 from ingestion_step.ztf import serializer
 
@@ -11,6 +13,14 @@ def test_serialize_detections(parsed_ztf_data: ParsedData):
     assert len(detections) == len(parsed_ztf_data["detections"]) + len(
         parsed_ztf_data["forced_photometries"]
     )
+    assert len(detections[detections["forced"]]) == len(
+        parsed_ztf_data["forced_photometries"]
+    ), (
+        "Number of detections with `forced = True` should be equal to the "
+        "number of forced_photometries."
+    )
+
+    assert detections.dtypes["parent_candid"] == pd.Int64Dtype()
 
 
 def test_serialize_non_detections(parsed_ztf_data: ParsedData):

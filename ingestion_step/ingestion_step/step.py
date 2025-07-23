@@ -16,7 +16,7 @@ from ingestion_step.utils.database import (
 from ingestion_step.ztf.serializer import serialize_ztf
 
 
-class SortingHatStep(GenericStep):
+class IngestionStep(GenericStep):
     ingestion_timestamp: int | None
 
     def __init__(
@@ -59,6 +59,7 @@ class SortingHatStep(GenericStep):
         return parsed_data
 
     def pre_produce(self, result: ParsedData):  # pyright: ignore
+        self.set_producer_key_field("oid")
         messages = serialize_ztf(result)
 
         return messages
