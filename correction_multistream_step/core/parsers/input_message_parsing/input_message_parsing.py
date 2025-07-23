@@ -72,7 +72,6 @@ class InputMessageParsingStrategy(ABC):
         def parse_input_messages(self, messages: List[dict]) -> Dict[str, any]:
             """
             Parse raw input messages from a survey into a standardized data structure.
-            Used to keep a clean logger
             
             Returns:
                 Dict[str, any]: Standardized structure with:
@@ -102,8 +101,7 @@ def get_input_message_parser(survey: str) -> InputMessageParsingStrategy:
     """
     survey_lower = survey.lower()
     
-    # Dynamic import to avoid loading all parsers at once - this is important
-    # because each parser imports heavy schema definitions and survey-specific modules
+    # Dynamic import to avoid loading all parsers at once 
     if survey_lower == 'lsst':
         from .lsst_input_parser import LSSTInputMessageParser
         return LSSTInputMessageParser()
