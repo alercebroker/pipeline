@@ -3,6 +3,7 @@ from random import Random
 from typing import Any, Literal
 
 import numpy as np
+from numpy.typing import NDArray
 
 # Constants for simple_hash/inv_simple_hash, used for generating unique IDs.
 HASH_CONSTANT_MUL = 72348927498  # Random number
@@ -62,30 +63,36 @@ class ObjectStats:
 
     def to_objstats_dict(self) -> dict[str, Any]:
         """Returns a dict format, similar to how it is stored in the DB"""
+        sigmas_ra = self._sigmas(self.e_ras)
+        sigmas_dec = self._sigmas(self.e_decs)
         return {
             "oid": self.oid,
             "sid": self.sid,
             "tid": self.tid,
             "n_det": self.n_det,
-            "n_ndet": self.n_non_det,
-            "n_fphot": self.n_fphot,
-            "meanra": np.mean(self.ras),
-            "meandec": np.mean(self.decs),
-            "sigmara": self._sigma(self.e_ras),
-            "sigmadec": self._sigma(self.e_decs),
+            "n_non_det": self.n_non_det,
+            "n_forced": self.n_fphot,
+            "meanra": np.average(self.ras, weights=sigmas_ra),
+            "meandec": np.average(self.decs, weights=sigmas_dec),
+            "sigmara": self._sigma(sigmas_ra),
+            "sigmadec": self._sigma(sigmas_dec),
             "firstmjd": self.first_mjd,
             "lastmjd": self.last_mjd,
-            "deltajd": self.last_mjd - self.first_mjd,
+            "deltamjd": self.last_mjd - self.first_mjd,
         }
 
     @staticmethod
-    def _sigma(errors: list[float | None]) -> None:
-        arr = np.array(
+    def _sigmas(errors: list[float | None]):
+        sigmas = np.array(
             [error if error is not None else DEFAULT_ERR for error in errors]
         )
+        sigmas = sigmas / 3600.0  # Arcsec to deg
 
-        arr = arr / 3600.0  # Arcsec to deg
-        sigma = np.sqrt(np.sum(arr**-2) ** -1)
+        return sigmas
+
+    @staticmethod
+    def _sigma(sigmas: NDArray[np.floating[Any]]) -> float:
+        sigma = np.sqrt(1 / np.sum(sigmas.astype(float) ** -2))
         sigma = sigma * 3600.0  # Deg to arcsec
 
         return sigma
