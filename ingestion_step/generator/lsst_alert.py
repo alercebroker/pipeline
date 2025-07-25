@@ -88,11 +88,11 @@ class ObjectStats:
         )
         sigmas = sigmas / 3600.0  # Arcsec to deg
 
-        return sigmas
+        return sigmas**-2
 
     @staticmethod
     def _sigma(sigmas: NDArray[np.floating[Any]]) -> float:
-        sigma = np.sqrt(1 / np.sum(sigmas.astype(float) ** -2))
+        sigma = np.sqrt(1 / np.sum(sigmas))
         sigma = sigma * 3600.0  # Deg to arcsec
 
         return sigma

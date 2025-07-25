@@ -11,6 +11,7 @@ step = { callable = "scripts.run_step:step" }
 generate_schemas = { callable = "scripts.generate_pd_schemas:generate" }
 produce_sample = { callable = "scripts.produce_sample:produce" }
 generate_sample = { callable = "generator.main:main" }
+validate = { callable = "scripts.validate:main" }
 
 [tool.poetry.dependencies]
 python = ">=3.10, <3.11"
@@ -42,14 +43,9 @@ black = "^25.1.0"
 tqdm = "^4.67.1"
 matplotlib = "^3.10.3"
 matplotlib-backend-wezterm = "^2.1.2"
-
-
-[tool.poetry.group.notebook.dependencies]
-notebook = "^7.3.3"
-nbclassic = "^1.2.0"
-jupyter-console = "^6.6.3"
-jupynium = "^0.2.6"
-jupytext = "^1.16.7"
+ipython = "^8.37"
+polars = "^1.31.0"
+connectorx = "^0.4.3"
 
 [tool.black]
 line-length = 79
