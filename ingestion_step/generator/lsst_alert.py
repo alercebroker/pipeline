@@ -148,7 +148,10 @@ class LsstAlertGenerator:
         self.prv_objects = {}
         self.objstats = {}
 
-    def get_objstats(self) -> list[dict[str, Any]]:
+    def get_objstats(self, oid: int) -> ObjectStats:
+        return self.objstats[oid]
+
+    def get_all_objstats_dicts(self) -> list[dict[str, Any]]:
         """Return al objstats as a list of dicts"""
         return [objstat.to_objstats_dict() for objstat in self.objstats.values()]
 

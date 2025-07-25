@@ -13,7 +13,7 @@ def main():
     generator = LsstAlertGenerator(rng=rng, new_obj_rate=0.1)
 
     alerts = [generator.generate_alert() for _ in range(10_000)]
-    pd.DataFrame(generator.get_objstats()).to_parquet(
+    pd.DataFrame(generator.get_all_objstats_dicts()).to_parquet(
         "data/object_stats.parquet", index=False
     )
 
