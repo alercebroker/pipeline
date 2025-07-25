@@ -41,7 +41,7 @@ class SPMExtractor(FeatureExtractor):
             "r": 6223.0,
             "i": 7546.0,
             "z": 8691.0,
-            "Y": 9712.0,
+            "y": 9712.0,
         }
         for band in bands:
             if band not in self.cws.keys():
@@ -261,7 +261,7 @@ class SNModel:
 
             initial_guess.append(p0)
         initial_guess = np.concatenate(initial_guess, axis=0)
-        band_mapper = dict(zip("ugrizY", range(6)))
+        band_mapper = dict(zip("ugrizy", range(6)))
 
         # debugging
         # for g, b in zip(initial_guess, bounds):
