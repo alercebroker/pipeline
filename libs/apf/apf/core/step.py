@@ -192,11 +192,11 @@ class GenericStep(abc.ABC):
             raise error
         return preprocessed
 
-    def pre_execute(self, messages: List[dict]):
+    def pre_execute(self, messages: List[dict]) -> List[dict]:
         """
         Override this method to perform operations on each batch of messages consumed.
 
-        Typically this method is used for pre processing operations such as parsing,
+        Typically, this method is used for pre-processing operations such as parsing,
         formatting and overall preparation for the execute method that handles
         all the complex logic applied to the messages.
         """
@@ -211,8 +211,8 @@ class GenericStep(abc.ABC):
 
         Parameters
         ----------
-        message : dict, list
-            Dict-like message to be processed or list of dict-like messages
+        messages : List[dict]
+            A list of dict-like messages to be processed.
         """
         pass
 
@@ -252,7 +252,7 @@ class GenericStep(abc.ABC):
         the processed data coming from :py:func:`apf.core.step.GenericStep.execute`
         method.
 
-        Typically used to do post processing, parsing, output formatting, etc.
+        Typically used to do post-processing, parsing, output formatting, etc.
         """
         return result
 
@@ -299,7 +299,7 @@ class GenericStep(abc.ABC):
         pass
 
     def get_value(self, message, params):
-        """Get values from a massage and process it to create a new metric.
+        """Get values from a message and process it to create a new metric.
 
         Parameters
         ----------
@@ -312,7 +312,7 @@ class GenericStep(abc.ABC):
             - 'key': str
                 Must have parameter, has to be in the message.
             - 'alias': str
-                New key returned, this can be used to standarize some message keys.
+                New key returned, this can be used to standardize some message keys.
             - 'format': callable
                 Function to be call on the message value.
 
