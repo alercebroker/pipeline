@@ -39,6 +39,13 @@ class StampClassifierStep(GenericStep):
 
         # stamps: ['visit_image', 'difference_image', 'reference_image']
 
+        logging.warning("Airmass is not available in schema v7.4, setting to 1.0")
+        logging.warning("MagLim is not available in schema v7.4, setting to 25")
+        logging.warning(
+            "scienceFlux and scienceFluxErr are not available in schema v7.4, setting to 0"
+        )
+        logging.warning("Seeing is not available in schema v7.4, setting to 0.7")
+
         processed_messages = []
         for message in messages:
             processed_message = {}
@@ -52,21 +59,15 @@ class StampClassifierStep(GenericStep):
             processed_message["ra"] = message["diaSource"]["ra"]
             processed_message["dec"] = message["diaSource"]["dec"]
 
-            logging.warning("Airmass is not available in schema v7.4, setting to 1.0")
             processed_message["airmass"] = 1.0
-            logging.warning("MagLim is not available in schema v7.4, setting to 25")
             processed_message["magLim"] = 25.0
 
             processed_message["psfFlux"] = message["diaSource"]["psfFlux"]
             processed_message["psfFluxErr"] = message["diaSource"]["psfFluxErr"]
 
-            logging.warning(
-                "scienceFlux and scienceFluxErr are not available in schema v7.4, setting to 0"
-            )
             processed_message["scienceFlux"] = 0.0
             processed_message["scienceFluxErr"] = 0.0
 
-            logging.warning("Seeing is not available in schema v7.4, setting to 0.7")
             processed_message["seeing"] = 0.7
 
             processed_message["snr"] = message["diaSource"]["snr"]
