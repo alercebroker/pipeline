@@ -33,4 +33,5 @@ class LSSTAlertManager(BaseAlertManager):
             "cutoutTemplate": alert.get("cutoutTemplate", None),
         }
         writer(avro_io, self.parsed_schema, [avro_data])
+        avro_io.seek(0)
         return avro_io
