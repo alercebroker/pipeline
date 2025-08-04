@@ -34,15 +34,15 @@ class BaseObjectStatistics(BaseStatistics):
     
     @staticmethod
     def _arcsec2deg(values: Union[pd.Series, float]) -> Union[pd.Series, float]:
-        return values / 3600.0
+        return  values.astype(np.float64) / 3600.0 
     
     @staticmethod
     def _deg2arcsec(values: Union[pd.Series, float]) -> Union[pd.Series, float]:
-        return values * 3600.0
+        return values.astype(np.float64) * 3600.0
     
     @staticmethod
     def _compute_weights(sigmas: Union[pd.Series, float]) -> Union[pd.Series, float]:
-        return sigmas.astype(float) ** -2
+        return sigmas.astype(np.float64) ** -2.0
     
     @classmethod
     def _weighted_mean(cls, values: pd.Series, sigmas: pd.Series) -> float:

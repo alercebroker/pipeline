@@ -247,7 +247,7 @@ class LsstForcedPhotometry(Base):
     visit = Column(BigInteger, nullable=False)
     detector = Column(Integer, nullable=False)
 
-    psfFlux = Column(REAL, nullable=False)
+    psfFlux = Column(REAL)
     psfFluxErr = Column(REAL)
 
     __table_args__ = (

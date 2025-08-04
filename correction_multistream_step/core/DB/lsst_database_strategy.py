@@ -66,7 +66,9 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
                 cast(LsstDetection.psfFluxErr, DOUBLE_PRECISION).label('psfFluxErr'),
                 LsstDetection.psfFlux_flag,
                 LsstDetection.psfFlux_flag_edge,
-                LsstDetection.psfFlux_flag_noGoodPixels
+                LsstDetection.psfFlux_flag_noGoodPixels,
+                cast(LsstDetection.raErr, DOUBLE_PRECISION).label('raErr'),
+                cast(LsstDetection.decErr, DOUBLE_PRECISION).label('decErr')
             ).where(LsstDetection.oid.in_(oids))
             
             lsst_detections = session.execute(lsst_stmt).all()

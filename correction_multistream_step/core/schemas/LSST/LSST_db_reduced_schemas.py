@@ -43,6 +43,8 @@ dia_source_lsst_db = {
     "psfFlux": pd.Float64Dtype(),
     "psfFlux_flag": pd.BooleanDtype(),
     "psfFlux_flag_noGoodPixels": pd.BooleanDtype(),
+    "raErr": pd.Float32Dtype(),
+    "decErr": pd.Float32Dtype(),
     "ra": pd.Float64Dtype(),
     "band": pd.Int32Dtype(),
     "dec": pd.Float64Dtype(),

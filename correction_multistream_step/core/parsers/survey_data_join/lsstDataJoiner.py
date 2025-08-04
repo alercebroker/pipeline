@@ -51,7 +51,13 @@ class LSSTDataJoiner(SurveyDataJoiner):
             msg_data.get('forced_sources_df', pd.DataFrame()),
             historical_data.get('db_sql_forced_photometries_df', pd.DataFrame())
         ], ignore_index=True)
-        
+
+        # Remove from previous sources sources that are already in sources (to not end up with duplicates because of alerts that also appear in prvious_sources)
+        unique_sources_set = set(zip(result['sources']['measurement_id'], result['sources']['oid']))
+        result['previous_sources'] = result['previous_sources'][
+            ~result['previous_sources'].apply(lambda row: (row['measurement_id'], row['oid']) in unique_sources_set, axis=1)
+        ]
+
         result['non_detections'] = pd.concat([
             msg_data.get('non_detections_df', pd.DataFrame()),
             historical_data.get('db_sql_non_detections_df', pd.DataFrame())
