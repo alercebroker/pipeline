@@ -15,7 +15,10 @@
       "default": null,
       "name": "band",
       "type": 
+        [
+        "null",
         "int"
+      ]
     },
     {
       "doc": "Unique id.",

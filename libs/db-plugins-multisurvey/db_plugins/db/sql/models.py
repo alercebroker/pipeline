@@ -89,7 +89,7 @@ class Detection(Base):
     mjd = Column(DOUBLE_PRECISION, nullable=False)  # float8,
     ra = Column(DOUBLE_PRECISION, nullable=False)  # float8,
     dec = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    band = Column(SmallInteger, nullable=False)  # int2,
+    band = Column(SmallInteger)  # int2, nulleable because  original schema
 
     __table_args__ = (
         PrimaryKeyConstraint(
@@ -175,7 +175,7 @@ class ForcedPhotometry(Base):
     mjd = Column(DOUBLE_PRECISION, nullable=False)  # float8,
     ra = Column(DOUBLE_PRECISION, nullable=False)  # float8,
     dec = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    band = Column(SmallInteger, nullable=False)  # int2,
+    band = Column(SmallInteger)  # int2, nulleable original schema
 
     __table_args__ = (
         PrimaryKeyConstraint(
@@ -248,7 +248,7 @@ class LsstForcedPhotometry(Base):
     detector = Column(Integer, nullable=False)
 
     psfFlux = Column(REAL, nullable=False)
-    psfFluxErr = Column(REAL, nullable=False)
+    psfFluxErr = Column(REAL)
 
     __table_args__ = (
         PrimaryKeyConstraint(

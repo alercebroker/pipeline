@@ -14,8 +14,10 @@
       "doc": "Filter band this source was observed with. ALeRCE: Changed from string to int",
       "default": null,
       "name": "band",
-      "type": 
+      "type": [
+        "null",
         "int"
+      ]
     },
     {
       "doc": "Unique id.",

@@ -16,7 +16,11 @@
       "default": null,
       "name": "band",
       "type": 
+        [
+        "null",
         "int"
+      ]
+
     },
     {
       "doc": "Unique identifier of this DiaSource.",

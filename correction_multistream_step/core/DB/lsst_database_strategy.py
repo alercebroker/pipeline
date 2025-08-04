@@ -233,8 +233,5 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
                 parsed_non_det[key] = value
             non_dets.append(parsed_non_det)
 
-        # Add new=False to each record
-        for non_det in non_dets:
-            non_det["new"] = False
 
         return non_dets
