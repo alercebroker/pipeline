@@ -5,6 +5,7 @@ from apf.core.step import GenericStep
 import logging
 import numexpr
 from .utils.tools import extract_image_from_fits
+from .db.db import PSQLConnection, store_probability
 from alerce_classifiers.base.dto import OutputDTO, InputDTO
 from alerce_classifiers.base._types import (
     Detections,
@@ -28,6 +29,7 @@ class StampClassifierStep(GenericStep):
         self.model = StampClassifierModel(
             model_path=config["MODEL_CONFIG"]["MODEL_PATH"]
         )
+        self.psql_connection = PSQLConnection(config["DB_CONFIG"])
 
     def pre_execute(self, messages: List[dict]) -> List[dict]:
         # Preprocessing: parsing, formatting and validation.
@@ -54,6 +56,7 @@ class StampClassifierStep(GenericStep):
             processed_message["alertId"] = message["alertId"]
             processed_message["diaObjectId"] = message["diaObject"]["diaObjectId"]
             processed_message["diaSourceId"] = message["diaSource"]["diaSourceId"]
+            processed_message["midpointMjdTai"] = message["diaSource"]["midpointMjdTai"]
 
             # Properties
             processed_message["ra"] = message["diaSource"]["ra"]
@@ -132,7 +135,7 @@ class StampClassifierStep(GenericStep):
         self, messages: List[dict]
     ) -> Union[Iterable[Dict[str, Any]], Dict[str, Any]]:
         input_dto = self._messages_to_dto(messages)
-        output_dto = self.model.predict(input_dto)
+        output_dto: OutputDTO = self.model.predict(input_dto)
         predicted_probabilities = output_dto.probabilities
 
         output_messages = []
@@ -144,9 +147,20 @@ class StampClassifierStep(GenericStep):
                 "probabilities": predicted_probabilities.loc[
                     message["alertId"]
                 ].to_dict(),
+                "midpointMjdTai": message["midpointMjdTai"],
             }
             output_messages.append(output_message)
         return output_messages
+
+    def post_execute(self, messages: List[dict]) -> List[dict]:
+        # Write probabilities in the database
+        store_probability(
+            self.psql_connection,
+            classifier_id=classifier_name_to_id("rubin_stamp_classifier"),
+            classifier_version=self.model.version,
+            predictions=messages,
+        )
+        return messages
 
     def tear_down(self):
         if isinstance(self.consumer, KafkaConsumer):

@@ -140,7 +140,7 @@ class GenericStep(abc.ABC):
 
             #settings.py
             STEP_CONFIG = {...
-                "METRICS_CONFIG":{ #Can be a empty dictionary
+                "METRICS_CONFIG":{ #Can be an empty dictionary
                     "CLASS": "apf.metrics.KafkaMetricsProducer",
                     "PARAMS": { # params for the apf.metrics.KafkaMetricsProducer
                         "PARAMS":{
@@ -326,7 +326,7 @@ class GenericStep(abc.ABC):
             return params, message.get(params)
         elif isinstance(params, dict):
             if "key" not in params:
-                raise KeyError("'key' in parameteres not found")
+                raise KeyError("'key' in parameters not found")
 
             val = message.get(params["key"])
             if val is None or "value" in params:
@@ -335,7 +335,7 @@ class GenericStep(abc.ABC):
 
             if "format" in params:
                 if not callable(params["format"]):
-                    raise ValueError("'format' parameter must be a calleable.")
+                    raise ValueError("'format' parameter must be a callable.")
                 else:
                     val = params["format"](val)
             if "alias" in params:
