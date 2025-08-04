@@ -83,11 +83,14 @@ class ObjectStats:
 
     @staticmethod
     def _sigmas(errors: list[float | None]):
-        sigmas = np.array(
-            [error if error is not None else DEFAULT_ERR for error in errors]
-        )
-        sigmas = sigmas / 3600.0  # Arcsec to deg
-
+        processed_errors = []
+        for error in errors:
+            if error is not None and not np.isnan(error):
+                processed_errors.append(float(error))
+            else:
+                processed_errors.append(DEFAULT_ERR)
+        
+        sigmas = np.array(processed_errors, dtype=np.float64) / 3600.0 # Arcsec to deg
         return sigmas**-2
 
     @staticmethod
@@ -526,9 +529,9 @@ class LsstAlertGenerator:
         obj = {
             "diaObjectId": object_id,
             "ra": self.rng.uniform(0, 360),
-            "raErr": self._noneable(self.rng.uniform(0, 0.1)),
+            "raErr": np.float32(self._noneable(self.rng.uniform(0, 0.1))),
             "dec": self.rng.uniform(-90, 90),
-            "decErr": self._noneable(self.rng.uniform(0, 0.1)),
+            "decErr": np.float32(self._noneable(self.rng.uniform(0, 0.1))),
             "ra_dec_Cov": self._noneable(self.rng.uniform(-0.01, 0.01)),
             "radecMjdTai": self._noneable(self.rng.uniform(50000, 70000)),
             "pmRa": self._noneable(self.rng.uniform(-100, 100)),

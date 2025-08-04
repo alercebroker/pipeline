@@ -20,7 +20,7 @@ from generator.lsst_alert import LsstAlertGenerator
 PRODUCE_SAMPLE_CONFIG: dict[str, Any] = config_from_yaml_file(
     os.getenv(
         "CONFIG_PRODUCE_SAMPLE_YAML_PATH",
-        "/home/vex/Documentos/alerce/staging/generator_pipeline/pipeline/ingestion_step/scripts/config-sample-generator.yaml",
+        "/scripts/config-sample-generator.yaml",
     )
 )
 
