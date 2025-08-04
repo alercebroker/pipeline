@@ -241,7 +241,7 @@ class LsstAlertGenerator:
             for _ in range(n_new_non_det):
                 base_mjd = (
                     self.non_dets[obj_info.oid][-10]["midpointMjdTai"]
-                    if len(self.fps[obj_info.oid]) > 10
+                    if len(self.non_dets[obj_info.oid]) > 10
                     else mjd - 100.0
                 )
                 new_non_det = self._random_non_detection(
