@@ -160,8 +160,6 @@ class Trainer:
         test_predictions = [self.dict_info['dict_mapping_classes'][x] for x in test_predictions]
         class_names = list(self.dict_info['dict_mapping_classes'].values())
 
-        print(self.dict_info['dict_mapping_classes'])
-        
         # Guardar métricas finales en MLflow
         precision, recall, f1, _ = precision_recall_fscore_support(
             test_labels, test_predictions, average='macro'

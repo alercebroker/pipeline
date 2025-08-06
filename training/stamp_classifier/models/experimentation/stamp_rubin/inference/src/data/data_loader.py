@@ -97,8 +97,8 @@ def get_tf_datasets(batch_size: int, args: dict):
         data.append(pd.read_pickle(path_chunk))
     data = pd.concat(data)
     #data = pd.read_pickle(f"{args['dir_data']}/firststamps_250708.pkl")
-    #print(data.columns)
-    #print(data.pivot_table(index='target_name',columns='class', aggfunc='count'))
+    print(data.columns)
+
     # Split data
     fold = args['loader']['fold']
     oids_train = partition[partition['partition'] == f'training_{fold}'][args_loader['id_col']].tolist()

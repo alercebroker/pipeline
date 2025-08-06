@@ -10,9 +10,9 @@ stamp_classifier:
   # General Configuration
   model_name: 'stamp_full' # no usado
   name_dataset_version: 'rubin_AGN_vs_VS'
-  dir_data: './../../../data_acquisition/rubin/data/processed/rubin_AGN_vs_VS'
-  path_partition: './../../../data_acquisition/rubin/data/processed/partitions/rubin_AGN_vs_VS/partitions.parquet'
-  list_folds: [0] # [0, 1, 2 , 3]
+  dir_data: './../../../data_acquisition/rubin/data/processed/rubin_5_classes2/ts_stamps_v0.0.3_dp1/'
+  path_partition: './../../../data_acquisition/rubin/data/processed/partitions/rubin_5_classes_Rubin_SV_095_-25/partitions.parquet'
+  list_folds: [0,1,2,3,4]
   debug: false
   is_searching_hyperparameters: false
 
@@ -20,8 +20,8 @@ stamp_classifier:
   loader:
     id_col: 'diaObjectId'
     candid_col: 'diaSourceId'
-    ra_col: 'coord_ra'
-    dec_col: 'coord_dec'
+    ra_col: 'ra'
+    dec_col: 'dec'
     class_col: 'class'
     stamps_cols: ['visit_image', 'difference_image', 'reference_image']
     cropping: {
@@ -35,35 +35,40 @@ stamp_classifier:
     
   arch:
     conv_config:
-      - filters: 32
-        kernel_size: [5, 5]
-        activation: relu
-        pool: true
-        pool_size: [2, 2]
-
-      - filters: 64
-        kernel_size: [3, 3]
-        activation: relu
-        pool: true
-        pool_size: [2, 2]
-
-      - filters: 128
-        kernel_size: [3, 3]
-        activation: relu
-        pool: true
-        pool_size: [2, 2]
-
-      - filters: 256
-        kernel_size: [3, 3]
+      - filters: 8
+        kernel_size: [2, 2]
         activation: relu
         pool: false
-        batchnorm: true
+
+      - filters: 16
+        kernel_size: [2, 2]
+        activation: relu
+        pool: true
+        pool_size: [2, 2]
+
+      - filters:  16
+        kernel_size: [2, 2]
+        activation: relu
+        pool: false
+        #pool_size: [2, 2]
+
+      - filters: 8
+        kernel_size: [2, 2]
+        activation: relu
+        pool: false
+        pool_size: [2, 2]
+      - filters: 8
+        kernel_size: [2, 2]
+        activation: relu
+        pool: true
+        pool_size: [2, 2]
+        #batchnorm: true
 
     dense_config:
-      - units: 256
+      - units: 16
         activation: tanh
 
-    dropout_rate: 0.71726
+    dropout_rate: 0.7
     use_batchnorm_metadata: false
 
   # Training Configuration

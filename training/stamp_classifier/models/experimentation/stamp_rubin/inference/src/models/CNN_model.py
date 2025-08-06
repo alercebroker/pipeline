@@ -3,6 +3,7 @@ from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dropout, Dens
 from typing import List, Dict
 
 
+# Asegúrate de tener esta función si usas cropping
 def add_center_mask(im, center_size=8):
     """
     im: tensor [batch, 63, 63, 6]
@@ -103,15 +104,14 @@ class DynamicStampModel(tf.keras.Model):
         
     def call(self, inputs, training=False):
         x_img, x_metadata = inputs
-        #x_img = add_center_mask(x_img)
+        #x_img = add_center_mask(x_img)  # Añadir máscara central si es necesario
 
         rot_list = [x_img, tf.image.rot90(x_img), 
                     tf.image.rot90(x_img, k=2), tf.image.rot90(x_img, k=3)]
 
         for i in range(4):
             rot_list.append(tf.image.flip_up_down(rot_list[i]))
-        
-        #rot_list = [x_img]
+        rot_list = [x_img]
 
         output_list = []
         for im in rot_list:

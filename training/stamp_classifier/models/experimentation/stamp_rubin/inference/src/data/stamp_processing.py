@@ -3,6 +3,7 @@ import numpy as np
 def prepare_model_input(stamps, max_h, max_w):
     padded_stamps = []
     padding_masks = []
+    #print(stamps.shape)
 
     for row in stamps:  # row = [stamp_1, stamp_2, stamp_3] (cada uno 2D)
         padded_row = []
@@ -33,13 +34,11 @@ def normalize_stamps(stamps_ndarray, padding_mask):
     is_infinite = (~np.isfinite(stamps_ndarray)).astype(float)
 
     # Crear máscara final: 1 si el valor es padding O inválido
-    final_mask = 1-padding_mask#np.clip(is_infinite + (1.0 - padding_mask), 0, 1)
+    final_mask = np.clip(is_infinite + (1.0 - padding_mask), 0, 1)
 
     # Cálculo de min y percentil 99 por imagen y canal
     maxval = np.nanpercentile(abs_ndarray, 99, axis=1)
     minval = np.nanmin(abs_ndarray, axis=1)
-
-    print(stamps_ndarray.shape)
     
     # Normalización per-channel, per-image
     stamps_ndarray = (stamps_ndarray - minval[:, np.newaxis, np.newaxis, :]) / (
@@ -54,47 +53,6 @@ def normalize_stamps(stamps_ndarray, padding_mask):
     # Agregar canal con la máscara de invalidez
     stamps_ndarray = np.concatenate([stamps_ndarray, final_mask], axis=3)
     return stamps_ndarray
-
-"""def normalize_stamps(stamps_ndarray, padding_mask):
-    # Reshape para normalizar por canal
-    new_shape = (
-        stamps_ndarray.shape[0],
-        stamps_ndarray.shape[1] * stamps_ndarray.shape[2],
-        stamps_ndarray.shape[3])
-    
-    # Sustituir valores problemáticos por NaN
-    abs_ndarray = np.abs(stamps_ndarray.reshape(new_shape))
-    abs_ndarray[np.isinf(abs_ndarray)] = np.nan
-    abs_ndarray[abs_ndarray > 1e10] = np.nan
-
-    # Crear máscara de valores inválidos
-    is_infinite = (~np.isfinite(stamps_ndarray)).astype(float)
-
-    # Crear máscara final: 1 si el valor es padding O inválido
-    final_mask = np.clip(is_infinite + (1.0 - padding_mask), 0, 1)
-
-    # Cálculo de min y percentil 99 GLOBAL por canal
-    flat_abs = abs_ndarray.reshape(-1, abs_ndarray.shape[-1])  # (B*H*W, C)
-    maxval = np.nanpercentile(flat_abs, 99, axis=0)  # shape: (C,)
-    minval = np.nanmin(flat_abs, axis=0)             # shape: (C,)
-
-    print(stamps_ndarray.shape)
-    
-    # Normalización global per-channel (todos los ejemplos usan el mismo min/max)
-    stamps_ndarray = (stamps_ndarray - minval[None, None, None, :]) / (
-        maxval[None, None, None, :] - minval[None, None, None, :] + 1e-8)
-
-    # Clipping en caso de valores extremos
-    stamps_ndarray = np.clip(stamps_ndarray, a_min=-2.0, a_max=2.0)
-
-    # Reemplazo de valores NaN/infinito por 0
-    stamps_ndarray = np.nan_to_num(stamps_ndarray, posinf=0.0, neginf=0.0)
-
-    # Agregar canal con la máscara de invalidez
-    stamps_ndarray = np.concatenate([stamps_ndarray, final_mask], axis=3)
-    return stamps_ndarray"""
-
-
 
 
 def normalize_batches(stamps_ndarray, padding_mask, batch_size):
