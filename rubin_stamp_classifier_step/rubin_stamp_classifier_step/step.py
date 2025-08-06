@@ -18,6 +18,13 @@ from alerce_classifiers.rubin import StampClassifierModel
 import pandas as pd
 
 
+# Dummy function to convert classifier name to ID
+# In a real implementation, this would query a database or a configuration file.
+# TODO: Replace with actual implementation
+def classifier_name_to_id(classifier_name: str) -> int:
+    return 0
+
+
 class StampClassifierStep(GenericStep):
     """
     Pipeline step for classifying stamps from LSST alerts.
@@ -157,7 +164,7 @@ class StampClassifierStep(GenericStep):
         store_probability(
             self.psql_connection,
             classifier_id=classifier_name_to_id("rubin_stamp_classifier"),
-            classifier_version=self.model.version,
+            classifier_version=self.model.model_version,
             predictions=messages,
         )
         return messages

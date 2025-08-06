@@ -61,7 +61,7 @@ def _format_data(
     formated_probabilities = []
     for prediction in predictions:
         probabilities = prediction["probabilities"]
-        alert_id = prediction["alertId"]
+        dia_object_id = prediction["diaObjectId"]
         alert_mjd = prediction["midpointMjdTai"]
 
         # sort probabilities by value in descending order
@@ -71,7 +71,7 @@ def _format_data(
         for i, (class_name, probability) in enumerate(probabilities):
             formated_probabilities.append(
                 {
-                    "oid": alert_id,
+                    "oid": dia_object_id,
                     "sid": 0,  # TODO: replace with actual sid
                     "classifier_id": classifier_id,
                     "classifier_version": classifier_version_str_to_small_integer(
@@ -98,12 +98,24 @@ def classifier_version_str_to_small_integer(version: str) -> int:
 
 
 # TODO: The following function is a placeholder and should be replaced with the actual implementation
+CLASS_LIST = ["AGN", "VS", "asteroid", "bogus", "satellite"]
+
+
 def class_name_to_id(class_name: str) -> int:
     """
     Convert a class name to an integer ID.
     This is a placeholder function and should be replaced with actual logic.
     """
 
-    class_list = ["AGN", "VS", "asteroid", "bogus", "satellite"]
-    class_dict = {name: idx for idx, name in enumerate(class_list)}
+    class_dict = {name: idx for idx, name in enumerate(CLASS_LIST)}
     return class_dict.get(class_name, -1)  # Return -1 if class_name not found
+
+
+# TODO: The following function is a placeholder and should be replaced with the actual implementation
+def class_id_to_name(class_id: int) -> str:
+    """
+    Convert a class ID to a class name.
+    This is a placeholder function and should be replaced with actual logic.
+    """
+    class_dict = {idx: name for idx, name in enumerate(CLASS_LIST)}
+    return class_dict.get(class_id, "unknown")  # Return "unknown" if class_id not found
