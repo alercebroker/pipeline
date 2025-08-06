@@ -46,14 +46,17 @@ def process_metadata(
     columns_to_rm = args['stamps_cols'] + [args['candid_col']] + ["target_name"] # nuevo
     metadata = data.drop(columns=columns_to_rm, axis=1)
     metadata = metadata.set_index(args['id_col'])
+    use_coords = args['use_coords']
 
-    coord_df = process_coordinates(
-        oids=metadata.index,
-        ra=metadata[args['ra_col']].values,
-        dec=metadata[args['dec_col']].values,
-        coord_type=args['coord_type'],
-    )
-    #metadata = pd.concat([metadata, coord_df], axis=1)
+    if use_coords:
+        coord_df = process_coordinates(
+            oids=metadata.index,
+            ra=metadata[args['ra_col']].values,
+            dec=metadata[args['dec_col']].values,
+            coord_type=args['coord_type'],
+        )
+        metadata = pd.concat([metadata, coord_df], axis=1)
+   
     metadata = metadata.drop(columns=[args['ra_col'], args['dec_col']])
     metadata = metadata.fillna(-999)
     
@@ -96,9 +99,7 @@ def get_tf_datasets(batch_size: int, args: dict):
     for path_chunk in path_chunks:
         data.append(pd.read_pickle(path_chunk))
     data = pd.concat(data)
-    #data = pd.read_pickle(f"{args['dir_data']}/firststamps_250708.pkl")
-    #print(data.columns)
-    #print(data.pivot_table(index='target_name',columns='class', aggfunc='count'))
+
     # Split data
     fold = args['loader']['fold']
     oids_train = partition[partition['partition'] == f'training_{fold}'][args_loader['id_col']].tolist()

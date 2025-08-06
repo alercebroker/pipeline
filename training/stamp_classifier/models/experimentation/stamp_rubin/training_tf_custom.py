@@ -54,6 +54,7 @@ def perform_training(run, args, experiment_name):
         dropout_rate=hp['dropout_rate'],
         use_batchnorm_metadata=hp['use_batchnorm_metadata'],
         num_classes=len(dict_info['dict_mapping_classes']),
+        use_metadata=hp['use_metadata']
     )
 
     loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)

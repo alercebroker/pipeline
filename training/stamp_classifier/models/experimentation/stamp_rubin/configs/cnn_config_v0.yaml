@@ -32,6 +32,7 @@ stamp_classifier:
     coord_type: 'spherical' # ['spherical', 'cartesian']
     norm_type: 'z-score' # ['qt', 'z-score']
     batch_size: 256
+    use_coords: false
     
   arch:
     conv_config:
@@ -70,6 +71,7 @@ stamp_classifier:
 
     dropout_rate: 0.7
     use_batchnorm_metadata: false
+    use_metadata: false
 
   # Training Configuration
   training:

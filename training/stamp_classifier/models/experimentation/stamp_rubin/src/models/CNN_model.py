@@ -2,45 +2,6 @@ import tensorflow as tf
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dropout, Dense, BatchNormalization
 from typing import List, Dict
 
-
-def add_center_mask(im, center_size=8):
-    """
-    im: tensor [batch, 63, 63, 6]
-    center_size: tamaño del cuadrado central (8 por defecto)
-    returns: tensor [batch, 63, 63, 7]
-    """
-    batch_size, h, w, _ = im.shape
-
-    # Coordenadas para el centro
-    start_h = (h - center_size) // 2
-    end_h = start_h + center_size
-    start_w = (w - center_size) // 2
-    end_w = start_w + center_size
-
-    # Crear máscara [63, 63] con ceros
-    mask = tf.zeros((h, w), dtype=tf.float32)
-
-    # Poner 1s en la región central
-    ones_center = tf.ones((center_size, center_size), dtype=tf.float32)
-    mask = tf.tensor_scatter_nd_update(
-        mask,
-        indices=tf.reshape(tf.stack(tf.meshgrid(
-            tf.range(start_h, end_h),
-            tf.range(start_w, end_w),
-            indexing="ij"
-        ), axis=-1), [-1, 2]),
-        updates=tf.reshape(ones_center, [-1])
-    )
-
-    # Expandir y replicar la máscara para el batch
-    mask = tf.expand_dims(mask, axis=0)  # [1, 63, 63]
-    mask = tf.tile(mask, [batch_size, 1, 1])  # [batch, 63, 63]
-    mask = tf.expand_dims(mask, axis=-1)  # [batch, 63, 63, 1]
-
-    # Concatenar como nuevo canal
-    im_with_mask = tf.concat([im, mask], axis=-1)  # [batch, 63, 63, 7]
-    return im_with_mask
-
 class DynamicStampModel(tf.keras.Model):
     """
     A flexible CNN + MLP model constructed from configuration lists.
@@ -52,6 +13,7 @@ class DynamicStampModel(tf.keras.Model):
         dropout_rate,
         use_batchnorm_metadata,  # nombre más explícito
         num_classes,
+        use_metadata,
         **kwargs
     ):
         super().__init__(**kwargs)
@@ -60,6 +22,7 @@ class DynamicStampModel(tf.keras.Model):
         self.dropout_rate = dropout_rate
         self.use_batchnorm_metadata = use_batchnorm_metadata
         self.num_classes = num_classes
+        self.use_metadata = use_metadata
 
         # Capas convolucionales (sin batchnorm)
         self.conv_layers = []
@@ -69,7 +32,6 @@ class DynamicStampModel(tf.keras.Model):
                     filters=cfg['filters'],
                     kernel_size=cfg.get('kernel_size', (3, 3)),
                     activation=cfg.get('activation', 'relu'),
-                    #strides = (2,2),
                     padding='same',
                     name=f"conv_{i+1}"
                 )
@@ -92,7 +54,6 @@ class DynamicStampModel(tf.keras.Model):
                     name=f"dense_{i+1}"
                 )
             )
-        self.dense1 = Dense(units=32,activation='relu')
 
         # Batchnorm para la metadata (solo si se activa)
         self.metadata_batchnorm = BatchNormalization(name="bn_metadata") if self.use_batchnorm_metadata else None
@@ -103,7 +64,6 @@ class DynamicStampModel(tf.keras.Model):
         
     def call(self, inputs, training=False):
         x_img, x_metadata = inputs
-        #x_img = add_center_mask(x_img)
 
         rot_list = [x_img, tf.image.rot90(x_img), 
                     tf.image.rot90(x_img, k=2), tf.image.rot90(x_img, k=3)]
@@ -131,10 +91,10 @@ class DynamicStampModel(tf.keras.Model):
             x_metadata = self.metadata_batchnorm(x_metadata, training=training)
 
         # Combinar imagen + metadata
-        #x = tf.concat([x, x_metadata], axis=-1)
+        if self.use_metadata:
+            x = tf.concat([x, x_metadata], axis=-1)
 
         # Pipeline dense
-        #print(x.shape)
         for layer in self.dense_layers:
             x = layer(x)
 
@@ -149,6 +109,7 @@ class DynamicStampModel(tf.keras.Model):
             "dropout_rate": self.dropout_rate,
             "use_batchnorm_metadata": self.use_batchnorm_metadata,
             "num_classes": self.num_classes,
+            "use_metadata":self.use_metadata
             })
         return config
 

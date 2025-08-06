@@ -2,7 +2,7 @@ import os
 import pandas as pd
 from sklearn.model_selection import StratifiedKFold, train_test_split
 
-def partition_data(df, output_path, oid_col, candid_col, class_col, n_folds=5, random_state=42):
+def partition_data(df, output_path, oid_col, candid_col, class_col,field=None, n_folds=5, random_state=42):
     """
     Partitions data into stratified train/val/test sets for k-fold CV and saves to a Parquet file.
 
@@ -21,18 +21,18 @@ def partition_data(df, output_path, oid_col, candid_col, class_col, n_folds=5, r
 
     assert df[oid_col].is_unique, f"Duplicate '{oid_col}' values found in the input DataFrame"
 
-    # Step 1: Stratified test split (20%)
-    #train_val_df, test_df = train_test_split( #esto quiero hacerlo por target_name
-    #    df,
-    #    test_size=0.20,
-    #    stratify=df[class_col],
-    #    random_state=random_state
-    #)
-
-    train_val_df = df[df.target_name != 'Rubin_SV_095_-25']
-    test_df = df[df.target_name == 'Rubin_SV_095_-25']
-    test_df = test_df.copy()
-    test_df['partition'] = 'test'
+    if field:
+        train_val_df = df[df.target_name != field]
+        test_df = df[df.target_name == field]#'Rubin_SV_095_-25']
+        test_df = test_df.copy()
+        test_df['partition'] = 'test'
+    else:
+        # Step 1: Stratified test split (20%)
+        train_val_df, test_df = train_test_split( #esto quiero hacerlo por target_name
+            df,
+            test_size=0.20,
+            stratify=df[class_col],
+            random_state=random_state)
 
     # Step 2: Stratified K-Fold on remaining data
     skf = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=random_state)
@@ -61,10 +61,12 @@ if __name__ == "__main__":
     oid_col = 'diaObjectId'
     candid_col = 'diaSourceId'
     class_col = 'class'
+    field = 'Rubin_SV_095_-25'
 
     # Cargar datos y crear carpeta de salida si no existe
     output_path = "./data/processed/partitions/rubin_5_classes_Rubin_SV_095_-25/partitions.parquet"
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
     df = pd.read_parquet("./data/processed/rubin_5_classes2/ts_stamps_v0.0.3_dp1/objs.parquet")
-    partitioned_df = partition_data(df, output_path, oid_col, candid_col, class_col)
+    partitioned_df = partition_data(df, output_path, oid_col, candid_col, class_col,field)
+s
