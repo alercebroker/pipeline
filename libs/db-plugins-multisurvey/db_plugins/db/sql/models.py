@@ -4,7 +4,6 @@ from sqlalchemy import (
     BigInteger,
     Boolean,
     Column,
-    ForeignKeyConstraint,
     Index,
     Integer,
     PrimaryKeyConstraint,
@@ -224,9 +223,8 @@ class Detection(Base):
 
     __table_args__ = (
         PrimaryKeyConstraint(
-            "oid", "measurement_id", name="pk_detection_oid_measurementid"
+            "oid", "measurement_id", "sid", name="pk_detection_oid_measurementid_sid"
         ),
-        ForeignKeyConstraint([oid, sid], [Object.oid, Object.sid]),
         Index("ix_detection_oid", "oid", postgresql_using="hash"),
     )
 
@@ -265,7 +263,6 @@ class ZtfDetection(Base):
         PrimaryKeyConstraint(
             "oid", "measurement_id", name="pk_ztfdetection_oid_measurementid"
         ),
-        ForeignKeyConstraint([oid, sid], [Object.oid, Object.sid]),
         Index("ix_ztfdetection_oid", "oid", postgresql_using="hash"),
     )
 
@@ -427,7 +424,6 @@ class LsstDetection(Base):
         PrimaryKeyConstraint(
             "oid", "measurement_id", name="pk_lsstdetection_oid_measurementid"
         ),
-        ForeignKeyConstraint([oid, sid], [Object.oid, Object.sid]),
         Index("ix_lsstdetection_oid", "oid", postgresql_using="hash"),
     )
 
@@ -445,9 +441,8 @@ class ForcedPhotometry(Base):
 
     __table_args__ = (
         PrimaryKeyConstraint(
-            "oid", "measurement_id", name="pk_forcedphotometry_oid_measurementid"
+            "oid", "measurement_id", "sid", name="pk_forcedphotometry_oid_measurementid_sid"
         ),
-        ForeignKeyConstraint([oid, sid], [Object.oid, Object.sid]),
         Index("ix_forced_photometry_oid", "oid", postgresql_using="hash"),
     )
 
@@ -498,7 +493,6 @@ class ZtfForcedPhotometry(Base):
         PrimaryKeyConstraint(
             "oid", "measurement_id", name="pk_ztfforcedphotometry_oid_measurementid"
         ),
-        ForeignKeyConstraint([oid, sid], [Object.oid, Object.sid]),
         Index("ix_ztf_forced_photometry_oid", "oid", postgresql_using="hash"),
     )
 
@@ -520,23 +514,20 @@ class LsstForcedPhotometry(Base):
         PrimaryKeyConstraint(
             "oid", "measurement_id", name="pk_lsstforcedphotometry_oid_measurementid"
         ),
-        ForeignKeyConstraint([oid, sid], [Object.oid, Object.sid]),
         Index("ix_lsst_forced_photometry_oid", "oid", postgresql_using="hash"),
     )
 
 
-class NonDetection(Base):
-    __tablename__ = "non_detection"
+class ZtfNonDetection(Base):
+    __tablename__ = "ztf_non_detection"
 
     oid = Column(BigInteger, nullable=False)  # int8,
-    sid = Column(SmallInteger, nullable=False)  # int2,
     band = Column(SmallInteger, nullable=False)  # int2,
     mjd = Column(DOUBLE_PRECISION, nullable=False)  # float8,
     diffmaglim = Column(REAL, nullable=False)  # float4,
 
     __table_args__ = (
         PrimaryKeyConstraint("oid", "mjd", name="pk_oid_mjd"),
-        ForeignKeyConstraint([oid, sid], [Object.oid, Object.sid]),
         Index("ix_non_detection_oid", "oid", postgresql_using="hash"),
     )
 
@@ -545,7 +536,6 @@ class LsstNonDetection(Base):
     __tablename__ = "lsst_non_detection"
 
     oid = Column(BigInteger, nullable=False)  # int8,
-    sid = Column(SmallInteger, nullable=False)  # int2,
     ccdVisitId = Column(BigInteger, nullable=False)
     band = Column(SmallInteger, nullable=False)
     mjd = Column(DOUBLE_PRECISION, nullable=False)
@@ -553,7 +543,6 @@ class LsstNonDetection(Base):
 
     __table_args__ = (
         PrimaryKeyConstraint("oid", "mjd", name="pk_lsstnondetection_oid_mjd"),
-        ForeignKeyConstraint([oid, sid], [Object.oid, Object.sid]),
         Index("ix_lsst_non_detection_oid", "oid", postgresql_using="hash"),
     )
 
@@ -729,17 +718,40 @@ class MagStat(Base):
     last_update = Column(TIMESTAMP)  # timestamp
 
     __table_args__ = (
-        PrimaryKeyConstraint("oid", "band", name="pk_magstat_oid_band"),
-        ForeignKeyConstraint([oid, sid], [Object.oid, Object.sid]),
+        PrimaryKeyConstraint("oid", "sid", "band", name="pk_magstat_oid_sid_band"),
     )
 
+class classifier(Base):
+    __tablename__ = "classifier"
+    classifier_id = Column(Integer, primary_key=True)
+    classifier_name = Column(VARCHAR)
+    classifier_version = Column(SmallInteger)
 
-class LsstIdMapper(Base):
-    __tablename__ = "lsst_idmapper"
+class Taxonomy(Base):
+    __tablename__ = "taxonomy"
+    class_id = Column(Integer, primary_key=True)
+    class_name = Column(VARCHAR)
+    order = Column(Integer)
+    classifier_id = Column(SmallInteger)
 
-    lsst_id_serial = Column(BigInteger, autoincrement=True)
-    lsst_diaObjectId = Column(BigInteger)
+class Probability(Base):
+    __tablename__ = "probability"
+    oid = Column(Integer, primary_key=True)
+    sid = Column(SmallInteger, nullable=False)  # int2,
+    classifier_id = Column(SmallInteger, primary_key=True)
+    classifier_version = Column(SmallInteger)
+    class_id = Column(SmallInteger, primary_key=True)
+    probability = Column(REAL, nullable=False)
+    ranking = Column(SmallInteger, nullable=False)
 
     __table_args__ = (
-        PrimaryKeyConstraint("lsst_id_serial", name="pk_lsst_idmapper_serial"),
+        PrimaryKeyConstraint("oid", "sid", "class_id", "classifier_id", name="pk_probability", postgresql_using="hash"),
+        Index("ix_probability_probability", "probability", postgresql_using="btree"),
+        Index("ix_probability_ranking", "ranking", postgresql_using="btree"),
+        Index(
+            "ix_classification_rank1",
+            "ranking",
+            postgresql_where=ranking == 1,
+            postgresql_using="btree",
+        ),
     )
