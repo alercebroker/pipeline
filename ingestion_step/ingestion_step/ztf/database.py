@@ -3,7 +3,7 @@ from db_plugins.db.sql._connection import PsqlDatabase
 from db_plugins.db.sql.models import (
     Detection,
     ForcedPhotometry,
-    NonDetection,
+    ZtfNonDetection,
     Object,
     ZtfDetection,
     ZtfForcedPhotometry,
@@ -207,7 +207,7 @@ def insert_non_detections(
     ].to_dict("records")
 
     non_detection_sql_stmt = db_statement_builder(
-        NonDetection, non_detections_dict
+        ZtfNonDetection, non_detections_dict
     )
 
     with connection.session() as session:
