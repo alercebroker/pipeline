@@ -18,45 +18,47 @@ from ingestion_step.core.database import (
     db_statement_builder,
 )
 
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 
-def insert_dia_objects(driver: PsqlDatabase, dia_objects: pd.DataFrame):
-    if len(dia_objects) == 0:
+
+def bulk_insert_on_conflict_do_nothing(session, model, records, conflict_columns=None):
+    if not records:
+        return
+    stmt = pg_insert(model).values(records)
+    if conflict_columns:
+        stmt = stmt.on_conflict_do_nothing(index_elements=conflict_columns)
+    else:
+        # Let SQLAlchemy/DB use the primary key
+        stmt = stmt.on_conflict_do_nothing()
+    session.execute(stmt)
+
+
+def insert_dia_objects(session, dia_objects: pd.DataFrame):
+    if dia_objects.empty:
         return
 
     objects_dict = dia_objects[OBJECT_COLUMNS].to_dict("records")
     objects_dia_lsst_dict = dia_objects[["oid"]].to_dict("records")
 
-    objects_sql_stmt = db_statement_builder(Object, objects_dict)
-    objects_dia_lsst_sql_stmt = db_statement_builder(
-        LsstDiaObject, objects_dia_lsst_dict
-    )
-
-    with driver.session() as session:
-        session.execute(objects_sql_stmt)
-        session.execute(objects_dia_lsst_sql_stmt)
-        session.commit()
+    bulk_insert_on_conflict_do_nothing(session, Object, objects_dict)
+    bulk_insert_on_conflict_do_nothing(session, LsstDiaObject, objects_dia_lsst_dict)
 
 
-def insert_ss_objects(driver: PsqlDatabase, ss_objects: pd.DataFrame):
-    if len(ss_objects) == 0:
+def insert_ss_objects(session, ss_objects: pd.DataFrame):
+    if ss_objects.empty:
         return
+
     objects_dict = ss_objects[OBJECT_COLUMNS].to_dict("records")
     objects_ss_lsst_dict = ss_objects[["oid"]].to_dict("records")
 
-    objects_sql_stmt = db_statement_builder(Object, objects_dict)
-    objects_ss_lsst_sql_stmt = db_statement_builder(
-        LsstSsObject, objects_ss_lsst_dict
-    )
-
-    with driver.session() as session:
-        session.execute(objects_sql_stmt)
-        session.execute(objects_ss_lsst_sql_stmt)
-        session.commit()
+    bulk_insert_on_conflict_do_nothing(session, Object, objects_dict)
+    bulk_insert_on_conflict_do_nothing(session, LsstSsObject, objects_ss_lsst_dict)
 
 
-def insert_sources(driver: PsqlDatabase, sources: pd.DataFrame):
-    if len(sources) == 0:
+def insert_sources(session, sources: pd.DataFrame):
+    if sources.empty:
         return
+
     detections_dict = sources[DETECTION_COLUMNS].to_dict("records")
     detections_lsst_dict = sources[
         [
@@ -74,23 +76,15 @@ def insert_sources(driver: PsqlDatabase, sources: pd.DataFrame):
         ]
     ].to_dict("records")
 
-    detections_sql_stmt = db_statement_builder(Detection, detections_dict)
-    detections_lsst_sql_stmt = db_statement_builder(
-        LsstDetection, detections_lsst_dict
-    )
-
-    with driver.session() as session:
-        session.execute(detections_sql_stmt)
-        session.execute(detections_lsst_sql_stmt)
-        session.commit()
+    bulk_insert_on_conflict_do_nothing(session, Detection, detections_dict)
+    bulk_insert_on_conflict_do_nothing(session, LsstDetection, detections_lsst_dict)
 
 
-def insert_forced_sources(driver: PsqlDatabase, forced_sources: pd.DataFrame):
-    if len(forced_sources) == 0:
+def insert_forced_sources(session, forced_sources: pd.DataFrame):
+    if forced_sources.empty:
         return
-    forced_detections_dict = forced_sources[FORCED_DETECTION_COLUMNS].to_dict(
-        "records"
-    )
+
+    forced_detections_dict = forced_sources[FORCED_DETECTION_COLUMNS].to_dict("records")
     forced_detections_lsst_dict = forced_sources[
         [
             "oid",
@@ -103,22 +97,14 @@ def insert_forced_sources(driver: PsqlDatabase, forced_sources: pd.DataFrame):
         ]
     ].to_dict("records")
 
-    forced_detections_sql_stmt = db_statement_builder(
-        ForcedPhotometry, forced_detections_dict
-    )
-    forced_detections_lsst_sql_stmt = db_statement_builder(
-        LsstForcedPhotometry, forced_detections_lsst_dict
-    )
-
-    with driver.session() as session:
-        session.execute(forced_detections_sql_stmt)
-        session.execute(forced_detections_lsst_sql_stmt)
-        session.commit()
+    bulk_insert_on_conflict_do_nothing(session, ForcedPhotometry, forced_detections_dict)
+    bulk_insert_on_conflict_do_nothing(session, LsstForcedPhotometry, forced_detections_lsst_dict)
 
 
-def insert_non_detections(driver: PsqlDatabase, non_detections: pd.DataFrame):
-    if len(non_detections) == 0:
+def insert_non_detections(session, non_detections: pd.DataFrame):
+    if non_detections.empty:
         return
+
     non_detections_lsst_dict = non_detections[
         [
             "oid",
@@ -130,10 +116,4 @@ def insert_non_detections(driver: PsqlDatabase, non_detections: pd.DataFrame):
         ]
     ].to_dict("records")
 
-    non_detections_sql_stmt = db_statement_builder(
-        LsstNonDetection, non_detections_lsst_dict
-    )
-
-    with driver.session() as session:
-        session.execute(non_detections_sql_stmt)
-        session.commit()
+    bulk_insert_on_conflict_do_nothing(session, LsstNonDetection, non_detections_lsst_dict)
