@@ -2,22 +2,38 @@
   "type": "record",
   "name": "ss_object",
   "fields": [
-    { "name": "oid", "type": "long" },
-    { "name": "tid", "type": "int"},
-    { "name": "sid", "type": "int"},
-    { "name" : "mjd", "type": "double" },
-    { "name" : "firstmjd", "type": "double" },
-    { "name" : "lastmjd", "type": "double" },
-    { "name": "meanra", "type": "double" },
-    { "name": "meandec", "type": "double" },
-    { "name": "sigmara", "type": ["null", "double"] },
-    { "name": "sigmadec", "type": ["null", "double"] },
-    { "name": "deltamjd", "type": "double" },
-    { "name": "n_det", "type": "int" },
-    { "name": "n_forced", "type": "int" },
-    { "name": "n_non_det", "type": "int" },
-    { "name": "corrected", "type": "boolean" },
-    { "name": "stellar", "type": "boolean" },
+    {
+      "name": "oid",
+      "type": "long"
+    },
+    {
+      "name": "sid",
+      "type": "int"
+    },
+    {
+      "name": "tid",
+      "type": "int"
+    },
+    {
+      "name": "mjd",
+      "type": "double"
+    },
+    {
+      "name": "firstmjd",
+      "type": "double"
+    },
+    {
+      "name": "lastmjd",
+      "type": "double"
+    },
+    {
+      "name": "meanra",
+      "type": "double"
+    },
+    {
+      "name": "meandec",
+      "type": "double"
+    },
     {
       "doc": "Unique identifier.",
       "name": "ssObjectId",

@@ -27,6 +27,9 @@ from ingestion_step.lsst.transforms import (
     get_ss_object_transforms,
 )
 
+from collections import defaultdict
+from typing import Any
+
 
 class LsstData(ParsedData):
     sources: pd.DataFrame
@@ -70,22 +73,47 @@ class LsstStrategy(StrategyInterface[LsstData]):
 
     @classmethod
     def insert_into_db(cls, driver: PsqlDatabase, parsed_data: LsstData):
-        insert_dia_objects(driver, parsed_data["dia_object"])
-        insert_ss_objects(driver, parsed_data["ss_object"])
+        with driver.session() as session:
+            insert_dia_objects(session, parsed_data["dia_object"])
+            insert_ss_objects(session, parsed_data["ss_object"])
+            insert_sources(session, parsed_data["sources"])
+            insert_sources(session, parsed_data["previous_sources"])
+            insert_forced_sources(session, parsed_data["forced_sources"])
+            insert_non_detections(session, parsed_data["non_detections"])
+            session.commit()
+    
 
-        insert_sources(driver, parsed_data["sources"])
-        insert_sources(driver, parsed_data["previous_sources"])
-        insert_forced_sources(driver, parsed_data["forced_sources"])
-        insert_non_detections(driver, parsed_data["non_detections"])
+    @staticmethod
+    def groupby_messageid(df: pd.DataFrame) -> dict[int, list[dict[str, Any]]]:
+        """Changes to make the groupby faster using defaultdict"""
+        if df.empty:
+            return {}
+        
+        # Get message_ids first
+        message_ids = df['message_id'].values
+        
+        # Convert to records but exclude the message_id column
+        df_without_msg_id = df.drop(columns=['message_id'])
+        records = df_without_msg_id.to_dict('records')
+        
+        # Use defaultdict
+        result = defaultdict(list)
+        for record, msg_id in zip(records, message_ids):
+            result[msg_id].append(record)
+        
+        return dict(result)
+
+    
 
     @classmethod
     def serialize(cls, parsed_data: LsstData) -> list[Message]:
-        msg_dia_objects = groupby_messageid(parsed_data["dia_object"])
-        msg_ss_objects = groupby_messageid(parsed_data["ss_object"])
-        msg_sources = groupby_messageid(parsed_data["sources"])
-        msg_prv_sources = groupby_messageid(parsed_data["previous_sources"])
-        msg_forced_sources = groupby_messageid(parsed_data["forced_sources"])
-        msg_non_detections = groupby_messageid(parsed_data["non_detections"])
+        # Group all DataFrames in one go using the faster method
+        msg_dia_objects = cls.groupby_messageid(parsed_data["dia_object"])
+        msg_ss_objects = cls.groupby_messageid(parsed_data["ss_object"])
+        msg_sources = cls.groupby_messageid(parsed_data["sources"])
+        msg_prv_sources = cls.groupby_messageid(parsed_data["previous_sources"])
+        msg_forced_sources = cls.groupby_messageid(parsed_data["forced_sources"])
+        msg_non_detections = cls.groupby_messageid(parsed_data["non_detections"])
 
         messages: list[Message] = []
         for message_id, source in msg_sources.items():

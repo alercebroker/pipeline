@@ -7,12 +7,6 @@
   		{"name" : "mjd", "type": "double"},
 		{"name": "band", "type": "int" },
 		{"name": "ccdVisitId",  "type": "long"},
-		{"name": "midpointMjdTai", "type":
-				[
-				"null",
-				"double"
-				]
-		},
 		{"name": "diaNoise", "type": "float"}
 	]
 }

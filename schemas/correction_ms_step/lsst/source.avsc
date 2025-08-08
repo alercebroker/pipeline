@@ -5,12 +5,21 @@
   "fields": [
     { "name": "new", "type": "boolean"},
     {
+      "name": "oid",
+      "type": "long"
+    },
+    {
       "name": "sid",
       "type": "int"
     },
-    { "name": "oid", "type": "long" },
-    { "name": "measurement_id", "type": "long" },
-    { "name" : "mjd", "type": "double" },
+    {
+      "name": "measurement_id",
+      "type": "long"
+    },
+    {
+      "name": "mjd",
+      "type": "double"
+    },
     {
       "doc": "Filter band this source was observed with. ALeRCE: Changed from string to int",
       "default": null,
@@ -21,46 +30,14 @@
       ]
     },
     {
-      "doc": "Unique identifier of this DiaSource.",
-      "name": "diaSourceId",
-      "type": [
-        "null",
-        "long"
-      ]
-    },
-    {
       "doc": "Id of the visit where this diaSource was measured.",
       "name": "visit",
-      "type": [
-        "null",
-        "long"
-      ]
+      "type": "long"
     },
     {
       "doc": "Id of the detector where this diaSource was measured. Datatype short instead of byte because of DB concerns about unsigned bytes.",
       "name": "detector",
-      "type": [
-        "null",
-        "int"
-      ]
-    },
-    {
-      "doc": "Id of the diaObject this source was associated with, if any. If not, it is set to NULL (each diaSource will be associated with either a diaObject or ssObject).",
-      "default": null,
-      "name": "diaObjectId",
-      "type": [
-        "null",
-        "long"
-      ]
-    },
-    {
-      "doc": "Id of the ssObject this source was associated with, if any. If not, it is set to NULL (each diaSource will be associated with either a diaObject or ssObject).",
-      "default": null,
-      "name": "ssObjectId",
-      "type": [
-        "null",
-        "long"
-      ]
+      "type": "int"
     },
     {
       "doc": "Id of the parent diaSource this diaSource has been deblended from, if any.",
@@ -69,14 +46,6 @@
       "type": [
         "null",
         "long"
-      ]
-    },
-    {
-      "doc": "Effective mid-visit time for this diaSource, expressed as Modified Julian Date, International Atomic Time.",
-      "name": "midpointMjdTai",
-      "type": [
-        "null",
-        "double"
       ]
     },
     {
@@ -119,10 +88,7 @@
     {
       "doc": "x position computed by a centroiding algorithm.",
       "name": "x",
-      "type": [
-        "null",
-        "float"
-      ]
+      "type": "float"
     },
     {
       "doc": "Uncertainty of x.",
@@ -136,10 +102,7 @@
     {
       "doc": "y position computed by a centroiding algorithm.",
       "name": "y",
-      "type": [
-        "null",
-        "float"
-      ]
+      "type": "float"
     },
     {
       "doc": "Uncertainty of y.",

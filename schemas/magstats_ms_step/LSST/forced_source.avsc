@@ -4,26 +4,21 @@
   "fields": [
     { "name": "new", "type": "boolean"},
     { "name": "oid", "type": "long" },
+    {
+      "name": "sid",
+      "type": "int"
+    },
     { "name": "measurement_id", "type": "long" },
     { "name" : "mjd", "type": "double" },
     {
       "doc": "Filter band this source was observed with. ALeRCE: Changed from string to int",
       "default": null,
       "name": "band",
-      "type": [
+      "type": 
+        [
         "null",
         "int"
       ]
-    },
-    {
-      "doc": "Unique id.",
-      "name": "diaForcedSourceId",
-      "type": "long"
-    },
-    {
-      "doc": "Id of the DiaObject that this DiaForcedSource was associated with.",
-      "name": "diaObjectId",
-      "type": "long"
     },
     {
       "doc": "Right ascension coordinate of the position of the DiaObject at time radecMjdTai.",
@@ -62,11 +57,6 @@
         "null",
         "float"
       ]
-    },
-    {
-      "doc": "Effective mid-visit time for this diaForcedSource, expressed as Modified Julian Date, International Atomic Time.",
-      "name": "midpointMjdTai",
-      "type": "double"
     }
   ]
 }
