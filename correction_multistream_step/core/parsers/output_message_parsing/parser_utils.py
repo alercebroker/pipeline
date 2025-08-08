@@ -1,7 +1,9 @@
 import pandas as pd
 import numpy as np
 import json
-from typing import Dict, List, Any
+from typing import Dict, List
+from collections import defaultdict
+
 
 def parse_output_correction(corrected_data: dict, measurement_ids: dict, oids: list) -> List[Dict]:
     """
@@ -18,57 +20,64 @@ def parse_output_correction(corrected_data: dict, measurement_ids: dict, oids: l
         Dictionary with the output of the correction multisurvey step
     """
     
-    def _clean_dataframe_vectorized(df: pd.DataFrame) -> pd.DataFrame:
-        """ Function to clean the dataframe from inf and NaN values in a vectorized way instead of the original code that iterated over the rows """
-        if df.empty:
-            return df
-        
-        # Replace inf and NaN values in one operation
-        df = df.replace([np.inf, -np.inf, np.nan], None)
-        return df
+    valid_oids = set(oids)
     
-    grouped_data = {}
-    valid_oids_set = set(oids)
+    # Pre-process measurement_ids
+    processed_measurement_ids = {
+        oid: [int(id_str) for id_str in measurement_ids[oid]] 
+        if measurement_ids[oid] and isinstance(measurement_ids[oid][0], str)
+        else measurement_ids[oid]
+        for oid in oids
+    }
     
+    # Pre-allocate final structure
+    grouped_data = {data_type: defaultdict(list) for data_type in corrected_data.keys()}
+    
+    # Process each of the corrected dataframes
     for data_type, df in corrected_data.items():
         if df.empty or "oid" not in df.columns:
-            grouped_data[data_type] = {oid: [] for oid in oids}
-        else:
-            filtered_df = df[df["oid"].isin(valid_oids_set)]
+            continue
+        
+        # Select only valid oids
+        filtered_df = df[df["oid"].isin(valid_oids)]
+        if filtered_df.empty:
+            continue
+        
+        # Convert to records
+        records = filtered_df.to_dict('records')
+        
+        # Replace the nan and infinity values with None
+        for record in records:
+            oid = record["oid"]
             
-            if filtered_df.empty:
-                grouped_data[data_type] = {oid: [] for oid in oids}
-            else:
-                cleaned_df = _clean_dataframe_vectorized(filtered_df)
-                
-                grouped = cleaned_df.groupby("oid", sort=False)
-                grouped_dict = {oid: group.to_dict("records") 
-                              for oid, group in grouped}
-                
-                grouped_data[data_type] = {oid: grouped_dict.get(oid, []) 
-                                         for oid in oids}
+            cleaned_record = {}
+            for key, value in record.items():
+                try:
+                    if pd.isna(value) or (isinstance(value, (int, float)) and (np.isinf(value) or np.isnan(value))):
+                        cleaned_record[key] = None
+                    else:
+                        cleaned_record[key] = value
+                except (TypeError, ValueError):
+                    cleaned_record[key] = value
+            
+            grouped_data[data_type][oid].append(cleaned_record)
     
-    # Create output list
-    output = []
-    for oid in oids:
-        unique_measurement_ids = measurement_ids[oid]
-        if isinstance(unique_measurement_ids[0], str):
-            unique_measurement_ids_long = [int(id_str) for id_str in unique_measurement_ids]
-        else:
-            unique_measurement_ids_long = unique_measurement_ids
-        
-        # Build message for output
-        output_message = {
+    # Convert defaultdict to regular dict
+    # If an oid is not present in the corrected data, we add an empty list
+    for data_type in grouped_data:
+        grouped_data[data_type] = {oid: grouped_data[data_type].get(oid, []) for oid in oids}
+    
+    # Build the output where each result is a dict with oid, measurement_id and data from the corrected data cleaned
+    # It works independently of the survey
+    return [
+        {
             "oid": oid,
-            "measurement_id": unique_measurement_ids_long,
+            "measurement_id": processed_measurement_ids[oid],
+            **{data_type: grouped_data[data_type][oid] for data_type in corrected_data.keys()}
         }
-        
-        for data_type in corrected_data.keys():
-            output_message[data_type] = grouped_data[data_type][oid]
-        
-        output.append(output_message)
-    
-    return output
+        for oid in oids
+    ]
+
 
 class NumpyEncoder(json.JSONEncoder):
     """
