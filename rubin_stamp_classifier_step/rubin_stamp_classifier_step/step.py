@@ -155,6 +155,8 @@ class StampClassifierStep(GenericStep):
                     message["alertId"]
                 ].to_dict(),
                 "midpointMjdTai": message["midpointMjdTai"],
+                "ra": message["ra"],
+                "dec": message["dec"],
             }
             output_messages.append(output_message)
         return output_messages
