@@ -166,7 +166,7 @@ class Trainer:
         precision, recall, f1, _ = precision_recall_fscore_support(
             test_labels, test_predictions, average='macro'
         )
-
+        
         # Mostrar en consola (para los sprints)
         print(f"\n✅ Final Evaluation (Test Set)")
         print(f"Test Precision: {precision:.4f}")
