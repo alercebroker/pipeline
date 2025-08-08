@@ -4,9 +4,22 @@
   "name": "source",
   "fields": [
     { "name": "new", "type": "boolean"},
-    { "name": "oid", "type": "long" },
-    { "name": "measurement_id", "type": "long" },
-    { "name" : "mjd", "type": "double" },
+    {
+      "name": "oid",
+      "type": "long"
+    },
+    {
+      "name": "sid",
+      "type": "int"
+    },
+    {
+      "name": "measurement_id",
+      "type": "long"
+    },
+    {
+      "name": "mjd",
+      "type": "double"
+    },
     {
       "doc": "Filter band this source was observed with. ALeRCE: Changed from string to int",
       "default": null,
@@ -15,11 +28,6 @@
         "null",
         "int"
       ]
-    },
-    {
-      "doc": "Unique identifier of this DiaSource.",
-      "name": "diaSourceId",
-      "type": "long"
     },
     {
       "doc": "Id of the visit where this diaSource was measured.",
@@ -32,24 +40,6 @@
       "type": "int"
     },
     {
-      "doc": "Id of the diaObject this source was associated with, if any. If not, it is set to NULL (each diaSource will be associated with either a diaObject or ssObject).",
-      "default": null,
-      "name": "diaObjectId",
-      "type": [
-        "null",
-        "long"
-      ]
-    },
-    {
-      "doc": "Id of the ssObject this source was associated with, if any. If not, it is set to NULL (each diaSource will be associated with either a diaObject or ssObject).",
-      "default": null,
-      "name": "ssObjectId",
-      "type": [
-        "null",
-        "long"
-      ]
-    },
-    {
       "doc": "Id of the parent diaSource this diaSource has been deblended from, if any.",
       "default": null,
       "name": "parentDiaSourceId",
@@ -57,11 +47,6 @@
         "null",
         "long"
       ]
-    },
-    {
-      "doc": "Effective mid-visit time for this diaSource, expressed as Modified Julian Date, International Atomic Time.",
-      "name": "midpointMjdTai",
-      "type": "double"
     },
     {
       "doc": "Right ascension coordinate of the center of this diaSource.",

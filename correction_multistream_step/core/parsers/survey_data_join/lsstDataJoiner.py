@@ -42,15 +42,22 @@ class LSSTDataJoiner(SurveyDataJoiner):
             historical_data.get('db_sql_sources_df', pd.DataFrame())
         ], ignore_index=True)
         
+        result['sources'].drop(columns=['diaSourceId', 'midpointMjdTai', 'ssObjectId', 'diaObjectId'], inplace=True)
+
         result['previous_sources'] = pd.concat([
             msg_data.get('previous_sources_df', pd.DataFrame()),
             historical_data.get('db_sql_previous_sources_df', pd.DataFrame())
         ], ignore_index=True)
+
+        result['previous_sources'].drop(columns=['diaSourceId', 'midpointMjdTai', 'ssObjectId', 'diaObjectId'], inplace=True)
         
         result['forced_sources'] = pd.concat([
             msg_data.get('forced_sources_df', pd.DataFrame()),
             historical_data.get('db_sql_forced_photometries_df', pd.DataFrame())
         ], ignore_index=True)
+
+        result['forced_sources'].drop(columns=['diaForcedSourceId', 'midpointMjdTai'], inplace=True)
+
 
         # Remove from previous sources sources that are already in sources (to not end up with duplicates because of alerts that also appear in prvious_sources)
         unique_sources_set = set(zip(result['sources']['measurement_id'], result['sources']['oid']))
@@ -108,8 +115,8 @@ class LSSTDataJoiner(SurveyDataJoiner):
         else:
             # If empty, add an empty DataFrame with expected columns
             non_detections_df = pd.DataFrame(columns=[
-                "band", "ccdVisitId", "diaNoise", "diaObjectId", 
-                "midpointMjdTai", "mjd", "oid", "ssObjectId"
+                "band", "ccdVisitId", "diaNoise",  
+                "mjd", "oid", "sid"
             ])
         result['non_detections'] = non_detections_df
         

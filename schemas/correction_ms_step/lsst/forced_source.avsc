@@ -14,25 +14,10 @@
       "doc": "Filter band this source was observed with. ALeRCE: Changed from string to int",
       "default": null,
       "name": "band",
-      "type": [
+      "type": 
+        [
         "null",
         "int"
-      ]
-    },
-    {
-      "doc": "Unique id.",
-      "name": "diaForcedSourceId",
-      "type": [
-        "null",
-        "long"
-      ]
-    },
-    {
-      "doc": "Id of the DiaObject that this DiaForcedSource was associated with.",
-      "name": "diaObjectId",
-      "type": [
-        "null",
-        "long"
       ]
     },
     {
@@ -71,14 +56,6 @@
       "type": [
         "null",
         "float"
-      ]
-    },
-    {
-      "doc": "Effective mid-visit time for this diaForcedSource, expressed as Modified Julian Date, International Atomic Time.",
-      "name": "midpointMjdTai",
-      "type": [
-        "null",
-        "double"
       ]
     }
   ]
