@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "s3-step"
+version = "27.5.7a25"
+description = "S3 step"
+authors = []
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+apf-base = { path = "../libs/apf", develop = true }
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.3.0"
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.3.1"
+pytest-cov = "^4.1.0"
+pytest-docker = "^1.0.1"
+moto = {extras = ["secretsmanager"], version = "4.1.12"}
+
+[tool.black]
+line-length = 88
+
+[tool.pytest.ini_options]
+addopts = "-x"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
