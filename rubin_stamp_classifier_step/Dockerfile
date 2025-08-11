@@ -20,25 +20,24 @@ RUN pip install poetry
 COPY rubin_stamp_classifier_step/pyproject.toml \
     /app/
 COPY libs/apf /libs/apf
-COPY libs/db-plugins /libs/db-plugins
+COPY libs/db-plugins-multisurvey /libs/db-plugins-multisurvey
 COPY alerce_classifiers /alerce_classifiers
 COPY schemas/rubin_stamp_classifier_step /schemas/rubin_stamp_classifier_step
 COPY schemas/surveys/lsst /schemas/surveys/lsst
 WORKDIR /app
-RUN poetry install --no-root 
+RUN poetry install --no-root --without=dev --with=rubin
 
 
 FROM python:3.10-slim as production
 RUN pip install poetry
 COPY --from=builder /app /app
 COPY --from=builder /libs/apf /libs/apf
-COPY --from=builder /libs/db-plugins /libs/db-plugins
+COPY --from=builder /libs/db-plugins-multisurvey /libs/db-plugins-multisurvey
 COPY --from=builder /alerce_classifiers /alerce_classifiers
 COPY --from=builder /schemas /schemas
 COPY rubin_stamp_classifier_step/scripts /app/scripts
 COPY rubin_stamp_classifier_step/README.md /app/README.md
-COPY rubin_stamp_classifier_step/models_settings.py /app/models_settings.py
 COPY rubin_stamp_classifier_step/rubin_stamp_classifier_step /app/rubin_stamp_classifier_step
 WORKDIR /app/
 RUN poetry install --only-root
-CMD ["poetry", "run", "python", "scripts/run_step.py"]  
+CMD ["poetry", "run", "python", "scripts/run_step.py"]

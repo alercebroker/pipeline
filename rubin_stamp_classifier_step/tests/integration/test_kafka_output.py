@@ -4,6 +4,8 @@ import pytest
 from rubin_stamp_classifier_step.step import StampClassifierStep
 import sys
 from confluent_kafka import Consumer
+import fastavro
+from io import BytesIO
 
 sys.path.append(os.path.dirname(__file__))
 from raw_kafka_producer import RawKafkaProducer
@@ -101,6 +103,7 @@ class TestKafkaOutput(unittest.TestCase):
 
         step._pre_consume()
         n_messages = 0
+        execute_results = []
         for message in step.consumer.consume():
             print(len(message))
             if len(message) == 0:
@@ -110,6 +113,7 @@ class TestKafkaOutput(unittest.TestCase):
                 continue
             try:
                 result = step.execute(preprocessed_msg)
+                execute_results.extend(result)
                 n_messages += len(result)
             except Exception as error:
                 logging.debug("Error at execute")
@@ -125,6 +129,81 @@ class TestKafkaOutput(unittest.TestCase):
                 break
         step._tear_down()
         print("Number of messages processed:", n_messages)
+
+        # Now consume from the output topic and compare
+        consumer = Consumer(
+            {
+                "bootstrap.servers": kafka_bootstrap_servers,
+                "group.id": "test-kafka-output-checker",
+                "auto.offset.reset": "earliest",
+            }
+        )
+        consumer.subscribe([output_topic])
+        output_schema_path = step_config["PRODUCER_CONFIG"]["SCHEMA_PATH"]
+
+        with open(output_schema_path) as schema_file:
+            output_schema = fastavro.schema.load_schema(output_schema_path)
+        deserialized_outputs = []
+        while len(deserialized_outputs) < n_messages:
+            msg = consumer.poll(5.0)
+            if msg is None:
+                break
+            if msg.error():
+                print(f"Consumer error: {msg.error()}")
+                continue
+            bio = BytesIO(msg.value())
+            record = fastavro.schemaless_reader(bio, output_schema)
+            deserialized_outputs.append(record)
+        consumer.close()
+        print(
+            f"Deserialized {len(deserialized_outputs)} output messages from topic '{output_topic}'."
+        )
+        self.assertEqual(
+            len(deserialized_outputs),
+            len(execute_results),
+            "Output topic message count does not match execute results.",
+        )
+        # Order execute_results and deserialized_outputs by a key to ensure comparison is valid
+        execute_results = sorted(execute_results, key=lambda x: x["alertId"])
+        deserialized_outputs = sorted(deserialized_outputs, key=lambda x: x["alertId"])
+        id_fields = [
+            "alertId",
+            "diaObjectId",
+            "diaSourceId",
+        ]
+        floating_point_fields = [
+            "midpointMjdTai",
+            "ra",
+            "dec",
+        ]
+        for i in range(len(execute_results)):
+            # Compare fields in execute_results and deserialized_outputs
+            for field in id_fields + floating_point_fields:
+                self.assertIn(
+                    field,
+                    execute_results[i],
+                    f"Field '{field}' not found in execute_results at index {i}.",
+                )
+                self.assertIn(
+                    field,
+                    deserialized_outputs[i],
+                    f"Field '{field}' not found in deserialized_outputs at index {i}.",
+                )
+                if field in floating_point_fields:
+                    # Allow for small floating point differences
+                    self.assertAlmostEqual(
+                        execute_results[i][field],
+                        deserialized_outputs[i][field],
+                        places=5,
+                        msg=f"Field '{field}' does not match at index {i}.",
+                    )
+                else:
+                    # For ID fields, check exact match
+                    self.assertEqual(
+                        execute_results[i][field],
+                        deserialized_outputs[i][field],
+                        f"Field '{field}' does not match at index {i}.",
+                    )
 
     def test_lsst_topic_has_messages(self):
         """Test that the lsst topic has messages after setup and count them"""
