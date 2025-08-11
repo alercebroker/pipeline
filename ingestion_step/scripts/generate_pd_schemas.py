@@ -28,7 +28,7 @@ type_mappings = {
 
 def process_schema(path: str) -> dict[str, DType]:
     parsed_schema = load_schema(path)
-    fields: list[dict[str, str | list[str]]] = parsed_schema["fields"]
+    fields: list[dict[str, str | list[str] | dict[str, str]]] = parsed_schema["fields"]
 
     schema = {}
     for field in fields:
@@ -39,6 +39,11 @@ def process_schema(path: str) -> dict[str, DType]:
             field_type = list(filter(lambda x: x != "null", field_type))
             assert len(field_type) == 1
             field_type = field_type[0]
+
+        if type(field_type) is dict:
+            assert "logicalType" in field_type
+            assert field_type["logicalType"] == "timestamp-micros"
+            field_type = field_type["type"]
 
         assert type(field_name) is str
         assert type(field_type) is str
@@ -72,13 +77,13 @@ DType = (
         print("}")
 
 
-sruvey_schemas = {
+survey_schemas = {
     "lsst": {
-        "dia_forced_source": "../schemas/surveys/lsst/v7_4_diaForcedSource.avsc",
-        "dia_non_detection_limit": "../schemas/surveys/lsst/v7_4_diaNondetectionLimit.avsc",
-        "dia_source": "../schemas/surveys/lsst/v7_4_diaSource.avsc",
-        "dia_object": "../schemas/surveys/lsst/v7_4_diaObject.avsc",
-        "ss_object": "../schemas/surveys/lsst/v7_4_ssObject.avsc",
+        "dia_forced_source": "../schemas/surveys/lsst_v8.0/lsst.v8_0.diaForcedSource.avsc",
+        "dia_source": "../schemas/surveys/lsst_v8.0/lsst.v8_0.diaSource.avsc",
+        "ss_source": "../schemas/surveys/lsst_v8.0/lsst.v8_0.ssSource.avsc",
+        "dia_object": "../schemas/surveys/lsst_v8.0/lsst.v8_0.diaObject.avsc",
+        "mpcorb": "../schemas/surveys/lsst_v8.0/lsst.v8_0.MPCORB.avsc",
     },
     "ztf": {
         "candidate": "../schemas/ztf/candidate.avsc",
@@ -89,14 +94,12 @@ sruvey_schemas = {
 
 
 def generate(args: list[str] = sys.argv):
-    assert len(args) == len(sruvey_schemas)
-    assert args[1] in sruvey_schemas.keys()
+    assert len(args) == 2
+    assert args[1] in survey_schemas.keys()
     survey = args[1]
 
-    schemas = sruvey_schemas[survey]
+    schemas = survey_schemas[survey]
 
-    pd_schemas = {
-        name: process_schema(schema) for name, schema in schemas.items()
-    }
+    pd_schemas = {name: process_schema(schema) for name, schema in schemas.items()}
 
     print_schemas(pd_schemas)

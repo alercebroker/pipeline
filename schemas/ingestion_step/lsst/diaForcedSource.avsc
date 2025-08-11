@@ -1,6 +1,6 @@
 {
   "type": "record",
-  "name": "forced_source",
+  "name": "diaForcedSource",
   "fields": [
     {
       "name": "oid",
@@ -19,8 +19,8 @@
       "type": "double"
     },
     {
-      "doc": "Filter band this source was observed with. ALeRCE: Changed from string to int",
       "default": null,
+      "doc": "Filter band this source was observed with.",
       "name": "band",
       "type": [
         "null",
@@ -38,12 +38,12 @@
       "type": "long"
     },
     {
-      "doc": "Right ascension coordinate of the position of the DiaObject at time radecMjdTai.",
+      "doc": "Right ascension coordinate of the position of the DiaObject [deg].",
       "name": "ra",
       "type": "double"
     },
     {
-      "doc": "Declination coordinate of the position of the DiaObject at time radecMjdTai.",
+      "doc": "Declination coordinate of the position of the DiaObject [deg].",
       "name": "dec",
       "type": "double"
     },
@@ -58,8 +58,8 @@
       "type": "int"
     },
     {
-      "doc": "Point Source model flux.",
       "default": null,
+      "doc": "Point Source model flux [nJy].",
       "name": "psfFlux",
       "type": [
         "null",
@@ -67,8 +67,8 @@
       ]
     },
     {
-      "doc": "Uncertainty of psfFlux.",
       "default": null,
+      "doc": "Uncertainty of psfFlux [nJy].",
       "name": "psfFluxErr",
       "type": [
         "null",
@@ -76,9 +76,35 @@
       ]
     },
     {
-      "doc": "Effective mid-visit time for this diaForcedSource, expressed as Modified Julian Date, International Atomic Time.",
+      "doc": "Effective mid-visit time for this diaForcedSource, expressed as Modified Julian Date, International Atomic Time [d].",
       "name": "midpointMjdTai",
       "type": "double"
+    },
+    {
+      "default": null,
+      "doc": "Forced photometry flux for a point source model measured on the visit image centered at the DiaObject position [nJy].",
+      "name": "scienceFlux",
+      "type": [
+        "null",
+        "float"
+      ]
+    },
+    {
+      "default": null,
+      "doc": "Uncertainty of scienceFlux [nJy].",
+      "name": "scienceFluxErr",
+      "type": [
+        "null",
+        "float"
+      ]
+    },
+    {
+      "doc": "Time when this record was generated.",
+      "name": "time_processed",
+      "type": {
+        "logicalType": "timestamp-micros",
+        "type": "long"
+      }
     }
   ]
 }

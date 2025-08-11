@@ -30,7 +30,11 @@ def add_sid_to_source(df: pd.DataFrame):
 def band_to_int(df: pd.DataFrame):
     df.rename(columns={"band": "_band"}, inplace=True)
     df["band"] = df["_band"].map(band_map).astype(pd.Int32Dtype())
-    df.drop(columns=["_band"])
+    df.drop(columns=["_band"], inplace=True)
+
+
+def temp_ignore_ss(df: pd.DataFrame):
+    df.drop(index=df[df["diaObjectId"].isnull()].index, inplace=True)
 
 
 def get_source_transforms() -> list[Transform]:
@@ -40,7 +44,12 @@ def get_source_transforms() -> list[Transform]:
         copy_column("diaSourceId", "measurement_id"),
         copy_column("midpointMjdTai", "mjd"),
         band_to_int,
+        temp_ignore_ss,
     ]
+
+
+def get_ss_source_transforms() -> list[Transform]:
+    return []
 
 
 def get_forced_source_transforms() -> list[Transform]:
@@ -86,3 +95,7 @@ def get_ss_object_transforms() -> list[Transform]:
         rename_column("ra", "meanra"),
         rename_column("dec", "meandec"),
     ]
+
+
+def get_mpcorb_transforms() -> list[Transform]:
+    return []
