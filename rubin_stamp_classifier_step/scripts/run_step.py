@@ -29,6 +29,8 @@ if step_config["FEATURE_FLAGS"]["PROMETHEUS"]:
     start_http_server(8000)
 
 step = StampClassifierStep(
-    config=step_config, level=step_config["LOGGING_LEVEL"], prometheus_metrics=prometheus_metrics
+    config=step_config,
+    level=step_config["LOGGING_LEVEL"],
+    prometheus_metrics=prometheus_metrics,
 )
 step.start()
