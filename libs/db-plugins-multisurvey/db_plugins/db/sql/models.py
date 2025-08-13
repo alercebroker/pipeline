@@ -478,6 +478,7 @@ class LsstIdMapper(Base):
         PrimaryKeyConstraint("lsst_id_serial", name="pk_lsst_idmapper_serial"),
     )
 
+
 class Probability(Base):
     __tablename__ = "probability"
 
@@ -492,8 +493,11 @@ class Probability(Base):
 
     __table_args__ = (
         PrimaryKeyConstraint(
-            "oid", "classifier_id", "classifier_version", "class_id",
-            name="pk_probability_oid_classifierid_classid"
+            "oid",
+            "classifier_id",
+            "classifier_version",
+            "class_id",
+            name="pk_probability_oid_classifierid_classid",
         ),
         Index("ix_probability_oid", "oid", postgresql_using="hash"),
     )
