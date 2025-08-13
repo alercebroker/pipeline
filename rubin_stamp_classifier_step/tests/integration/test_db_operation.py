@@ -36,7 +36,9 @@ step_config = {
     "CONSUMER_CONFIG": {"CLASS": "apf.core.step.DefaultConsumer"},
     "PRODUCER_CONFIG": {"CLASS": "apf.core.step.DefaultProducer"},
     "MODEL_VERSION": "",
-    "MODEL_CONFIG": {"MODEL_PATH": os.environ["MODEL_PATH"]},
+    "MODEL_CONFIG": {
+        "MODEL_PATH": os.environ["TEST_RUBIN_STAMP_CLASSIFIER_STEP_MODEL_PATH"]
+    },
 }
 
 
