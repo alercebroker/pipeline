@@ -1,11 +1,12 @@
 import datetime
-from apf.consumers.generic import GenericConsumer
-from confluent_kafka import OFFSET_END, Consumer, KafkaException
+import importlib
+import io
+import json
 
 import fastavro
-import io
-import importlib
-import json
+from confluent_kafka import OFFSET_END, Consumer, KafkaException
+
+from apf.consumers.generic import GenericConsumer
 
 
 class KafkaConsumer(GenericConsumer):
@@ -136,7 +137,7 @@ class KafkaConsumer(GenericConsumer):
         )
         self.dynamic_topic = False
         if self.config.get("TOPICS"):
-            self.logger.info(f'Subscribing to {self.config["TOPICS"]}')
+            self.logger.info(f"Subscribing to {self.config['TOPICS']}")
             self.consumer.subscribe(self.config["TOPICS"], on_assign=self._on_assign)
         elif self.config.get("TOPIC_STRATEGY"):
             self.dynamic_topic = True
@@ -148,7 +149,7 @@ class KafkaConsumer(GenericConsumer):
                 **self.config["TOPIC_STRATEGY"]["PARAMS"]
             )
             self.topics = self.topic_strategy.get_topics()
-            self.logger.info(f'Using {self.config["TOPIC_STRATEGY"]}')
+            self.logger.info(f"Using {self.config['TOPIC_STRATEGY']}")
             self.logger.info(f"Subscribing to {self.topics}")
             self.consumer.subscribe(self.topics, on_assign=self._on_assign)
         else:
@@ -234,7 +235,6 @@ class KafkaConsumer(GenericConsumer):
         """
         num_messages, timeout = self.set_basic_config(num_messages, timeout)
 
-        messages = []
         while True:
             if self.dynamic_topic:
                 if self._check_topics():
@@ -271,7 +271,6 @@ class KafkaConsumer(GenericConsumer):
                     deserialized.append(ds_message)
 
             self.messages = messages
-            messages = []
             if len(deserialized) > 0:
                 if num_messages == 1:
                     yield deserialized[0]
@@ -324,5 +323,13 @@ class KafkaSchemalessConsumer(KafkaConsumer):
         bytes_io = io.BytesIO(message.value())
         data = fastavro.schemaless_reader(bytes_io, self.schema)
 
+        return data
+
+
+class KafkaSchemalessRegistryConsumer(KafkaSchemalessConsumer):
+    def _deserialize_message(self, message):
+        msg_bytes = message.value()
+        avro_data = msg_bytes[5:]
+        data = fastavro.schemaless_reader(io.BytesIO(avro_data), self.schema)
 
         return data

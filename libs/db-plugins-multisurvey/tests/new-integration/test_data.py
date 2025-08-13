@@ -20,7 +20,7 @@ OBJECT_DATA = {
             "n_forced": 12,
             "n_non_det": 7,
             "corrected": False,
-            "stellar": True
+            "stellar": True,
         },
         {
             "oid": 12345681,
@@ -37,7 +37,7 @@ OBJECT_DATA = {
             "n_forced": 15,
             "n_non_det": 5,
             "corrected": True,
-            "stellar": False
+            "stellar": False,
         },
         {
             "oid": 12345682,
@@ -54,8 +54,8 @@ OBJECT_DATA = {
             "n_forced": 8,
             "n_non_det": 3,
             "corrected": True,
-            "stellar": True
-        }
+            "stellar": True,
+        },
     ]
 }
 
@@ -67,29 +67,29 @@ ZTF_OBJECT_DATA = {
             "g_r_max": 0.43,
             "g_r_max_corr": 1.2,
             "g_r_mean": 3.2,
-            "g_r_mean_corr": 0.01
+            "g_r_mean_corr": 0.01,
         },
         {
             "oid": 12345681,
             "g_r_max": 0.55,
             "g_r_max_corr": 1.4,
             "g_r_mean": 2.8,
-            "g_r_mean_corr": 0.02
+            "g_r_mean_corr": 0.02,
         },
         {
             "oid": 12345682,
             "g_r_max": 0.65,
             "g_r_max_corr": 1.6,
             "g_r_mean": 3.4,
-            "g_r_mean_corr": 0.03
+            "g_r_mean_corr": 0.03,
         },
         {
             "oid": 12345683,
             "g_r_max": 0.35,
             "g_r_max_corr": 1.1,
             "g_r_mean": 2.5,
-            "g_r_mean_corr": 0.015
-        }
+            "g_r_mean_corr": 0.015,
+        },
     ]
 }
 
@@ -102,7 +102,7 @@ DETECTION_DATA = {
             "mjd": 60080.5432,
             "ra": 293.26945,
             "dec": 74.38762,
-            "band": 1
+            "band": 1,
         },
         {
             "oid": 12345680,
@@ -110,7 +110,7 @@ DETECTION_DATA = {
             "mjd": 60085.6543,
             "ra": 293.26930,
             "dec": 74.38758,
-            "band": 2
+            "band": 2,
         },
         {
             "oid": 12345680,
@@ -118,8 +118,8 @@ DETECTION_DATA = {
             "mjd": 60090.7654,
             "ra": 293.26918,
             "dec": 74.38750,
-            "band": 1
-        }
+            "band": 1,
+        },
     ]
 }
 
@@ -152,7 +152,7 @@ ZTF_DETECTION_DATA = {
             "dubious": False,
             "parent_candid": 12345,
             "has_stamp": True,
-            "step_id_corr": 0
+            "step_id_corr": 0,
         },
         {
             "oid": 12345680,
@@ -180,7 +180,7 @@ ZTF_DETECTION_DATA = {
             "dubious": False,
             "parent_candid": 12346,
             "has_stamp": True,
-            "step_id_corr": 0
+            "step_id_corr": 0,
         },
         {
             "oid": 12345681,
@@ -208,7 +208,7 @@ ZTF_DETECTION_DATA = {
             "dubious": True,
             "parent_candid": 12347,
             "has_stamp": False,
-            "step_id_corr": 0
+            "step_id_corr": 0,
         },
         {
             "oid": 12345682,
@@ -236,8 +236,8 @@ ZTF_DETECTION_DATA = {
             "dubious": False,
             "parent_candid": 12348,
             "has_stamp": True,
-            "step_id_corr": 1
-        }
+            "step_id_corr": 1,
+        },
     ]
 }
 
@@ -250,7 +250,7 @@ FORCED_PHOTOMETRY_DATA = {
             "mjd": 58765.4321,
             "ra": 293.26945,
             "dec": 74.38762,
-            "band": 1
+            "band": 1,
         },
         {
             "oid": 12345680,
@@ -258,7 +258,7 @@ FORCED_PHOTOMETRY_DATA = {
             "mjd": 58766.5432,
             "ra": 293.26930,
             "dec": 74.38758,
-            "band": 2
+            "band": 2,
         },
         {
             "oid": 12345681,
@@ -266,7 +266,7 @@ FORCED_PHOTOMETRY_DATA = {
             "mjd": 58767.6543,
             "ra": 290.54335,
             "dec": 71.98775,
-            "band": 1
+            "band": 1,
         },
         {
             "oid": 12345682,
@@ -274,8 +274,8 @@ FORCED_PHOTOMETRY_DATA = {
             "mjd": 58768.7654,
             "ra": 292.87670,
             "dec": 73.12360,
-            "band": 3
-        }
+            "band": 3,
+        },
     ]
 }
 
@@ -318,7 +318,7 @@ ZTF_FORCED_PHOTOMETRY_DATA = {
             "magnr": 17.8,
             "sigmagnr": 0.03,
             "chinr": 1.2,
-            "sharpnr": 0.5
+            "sharpnr": 0.5,
         },
         {
             "oid": 12345680,
@@ -356,7 +356,7 @@ ZTF_FORCED_PHOTOMETRY_DATA = {
             "magnr": 17.9,
             "sigmagnr": 0.04,
             "chinr": 1.3,
-            "sharpnr": 0.6
+            "sharpnr": 0.6,
         },
         {
             "oid": 12345681,
@@ -394,7 +394,7 @@ ZTF_FORCED_PHOTOMETRY_DATA = {
             "magnr": 18.5,
             "sigmagnr": 0.05,
             "chinr": 1.4,
-            "sharpnr": 0.7
+            "sharpnr": 0.7,
         },
         {
             "oid": 12345682,
@@ -432,37 +432,17 @@ ZTF_FORCED_PHOTOMETRY_DATA = {
             "magnr": 16.9,
             "sigmagnr": 0.02,
             "chinr": 1.5,
-            "sharpnr": 0.8
-        }
+            "sharpnr": 0.8,
+        },
     ]
 }
 
 # Datos para el modelo NonDetection
 NON_DETECTION_DATA = {
     "filter": [
-        {
-            "oid": 12345680,
-            "band": 1,
-            "mjd": 60030.12345,
-            "diffmaglim": 19.5
-        },
-        {
-            "oid": 12345680,
-            "band": 2,
-            "mjd": 60035.23456,
-            "diffmaglim": 19.8
-        },
-        {
-            "oid": 12345681,
-            "band": 1,
-            "mjd": 60040.34567,
-            "diffmaglim": 20.1
-        },
-        {
-            "oid": 12345682,
-            "band": 3,
-            "mjd": 60045.45678,
-            "diffmaglim": 20.5
-        }
+        {"oid": 12345680, "band": 1, "mjd": 60030.12345, "diffmaglim": 19.5},
+        {"oid": 12345680, "band": 2, "mjd": 60035.23456, "diffmaglim": 19.8},
+        {"oid": 12345681, "band": 1, "mjd": 60040.34567, "diffmaglim": 20.1},
+        {"oid": 12345682, "band": 3, "mjd": 60045.45678, "diffmaglim": 20.5},
     ]
 }

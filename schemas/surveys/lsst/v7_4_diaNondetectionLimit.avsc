@@ -1,0 +1,10 @@
+{
+	"name": "v7_4_diaNondetectionLimit",
+	"type": "record",
+	"fields": [
+		{"name": "ccdVisitId",  "type": "long"},
+		{"name": "midpointMjdTai", "type": "double"},
+		{"name": "band", "type": "string"},
+		{"name": "diaNoise", "type": "float"}
+	]
+}

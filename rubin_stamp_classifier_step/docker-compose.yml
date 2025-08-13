@@ -1,0 +1,35 @@
+version: "3"
+services:
+  kafka:
+    image: "bitnami/kafka:latest"
+    ports:
+      - "9092:9092"
+    environment:
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - ALLOW_PLAINTEXT_LISTENER=yes
+  stamp:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      tags:
+        - "stamp:local"
+    environment:
+      - CONSUMER_CLASS=apf.consumers.KafkaConsumer
+      - CONSUMER_TOPICS=features_elasticc
+      - CONSUMER_SERVER=${CONSUMER_SERVER}
+      - CONSUMER_GROUP_ID=stamp_classifier
+      - CONSUMER_KAFKA_USERNAME=${CONSUMER_KAFKA_USERNAME}
+      - CONSUMER_KAFKA_PASSWORD=${CONSUMER_KAFKA_PASSWORD}
+      - PRODUCER_TOPIC_FORMAT=format%s
+      - PRODUCER_DATE_FORMAT=YYYYmmdd
+      - PRODUCER_CHANGE_HOUR=22
+      - PRODUCER_RETENTION_DAYS=1
+      - PRODUCER_SERVER=kafka:9092
+      - SCRIBE_SERVER=kafka:9092
+      - SCRIBE_TOPIC=w_object
+      - METRICS_HOST=kafka:9092
+      - METRICS_TOPIC=metrics
+      - CONSUME_TIMEOUT=10
+      - CONSUME_MESSAGES=100
+      - LOGGING_DEBUG=yes
+      - STREAM=elasticc

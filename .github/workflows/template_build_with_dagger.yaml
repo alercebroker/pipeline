@@ -1,4 +1,4 @@
-name: Build_with dagget template
+name: Build_with dagger template
 on:
   workflow_call:
     inputs:

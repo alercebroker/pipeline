@@ -1,3 +1,4 @@
+import time
 from datetime import datetime
 from typing import Any
 
@@ -5,15 +6,9 @@ import pandas as pd
 from apf.core.step import GenericStep
 from db_plugins.db.sql._connection import PsqlDatabase
 
-from ingestion_step.core.parser_interface import ParsedData
 from ingestion_step.core.select_parser import select_parser
-from ingestion_step.utils.database import (
-    insert_detections,
-    insert_forced_photometry,
-    insert_non_detections,
-    insert_objects,
-)
-from ingestion_step.ztf.serializer import serialize_ztf
+from ingestion_step.core.strategy import ParsedData
+from ingestion_step.core.types import Message
 
 
 class IngestionStep(GenericStep):
@@ -21,11 +16,11 @@ class IngestionStep(GenericStep):
 
     def __init__(
         self,
-        config,  # pyright: ignore
+        config: dict[str, Any],
         **kwargs: Any,
     ):
-        super().__init__(config=config, **kwargs)  # pyright: ignore
-        self.parser = select_parser(config["SURVEY_STRATEGY"])
+        super().__init__(config=config, **kwargs)
+        self.Strategy = select_parser(config["SURVEY_STRATEGY"])
         self.psql_driver = PsqlDatabase(config["PSQL_CONFIG"])
 
     def _add_metrics(self, alerts: pd.DataFrame):
@@ -36,30 +31,24 @@ class IngestionStep(GenericStep):
         self.metrics["tid"] = alerts["tid"].tolist()
         self.metrics["aid"] = alerts["aid"].tolist()
 
-    def execute(
-        self, messages: list[dict[str, Any]]
-    ) -> ParsedData:  # pyright: ignore
-        self.logger.info(f"Processing {len(messages)} alerts")
+    def execute(  # pyright: ignore[reportIncompatibleMethodOverride]
+        self, messages: list[Message]
+    ) -> ParsedData:
+        parsed_data = self.Strategy.parse(messages)
 
-        self.ingestion_timestamp = int(datetime.now().timestamp())
-        parsed_data = self.parser.parse(messages)
+        for key in parsed_data:
+            self.logger.info(
+                f"Parsed {len(parsed_data[key])} objects form {key}"
+            )
 
-        self.logger.info(f'Parsed {len(parsed_data["objects"])=}')
-        self.logger.info(f'Parsed {len(parsed_data["detections"])=}')
-        self.logger.info(f'Parsed {len(parsed_data["non_detections"])=}')
-        self.logger.info(f'Parsed {len(parsed_data["forced_photometries"])=}')
-
-        insert_objects(self.psql_driver, parsed_data["objects"])
-        insert_detections(self.psql_driver, parsed_data["detections"])
-        insert_non_detections(self.psql_driver, parsed_data["non_detections"])
-        insert_forced_photometry(
-            self.psql_driver, parsed_data["forced_photometries"]
-        )
+        self.Strategy.insert_into_db(self.psql_driver, parsed_data)
 
         return parsed_data
 
-    def pre_produce(self, result: ParsedData):  # pyright: ignore
-        self.set_producer_key_field("oid")
-        messages = serialize_ztf(result)
+    def pre_produce(  # pyright: ignore[reportIncompatibleMethodOverride]
+        self, result: ParsedData
+    ):
+        self.set_producer_key_field(self.Strategy.get_key())
+        messages = self.Strategy.serialize(result)
 
         return messages

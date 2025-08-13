@@ -1,0 +1,15 @@
+{
+  "type": "record",
+  "name": "correction_lsst",
+  "doc": "Correction ms step schema output for the LSST survey",
+  "fields": [
+    { "name": "oid", "type": "long" },
+    { "name": "measurement_id", "type": {"type": "array", "items": "long"}},
+    { "name": "sources", "type": { "type": "array", "items": "source" }},
+    { "name": "previous_sources", "type": { "type": "array", "items": "source" }},
+    { "name": "forced_sources", "type": { "type": "array", "items": "forced_source" }},
+    { "name": "non_detections", "type": { "type": "array", "items": "non_detection" }},
+    { "name": "dia_object", "type": ["null", { "type": "array", "items": "dia_object"}]},
+    { "name": "ss_object", "type": ["null", { "type": "array", "items": "ss_object"}]}
+  ]
+}

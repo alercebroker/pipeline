@@ -6,7 +6,8 @@ from typing import Any, Callable, Iterable, cast
 from fastavro.schema import load_schema as _load_schema
 from fastavro.types import Schema
 from fastavro.utils import generate_many
-from numpy.random import randint
+
+from ingestion_step.core.types import Message
 
 # Overwrite type as it is wrongly infered as `Unknown`
 load_schema = cast(Callable[[str], Schema], _load_schema)
@@ -15,11 +16,11 @@ base_schema_path = Path("tests/data/schema/ztf_custom")
 
 
 def replace_fid_det(det: dict[str, Any]) -> dict[str, Any]:
-    det["fid"] = randint(1, 4)
+    det["fid"] = random.randint(1, 3)
     return det
 
 
-def replace_all_fids(alert: dict[str, Any]) -> dict[str, Any]:
+def replace_all_fids(alert: Message) -> Message:
     alert["candidate"] = replace_fid_det(alert["candidate"])
     if alert["prv_candidates"] is not None:
         alert["prv_candidates"] = list(
@@ -30,7 +31,7 @@ def replace_all_fids(alert: dict[str, Any]) -> dict[str, Any]:
     return alert
 
 
-def replace_objectId(alert: dict[str, Any]) -> dict[str, Any]:
+def replace_objectId(alert: Message) -> Message:
     alert["objectId"] = "ZTF18" + "".join(
         random.choices(string.ascii_lowercase + string.digits, k=7)
     )

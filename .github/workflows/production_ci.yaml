@@ -229,7 +229,7 @@ jobs:
       PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
 
   build-ingestion-dagger:
-    needs: update-packages-dagger
+    needs: update_versions
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
       stage: production
@@ -333,7 +333,7 @@ jobs:
           poetry run python main.py deploy add-package watchlist-step --chart=watchlist-step --values=watchlist_step-helm-values --chart-folder=watchlist_step
           poetry run python main.py deploy execute --stage=production --clear
 
-  create_realease:
+  create_release:
     needs: deploy_production
     runs-on: ubuntu-latest
     steps:

@@ -16,11 +16,11 @@ existing_object_dict = {
     "n_forced": 1,
     "n_non_det": 1,
     "corrected": False,
-    "stellar": False,
 }
 
 existing_ztf_objects_expected = {
     "oid": 525514836051,
+    "sid": 0,
     "g_r_max": None,
     "g_r_max_corr": None,
     "g_r_mean": None,
@@ -70,7 +70,7 @@ objects_expected = [
         "n_forced": 1,
         "n_non_det": 1,
         "corrected": False,
-        "stellar": False,
+        "stellar": None,
     },
     {
         "oid": 390733221096,
@@ -87,7 +87,7 @@ objects_expected = [
         "n_forced": 1,
         "n_non_det": 1,
         "corrected": False,
-        "stellar": False,
+        "stellar": None,
     },
     {
         "oid": 755834527363,
@@ -104,7 +104,7 @@ objects_expected = [
         "n_forced": 1,
         "n_non_det": 1,
         "corrected": False,
-        "stellar": False,
+        "stellar": None,
     },
 ]
 
@@ -142,6 +142,7 @@ new_objects_df = new_objects_df.set_index("oid")
 
 existing_detections_dict = {
     "oid": 525514836051,
+    "sid": 0,
     "measurement_id": 3820277549,
     "mjd": 59823.18777780002,
     "ra": 24.9727715,
@@ -151,6 +152,7 @@ existing_detections_dict = {
 
 existing_ztf_detections_dict = {
     "oid": 525514836051,
+    "sid": 0,
     "measurement_id": 3820277549,
     "pid": 0,
     "diffmaglim": 20.7186,
@@ -182,6 +184,7 @@ existing_ztf_detections_dict = {
 new_detections_dict = [
     {
         "oid": 525514836051,
+        "sid": 0,
         "measurement_id": 3820277549,
         "band": 1,
         "mjd": 58791.2800925998,
@@ -208,6 +211,7 @@ new_detections_dict = [
     },
     {
         "oid": 525514836051,
+        "sid": 0,
         "measurement_id": 3985006894,
         "band": 1,
         "mjd": 58791.28415510012,
@@ -234,6 +238,7 @@ new_detections_dict = [
     },
     {
         "oid": 525514836051,
+        "sid": 0,
         "measurement_id": 7765783962,
         "band": 1,
         "mjd": 58791.27378469985,
@@ -263,6 +268,7 @@ new_detections_dict = [
 detections_expected = [
     {
         "oid": 525514836051,
+        "sid": 0,
         "measurement_id": 3820277549,
         "mjd": 59823.18777780002,
         "ra": 24.9727715,
@@ -271,6 +277,7 @@ detections_expected = [
     },
     {
         "oid": 525514836051,
+        "sid": 0,
         "measurement_id": 3985006894,
         "mjd": 58791.28415510012,
         "ra": 43.3676758,
@@ -279,6 +286,7 @@ detections_expected = [
     },
     {
         "oid": 525514836051,
+        "sid": 0,
         "measurement_id": 7765783962,
         "mjd": 58791.27378469985,
         "ra": 23.5628347,
@@ -290,6 +298,7 @@ detections_expected = [
 ztf_detections_expected = [
     {
         "oid": 525514836051,
+        "sid": 0,
         "measurement_id": 3820277549,
         "pid": 0,
         "diffmaglim": 20.7186,
@@ -317,6 +326,7 @@ ztf_detections_expected = [
     },
     {
         "oid": 525514836051,
+        "sid": 0,
         "measurement_id": 3985006894,
         "pid": 0,
         "diffmaglim": 20.7186,
@@ -344,6 +354,7 @@ ztf_detections_expected = [
     },
     {
         "oid": 525514836051,
+        "sid": 0,
         "measurement_id": 7765783962,
         "pid": 0,
         "diffmaglim": 20.7186,
@@ -381,6 +392,7 @@ new_detections_df = new_detections_df.set_index("oid")
 
 existing_fp_dict = {
     "oid": 525514836051,
+    "sid": 0,
     "measurement_id": 4970430577,
     "mjd": 60754.49832180003,
     "ra": 256.4062549,
@@ -390,6 +402,7 @@ existing_fp_dict = {
 
 existing_ztf_fp_dict = {
     "oid": 525514836051,
+    "sid": 0,
     "measurement_id": 4970430577,
     "pid": 0,
     "mag": 18.8348445892334,
@@ -431,6 +444,7 @@ existing_ztf_fp_dict = {
 new_fp_dict = [
     {
         "oid": 525514836051,
+        "sid": 0,
         "measurement_id": 4970430577,
         "pid": 0,
         "mjd": 58791.2800925998,
@@ -469,6 +483,7 @@ new_fp_dict = [
     },
     {
         "oid": 525514836051,
+        "sid": 0,
         "measurement_id": 9676191800,
         "pid": 0,
         "mjd": 58791.28415510012,
@@ -507,6 +522,7 @@ new_fp_dict = [
     },
     {
         "oid": 525514836051,
+        "sid": 0,
         "measurement_id": 5548762389,
         "pid": 0,
         "mjd": 60754.49832180003,
@@ -548,6 +564,7 @@ new_fp_dict = [
 fp_expected = [
     {
         "oid": 525514836051,
+        "sid": 0,
         "measurement_id": 4970430577,
         "mjd": 60754.49832180003,
         "ra": 256.4062549,
@@ -556,6 +573,7 @@ fp_expected = [
     },
     {
         "oid": 525514836051,
+        "sid": 0,
         "measurement_id": 9676191800,
         "mjd": 58791.28415510012,
         "ra": 43.3676758,
@@ -564,6 +582,7 @@ fp_expected = [
     },
     {
         "oid": 525514836051,
+        "sid": 0,
         "measurement_id": 5548762389,
         "mjd": 60754.49832180003,
         "ra": 256.4062549,
@@ -575,6 +594,7 @@ fp_expected = [
 ztf_fp_expected = [
     {
         "oid": 525514836051,
+        "sid": 0,
         "measurement_id": 4970430577,
         "pid": 0,
         "mag": 18.8348445892334,
@@ -614,6 +634,7 @@ ztf_fp_expected = [
     },
     {
         "oid": 525514836051,
+        "sid": 0,
         "measurement_id": 9676191800,
         "pid": 0,
         "mag": 19.8348445892334,
@@ -653,6 +674,7 @@ ztf_fp_expected = [
     },
     {
         "oid": 525514836051,
+        "sid": 0,
         "measurement_id": 5548762389,
         "pid": 0,
         "mag": 18.8348445892334,
@@ -702,6 +724,7 @@ new_fp_df = new_fp_df.set_index("oid")
 
 existing_non_detections_dict = {
     "oid": 525514836051,
+    "sid": 0,
     "band": 0,
     "mjd": 60461.40795140015,
     "diffmaglim": 20.5782,
@@ -710,18 +733,21 @@ existing_non_detections_dict = {
 new_non_detections_dict = [
     {
         "oid": 525514836051,
+        "sid": 0,
         "band": 0,
         "mjd": 60461.40795140015,
         "diffmaglim": 27.5782,
     },
     {
         "oid": 525514836051,
+        "sid": 0,
         "band": 0,
         "mjd": 60462.40795140015,
         "diffmaglim": 22.5782,
     },
     {
         "oid": 525514836051,
+        "sid": 0,
         "band": 0,
         "mjd": 60463.40795140015,
         "diffmaglim": 23.5782,
@@ -731,18 +757,21 @@ new_non_detections_dict = [
 non_detections_expected = [
     {
         "oid": 525514836051,
+        "sid": 0,
         "band": 0,
         "mjd": 60461.40795140015,
         "diffmaglim": 20.5782,
     },
     {
         "oid": 525514836051,
+        "sid": 0,
         "band": 0,
         "mjd": 60462.40795140015,
         "diffmaglim": 22.5782,
     },
     {
         "oid": 525514836051,
+        "sid": 0,
         "band": 0,
         "mjd": 60463.40795140015,
         "diffmaglim": 23.5782,

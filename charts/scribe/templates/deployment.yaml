@@ -20,7 +20,9 @@ spec:
       {{- end }}
       labels:
         {{- include "scribe.selectorLabels" . | nindent 8 }}
-    spec:
+    spec:      
+      imagePullSecrets:
+      - name: image-pull-access
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"

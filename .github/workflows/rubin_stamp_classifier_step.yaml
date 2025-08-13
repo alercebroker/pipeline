@@ -1,0 +1,36 @@
+name: Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "rubin_stamp_classifier_step/**"
+      - "!rubin_stamp_classifier_step/README.md"
+
+jobs:
+  rubin_stamp_classifier_step_lint:
+    uses: ./.github/workflows/lint-template.yaml
+    with:
+      base-folder: "rubin_stamp_classifier_step"
+      sources-folder: "rubin_stamp_classifier_step"
+  rubin_stamp_classifier_step_integration:
+    uses: ./.github/workflows/poetry-tests-template.yaml
+    with:
+      base-folder: "rubin_stamp_classifier_step"
+      sources-folder: "rubin_stamp_classifier_step"
+      test-folder: "tests/integration"
+      codecov-flags: "" # Do not upload
+    secrets:
+      GH_TOKEN: "${{ secrets.ADMIN_TOKEN }}"
+      TEST_RUBIN_STAMP_CLASSIFIER_STEP_MODEL_PATH: "${{ secrets.TEST_RUBIN_STAMP_CLASSIFIER_STEP_MODEL_PATH }}"
+  build-rubin-stamp-classifier-dagger:
+    uses: ./.github/workflows/template_build_with_dagger.yaml
+    with:
+      ref: ${{ github.ref }}
+      stage: staging
+      extra-args: rubin_stamp_classifier_step --dry-run
+      submodules: true
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+

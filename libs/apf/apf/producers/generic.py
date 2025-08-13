@@ -27,6 +27,6 @@ class GenericProducer(ABC):
         Parameters
         ----------
         message : dict-like
-            Message to be sended.
+            Message to be sent.
         """
         pass

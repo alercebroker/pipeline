@@ -12,10 +12,10 @@ app = typer.Typer(
 
     There are two ways to build packages.
     
-    1- A single build accion calling the direct command.
+    1- A single build action calling the direct command.
         eg: python main.py build direct package_name
 
-    2- A bulk build acction, this involved 3 commands: prepare,
+    2- A bulk build action, this involved 3 commands: prepare,
        add_package and execute.
         eg: 
         poetry run python main.py build prepare
@@ -32,7 +32,7 @@ state_file_name = ".build_state.json"
 @app.command()
 def prepare():
     """
-    Start the bulk build proccess by seting up the environment.
+    Start the bulk build process by setting up the environment.
     """
     empty_dict = {}
     file = open(state_file_name, "w")
@@ -45,7 +45,7 @@ def execute(
     stage: Stage = Stage.staging, dry_run: bool = False, clear: bool = False
 ):
     """
-    Executes the bulk build process according to the environment previously setted up.
+    Executes the bulk build process according to the environment previously set up.
     """
     file = open(state_file_name, "r+")
     packages_dict = json.load(file)
@@ -117,7 +117,7 @@ def add_package(
 
 def _build(packages: dict, dry_run: bool):
     """
-    Call the deploy staging or deploy producction according to stage
+    Call the deploy staging or deploy production according to stage
     with the packages dict. Essentially a wrapper.
     """
     build_packages(packages, dry_run)

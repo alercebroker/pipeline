@@ -2,31 +2,30 @@ import os
 import sys
 
 import logging
+from apf.core.settings import config_from_yaml_file
+from reflector_step.step import CustomMirrormaker
+
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 PACKAGE_PATH = os.path.abspath(os.path.join(SCRIPT_PATH, ".."))
 
 sys.path.append(PACKAGE_PATH)
-from settings import *
 
-level = logging.INFO
-if "LOGGING_DEBUG" in locals():
-    if LOGGING_DEBUG:
-        level = logging.DEBUG
+settings = config_from_yaml_file(os.getenv("CONFIG_YAML_PATH"))
 
 logging.basicConfig(
-    level=level,
+    level=settings["LOGGING_LEVEL"],
     format="%(asctime)s %(levelname)s %(name)s.%(funcName)s: %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 
-from reflector_step.step import CustomMirrormaker
+step_config = settings["STEP_CONFIG"]
 
-keep_original_timestamp = STEP_CONFIG.pop("keep_original_timestamp")
-use_message_topic = STEP_CONFIG.pop("use_message_topic")
+keep_original_timestamp = step_config.pop("keep_original_timestamp")
+use_message_topic = step_config.pop("use_message_topic")
 
 step = CustomMirrormaker(
-    config=STEP_CONFIG,
+    config=step_config,
     keep_original_timestamp=keep_original_timestamp,
     use_message_topic=use_message_topic,
 )
