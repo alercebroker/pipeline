@@ -61,7 +61,9 @@ step_config = {
         ),
     },
     "MODEL_VERSION": "",
-    "MODEL_CONFIG": {"MODEL_PATH": os.environ["MODEL_PATH"]},
+    "MODEL_CONFIG": {
+        "MODEL_PATH": os.environ["TEST_RUBIN_STAMP_CLASSIFIER_STEP_MODEL_PATH"]
+    },
     "FEATURE_FLAGS": {
         "USE_PROFILING": False,
         "PROMETHEUS": False,
