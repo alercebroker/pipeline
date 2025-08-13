@@ -8,7 +8,7 @@ from sqlalchemy import (
     Integer,
     PrimaryKeyConstraint,
     SmallInteger,
-    DateTime,
+    DATE,
     func,
 )
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, REAL
@@ -767,6 +767,8 @@ class Object(Base):
     n_non_det = Column(Integer, nullable=False, default=1)
     corrected = Column(Boolean, nullable=False, default=False)
     stellar = Column(Boolean, nullable=True, default=None)
+    updated_date = Column(DATE, onupdate=func.now())
+
 
     __table_args__ = (
         PrimaryKeyConstraint("oid", "sid", name="pk_object_oid_sid"),
@@ -787,6 +789,8 @@ class ZtfObject(Base):
     g_r_mean = Column(REAL)
     g_r_mean_corr = Column(REAL)
 
+    created_date = Column(DATE, server_default=func.now())
+
     __table_args__ = (PrimaryKeyConstraint("oid", name="pk_ztfobject_oid"),)
 
 
@@ -799,7 +803,7 @@ class LsstDiaObject(Base):
 
     # all fields 8.0 draft
     # diaObjectId = Column(BigInteger, nullable=False) => This is oid
-    validityStart = Column(DateTime, nullable=False)
+    validityStart = Column(BigInteger, nullable=False)
     ra = Column(DOUBLE_PRECISION, nullable=False)
     raErr = Column(REAL, nullable=True)
     dec = Column(DOUBLE_PRECISION, nullable=False)
@@ -899,6 +903,9 @@ class LsstDiaObject(Base):
     lastDiaSourceMjdTai = Column(DOUBLE_PRECISION, nullable=True)
     nDiaSources = Column(Integer, nullable=False)
 
+    created_date = Column(DATE, server_default=func.now())
+
+
     __table_args__ = (PrimaryKeyConstraint("oid", name="pk_lsstdiaobject_oid"),)
 
 
@@ -912,6 +919,9 @@ class Detection(Base):
     ra = Column(DOUBLE_PRECISION, nullable=False)  # float8,
     dec = Column(DOUBLE_PRECISION, nullable=False)  # float8,
     band = Column(SmallInteger)  # int2, nulleable because  original schema
+
+    created_date = Column(DATE, server_default=func.now())
+
 
     __table_args__ = (
         PrimaryKeyConstraint(
@@ -950,6 +960,9 @@ class ZtfDetection(Base):
     dubious = Column(Boolean)  # bool,
     parent_candid = Column(BigInteger)  # int8,
     has_stamp = Column(Boolean)  # bool,
+
+    created_date = Column(DATE, server_default=func.now())
+
 
     __table_args__ = (
         PrimaryKeyConstraint(
@@ -1042,7 +1055,7 @@ class LsstDetection(Base):
     # band = Column(SmallInteger) Goes into detection
     isDipole = Column(Boolean)
     dipoleFitAttempted = Column(Boolean)
-    time_processed = Column(DateTime, nullable=False)
+    time_processed = Column(BigInteger)
     bboxSize = Column(BigInteger)
     pixelFlags = Column(Boolean)
     pixelFlags_bad = Column(Boolean)
@@ -1066,6 +1079,8 @@ class LsstDetection(Base):
     pixelFlags_injected_templateCenter = Column(Boolean)
     glint_trail = Column(Boolean)
 
+    created_date = Column(DATE, server_default=func.now())
+
     __table_args__ = (
         PrimaryKeyConstraint(
             "oid", "measurement_id", name="pk_lsstdetection_oid_measurementid"
@@ -1084,6 +1099,8 @@ class ForcedPhotometry(Base):
     ra = Column(DOUBLE_PRECISION, nullable=False)  # float8,
     dec = Column(DOUBLE_PRECISION, nullable=False)  # float8,
     band = Column(SmallInteger)  # int2, nulleable original schema
+
+    created_date = Column(DATE, server_default=func.now())
 
     __table_args__ = (
         PrimaryKeyConstraint(
@@ -1135,6 +1152,9 @@ class ZtfForcedPhotometry(Base):
     chinr = Column(REAL, nullable=False)  # float8,
     sharpnr = Column(REAL, nullable=False)  # float8
 
+    created_date = Column(DATE, server_default=func.now())
+
+
     __table_args__ = (
         PrimaryKeyConstraint(
             "oid", "measurement_id", name="pk_ztfforcedphotometry_oid_measurementid"
@@ -1156,7 +1176,9 @@ class LsstForcedPhotometry(Base):
     psfFluxErr = Column(REAL)
     scienceFlux = Column(REAL)
     scienceFluxErr = Column(REAL)
-    time_processed = Column(DateTime, nullable=False)
+    time_processed = Column(BigInteger)
+
+    created_date = Column(DATE, server_default=func.now())
 
     __table_args__ = (
         PrimaryKeyConstraint(
@@ -1173,6 +1195,9 @@ class ZtfNonDetection(Base):
     band = Column(SmallInteger, nullable=False)  # int2,
     mjd = Column(DOUBLE_PRECISION, nullable=False)  # float8,
     diffmaglim = Column(REAL, nullable=False)  # float4,
+
+    created_date = Column(DATE, server_default=func.now())
+
 
     __table_args__ = (
         PrimaryKeyConstraint("oid", "mjd", name="pk_oid_mjd"),
@@ -1191,6 +1216,9 @@ class ZtfSS(Base):
     ssdistnr = Column(REAL)
     ssmagnr = Column(REAL)
     ssnamenr = Column(VARCHAR)
+
+    created_date = Column(DATE, server_default=func.now())
+
 
     __table_args__ = (
         PrimaryKeyConstraint(
@@ -1228,6 +1256,9 @@ class ZtfPS1(Base):
     distpsnr3 = Column(REAL)
     nmtchps = Column(SmallInteger)
 
+    created_date = Column(DATE, server_default=func.now())
+
+
     __table_args__ = (
         PrimaryKeyConstraint(
             "oid", "measurement_id", name="pk_ztfps1_oid_measurement_id"
@@ -1245,6 +1276,9 @@ class ZtfGaia(Base):
     neargaiabright = Column(REAL)
     maggaia = Column(REAL)
     maggaiabright = Column(REAL)
+
+    created_date = Column(DATE, server_default=func.now())
+
 
     __table_args__ = (PrimaryKeyConstraint("oid", name="pk_ztfgaia_oid"),)
 
@@ -1284,6 +1318,9 @@ class ZtfDataquality(Base):
     clrrms = Column(REAL)
     exptime = Column(REAL)
 
+    created_date = Column(DATE, server_default=func.now())
+
+
     __table_args__ = (
         PrimaryKeyConstraint(
             "oid", "measurement_id", name="pk_ztfdataquality_oid_measurement_id"
@@ -1315,6 +1352,9 @@ class ZtfReference(Base):
     mjdstartref = Column(DOUBLE_PRECISION)
     mjdendref = Column(DOUBLE_PRECISION)
     nframesref = Column(Integer)
+
+    created_date = Column(DATE, server_default=func.now())
+
 
     __table_args__ = (
         PrimaryKeyConstraint("oid", "rfid", name="pk_ztfreference_oid_rfid"),
@@ -1351,7 +1391,8 @@ class MagStat(Base):
     magfirst_corr = Column(DOUBLE_PRECISION)  # float8
     step_id_corr = Column(VARCHAR)  # varchar
     saturation_rate = Column(DOUBLE_PRECISION)  # float8
-    last_update = Column(TIMESTAMP)  # timestamp
+
+    updated_date = Column(DATE, onupdate=func.now())
 
     __table_args__ = (
         PrimaryKeyConstraint("oid", "sid", "band", name="pk_magstat_oid_sid_band"),
@@ -1363,9 +1404,39 @@ class classifier(Base):
     classifier_name = Column(VARCHAR)
     classifier_version = Column(SmallInteger)
 
+    created_date = Column(DATE, server_default=func.now())
+
 class Taxonomy(Base):
     __tablename__ = "taxonomy"
     class_id = Column(Integer, primary_key=True)
     class_name = Column(VARCHAR)
     order = Column(Integer)
     classifier_id = Column(SmallInteger)
+
+    created_date = Column(DATE, server_default=func.now())
+
+class Probability(Base):
+    __tablename__ = "probability"
+    oid = Column(Integer, primary_key=True)
+    sid = Column(SmallInteger, nullable=False)  # int2,
+    classifier_id = Column(SmallInteger, primary_key=True)
+    classifier_version = Column(SmallInteger)
+    class_id = Column(SmallInteger, primary_key=True)
+    probability = Column(REAL, nullable=False)
+    ranking = Column(SmallInteger, nullable=False)
+
+    updated_date = Column(DATE, onupdate=func.now())
+
+    __table_args__ = (
+        PrimaryKeyConstraint(
+            "oid", "sid", "classifier_id", "class_id", name="pk_probability_oid_sid_classifier_class"
+        ),
+        Index("ix_probability_probability", "probability", postgresql_using="btree"),
+        Index("ix_probability_ranking", "ranking", postgresql_using="btree"),
+        Index(
+            "ix_classification_rank1",
+            "ranking",
+            postgresql_where=ranking == 1,
+            postgresql_using="btree",
+        ),
+    )
