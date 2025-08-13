@@ -89,8 +89,8 @@ class ObjectStats:
                 processed_errors.append(float(error))
             else:
                 processed_errors.append(DEFAULT_ERR)
-        
-        sigmas = np.array(processed_errors, dtype=np.float64) / 3600.0 # Arcsec to deg
+
+        sigmas = np.array(processed_errors, dtype=np.float64) / 3600.0  # Arcsec to deg
         return sigmas**-2
 
     @staticmethod
@@ -173,7 +173,7 @@ class LsstAlertGenerator:
         mjd = self.mjd
         self.mjd += self.rng.uniform(0.5, 10.0)
 
-        source = self._random_source(obj_info, mjd)
+        source = self._random_dia_source(obj_info, mjd)
 
         objstats = self.objstats[obj_info.oid]
 
@@ -193,7 +193,7 @@ class LsstAlertGenerator:
                     if len(self.lightcurves[obj_info.oid]) > 5
                     else mjd - 100.0
                 )
-                new_prv_source = self._random_source(
+                new_prv_source = self._random_dia_source(
                     obj_info,
                     self.rng.uniform(base_mjd, mjd),
                     parent_id=source["diaSourceId"],
@@ -236,41 +236,47 @@ class LsstAlertGenerator:
         )[-30:]
         self.fps[obj_info.oid] = forced_sources
 
-        if self.rng.random() < self.new_non_det_rate:
-            n_new_non_det = self.rng.randint(1, 5)
-            for _ in range(n_new_non_det):
-                base_mjd = (
-                    self.non_dets[obj_info.oid][-10]["midpointMjdTai"]
-                    if len(self.non_dets[obj_info.oid]) > 10
-                    else mjd - 100.0
-                )
-                new_non_det = self._random_non_detection(
-                    self.rng.uniform(base_mjd, mjd)
-                )
-                self.non_dets[obj_info.oid].append(new_non_det)
-                objstats.n_non_det += 1
-
-        non_detections = sorted(
-            self.non_dets[obj_info.oid], key=lambda x: x["midpointMjdTai"]
-        )[-50:]
-        self.non_dets[obj_info.oid] = non_detections
+        # if self.rng.random() < self.new_non_det_rate:
+        #     n_new_non_det = self.rng.randint(1, 5)
+        #     for _ in range(n_new_non_det):
+        #         base_mjd = (
+        #             self.non_dets[obj_info.oid][-10]["midpointMjdTai"]
+        #             if len(self.non_dets[obj_info.oid]) > 10
+        #             else mjd - 100.0
+        #         )
+        #         new_non_det = self._random_non_detection(
+        #             self.rng.uniform(base_mjd, mjd)
+        #         )
+        #         self.non_dets[obj_info.oid].append(new_non_det)
+        #         objstats.n_non_det += 1
+        #
+        # non_detections = sorted(
+        #     self.non_dets[obj_info.oid], key=lambda x: x["midpointMjdTai"]
+        # )[-50:]
+        # self.non_dets[obj_info.oid] = non_detections
 
         self.lightcurves[obj_info.oid].append(source)
 
         self.objstats[obj_info.oid] = objstats
 
         return {
-            "alertId": self._new_id(),
+            "diaSourceId": source["diaSourceId"],
+            "observation_reason": self._noneable("TEST OBSERVATION REASON"),
+            "target_name": self._noneable("TEST TARGET NAME"),
             "diaSource": source,
             "prvDiaSources": prv_sources[:-1] if len(prv_sources) > 1 else None,
             "prvDiaForcedSources": forced_sources
             if obj_info.otype == "dia" or len(forced_sources) > 0
             else None,
-            "prvDiaNondetectionLimits": non_detections
-            if len(non_detections) > 0
-            else None,
+            # "prvDiaNondetectionLimits": non_detections
+            # if len(non_detections) > 0
+            # else None,
             "diaObject": obj_info.obj if obj_info.otype == "dia" else None,
-            "ssObject": obj_info.obj if obj_info.otype == "ss" else None,
+            # "ssObject": obj_info.obj if obj_info.otype == "ss" else None,
+            "ssSource": self._random_ss_source(obj_info)
+            if obj_info.otype == "ss"
+            else None,
+            "MPCORB": obj_info.obj if obj_info.otype == "ss" else None,
             "cutoutDifference": None,
             "cutoutScience": None,
             "cutoutTemplate": None,
@@ -292,10 +298,15 @@ class LsstAlertGenerator:
         otype: ObjectTypes = self.rng.choice(["dia", "ss"])
         oid = self._new_id()
 
+        # if otype == "dia":
+        #     obj = self._random_dia_object(oid)
+        # elif otype == "ss":
+        #     obj = self._random_ss_object(oid)
+
         if otype == "dia":
             obj = self._random_dia_object(oid)
         elif otype == "ss":
-            obj = self._random_ss_object(oid)
+            obj = self._random_MPCORB(oid)
 
         self.lightcurves[oid] = []
         self.fps[oid] = []
@@ -318,34 +329,30 @@ class LsstAlertGenerator:
 
         return ObjectInfo(object_id, object_type, obj)
 
-    def _random_source(
+    def _random_dia_source(
         self, obj_info: ObjectInfo, mjd: float, parent_id: int | None = None
     ) -> dict[str, Any]:
-        if obj_info.otype == "ss":
-            ra = self.rng.uniform(0, 360)
-            dec = self.rng.uniform(-90, 90)
-        else:
-            ra = obj_info.obj["ra"] + self.rng.uniform(-0.01, +0.01)
-            dec = obj_info.obj["dec"] + self.rng.uniform(-0.01, +0.01)
-
         return {
             "diaSourceId": self._new_id(),
             "visit": self.rng.randint(1, 2**63 - 1),
             "detector": self.rng.randint(0, 2**31 - 1),
-            "diaObjectId": obj_info.oid if obj_info.otype == "dia" else 0,
-            "ssObjectId": obj_info.oid if obj_info.otype == "ss" else 0,
+            "diaObjectId": obj_info.oid if obj_info.otype == "dia" else None,
+            "ssObjectId": obj_info.oid if obj_info.otype == "ss" else None,
             "parentDiaSourceId": parent_id,
             "midpointMjdTai": mjd,
-            "ra": ra,
+            "ra": obj_info.obj["ra"] + self.rng.uniform(-0.01, +0.01)
+            if obj_info.otype == "dia"
+            else self.rng.uniform(0, 360),
             "raErr": self._noneable(self.rng.uniform(0, 0.1)),
-            "dec": dec,
+            "dec": obj_info.obj["dec"] + self.rng.uniform(-0.01, +0.01)
+            if obj_info.otype == "dia"
+            else self.rng.uniform(-90, 90),
             "decErr": self._noneable(self.rng.uniform(0, 0.1)),
             "ra_dec_Cov": self._noneable(self.rng.uniform(-0.01, 0.01)),
             "x": self.rng.uniform(0, 4000),
             "xErr": self._noneable(self.rng.uniform(0, 5)),
             "y": self.rng.uniform(0, 4000),
             "yErr": self._noneable(self.rng.uniform(0, 5)),
-            "x_y_Cov": self._noneable(self.rng.uniform(-0.01, 0.01)),
             "centroid_flag": self._noneable(self.rng.choice([True, False])),
             "apFlux": self._noneable(self.rng.uniform(-1000, 1000)),
             "apFluxErr": self._noneable(self.rng.uniform(0, 100)),
@@ -353,17 +360,10 @@ class LsstAlertGenerator:
             "apFlux_flag_apertureTruncated": self._noneable(
                 self.rng.choice([True, False])
             ),
-            "is_negative": self._noneable(self.rng.choice([True, False])),
+            "isNegative": self._noneable(self.rng.choice([True, False])),
             "snr": self._noneable(self.rng.uniform(-10, 100)),
             "psfFlux": self._noneable(self.rng.uniform(-1000, 1000)),
             "psfFluxErr": self._noneable(self.rng.uniform(0, 100)),
-            "psfRa": self._noneable(self.rng.uniform(0, 360)),
-            "psfRaErr": self._noneable(self.rng.uniform(0, 0.1)),
-            "psfDec": self._noneable(self.rng.uniform(-90, 90)),
-            "psfDecErr": self._noneable(self.rng.uniform(0, 0.1)),
-            "psfFlux_psfRa_Cov": self._noneable(self.rng.uniform(-0.01, 0.01)),
-            "psfFlux_psfDec_Cov": self._noneable(self.rng.uniform(-0.01, 0.01)),
-            "psfRa_psfDec_Cov": self._noneable(self.rng.uniform(-0.01, 0.01)),
             "psfLnL": self._noneable(self.rng.uniform(-1000, 1000)),
             "psfChi2": self._noneable(self.rng.uniform(0, 1000)),
             "psfNdata": self._noneable(self.rng.randint(0, 1000)),
@@ -380,17 +380,6 @@ class LsstAlertGenerator:
             "trailLengthErr": self._noneable(self.rng.uniform(0, 10)),
             "trailAngle": self._noneable(self.rng.uniform(0, 360)),
             "trailAngleErr": self._noneable(self.rng.uniform(0, 10)),
-            "trailFlux_trailRa_Cov": self._noneable(self.rng.uniform(-0.01, 0.01)),
-            "trailFlux_trailDec_Cov": self._noneable(self.rng.uniform(-0.01, 0.01)),
-            "trailFlux_trailLength_Cov": self._noneable(self.rng.uniform(-0.01, 0.01)),
-            "trailFlux_trailAngle_Cov": self._noneable(self.rng.uniform(-0.01, 0.01)),
-            "trailRa_trailDec_Cov": self._noneable(self.rng.uniform(-0.01, 0.01)),
-            "trailRa_trailLength_Cov": self._noneable(self.rng.uniform(-0.01, 0.01)),
-            "trailRa_trailAngle_Cov": self._noneable(self.rng.uniform(-0.01, 0.01)),
-            "trailDec_trailLength_Cov": self._noneable(self.rng.uniform(-0.01, 0.01)),
-            "trailDec_trailAngle_Cov": self._noneable(self.rng.uniform(-0.01, 0.01)),
-            "trailLength_trailAngle_Cov": self._noneable(self.rng.uniform(-0.01, 0.01)),
-            "trailLnL": self._noneable(self.rng.uniform(-1000, 1000)),
             "trailChi2": self._noneable(self.rng.uniform(0, 1000)),
             "trailNdata": self._noneable(self.rng.randint(0, 1000)),
             "trail_flag_edge": self._noneable(self.rng.choice([True, False])),
@@ -398,70 +387,22 @@ class LsstAlertGenerator:
             "dipoleMeanFluxErr": self._noneable(self.rng.uniform(0, 100)),
             "dipoleFluxDiff": self._noneable(self.rng.uniform(-1000, 1000)),
             "dipoleFluxDiffErr": self._noneable(self.rng.uniform(0, 100)),
-            "dipoleRa": self._noneable(self.rng.uniform(0, 360)),
-            "dipoleRaErr": self._noneable(self.rng.uniform(0, 0.1)),
-            "dipoleDec": self._noneable(self.rng.uniform(-90, 90)),
-            "dipoleDecErr": self._noneable(self.rng.uniform(0, 0.1)),
             "dipoleLength": self._noneable(self.rng.uniform(0, 100)),
-            "dipoleLengthErr": self._noneable(self.rng.uniform(0, 10)),
             "dipoleAngle": self._noneable(self.rng.uniform(0, 360)),
-            "dipoleAngleErr": self._noneable(self.rng.uniform(0, 10)),
-            "dipoleMeanFlux_dipoleFluxDiff_Cov": self._noneable(
-                self.rng.uniform(-0.01, 0.01)
-            ),
-            "dipoleMeanFlux_dipoleRa_Cov": self._noneable(
-                self.rng.uniform(-0.01, 0.01)
-            ),
-            "dipoleMeanFlux_dipoleDec_Cov": self._noneable(
-                self.rng.uniform(-0.01, 0.01)
-            ),
-            "dipoleMeanFlux_dipoleLength_Cov": self._noneable(
-                self.rng.uniform(-0.01, 0.01)
-            ),
-            "dipoleMeanFlux_dipoleAngle_Cov": self._noneable(
-                self.rng.uniform(-0.01, 0.01)
-            ),
-            "dipoleFluxDiff_dipoleRa_Cov": self._noneable(
-                self.rng.uniform(-0.01, 0.01)
-            ),
-            "dipoleFluxDiff_dipoleDec_Cov": self._noneable(
-                self.rng.uniform(-0.01, 0.01)
-            ),
-            "dipoleFluxDiff_dipoleLength_Cov": self._noneable(
-                self.rng.uniform(-0.01, 0.01)
-            ),
-            "dipoleFluxDiff_dipoleAngle_Cov": self._noneable(
-                self.rng.uniform(-0.01, 0.01)
-            ),
-            "dipoleRa_dipoleDec_Cov": self._noneable(self.rng.uniform(-0.01, 0.01)),
-            "dipoleRa_dipoleLength_Cov": self._noneable(self.rng.uniform(-0.01, 0.01)),
-            "dipoleRa_dipoleAngle_Cov": self._noneable(self.rng.uniform(-0.01, 0.01)),
-            "dipoleDec_dipoleLength_Cov": self._noneable(self.rng.uniform(-0.01, 0.01)),
-            "dipoleDec_dipoleAngle_Cov": self._noneable(self.rng.uniform(-0.01, 0.01)),
-            "dipoleLength_dipoleAngle_Cov": self._noneable(
-                self.rng.uniform(-0.01, 0.01)
-            ),
-            "dipoleLnL": self._noneable(self.rng.uniform(-1000, 1000)),
             "dipoleChi2": self._noneable(self.rng.uniform(0, 1000)),
             "dipoleNdata": self._noneable(self.rng.randint(0, 1000)),
+            "scienceFlux": self._noneable(self.rng.uniform(-1000, 1000)),
+            "scienceFluxErr": self._noneable(self.rng.uniform(0, 100)),
             "forced_PsfFlux_flag": self._noneable(self.rng.choice([True, False])),
             "forced_PsfFlux_flag_edge": self._noneable(self.rng.choice([True, False])),
             "forced_PsfFlux_flag_noGoodPixels": self._noneable(
                 self.rng.choice([True, False])
             ),
-            "snapDiffFlux": self._noneable(self.rng.uniform(-1000, 1000)),
-            "snapDiffFluxErr": self._noneable(self.rng.uniform(0, 100)),
-            "fpBkgd": self._noneable(self.rng.uniform(-100, 100)),
-            "fpBkgdErr": self._noneable(self.rng.uniform(0, 10)),
+            "templateFlux": self._noneable(self.rng.uniform(-1000, 1000)),
+            "templateFluxErr": self._noneable(self.rng.uniform(0, 100)),
             "ixx": self._noneable(self.rng.uniform(0, 100)),
-            "ixxErr": self._noneable(self.rng.uniform(0, 10)),
             "iyy": self._noneable(self.rng.uniform(0, 100)),
-            "iyyErr": self._noneable(self.rng.uniform(0, 10)),
             "ixy": self._noneable(self.rng.uniform(-100, 100)),
-            "ixyErr": self._noneable(self.rng.uniform(0, 10)),
-            "ixx_iyy_Cov": self._noneable(self.rng.uniform(-0.01, 0.01)),
-            "ixx_ixy_Cov": self._noneable(self.rng.uniform(-0.01, 0.01)),
-            "iyy_ixy_Cov": self._noneable(self.rng.uniform(-0.01, 0.01)),
             "ixxPSF": self._noneable(self.rng.uniform(0, 100)),
             "iyyPSF": self._noneable(self.rng.uniform(0, 100)),
             "ixyPSF": self._noneable(self.rng.uniform(-100, 100)),
@@ -472,7 +413,12 @@ class LsstAlertGenerator:
             "extendedness": self._noneable(self.rng.uniform(0, 1)),
             "reliability": self._noneable(self.rng.uniform(0, 1)),
             "band": self._noneable(self._random_band()),
+            "isDipole": self._noneable(self.rng.choice([True, False])),
             "dipoleFitAttempted": self._noneable(self.rng.choice([True, False])),
+            "time_processed": int(
+                self.rng.uniform(1.7e17, 1.8e17)
+            ),  # realistic timestamp-micros
+            "bboxSize": self._noneable(self.rng.randint(10, 100)),
             "pixelFlags": self._noneable(self.rng.choice([True, False])),
             "pixelFlags_bad": self._noneable(self.rng.choice([True, False])),
             "pixelFlags_cr": self._noneable(self.rng.choice([True, False])),
@@ -501,6 +447,35 @@ class LsstAlertGenerator:
             "pixelFlags_injected_templateCenter": self._noneable(
                 self.rng.choice([True, False])
             ),
+            "glint_trail": self._noneable(self.rng.choice([True, False])),
+        }
+
+    def _random_ss_source(self, obj_info: ObjectInfo) -> dict[str, Any]:
+        return {
+            "diaObjectId": obj_info.oid if obj_info.otype == "dia" else None,
+            "ssObjectId": obj_info.oid if obj_info.otype == "ss" else None,
+            "eclipticLambda": self._noneable(self.rng.uniform(0, 360)),
+            "eclipticBeta": self._noneable(self.rng.uniform(-90, 90)),
+            "galacticL": self._noneable(self.rng.uniform(0, 360)),
+            "galacticB": self._noneable(self.rng.uniform(-90, 90)),
+            "phaseAngle": self._noneable(self.rng.uniform(0, 180)),
+            "heliocentricDist": self._noneable(self.rng.uniform(0, 50)),
+            "topocentricDist": self._noneable(self.rng.uniform(0, 50)),
+            "predictedVMagnitude": self._noneable(self.rng.uniform(10, 30)),
+            "residualRa": self._noneable(self.rng.uniform(-0.1, 0.1)),
+            "residualDec": self._noneable(self.rng.uniform(-0.1, 0.1)),
+            "heliocentricX": self._noneable(self.rng.uniform(-50, 50)),
+            "heliocentricY": self._noneable(self.rng.uniform(-50, 50)),
+            "heliocentricZ": self._noneable(self.rng.uniform(-50, 50)),
+            "heliocentricVX": self._noneable(self.rng.uniform(-5, 5)),
+            "heliocentricVY": self._noneable(self.rng.uniform(-5, 5)),
+            "heliocentricVZ": self._noneable(self.rng.uniform(-5, 5)),
+            "topocentricX": self._noneable(self.rng.uniform(-50, 50)),
+            "topocentricY": self._noneable(self.rng.uniform(-50, 50)),
+            "topocentricZ": self._noneable(self.rng.uniform(-50, 50)),
+            "topocentricVX": self._noneable(self.rng.uniform(-5, 5)),
+            "topocentricVY": self._noneable(self.rng.uniform(-5, 5)),
+            "topocentricVZ": self._noneable(self.rng.uniform(-5, 5)),
         }
 
     def _random_forced_source(self, obj_info: ObjectInfo, mjd: float) -> dict[str, Any]:
@@ -514,49 +489,32 @@ class LsstAlertGenerator:
             "psfFlux": self._noneable(self.rng.uniform(-1000, 1000)),
             "psfFluxErr": self._noneable(self.rng.uniform(0, 100)),
             "midpointMjdTai": mjd,
+            "scienceFlux": self._noneable(self.rng.uniform(-1000, 1000)),
+            "scienceFluxErr": self._noneable(self.rng.uniform(0, 100)),
             "band": self._noneable(self._random_band()),
+            "time_processed": int(self.rng.uniform(1.7e17, 1.8e17)),
         }
 
-    def _random_non_detection(self, mjd: float) -> dict[str, Any]:
-        return {
-            "ccdVisitId": self.rng.randint(1, 2**63 - 1),
-            "midpointMjdTai": mjd,
-            "band": self._random_band(),
-            "diaNoise": self.rng.uniform(0, 100),
-        }
+    # def _random_non_detection(self, mjd: float) -> dict[str, Any]:
+    #     return {
+    #         "ccdVisitId": self.rng.randint(1, 2**63 - 1),
+    #         "midpointMjdTai": mjd,
+    #         "band": self._random_band(),
+    #         "diaNoise": self.rng.uniform(0, 100),
+    #     }
 
     def _random_dia_object(self, object_id: int) -> dict[str, Any]:
         obj = {
             "diaObjectId": object_id,
+            "validityStart": int(self.rng.uniform(1.7e17, 1.8e17)),
             "ra": self.rng.uniform(0, 360),
-            "raErr": np.float32(self._noneable(self.rng.uniform(0, 0.1))),
+            "raErr": self._noneable(self.rng.uniform(0, 0.1)),
             "dec": self.rng.uniform(-90, 90),
-            "decErr": np.float32(self._noneable(self.rng.uniform(0, 0.1))),
+            "decErr": self._noneable(self.rng.uniform(0, 0.1)),
             "ra_dec_Cov": self._noneable(self.rng.uniform(-0.01, 0.01)),
-            "radecMjdTai": self._noneable(self.rng.uniform(50000, 70000)),
-            "pmRa": self._noneable(self.rng.uniform(-100, 100)),
-            "pmRaErr": self._noneable(self.rng.uniform(0, 10)),
-            "pmDec": self._noneable(self.rng.uniform(-100, 100)),
-            "pmDecErr": self._noneable(self.rng.uniform(0, 10)),
-            "parallax": self._noneable(self.rng.uniform(-10, 10)),
-            "parallaxErr": self._noneable(self.rng.uniform(0, 10)),
-            "pmRa_pmDec_Cov": self._noneable(self.rng.uniform(-0.01, 0.01)),
-            "pmRa_parallax_Cov": self._noneable(self.rng.uniform(-0.01, 0.01)),
-            "pmDec_parallax_Cov": self._noneable(self.rng.uniform(-0.01, 0.01)),
-            "pmParallaxLnL": self._noneable(self.rng.uniform(-1000, 1000)),
-            "pmParallaxChi2": self._noneable(self.rng.uniform(0, 1000)),
-            "pmParallaxNdata": self._noneable(self.rng.randint(0, 1000)),
-            "nearbyObj1": self._noneable(self.rng.randint(1, 2**63 - 1)),
-            "nearbyObj1Dist": self._noneable(self.rng.uniform(0, 1000)),
-            "nearbyObj1LnP": self._noneable(self.rng.uniform(-100, 0)),
-            "nearbyObj2": self._noneable(self.rng.randint(1, 2**63 - 1)),
-            "nearbyObj2Dist": self._noneable(self.rng.uniform(0, 1000)),
-            "nearbyObj2LnP": self._noneable(self.rng.uniform(-100, 0)),
-            "nearbyObj3": self._noneable(self.rng.randint(1, 2**63 - 1)),
-            "nearbyObj3Dist": self._noneable(self.rng.uniform(0, 1000)),
-            "nearbyObj3LnP": self._noneable(self.rng.uniform(-100, 0)),
         }
-        for band in self.bands:
+        bands = self.bands
+        for band in bands:
             obj[f"{band}_psfFluxMean"] = self._noneable(self.rng.uniform(-1000, 1000))
             obj[f"{band}_psfFluxMeanErr"] = self._noneable(self.rng.uniform(0, 100))
             obj[f"{band}_psfFluxSigma"] = self._noneable(self.rng.uniform(0, 100))
@@ -564,31 +522,58 @@ class LsstAlertGenerator:
             obj[f"{band}_psfFluxNdata"] = self._noneable(self.rng.randint(0, 1000))
             obj[f"{band}_fpFluxMean"] = self._noneable(self.rng.uniform(-1000, 1000))
             obj[f"{band}_fpFluxMeanErr"] = self._noneable(self.rng.uniform(0, 100))
-            obj[f"{band}_fpFluxSigma"] = self._noneable(self.rng.uniform(0, 100))
+            obj[f"{band}_scienceFluxMean"] = self._noneable(
+                self.rng.uniform(-1000, 1000)
+            )
+            obj[f"{band}_scienceFluxMeanErr"] = self._noneable(self.rng.uniform(0, 100))
+            obj[f"{band}_scienceFluxSigma"] = self._noneable(self.rng.uniform(0, 100))
+            obj[f"{band}_psfFluxSkew"] = self._noneable(self.rng.uniform(-2, 2))
+            obj[f"{band}_psfFluxMin"] = self._noneable(self.rng.uniform(-1000, 1000))
+            obj[f"{band}_psfFluxMax"] = self._noneable(self.rng.uniform(-1000, 1000))
+            obj[f"{band}_psfFluxMaxSlope"] = self._noneable(self.rng.uniform(-100, 100))
             obj[f"{band}_psfFluxErrMean"] = self._noneable(self.rng.uniform(0, 100))
+        obj["firstDiaSourceMjdTai"] = self._noneable(self.rng.uniform(50000, 70000))
+        obj["lastDiaSourceMjdTai"] = self._noneable(self.rng.uniform(50000, 70000))
+        obj["nDiaSources"] = self.rng.randint(1, 1000)
         return obj
 
-    def _random_ss_object(self, object_id: int) -> dict[str, Any]:
-        obj = {
+    def _random_MPCORB(self, object_id: int) -> dict[str, Any]:
+        return {
+            "mpcDesignation": self._noneable(f"MPC{self.rng.randint(10000, 99999)}"),
             "ssObjectId": object_id,
-            "discoverySubmissionDate": self._noneable(self.rng.uniform(50000, 70000)),
-            "firstObservationDate": self._noneable(self.rng.uniform(50000, 70000)),
-            "arc": self._noneable(self.rng.uniform(0, 10000)),
-            "numObs": self._noneable(self.rng.randint(0, 1000)),
-            "MOID": self._noneable(self.rng.uniform(0, 10)),
-            "MOIDTrueAnomaly": self._noneable(self.rng.uniform(0, 360)),
-            "MOIDEclipticLongitude": self._noneable(self.rng.uniform(0, 360)),
-            "MOIDDeltaV": self._noneable(self.rng.uniform(0, 100)),
-            "medianExtendedness": self._noneable(self.rng.uniform(0, 1)),
+            "mpcH": self._noneable(self.rng.uniform(10, 30)),
+            "epoch": self._noneable(self.rng.uniform(50000, 70000)),
+            "M": self._noneable(self.rng.uniform(0, 360)),
+            "peri": self._noneable(self.rng.uniform(0, 360)),
+            "node": self._noneable(self.rng.uniform(0, 360)),
+            "incl": self._noneable(self.rng.uniform(0, 180)),
+            "e": self._noneable(self.rng.uniform(0, 1)),
+            "a": self._noneable(self.rng.uniform(0.5, 50)),
+            "q": self._noneable(self.rng.uniform(0.5, 50)),
+            "t_p": self._noneable(self.rng.uniform(50000, 70000)),
         }
-        for band in self.bands:
-            obj[f"{band}_H"] = self._noneable(self.rng.uniform(10, 30))
-            obj[f"{band}_G12"] = self._noneable(self.rng.uniform(-0.5, 0.8))
-            obj[f"{band}_HErr"] = self._noneable(self.rng.uniform(0, 1))
-            obj[f"{band}_G12Err"] = self._noneable(self.rng.uniform(0, 0.5))
-            obj[f"{band}_H_{band}_G12_Cov"] = self._noneable(
-                self.rng.uniform(-0.1, 0.1)
-            )
-            obj[f"{band}_Chi2"] = self._noneable(self.rng.uniform(0, 1000))
-            obj[f"{band}_Ndata"] = self._noneable(self.rng.randint(0, 1000))
-        return obj
+
+    # def _random_ss_object(self, object_id: int) -> dict[str, Any]:
+    #     obj = {
+    #         "ssObjectId": object_id,
+    #         "discoverySubmissionDate": self._noneable(self.rng.uniform(50000, 70000)),
+    #         "firstObservationDate": self._noneable(self.rng.uniform(50000, 70000)),
+    #         "arc": self._noneable(self.rng.uniform(0, 10000)),
+    #         "numObs": self._noneable(self.rng.randint(0, 1000)),
+    #         "MOID": self._noneable(self.rng.uniform(0, 10)),
+    #         "MOIDTrueAnomaly": self._noneable(self.rng.uniform(0, 360)),
+    #         "MOIDEclipticLongitude": self._noneable(self.rng.uniform(0, 360)),
+    #         "MOIDDeltaV": self._noneable(self.rng.uniform(0, 100)),
+    #         "medianExtendedness": self._noneable(self.rng.uniform(0, 1)),
+    #     }
+    #     for band in self.bands:
+    #         obj[f"{band}_H"] = self._noneable(self.rng.uniform(10, 30))
+    #         obj[f"{band}_G12"] = self._noneable(self.rng.uniform(-0.5, 0.8))
+    #         obj[f"{band}_HErr"] = self._noneable(self.rng.uniform(0, 1))
+    #         obj[f"{band}_G12Err"] = self._noneable(self.rng.uniform(0, 0.5))
+    #         obj[f"{band}_H_{band}_G12_Cov"] = self._noneable(
+    #             self.rng.uniform(-0.1, 0.1)
+    #         )
+    #         obj[f"{band}_Chi2"] = self._noneable(self.rng.uniform(0, 1000))
+    #         obj[f"{band}_Ndata"] = self._noneable(self.rng.randint(0, 1000))
+    #     return obj
