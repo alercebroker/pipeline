@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from random import Random
 from typing import Any, Literal
+import pickle
 
 import numpy as np
 from numpy.typing import NDArray
@@ -12,6 +13,8 @@ HASH_CONSTANT_XOR = 23894729048  # Random number
 
 DEFAULT_ERR = 0.01  # Used as fallback for missing error values.
 
+with open('/home/vex/Descargas/generator-lsst (1)/pipeline/ingestion_step/generator/binary_cutouts.pkl', 'rb') as f:
+    binary_data = pickle.load(f)
 
 def simple_hash(x: int) -> int:
     """Generates a pseudo-unique positive integer for IDs."""
@@ -259,7 +262,7 @@ class LsstAlertGenerator:
 
         self.objstats[obj_info.oid] = objstats
 
-        return {
+        dict = {
             "alertId": self._new_id(),
             "diaSource": source,
             "prvDiaSources": prv_sources[:-1] if len(prv_sources) > 1 else None,
@@ -275,6 +278,9 @@ class LsstAlertGenerator:
             "cutoutScience": None,
             "cutoutTemplate": None,
         }
+
+        dict.update(binary_data)
+        return dict
 
     def _random_band(self):
         return self.rng.choice(self.bands)
