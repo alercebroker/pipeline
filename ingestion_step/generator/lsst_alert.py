@@ -273,7 +273,9 @@ class LsstAlertGenerator:
             # else None,
             "diaObject": obj_info.obj if obj_info.otype == "dia" else None,
             # "ssObject": obj_info.obj if obj_info.otype == "ss" else None,
-            "ssSource": self._random_ss_source(obj_info)
+            "ssSource": self._random_ss_source(
+                obj_info, dia_source_id=source["diaSourceId"]
+            )
             if obj_info.otype == "ss"
             else None,
             "MPCORB": obj_info.obj if obj_info.otype == "ss" else None,
@@ -450,10 +452,12 @@ class LsstAlertGenerator:
             "glint_trail": self._noneable(self.rng.choice([True, False])),
         }
 
-    def _random_ss_source(self, obj_info: ObjectInfo) -> dict[str, Any]:
+    def _random_ss_source(
+        self, obj_info: ObjectInfo, dia_source_id: int
+    ) -> dict[str, Any]:
         return {
-            "diaObjectId": obj_info.oid if obj_info.otype == "dia" else None,
-            "ssObjectId": obj_info.oid if obj_info.otype == "ss" else None,
+            "ssObjectId": obj_info.oid,
+            "diaSourceId": dia_source_id,
             "eclipticLambda": self._noneable(self.rng.uniform(0, 360)),
             "eclipticBeta": self._noneable(self.rng.uniform(-90, 90)),
             "galacticL": self._noneable(self.rng.uniform(0, 360)),

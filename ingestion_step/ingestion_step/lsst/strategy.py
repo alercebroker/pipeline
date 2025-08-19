@@ -85,13 +85,21 @@ class LsstStrategy(StrategyInterface[LsstData]):
 
     @classmethod
     def insert_into_db(cls, driver: PsqlDatabase, parsed_data: LsstData):
-        insert_dia_objects(driver, parsed_data["dia_object"])
-        # insert_ss_objects(driver, parsed_data["ss_object"])
-
-        insert_sources(driver, parsed_data["dia_sources"])
-        insert_sources(driver, parsed_data["previous_sources"])
-        insert_forced_sources(driver, parsed_data["forced_sources"])
-        # insert_non_detections(driver, parsed_data["non_detections"])
+        with driver.session() as session:
+            insert_dia_objects(session, parsed_data["dia_object"])
+            # insert_ss_objects(session, parsed_data["ss_object"])
+            insert_sources(session, parsed_data["dia_sources"])
+            insert_sources(session, parsed_data["previous_sources"])
+            insert_forced_sources(session, parsed_data["forced_sources"])
+            # insert_non_detections(session, parsed_data["non_detections"])
+            session.commit()
+        # insert_dia_objects(driver, parsed_data["dia_object"])
+        # # insert_ss_objects(driver, parsed_data["ss_object"])
+        #
+        # insert_sources(driver, parsed_data["dia_sources"])
+        # insert_sources(driver, parsed_data["previous_sources"])
+        # insert_forced_sources(driver, parsed_data["forced_sources"])
+        # # insert_non_detections(driver, parsed_data["non_detections"])
 
     @classmethod
     def serialize(cls, parsed_data: LsstData) -> list[Message]:

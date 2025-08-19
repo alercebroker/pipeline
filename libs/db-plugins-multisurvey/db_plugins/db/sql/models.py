@@ -767,6 +767,8 @@ class Object(Base):
     n_non_det = Column(Integer, nullable=False, default=1)
     corrected = Column(Boolean, nullable=False, default=False)
     stellar = Column(Boolean, nullable=True, default=None)
+
+    created_date = Column(DATE, server_default=func.now())
     updated_date = Column(DATE, onupdate=func.now())
 
 
@@ -1192,6 +1194,7 @@ class ZtfNonDetection(Base):
     __tablename__ = "ztf_non_detection"
 
     oid = Column(BigInteger, nullable=False)  # int8,
+    sid = Column(SmallInteger, nullable=False)
     band = Column(SmallInteger, nullable=False)  # int2,
     mjd = Column(DOUBLE_PRECISION, nullable=False)  # float8,
     diffmaglim = Column(REAL, nullable=False)  # float4,
