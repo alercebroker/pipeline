@@ -1,3 +1,4 @@
+import pickle
 from dataclasses import dataclass
 from random import Random
 from typing import Any, Literal
@@ -46,6 +47,7 @@ class ObjectStats:
     e_decs: list[float | None]
     first_mjd: float
     last_mjd: float
+    binary_data: Any
 
     def __init__(self, oid: int, sid: int):
         self.oid = oid
@@ -112,6 +114,7 @@ class LsstAlertGenerator:
     """Generator for LSST like alerts"""
 
     bands = ("u", "g", "r", "i", "z", "y")
+    binary_data: Any
 
     _id: int = 0
     mjd: float = 60_000.0
@@ -150,6 +153,9 @@ class LsstAlertGenerator:
         self.prv_object_types = {"dia": [], "ss": []}
         self.prv_objects = {}
         self.objstats = {}
+        with open("./generator/binary_cutouts.pkl", "rb") as f:
+            binary_data = pickle.load(f)
+        self.binary_data = binary_data
 
     def get_objstats(self, oid: int) -> ObjectStats:
         return self.objstats[oid]
@@ -259,7 +265,7 @@ class LsstAlertGenerator:
 
         self.objstats[obj_info.oid] = objstats
 
-        return {
+        alert = {
             "diaSourceId": source["diaSourceId"],
             "observation_reason": self._noneable("TEST OBSERVATION REASON"),
             "target_name": self._noneable("TEST TARGET NAME"),
@@ -283,6 +289,9 @@ class LsstAlertGenerator:
             "cutoutScience": None,
             "cutoutTemplate": None,
         }
+
+        alert.update(self.binary_data)
+        return alert
 
     def _random_band(self):
         return self.rng.choice(self.bands)
