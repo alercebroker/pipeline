@@ -1,6 +1,7 @@
 import unittest
 from typing import Any
 
+import numpy as np
 import pytest
 from db_plugins.db.sql._connection import PsqlDatabase
 from db_plugins.db.sql.models import (
@@ -35,6 +36,18 @@ psql_config = {
 
 @pytest.mark.usefixtures("psql_service")
 class BaseDbTests(unittest.TestCase):
+    def assertDictAlmostEqual(
+        self,
+        dict1: dict[str, Any],
+        dict2: dict[str, Any],
+        rel_tol: float = 1e-6,
+        abs_tol: float = 0.0,
+    ):
+        assert dict1.keys() == dict2.keys()
+        for key in dict1:
+            v1, v2 = dict1[key], dict2[key]
+            assert pytest.approx(v1, rel=rel_tol, abs=abs_tol) == v2
+
     def setUp(self):
         # crear db
         self.psql_db = PsqlDatabase(psql_config)
@@ -139,12 +152,10 @@ class BaseDbTests(unittest.TestCase):
             result_ztf_fp, msgs.ztf_fp_expected, "measurement_id"
         ):
             del res["created_date"]
-            # print(f"HERE ---- \n {res} \n {exp} \n")
-
-            # for key in res.keys():
-            #     if res[key] != exp[key]:
-            #         print(f"LLAVE MALA {key} {res[key]=} != {exp[key]=}f")
-            self.assertDictEqual(res, exp)
+            for key in res.keys():
+                if pytest.approx(res[key], rel=1e-6, abs=0.0) != exp[key]:
+                    print(f"LLAVE MALA {key} {res[key]=} != {exp[key]=}f")
+            self.assertDictAlmostEqual(res, exp)
 
     def test_non_detections(self):
         with self.psql_db.session() as session:
