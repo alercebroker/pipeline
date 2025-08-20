@@ -7,8 +7,10 @@ from ingestion_step.core.utils import apply_transforms, groupby_messageid
 from ingestion_step.lsst.database import (
     insert_dia_objects,
     insert_forced_sources,
+    insert_mpcorb,
     # insert_non_detections,
     insert_sources,
+    insert_ss_sources,
     # insert_ss_objects,
 )
 from ingestion_step.lsst.extractor import (
@@ -87,11 +89,11 @@ class LsstStrategy(StrategyInterface[LsstData]):
     def insert_into_db(cls, driver: PsqlDatabase, parsed_data: LsstData):
         with driver.session() as session:
             insert_dia_objects(session, parsed_data["dia_object"])
-            # insert_ss_objects(session, parsed_data["ss_object"])
+            insert_mpcorb(session, parsed_data["mpcorbs"])
             insert_sources(session, parsed_data["dia_sources"])
             insert_sources(session, parsed_data["previous_sources"])
+            insert_ss_sources(session, parsed_data["ss_sources"])
             insert_forced_sources(session, parsed_data["forced_sources"])
-            # insert_non_detections(session, parsed_data["non_detections"])
             session.commit()
         # insert_dia_objects(driver, parsed_data["dia_object"])
         # # insert_ss_objects(driver, parsed_data["ss_object"])
