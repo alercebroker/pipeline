@@ -79,11 +79,11 @@ DType = (
 
 survey_schemas = {
     "lsst": {
-        "dia_forced_source": "../schemas/surveys/lsst_v8.0/lsst.v8_0.diaForcedSource.avsc",
-        "dia_source": "../schemas/surveys/lsst_v8.0/lsst.v8_0.diaSource.avsc",
-        "ss_source": "../schemas/surveys/lsst_v8.0/lsst.v8_0.ssSource.avsc",
-        "dia_object": "../schemas/surveys/lsst_v8.0/lsst.v8_0.diaObject.avsc",
-        "mpcorb": "../schemas/surveys/lsst_v8.0/lsst.v8_0.MPCORB.avsc",
+        "dia_forced_source": "../schemas/surveys/lsst_v9.0/lsst.v9_0.diaForcedSource.avsc",
+        "dia_source": "../schemas/surveys/lsst_v9.0/lsst.v9_0.diaSource.avsc",
+        "ss_source": "../schemas/surveys/lsst_v9.0/lsst.v9_0.ssSource.avsc",
+        "dia_object": "../schemas/surveys/lsst_v9.0/lsst.v9_0.diaObject.avsc",
+        "mpcorb": "../schemas/surveys/lsst_v9.0/lsst.v9_0.MPCORB.avsc",
     },
     "ztf": {
         "candidate": "../schemas/ztf/candidate.avsc",

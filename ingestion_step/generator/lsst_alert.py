@@ -426,9 +426,8 @@ class LsstAlertGenerator:
             "band": self._noneable(self._random_band()),
             "isDipole": self._noneable(self.rng.choice([True, False])),
             "dipoleFitAttempted": self._noneable(self.rng.choice([True, False])),
-            "time_processed": int(
-                self.rng.uniform(1.7e17, 1.8e17)
-            ),  # realistic timestamp-micros
+            "timeProcessedMjdTai": self.rng.uniform(50000, 70000),  # realistic MJD TAI
+            "timeWithdrawnMjdTai": None,  # always present, default None
             "bboxSize": self._noneable(self.rng.randint(10, 100)),
             "pixelFlags": self._noneable(self.rng.choice([True, False])),
             "pixelFlags_bad": self._noneable(self.rng.choice([True, False])),
@@ -505,7 +504,8 @@ class LsstAlertGenerator:
             "scienceFlux": self._noneable(self.rng.uniform(-1000, 1000)),
             "scienceFluxErr": self._noneable(self.rng.uniform(0, 100)),
             "band": self._noneable(self._random_band()),
-            "time_processed": int(self.rng.uniform(1.7e17, 1.8e17)),
+            "timeProcessedMjdTai": self.rng.uniform(50000, 70000),
+            "timeWithdrawnMjdTai": None,
         }
 
     # def _random_non_detection(self, mjd: float) -> dict[str, Any]:
@@ -519,7 +519,7 @@ class LsstAlertGenerator:
     def _random_dia_object(self, object_id: int) -> dict[str, Any]:
         obj = {
             "diaObjectId": object_id,
-            "validityStart": int(self.rng.uniform(1.7e17, 1.8e17)),
+            "validityStartMjdTai": self.rng.uniform(50000, 70000),
             "ra": self.rng.uniform(0, 360),
             "raErr": self._noneable(self.rng.uniform(0, 0.1)),
             "dec": self.rng.uniform(-90, 90),
@@ -531,7 +531,6 @@ class LsstAlertGenerator:
             obj[f"{band}_psfFluxMean"] = self._noneable(self.rng.uniform(-1000, 1000))
             obj[f"{band}_psfFluxMeanErr"] = self._noneable(self.rng.uniform(0, 100))
             obj[f"{band}_psfFluxSigma"] = self._noneable(self.rng.uniform(0, 100))
-            obj[f"{band}_psfFluxChi2"] = self._noneable(self.rng.uniform(0, 1000))
             obj[f"{band}_psfFluxNdata"] = self._noneable(self.rng.randint(0, 1000))
             obj[f"{band}_fpFluxMean"] = self._noneable(self.rng.uniform(-1000, 1000))
             obj[f"{band}_fpFluxMeanErr"] = self._noneable(self.rng.uniform(0, 100))
@@ -539,8 +538,6 @@ class LsstAlertGenerator:
                 self.rng.uniform(-1000, 1000)
             )
             obj[f"{band}_scienceFluxMeanErr"] = self._noneable(self.rng.uniform(0, 100))
-            obj[f"{band}_scienceFluxSigma"] = self._noneable(self.rng.uniform(0, 100))
-            obj[f"{band}_psfFluxSkew"] = self._noneable(self.rng.uniform(-2, 2))
             obj[f"{band}_psfFluxMin"] = self._noneable(self.rng.uniform(-1000, 1000))
             obj[f"{band}_psfFluxMax"] = self._noneable(self.rng.uniform(-1000, 1000))
             obj[f"{band}_psfFluxMaxSlope"] = self._noneable(self.rng.uniform(-100, 100))

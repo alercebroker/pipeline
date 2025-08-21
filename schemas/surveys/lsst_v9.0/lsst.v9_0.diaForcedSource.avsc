@@ -1,32 +1,8 @@
 {
   "type": "record",
+  "namespace": "lsst.v9_0",
   "name": "diaForcedSource",
   "fields": [
-    {
-      "name": "oid",
-      "type": "long"
-    },
-    {
-      "name": "sid",
-      "type": "int"
-    },
-    {
-      "name": "measurement_id",
-      "type": "long"
-    },
-    {
-      "name": "mjd",
-      "type": "double"
-    },
-    {
-      "default": null,
-      "doc": "Filter band this source was observed with.",
-      "name": "band",
-      "type": [
-        "null",
-        "int"
-      ]
-    },
     {
       "doc": "Unique id.",
       "name": "diaForcedSourceId",
@@ -96,6 +72,15 @@
       "type": [
         "null",
         "float"
+      ]
+    },
+    {
+      "doc": "Filter band this source was observed with.",
+      "default": null,
+      "name": "band",
+      "type": [
+        "null",
+        "string"
       ]
     },
     {

@@ -1,39 +1,8 @@
 {
   "type": "record",
+  "namespace": "lsst.v9_0",
   "name": "diaObject",
   "fields": [
-    {
-      "name": "oid",
-      "type": "long"
-    },
-    {
-      "name": "sid",
-      "type": "int"
-    },
-    {
-      "name": "tid",
-      "type": "int"
-    },
-    {
-      "name": "mjd",
-      "type": "double"
-    },
-    {
-      "name": "firstmjd",
-      "type": "double"
-    },
-    {
-      "name": "lastmjd",
-      "type": "double"
-    },
-    {
-      "name": "meanra",
-      "type": "double"
-    },
-    {
-      "name": "meandec",
-      "type": "double"
-    },
     {
       "doc": "Unique identifier of this DiaObject.",
       "name": "diaObjectId",
