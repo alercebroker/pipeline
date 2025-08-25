@@ -9,6 +9,7 @@ from ingestion_step.core.utils import (
 
 DIA_SID = 1
 SS_SID = 2
+TID = 1
 
 band_map = {"u": 0, "g": 1, "r": 2, "i": 3, "z": 4, "y": 5}
 
@@ -85,7 +86,7 @@ def get_non_detection_transforms() -> list[Transform]:
 def get_dia_object_transforms() -> list[Transform]:
     return [
         copy_column("diaObjectId", "oid"),
-        add_constant_column("tid", 0, pd.Int32Dtype()),
+        add_constant_column("tid", TID, pd.Int32Dtype()),
         add_constant_column("sid", DIA_SID, pd.Int32Dtype()),
         copy_column("midpointMjdTai", "mjd"),
         copy_column("mjd", "firstmjd"),
@@ -98,7 +99,7 @@ def get_dia_object_transforms() -> list[Transform]:
 def get_ss_object_transforms() -> list[Transform]:
     return [
         copy_column("ssObjectId", "oid"),
-        add_constant_column("tid", 0, pd.Int32Dtype()),
+        add_constant_column("tid", TID, pd.Int32Dtype()),
         add_constant_column("sid", SS_SID, pd.Int32Dtype()),
         copy_column("midpointMjdTai", "mjd"),
         copy_column("mjd", "firstmjd"),

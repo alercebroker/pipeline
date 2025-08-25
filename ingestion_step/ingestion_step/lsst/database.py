@@ -32,7 +32,7 @@ def insert_dia_objects(session: Session, dia_objects: pd.DataFrame):
         - set(OBJECT_COLUMNS)
         - {"mjd", "diaObjectId", "midpointMjdTai", "message_id"}
     )
-    lsst_columns.union(
+    lsst_columns = lsst_columns.union(
         {
             "oid",
             "sid",
