@@ -67,6 +67,10 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
                 LsstDetection.oid,
                 LsstDetection.visit,
                 LsstDetection.detector,
+                LsstDetection.diaObjectId,
+                LsstDetection.ssObjectId,
+                LsstDetection.diaSourceId,
+                LsstDetection.ssSourceId,
                 LsstDetection.parentDiaSourceId,
                 cast(LsstDetection.raErr, DOUBLE_PRECISION).label("raErr"),
                 cast(LsstDetection.decErr, DOUBLE_PRECISION).label("decErr"),
@@ -132,7 +136,8 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
                 cast(LsstDetection.reliability, DOUBLE_PRECISION).label("reliability"),
                 LsstDetection.isDipole,
                 LsstDetection.dipoleFitAttempted,
-                LsstDetection.time_processed,
+                LsstDetection.timeProcessedMjdTai,
+                LsstDetection.timeWithdrawnMjdTai,
                 LsstDetection.bboxSize,
                 LsstDetection.pixelFlags,
                 LsstDetection.pixelFlags_bad,
@@ -178,7 +183,9 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
             # Query LSST-specific forced photometry with casting
             lsst_stmt = select(
                 LsstForcedPhotometry.oid,
+                LsstForcedPhotometry.oid.label('diaObjectId'),
                 LsstForcedPhotometry.measurement_id,
+                LsstForcedPhotometry.measurement_id.label('diaForcedSourceId'),
                 LsstForcedPhotometry.sid,
                 LsstForcedPhotometry.visit,
                 LsstForcedPhotometry.detector,
@@ -186,6 +193,8 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
                 cast(LsstForcedPhotometry.psfFluxErr, DOUBLE_PRECISION).label('psfFluxErr'),
                 cast(LsstForcedPhotometry.scienceFlux, DOUBLE_PRECISION).label('scienceFlux'),
                 cast(LsstForcedPhotometry.scienceFluxErr, DOUBLE_PRECISION).label('scienceFluxErr'),
+                LsstForcedPhotometry.timeProcessedMjdTai,
+                LsstForcedPhotometry.timeWithdrawnMjdTai,
             ).where(LsstForcedPhotometry.oid.in_(oids))
             
             lsst_forced = session.execute(lsst_stmt).all()
@@ -265,8 +274,9 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
                 # Create combined dictionary
                 combined_dict = {**lsst_det, **det_lookup[lsst_key]}
                 combined_dict["new"] = False
+                combined_dict["midpointMjdTai"] = combined_dict.get("mjd")
+                del combined_dict["created_date"]
                 parsed_lsst_list.append(combined_dict)
-
         return parsed_lsst_list
 
     def _parse_lsst_forced_photometry(self, lsst_models: list, models: list) -> List[Dict[str, Any]]:
@@ -308,6 +318,8 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
                 # Create combined dictionary
                 combined_dict = {**lsst_record, **fp_lookup[lsst_key]}
                 combined_dict["new"] = False
+                combined_dict["midpointMjdTai"] = combined_dict.get("mjd")
+                del combined_dict["created_date"]
                 parsed_lsst_list.append(combined_dict)
 
         return parsed_lsst_list

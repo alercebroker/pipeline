@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import json
 from typing import Dict, List, Any
+from datetime import date, datetime
 
 def parse_output_correction(corrected_data: dict, measurement_ids: dict, oids: list) -> List[Dict]:
     """
@@ -85,4 +86,8 @@ class NumpyEncoder(json.JSONEncoder):
             return None
         elif isinstance(obj, pd._libs.missing.NAType): 
             return None
+        elif isinstance(obj, (date, datetime)):
+            return obj.isoformat()  # Convert date/datetime to ISO string format
+        elif isinstance(obj, pd.Timestamp):
+            return obj.isoformat()  # Handle pandas Timestamp objects
         return super().default(obj)

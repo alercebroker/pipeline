@@ -102,12 +102,18 @@
       ]
     },
     {
-      "doc": "Time when this record was generated.",
-      "name": "time_processed",
-      "type": {
-        "logicalType": "timestamp-micros",
-        "type": "long"
-      }
+      "doc": "Time when the image was processed and this DiaSource record was generated, expressed as Modified Julian Date, International Atomic Time.",
+      "name": "timeProcessedMjdTai",
+      "type": "double"
+    },
+    {
+      "doc": "Time when this record was marked invalid, expressed as Modified Julian Date, International Atomic Time.",
+      "default": null,
+      "name": "timeWithdrawnMjdTai",
+      "type": [
+        "null",
+        "double"
+      ]
     }
   ]
 }
