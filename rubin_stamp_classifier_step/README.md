@@ -15,7 +15,7 @@ This step is part of the ALeRCE astronomical alert broker pipeline. It processes
    
    Create a YAML file named `local_config.yaml` with content similar to:
    ```yaml
-   LOGGING_LEVEL: INFO
+   LOGGING_LEVEL: DEBUG
    STEP_CONFIG:
      CONSUMER_CONFIG:
        CLASS: "rubin_stamp_classifier_step.utils.LsstKafkaConsumer"
@@ -24,12 +24,29 @@ This step is part of the ALeRCE astronomical alert broker pipeline. It processes
          bootstrap.servers: localhost:9092
          group.id: rubin-stamp-classifier
          auto.offset.reset: earliest
+       consume.timeout: 5
+       consume.messages: 16
+       SCHEMA_PATH: "/schemas/surveys/lsst/v7_4_alert.avsc"
      PRODUCER_CONFIG:
-       CLASS: "rubin_stamp_classifier_step.utils.RawKafkaProducer"
+       CLASS: "apf.producers.kafka.KafkaSchemalessProducer"
        TOPIC: rubin_stamp_classifier
        PARAMS:
          bootstrap.servers: localhost:9092
-         acks: "all"
+       SCHEMA_PATH: "schemas/rubin_stamp_classifier_step/output.avsc"
+     DB_CONFIG:
+       USER: postgres
+       PASSWORD: postgres
+       HOST: localhost
+       PORT: 5432
+       DB_NAME: postgres
+       SCHEMA: public
+     MODEL_VERSION: "1.0.0"
+     MODEL_CONFIG:
+       # MODEL_PATH: "/path/to/local/model"
+       MODEL_PATH: "https://download.my.model/model.zip"
+     FEATURE_FLAGS:
+       USE_PROFILING: false
+       PROMETHEUS: false
    ```
    Adjust parameters as needed for your environment.
 
@@ -51,10 +68,20 @@ This step is part of the ALeRCE astronomical alert broker pipeline. It processes
 
 ## Integration Testing
 
-Integration tests use Docker Compose to spin up required services (Kafka, Postgres). Tests populate the input Kafka topic with Avro messages and verify the output topic for correct classification results.
+To run the integration tests, set rubin_stamp_classifier_step as the current directory.
+Then set the environment variable `TEST_RUBIN_STAMP_CLASSIFIER_STEP_MODEL_PATH` with 
+the path of the directory containing the model files. You can also use a URL to a zip file containing the model.
 
-- Test data: `tests/integration/data/avro_messages/`
-- Example test: `tests/integration/test_kafka_output.py`
+```bash
+export TEST_RUBIN_STAMP_CLASSIFIER_STEP_MODEL_PATH=/path/to/model
+# or
+export TEST_RUBIN_STAMP_CLASSIFIER_STEP_MODEL_PATH=https://download.my.model/model.zip
+```
+Then run the tests with:
+
+```bash
+poetry run pytest -m integration
+```
 
 ## Helm Deployment
 
@@ -79,21 +106,38 @@ image:
   tag: tag_version
 configYaml:
   enabled: true
-  LOGGING_LEVEL: INFO
+  LOGGING_LEVEL: DEBUG
   STEP_CONFIG:
     CONSUMER_CONFIG:
       CLASS: "rubin_stamp_classifier_step.utils.LsstKafkaConsumer"
       TOPICS: ["lsst"]
       PARAMS:
-        bootstrap.servers: kafka:9092
+        bootstrap.servers: localhost:9092
         group.id: rubin-stamp-classifier
         auto.offset.reset: earliest
+      consume.timeout: 5
+      consume.messages: 16
+      SCHEMA_PATH: "/schemas/surveys/lsst/v7_4_alert.avsc"
     PRODUCER_CONFIG:
-      CLASS: "rubin_stamp_classifier_step.utils.RawKafkaProducer"
+      CLASS: "apf.producers.kafka.KafkaSchemalessProducer"
       TOPIC: rubin_stamp_classifier
       PARAMS:
-        bootstrap.servers: kafka:9092
-        acks: "all"
+        bootstrap.servers: localhost:9092
+      SCHEMA_PATH: "schemas/rubin_stamp_classifier_step/output.avsc"
+    DB_CONFIG:
+      USER: postgres
+      PASSWORD: postgres
+      HOST: localhost
+      PORT: 5432
+      DB_NAME: postgres
+      SCHEMA: public
+    MODEL_VERSION: "1.0.0"
+    MODEL_CONFIG:
+      # MODEL_PATH: "/path/to/local/model"
+      MODEL_PATH: "https://download.my.model/model.zip"
+    FEATURE_FLAGS:
+      USE_PROFILING: false
+      PROMETHEUS: false
 ```
 
 Deploy with:
