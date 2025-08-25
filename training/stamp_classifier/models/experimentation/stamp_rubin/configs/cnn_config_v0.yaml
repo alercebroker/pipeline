@@ -14,7 +14,7 @@ stamp_classifier:
   path_partition: './../../../data_acquisition/rubin/data/processed/partitions/ts_stamps_v0.0.4_dp1/partitions.parquet'
   #dir_data: './../../../data_acquisition/rubin/data/processed/rubin_5_classes2/ts_stamps_v0.0.3_dp1/'
   #path_partition: './../../../data_acquisition/rubin/data/processed/partitions/rubin_5_classes2/partitions.parquet'
-  list_folds: [0,1]
+  list_folds: [0,1,2,3,4]
   debug: false
   is_searching_hyperparameters: false
 
@@ -43,7 +43,7 @@ stamp_classifier:
         activation: relu
         pool: false
 
-      - filters: 8
+      - filters: 16
         kernel_size: [2, 2]
         activation: relu
         pool: true
@@ -52,14 +52,14 @@ stamp_classifier:
       - filters:  8
         kernel_size: [2, 2]
         activation: relu
-        pool: true
+        pool: false
         pool_size: [2, 2]
 
-      #- filters: 8
-      #  kernel_size: [2, 2]
-      #  activation: relu
-      #  pool: false
-      #  pool_size: [2, 2]
+      - filters: 16
+        kernel_size: [2, 2]
+        activation: relu
+        pool: true
+        pool_size: [2, 2]
       #- filters: 8
       #  kernel_size: [2, 2]
       #  activation: relu
@@ -68,7 +68,7 @@ stamp_classifier:
         #batchnorm: true
 
     dense_config:
-      - units: 4
+      - units: 16
         activation: tanh
 
     dropout_rate: 0.7
