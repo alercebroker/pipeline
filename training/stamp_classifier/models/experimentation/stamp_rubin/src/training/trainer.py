@@ -60,18 +60,22 @@ class Trainer:
 
     def val_test_step(self, dataset, iteration, file_writer):
         prediction_list, label_list = [], []
+        loss_list = []
         for (samples, md), labels in dataset:
             predictions = self.model((samples, md), training=False)
+            loss = self.loss_object(labels, predictions)  # Usar la misma función de pérdida que en entrenamiento
+            loss_list.append(loss)
             prediction_list.append(predictions)
             label_list.append(labels)
 
+        xentropy = tf.reduce_mean(tf.stack(loss_list))
         labels = tf.concat(label_list, axis=0)
         predictions = tf.concat(prediction_list, axis=0)
 
         precision, recall, f1, _ = precision_recall_fscore_support(
             labels.numpy(), predictions.numpy().argmax(axis=1), average='macro'
         )
-        xentropy = balanced_xentropy(labels, predictions)
+        #xentropy = balanced_xentropy(labels, predictions)
 
         # ✅ Calcular accuracy manualmente
         val_accuracy = np.mean((predictions.numpy().argmax(axis=1) == labels.numpy()).astype(np.float32))

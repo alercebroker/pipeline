@@ -12,6 +12,19 @@ from src.data.metadata_processing import process_coordinates, apply_normalizatio
 import logging
 #logging.basicConfig(level=logging.INFO, format='[%(asctime)s][%(levelname)s] - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 
+def flip_negative_flux(padded_stamps, flux):
+    """
+    Flips the stamps with negative flux values to positive.
+    """
+    #solo la posicion 1: 'difference'
+    negative_flux_mask = flux < 0
+    if np.any(negative_flux_mask):
+        logging.info(f"Flipping {np.sum(negative_flux_mask)} stamps with negative flux values to positive.")
+        padded_stamps[negative_flux_mask, :, :, 1] *= -1
+    else:
+        logging.info("No stamps with negative flux values found.")
+    return padded_stamps
+
 
 def check_stamp_shapes(stamps):
     for i, row in enumerate(stamps):  # fila por fila
@@ -30,6 +43,10 @@ def process_stamp(data, args):
     if args['cropping']['use']:
         padded_stamps = crop_stamps_ndarray(padded_stamps, args['cropping']['crop_size'])
         padding_masks = crop_stamps_ndarray(padding_masks, args['cropping']['crop_size'])
+    #aqui
+    padded_stamps = flip_negative_flux(padded_stamps,data['psfFlux'].values)
+    #padded_stamps = flip_negative_flux(padded_stamps,data['psfFlux'].values)
+
     padded_stamps = normalize_batches(padded_stamps, padding_masks, args['batch_size'])
     return padded_stamps
 
@@ -107,9 +124,17 @@ def get_tf_datasets(batch_size: int, args: dict):
     oids_test = partition[partition['partition'] == 'test'][args_loader['id_col']].tolist()
 
     data_train = data[data[args_loader['id_col']].isin(oids_train)]
-    data_val = data[data[args_loader['id_col']].isin(oids_val)]
-    data_test = data[data[args_loader['id_col']].isin(oids_test)]
 
+    #print(data_train[[args_loader['id_col']] + [args_loader['class_col']]].sort_values(by=args_loader['id_col']).head(20))
+    data_val = data[data[args_loader['id_col']].isin(oids_val)]
+    #print(data_val[[args_loader['id_col']] + [args_loader['class_col']]].head(20))
+
+    data_test = data[data[args_loader['id_col']].isin(oids_test)]
+    #print(data_test[[args_loader['id_col']] + [args_loader['class_col']]].head(20))
+    a = data_train[args_loader['id_col']].values
+    b = data_test[args_loader['id_col']].values
+
+    #print([elem for elem in a if elem in b])
     # --- Separate data and labels ---
     class_col = args_loader['class_col']
     def split_data_labels(df):
@@ -119,7 +144,7 @@ def get_tf_datasets(batch_size: int, args: dict):
     X_val, y_val = split_data_labels(data_val)
     X_test, y_test = split_data_labels(data_test)
 
-    del data_train, data_val, data_test
+    #del data_train, data_val, data_test
 
     # Stamps input
     stamp_train = process_stamp(X_train, args_loader)
@@ -142,6 +167,34 @@ def get_tf_datasets(batch_size: int, args: dict):
         X_test, args_loader, dict_info_model,
         norm_type=norm_type, path_norm_dir=args['artifact_path'], is_test_only=True
     )
+
+    tol = 1e-3  # tolerancia
+    match_matrix = np.all(
+    np.isclose(md_train.values[:, None, :], md_test.values[None, :, :], atol=tol),
+    axis=2
+    )
+
+    # Saber si existe al menos un match
+    hay_match = np.any(match_matrix)
+
+    train_idx, test_idx = np.where(match_matrix)
+
+    # Filas que coinciden
+    coincidencias_train = data_train.iloc[train_idx,[i for i in range(10)]]
+    coincidencias_test = data_test.iloc[test_idx,[i for i in range(10)]]
+
+    # Mostrar resultados
+    print("Pares de índices (train, test):")
+    for ti, te in zip(train_idx, test_idx):
+        print(f"Train idx {ti}  <->  Test idx {te}")
+
+    print("\nFilas coincidentes en md_train:")
+    print(coincidencias_train)
+
+    print("\nFilas coincidentes en md_test:")
+    print(coincidencias_test)
+
+    print(f"\nCantidad de coincidencias: {len(train_idx)}")
 
     # --- Encode labels ---
     label_encoder = LabelEncoder()

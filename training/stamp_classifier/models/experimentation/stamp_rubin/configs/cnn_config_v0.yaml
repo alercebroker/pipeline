@@ -10,9 +10,11 @@ stamp_classifier:
   # General Configuration
   model_name: 'stamp_full' # no usado
   name_dataset_version: 'rubin_AGN_vs_VS'
-  dir_data: './../../../data_acquisition/rubin/data/processed/rubin_5_classes2/ts_stamps_v0.0.3_dp1/'
-  path_partition: './../../../data_acquisition/rubin/data/processed/partitions/rubin_5_classes_Rubin_SV_095_-25/partitions.parquet'
-  list_folds: [0,1,2,3,4]
+  dir_data: './../../../data_acquisition/rubin/data/processed/ts_stamps_v0.0.4_dp1/'
+  path_partition: './../../../data_acquisition/rubin/data/processed/partitions/ts_stamps_v0.0.4_dp1/partitions.parquet'
+  #dir_data: './../../../data_acquisition/rubin/data/processed/rubin_5_classes2/ts_stamps_v0.0.3_dp1/'
+  #path_partition: './../../../data_acquisition/rubin/data/processed/partitions/rubin_5_classes2/partitions.parquet'
+  list_folds: [0,1]
   debug: false
   is_searching_hyperparameters: false
 
@@ -41,32 +43,32 @@ stamp_classifier:
         activation: relu
         pool: false
 
-      - filters: 16
-        kernel_size: [2, 2]
-        activation: relu
-        pool: true
-        pool_size: [2, 2]
-
-      - filters:  16
-        kernel_size: [2, 2]
-        activation: relu
-        pool: false
-        #pool_size: [2, 2]
-
-      - filters: 8
-        kernel_size: [2, 2]
-        activation: relu
-        pool: false
-        pool_size: [2, 2]
       - filters: 8
         kernel_size: [2, 2]
         activation: relu
         pool: true
         pool_size: [2, 2]
+
+      - filters:  8
+        kernel_size: [2, 2]
+        activation: relu
+        pool: true
+        pool_size: [2, 2]
+
+      #- filters: 8
+      #  kernel_size: [2, 2]
+      #  activation: relu
+      #  pool: false
+      #  pool_size: [2, 2]
+      #- filters: 8
+      #  kernel_size: [2, 2]
+      #  activation: relu
+      #  pool: true
+      #  pool_size: [2, 2]
         #batchnorm: true
 
     dense_config:
-      - units: 16
+      - units: 4
         activation: tanh
 
     dropout_rate: 0.7
@@ -75,7 +77,8 @@ stamp_classifier:
 
   # Training Configuration
   training:
-    lr: 0.0007589
+    lr: 0.0007
+    #7589
     use_focal: false    
     patience: 10
     num_epochs: 10000
