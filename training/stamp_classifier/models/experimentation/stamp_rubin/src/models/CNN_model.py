@@ -46,7 +46,7 @@ class DynamicStampModel(tf.keras.Model):
         self.flatten = Flatten(name="flatten")
         self.dropout = Dropout(self.dropout_rate, name="dropout")
 
-        self.preprocess = resnet_v2.preprocess_input
+        #self.preprocess = resnet_v2.preprocess_input
         #self.backbone = resnet_v2.ResNet50V2(
         #    include_top=False,
         #    weights="imagenet",
@@ -54,12 +54,6 @@ class DynamicStampModel(tf.keras.Model):
         #    input_shape=(32, 32, 3)
         #)
         #self.backbone.trainable = True
-
-        self.dense1= Dense(
-            units=8,
-            activation='relu',
-            name="dense_1"
-        )
 
         # Capas densas (sin batchnorm)
         self.dense_layers = []
@@ -87,15 +81,12 @@ class DynamicStampModel(tf.keras.Model):
         
     def call(self, inputs, training=False):
         x_img, x_metadata = inputs
-        #x_img = add_center_mask(x_img, center_size=8)  # Añadir máscara central
-        rot_list = [x_img,] #tf.image.rot90(x_img), 
-                    #tf.image.rot90(x_img, k=2), tf.image.rot90(x_img, k=3)]
+        rot_list = [x_img,tf.image.rot90(x_img), 
+                    tf.image.rot90(x_img, k=2), tf.image.rot90(x_img, k=3)]
 
-        #for i in range(4):
-        #    rot_list.append(tf.image.flip_up_down(rot_list[i]))
+        for i in range(4):
+            rot_list.append(tf.image.flip_up_down(rot_list[i]))
         
-        #rot_list = [x_img]
-
         #output_list = [self._embed_view(v, training=training) for v in rot_list]
 
         output_list = []
@@ -104,17 +95,11 @@ class DynamicStampModel(tf.keras.Model):
             for layer in self.conv_layers:
                 im = layer(im)
 
-            #print(im.shape)
             x = self.flatten(im)
-            #print(x.shape)
-            #x = self.dense1(x)
             output_list.append(x)
         
-        #print(x.shape)
         x = tf.stack(output_list, axis=0)
-        #print(x.shape)
         x = tf.reduce_mean(x, axis=0)
-        #print(x.shape)
         x = self.dropout(x, training=training)
 
         # Normalización de metadata (si aplica)
