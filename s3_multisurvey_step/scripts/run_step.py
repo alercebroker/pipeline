@@ -1,7 +1,6 @@
 import os
 import sys
 import logging
-import boto3
 from apf.core.settings import config_from_yaml_file
 from s3_step.step import S3Step
 from apf.metrics.prometheus import PrometheusMetrics
@@ -29,7 +28,7 @@ def set_logger(settings):
 
 
 def step_creator():
-    settings = config_from_yaml_file("/home/alex/Work/Projects/pipeline/s3_multisurvey_step/scripts/config.yaml")
+    settings = config_from_yaml_file("/config/config.yaml")
 
     logger = set_logger(settings)
 

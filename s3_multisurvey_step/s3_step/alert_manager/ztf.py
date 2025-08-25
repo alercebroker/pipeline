@@ -21,4 +21,5 @@ class ZTFAlertManager(BaseAlertManager):
         """
         avro_io = io.BytesIO()
         writer(avro_io, self.parsed_schema, [alert])
+        avro_io.seek(0)
         return avro_io

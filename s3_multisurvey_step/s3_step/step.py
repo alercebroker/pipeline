@@ -49,8 +49,6 @@ class S3Step(GenericStep):
         bucket_name : str
             name of the s3 bucket
         """
-        print("IO DATA")
-        print("\n\n\n\n--------")
         self.s3_client.upload_fileobj(file_data, self.alert_manager.bucket_name, file_name)
         
 
