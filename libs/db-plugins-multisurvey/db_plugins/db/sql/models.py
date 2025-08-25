@@ -259,10 +259,11 @@ class LsstDetection(Base):
     measurement_id = Column(BigInteger, nullable=False)  # int8,
     parentDiaSourceId = Column(BigInteger)
 
-    # diaSourceId = Column(BigInteger, nullable=False) this is oid
+    diaSourceId = Column(BigInteger, nullable=True)
+    ssSourceId = Column(BigInteger, nullable=True)
     visit = Column(BigInteger, nullable=False)
     detector = Column(Integer, nullable=False)
-    # diaObjectId = Column(BigInteger) # From these two we select measurement_id
+    diaObjectId = Column(BigInteger)  # From these two we select measurement_id
     ssObjectId = Column(BigInteger)
     # ra = Column(DOUBLE_PRECISION, nullable=False) goes into detection
     raErr = Column(REAL)

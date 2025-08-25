@@ -32,6 +32,12 @@ def insert_dia_objects(session: Session, dia_objects: pd.DataFrame):
         - set(OBJECT_COLUMNS)
         - {"mjd", "diaObjectId", "midpointMjdTai", "message_id"}
     )
+    lsst_columns.union(
+        {
+            "oid",
+            "sid",
+        }
+    )
 
     objects_dia_lsst_dict = dia_objects[list(lsst_columns)].to_dict("records")
 
@@ -80,9 +86,7 @@ def insert_sources(session: Session, sources: pd.DataFrame):
     detections_dict = sources[DETECTION_COLUMNS].to_dict("records")
 
     lsst_columns = (
-        set(sources.columns)
-        - set(DETECTION_COLUMNS)
-        - {"message_id", "diaSourceId", "midpointMjdTai", "diaObjectId"}
+        set(sources.columns) - set(DETECTION_COLUMNS) - {"message_id", "midpointMjdTai"}
     )
     lsst_columns = lsst_columns.union({"oid", "sid", "measurement_id"})
 
