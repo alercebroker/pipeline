@@ -35,7 +35,6 @@ def insert_dia_objects(session: Session, dia_objects: pd.DataFrame):
     lsst_columns = lsst_columns.union(
         {
             "oid",
-            "sid",
         }
     )
 
