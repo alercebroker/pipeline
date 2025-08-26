@@ -12,8 +12,7 @@ import copy
 # Corrector receives a parsed data dict, which contains specific keys per surveys
 # We use this dict to select only the corresponding keys that have detections to be corrected
 SURVEY_DETECTION_KEYS = {
-    "ztf": ["candidates", "previous_candidates", "forced_photometries"]
-}
+    "ztf": ["detections", "previous_detections", "forced_photometries"]}
 
 class StrategySelector:
     """Factory class for selecting correction strategies"""
@@ -136,7 +135,7 @@ class Corrector:
         
         return result.astype(dtype)
 
-    def _correct_dataframe_inplace(self, df: pd.DataFrame):
+    def _correct_dataframe_inplace(self, df: pd.DataFrame, key: str):
         """Apply corrections to a single dataframe. Must be applied for each key in the survey detection keys"""
         # If there's no detection to correct, then there's no need to apply correction so we end the correction for this key
         if len(df) == 0:
@@ -148,7 +147,7 @@ class Corrector:
         stellar = self._apply_strategy_function(df, "is_stellar", default=False, dtype=bool)
         
         # Get corrected magnitudes
-        cols = ["mag_corr", "e_mag_corr", "e_mag_corr_ext"]
+        cols = ["magpsf_corr", "sigmapsf_corr", "sigmapsf_corr_ext"]
         corrected_mags = self._apply_strategy_function(df, "correct", columns=cols, dtype=float)
         
         # Replace the magnitudes only for detections where corrected=True
@@ -156,9 +155,9 @@ class Corrector:
         corrected_mags = corrected_mags.replace(np.inf, self._ZERO_MAG)
         
         # Modify columns directly to the original DataFrame of the detectionand replace nan so they won't cause errors 
-        df["mag_corr"] = corrected_mags["mag_corr"].replace(np.nan, None)
-        df["e_mag_corr"] = corrected_mags["e_mag_corr"].replace(np.nan, None)
-        df["e_mag_corr_ext"] = corrected_mags["e_mag_corr_ext"].replace(np.nan, None)
+        df["magpsf_corr"] = corrected_mags["magpsf_corr"].replace(np.nan, None)
+        df["sigmapsf_corr"] = corrected_mags["sigmapsf_corr"].replace(np.nan, None)
+        df["sigmapsf_corr_ext"] = corrected_mags["sigmapsf_corr_ext"].replace(np.nan, None)
         df["corrected"] = corrected
         df["dubious"] = dubious
         df["stellar"] = stellar
@@ -166,6 +165,10 @@ class Corrector:
         # Replace infinity same as original Corrector
         # Theres no return because the modification is done in place so the Corrector's self.parsed data key must not be modified
         df.replace(-np.inf, None, inplace=True)
+
+        # If the strategy has a post_process function, call it to allow further modifications
+        if hasattr(self._strategy, 'post_process'):
+            self._strategy.post_process(df, key)
 
     def corrected_as_dataframes(self) -> dict[str, pd.DataFrame]:
         """Apply corrections to the original dict of parsed data for survey and return as dict of DataFrames
@@ -179,16 +182,18 @@ class Corrector:
         
         # If no corrections are available for the survey, return original data without modifications
         if not self._has_corrections:
+            self.logger.info(f"NO CORRECTIONS AVAILABLE")
             return self.parsed_data
         
         # Apply corrections to detection DataFrames for each of the survey detection keys
         for key in self.parsed_data.keys():
             if key in self._detection_keys:
                 df = self.parsed_data[key]
+
                 self.logger.info(f"Processing {len(df)} detections from {key}")
                 
                 # Modify the detections in place of the parsed data key
-                self._correct_dataframe_inplace(df)
+                self._correct_dataframe_inplace(df, key)
                 
                 num_corrected = df["corrected"].sum() if len(df) > 0 else 0
                 if num_corrected > 0:

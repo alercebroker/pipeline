@@ -81,9 +81,10 @@ sruvey_schemas = {
         "ss_object": "../schemas/surveys/lsst/v7_4_ssObject.avsc",
     },
     "ztf": {
-        "candidate": "../schemas/ztf/candidate.avsc",
-        "fp_hist": "../schemas/ztf/fp_hist.avsc",
-        "prv_candidate": "../schemas/ztf/prv_candidate.avsc",
+        "candidate": "../schemas/ingestion_step/ztf/test_no_extra_fields/candidate.avsc",
+        "prv_candidate": "../schemas/ingestion_step/ztf/test_no_extra_fields/prv_candidate.avsc",
+        "forced_photometry": "../schemas/ingestion_step/ztf/test_no_extra_fields/forced_photometry.avsc",
+        "non_detection": "../schemas/ingestion_step/ztf/test_no_extra_fields/non_detection.avsc",
     },
 }
 
@@ -100,3 +101,7 @@ def generate(args: list[str] = sys.argv):
     }
 
     print_schemas(pd_schemas)
+
+
+for name in sruvey_schemas.keys():
+    generate(["", name])

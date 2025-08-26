@@ -81,26 +81,31 @@ class ZTFCorrectionCommand(Command):
 
         # detections
         candidate = {}        
-        ## potential issue, deduplicate candidates inside detections and forced
+        ## TODO check potential issue, multiple candidates in the same message ? => Whats the solution?
         detections = []
         ztf_detections = []
         forced_photometries = []
         ztf_forced_photometries = []
-
+        # First parse the candidate
         for detection in data["detections"]:
             if detection["new"]:
-                # forced photometry
-                # correct! if detection["forced"]: 
-                if detection["extra_fields"].get("forcediffimflux", None):
-                    forced_photometries.append(parse_fp(detection, oid))
-                    ztf_forced_photometries.append(parse_ztf_fp(detection, oid))
-                # detection
-                else:
-                    if detection["measurement_id"] == candidate_measurement_id:
-                        candidate = detection
-                    detections.append(parse_det(detection, oid))
-                    ztf_detections.append(parse_ztf_det(detection, oid))
-        
+                # Candidate is  always in the data
+                if detection["measurement_id"] == candidate_measurement_id:
+                    candidate = detection
+                detections.append(parse_det(detection, oid))
+                ztf_detections.append(parse_ztf_det(detection, oid))
+        # Then parse the previous detections
+        for detection in data["previous_detections"]:
+            if detection["new"]:
+                detections.append(parse_det(detection, oid))
+                ztf_detections.append(parse_ztf_det(detection, oid))
+        # And finally parse the forced photometries
+
+        for forced in data["forced_photometries"]:
+            if forced["new"]:
+                forced_photometries.append(parse_fp(forced, oid))
+                ztf_forced_photometries.append(parse_ztf_fp(forced, oid))
+
 
 
         parsed_ps1 = parse_ztf_ps1(candidate, oid)
@@ -126,8 +131,8 @@ class ZTFCorrectionCommand(Command):
         # forget deduplication!!!! :D
         detections = []
         ztf_detections = []
-        forced_pothometries = []
-        ztf_forced_pothometries = []
+        forced_photometries = []
+        ztf_forced_photometries = []
         ps1 = []
         ss = []
         gaia = []
@@ -137,8 +142,8 @@ class ZTFCorrectionCommand(Command):
         for single_data in data:
             detections.extend(single_data["detections"])
             ztf_detections.extend(single_data["ztf_detections"])
-            forced_pothometries.extend(single_data["forced_photometries"])
-            ztf_forced_pothometries.extend(single_data["ztf_forced_photometries"])
+            forced_photometries.extend(single_data["forced_photometries"])
+            ztf_forced_photometries.extend(single_data["ztf_forced_photometries"])
             ps1.append(single_data["ps1"])
             ss.append(single_data["ss"])
             gaia.append(single_data["gaia"])
@@ -167,24 +172,24 @@ class ZTFCorrectionCommand(Command):
             )
 
         # insert forced photometry
-        if len(forced_pothometries) > 0:
+        if len(forced_photometries) > 0:
             fp_stmt = insert(ForcedPhotometry)
             fp_result = session.connection().execute(
                 fp_stmt.on_conflict_do_update(
                     constraint="pk_forcedphotometry_oid_measurementid",
                     set_=fp_stmt.excluded
                 ),
-                forced_pothometries
+                forced_photometries
             )
 
-        if len(ztf_forced_pothometries) > 0:
+        if len(ztf_forced_photometries) > 0:
             ztf_fp_stmt = insert(ZtfForcedPhotometry)
             ztf_fp_result = session.connection().execute(
                 ztf_fp_stmt.on_conflict_do_update(
                     constraint="pk_ztfforcedphotometry_oid_measurementid",
                     set_=ztf_fp_stmt.excluded
                 ),
-                ztf_forced_pothometries
+                ztf_forced_photometries
             )
 
         # insert ps1_ztf
@@ -225,7 +230,7 @@ class ZTFCorrectionCommand(Command):
             dq_stmt = insert(ZtfDataquality)
             dq_result = session.connection().execute(
                 dq_stmt.on_conflict_do_update(
-                    constraint="pk_ztfdataqualit_oid_measurement_id",
+                    constraint="pk_ztfdataquality_oid_measurement_id",
                     set_=dq_stmt.excluded
                 ),
                 dq
@@ -249,10 +254,10 @@ class ZTFMagstatCommand(Command):
     def _format_data(self, data):
         
         oid = data["oid"]
-
+        sid = data["sid"]
         object_stats = parse_obj_stats(data, oid)
         magstats_list = [
-            parse_magstats(ms, oid)
+            parse_magstats(ms, oid, sid)
             for ms in data["magstats"]
         ]
 
@@ -269,6 +274,10 @@ class ZTFMagstatCommand(Command):
         for single_data in data:
             objectstat_list.append(single_data["object_stats"])
             magstat_list.extend(single_data["magstats"])      
+        
+
+        print(len(magstat_list))
+        print(magstat_list)
         
         # update object
         if len(objectstat_list) > 0:

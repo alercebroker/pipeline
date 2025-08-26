@@ -29,8 +29,8 @@ def rename_column(src: str, dest: str):
 
 def add_constant_column(column: str, constant: Any, dtype: DType):
     def _add_constant_column(df: pd.DataFrame):
-        df[column] = pd.Series([constant] * len(df), dtype=dtype)
-
+        df[column] = constant
+        df[column] = df[column].astype(dtype)
     return _add_constant_column
 
 

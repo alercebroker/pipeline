@@ -16,7 +16,7 @@ _ZERO_MAG = 100.0
 
 def is_corrected(detections: pd.DataFrame) -> pd.Series:
     """Whether the nearest source is closer than `DISTANCE_THRESHOLD`"""
-    is_new_mask = detections["new"]
+    is_new_mask = detections["new"].astype(bool)
     new_detections = detections[is_new_mask]
     old_detections = detections[~is_new_mask]
 
@@ -37,7 +37,7 @@ def is_dubious(detections: pd.DataFrame) -> pd.Series:
     * the first detection for its OID and FID has a nearby source, but the detection doesn't, or
     * the first detection for its OID and FID doesn't have a nearby source, but the detection does.
     """
-    is_new_mask = detections["new"]
+    is_new_mask = detections["new"].astype(bool)
     new_detections = detections[is_new_mask]
     old_detections = detections[~is_new_mask]
 
@@ -71,14 +71,11 @@ def is_stellar(detections: pd.DataFrame) -> pd.Series:
     * the nearest source sharpness parameter is within a range around zero, and
     * the nearest source $\chi$ parameter is low.
     """
-    # Adding column nan in case it doesnt exist (TO CORROBORATE THIS LOGIC) and maybe add it in a better way?
     for col in ["distpsnr1", "sgscore1", "sharpnr", "chinr"]:
         if col not in detections:
             detections[col] = np.nan
 
-    #! CHECK THIS SECTION ABOVE
-    ########################################################################################################A
-    is_new_mask = detections["new"]
+    is_new_mask = detections["new"].astype(bool)
     new_detections = detections[is_new_mask]
     old_detections = detections[~is_new_mask]
 
@@ -103,18 +100,16 @@ def is_stellar(detections: pd.DataFrame) -> pd.Series:
     stellar_old: pd.Series = stellar_old.set_index("index")["stellar"]
 
     # return output in the same order
-    stellar = pd.concat([stellar_new, stellar_old]).loc[detections.index]
+    stellar = pd.concat([stellar_new, stellar_old]).loc[detections.index].fillna(False)
     return stellar
 
 
 def correct(detections: pd.DataFrame) -> pd.DataFrame:
     """Apply magnitude correction and compute its associated errors. See `README` for details"""
-
-    need_correction_mask = detections["new"]
+    need_correction_mask = detections["new"].astype(bool)
     detections_that_need_corr = detections[need_correction_mask]
     detections_that_dont_need_corr = detections[~need_correction_mask]
-
-    corr_mag_column_names = ["mag_corr", "e_mag_corr", "e_mag_corr_ext"]
+    corr_mag_column_names = ["magpsf_corr", "sigmapsf_corr", "sigmapsf_corr_ext"]
     if len(detections_that_dont_need_corr) == 0:
         for col in corr_mag_column_names:
             detections_that_dont_need_corr[col] = []
@@ -127,7 +122,6 @@ def correct(detections: pd.DataFrame) -> pd.DataFrame:
         # possible log10 of 0; this is expected and returned inf is correct value
         warnings.filterwarnings("ignore", category=RuntimeWarning)
         mag_corr = -2.5 * np.log10(aux3)
-
     aux4 = (aux2 * detections_that_need_corr["e_mag"]) ** 2 - (
         aux1 * detections_that_need_corr["sigmagnr"]
     ) ** 2
@@ -150,12 +144,13 @@ def correct(detections: pd.DataFrame) -> pd.DataFrame:
     e_mag_corr_ext[mask] = np.inf
 
     corrected_mags_new_observations = pd.DataFrame(
-        {"mag_corr": mag_corr, "e_mag_corr": e_mag_corr, "e_mag_corr_ext": e_mag_corr_ext}
+        {"magpsf_corr": mag_corr, "sigmapsf_corr": e_mag_corr, "sigmapsf_corr_ext": e_mag_corr_ext}
     )
 
     corrected_mags = pd.concat(
         [corrected_mags_new_observations, corrected_mags_db_observations], axis=0
     )
+
     # return things in the same order
     corrected_mags = corrected_mags.loc[detections.index]
     return corrected_mags
@@ -165,3 +160,23 @@ def is_first_corrected(detections: pd.DataFrame, corrected: pd.Series) -> pd.Ser
     """Whether the first detection for each OID and FID has a nearby source"""
     idxmin = detections.groupby(["oid", "band"])["mjd"].transform("idxmin")
     return corrected[idxmin].set_axis(idxmin.index)
+
+
+def post_process(df: pd.DataFrame, key: str) -> None:
+    """Post-process DataFrame after corrections are applied to remove unnecessary columns and rename them if needed in the final output."""
+    if key == "forced_photometries":
+        # Return columns to original names used in pipeline
+        df.rename(
+            columns={
+                "magpsf": "mag",
+                "sigmapsf": "e_mag", 
+                "magpsf_corr": "mag_corr",
+                "sigmapsf_corr": "e_mag_corr",
+                "sigmapsf_corr_ext": "e_mag_corr_ext"
+            },
+            inplace=True
+        )
+    
+    # Remove columns not needed in final output
+    if key in ("forced_photometries", "previous_detections"):
+        df.drop(columns=["distpsnr1", "sgscore1"], errors="ignore", inplace=True)

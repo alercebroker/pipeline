@@ -17,13 +17,11 @@ def multistream_detection_to_ztf(command: dict):
 
     exclude = [
         "aid",
-        "sid",
         "tid",
         "new",
         "pid",
         "e_ra",
         "e_dec",
-        "extra_fields",
     ]
 
     new_command = {k: v for k, v in command.items() if k not in exclude}
@@ -72,6 +70,7 @@ def parse_ztf_det(raw_detection: dict, oid: str) -> dict:
 def parse_fp(raw_detection: dict, oid: str) -> dict:
     forced_photometry = {
         "oid": oid,
+        "sid": raw_detection["sid"],
         "measurement_id": raw_detection["measurement_id"],
         "mjd": raw_detection["mjd"],
         "ra": raw_detection["ra"],
@@ -83,6 +82,7 @@ def parse_fp(raw_detection: dict, oid: str) -> dict:
 def parse_ztf_fp(raw_detection: dict, oid: str) -> dict:
     forced_photometry = {
         "oid": oid,
+        "sid": raw_detection["sid"],
         "measurement_id": raw_detection["measurement_id"],
         "pid": raw_detection["pid"],
         "mag": raw_detection["mag"],
@@ -95,36 +95,38 @@ def parse_ztf_fp(raw_detection: dict, oid: str) -> dict:
         "dubious": raw_detection["dubious"],
         "parent_candid": raw_detection["parent_candid"],
         "has_stamp": raw_detection["has_stamp"],
-        "field": raw_detection["extra_fields"]["field"],
-        "rcid": raw_detection["extra_fields"]["rcid"],
-        "rfid": raw_detection["extra_fields"]["rfid"],
-        "sciinpseeing": raw_detection["extra_fields"]["sciinpseeing"],
-        "scibckgnd": raw_detection["extra_fields"]["scibckgnd"],
-        "scisigpix": raw_detection["extra_fields"]["scisigpix"],
-        "magzpsci": raw_detection["extra_fields"]["magzpsci"],
-        "magzpsciunc": raw_detection["extra_fields"]["magzpsciunc"],
-        "magzpscirms": raw_detection["extra_fields"]["magzpscirms"],
-        "clrcoeff": raw_detection["extra_fields"]["clrcoeff"],
-        "clrcounc": raw_detection["extra_fields"]["clrcounc"],
-        "exptime": raw_detection["extra_fields"]["exptime"],
-        "adpctdif1": raw_detection["extra_fields"]["adpctdif1"],
-        "adpctdif2": raw_detection["extra_fields"]["adpctdif2"],
-        "diffmaglim": raw_detection["extra_fields"]["diffmaglim"],
-        "programid": raw_detection["extra_fields"]["programid"],
-        "procstatus": raw_detection["extra_fields"]["procstatus"],
-        "distnr": raw_detection["extra_fields"]["distnr"],
-        "ranr": raw_detection["extra_fields"]["ranr"],
-        "decnr": raw_detection["extra_fields"]["decnr"],
-        "magnr": raw_detection["extra_fields"]["magnr"],
-        "sigmagnr": raw_detection["extra_fields"]["sigmagnr"],
-        "chinr": raw_detection["extra_fields"]["chinr"],
-        "sharpnr": raw_detection["extra_fields"]["sharpnr"],
+        "field": raw_detection["field"],
+        "rcid": raw_detection["rcid"],
+        "rfid": raw_detection["rfid"],
+        "sciinpseeing": raw_detection["sciinpseeing"],
+        "scibckgnd": raw_detection["scibckgnd"],
+        "scisigpix": raw_detection["scisigpix"],
+        "magzpsci": raw_detection["magzpsci"],
+        "magzpsciunc": raw_detection["magzpsciunc"],
+        "magzpscirms": raw_detection["magzpscirms"],
+        "clrcoeff": raw_detection["clrcoeff"],
+        "clrcounc": raw_detection["clrcounc"],
+        "exptime": raw_detection["exptime"],
+        "adpctdif1": raw_detection["adpctdif1"],
+        "adpctdif2": raw_detection["adpctdif2"],
+        "diffmaglim": raw_detection["diffmaglim"],
+        "programid": raw_detection["programid"],
+        "procstatus": raw_detection["procstatus"],
+        "distnr": raw_detection["distnr"],
+        "ranr": raw_detection["ranr"],
+        "decnr": raw_detection["decnr"],
+        "magnr": raw_detection["magnr"],
+        "sigmagnr": raw_detection["sigmagnr"],
+        "chinr": raw_detection["chinr"],
+        "sharpnr": raw_detection["sharpnr"],
     }
+
     return forced_photometry
 
 def parse_det(raw_detection: dict, oid: str) -> dict:
     detection = {
         "oid": oid,
+        "sid": raw_detection["sid"],
         "measurement_id": raw_detection["measurement_id"],
         "mjd": raw_detection["mjd"],
         "ra": raw_detection["ra"],
@@ -137,26 +139,27 @@ def parse_det(raw_detection: dict, oid: str) -> dict:
 def parse_ztf_det(raw_detection: dict, oid: str) -> dict:
     detection = {
         "oid": oid,
+        "sid": raw_detection["sid"],
         "measurement_id": raw_detection["measurement_id"],
         "pid": raw_detection["pid"],
-        "diffmaglim": raw_detection["extra_fields"]["diffmaglim"],
+        "diffmaglim": raw_detection["diffmaglim"],
         "isdiffpos": raw_detection["isdiffpos"],
-        "nid": raw_detection["extra_fields"]["nid"],
+        "nid": raw_detection["nid"],
         "magpsf": raw_detection["mag"],
         "sigmapsf": raw_detection["e_mag"],
-        "magap": raw_detection["extra_fields"]["magap"],
-        "sigmagap": raw_detection["extra_fields"]["sigmagap"],
-        "distnr": raw_detection["extra_fields"]["distnr"],
-        "rb": raw_detection["extra_fields"]["rb"],
-        "rbversion": raw_detection["extra_fields"]["rbversion"],
-        "drb": raw_detection["extra_fields"].get("drb", None),
-        "drbversion": raw_detection["extra_fields"].get("drbversion", None),
-        "magapbig": raw_detection["extra_fields"]["magapbig"],
-        "sigmagapbig": raw_detection["extra_fields"]["sigmagapbig"],
-        "rfid": raw_detection["extra_fields"].get("rfid", None),
-        "magpsf_corr": raw_detection["mag_corr"],
-        "sigmapsf_corr": raw_detection["e_mag_corr"],
-        "sigmapsf_corr_ext": raw_detection["e_mag_corr_ext"],
+        "magap": raw_detection["magap"],
+        "sigmagap": raw_detection["sigmagap"],
+        "distnr": raw_detection["distnr"],
+        "rb": raw_detection["rb"],
+        "rbversion": raw_detection["rbversion"],
+        "drb": raw_detection.get("drb", None),
+        "drbversion": raw_detection.get("drbversion", None),
+        "magapbig": raw_detection["magapbig"],
+        "sigmagapbig": raw_detection["sigmagapbig"],
+        "rfid": raw_detection.get("rfid", None),
+        "magpsf_corr": raw_detection["magpsf_corr"],
+        "sigmapsf_corr": raw_detection["sigmapsf_corr"],
+        "sigmapsf_corr_ext": raw_detection["sigmapsf_corr_ext"],
         "corrected": raw_detection["corrected"],
         "dubious": raw_detection["dubious"],
         "parent_candid": raw_detection["parent_candid"],
@@ -169,9 +172,9 @@ def parse_ztf_ss(candidate: dict, oid: str) -> dict:
     ss = {
         "oid": oid,
         "measurement_id": candidate["measurement_id"],
-        "ssdistnr": candidate["extra_fields"]["ssdistnr"],
-        "ssmagnr": candidate["extra_fields"]["ssmagnr"],
-        "ssnamenr":None if candidate["extra_fields"]["ssnamenr"] == 'null' else  candidate["extra_fields"]["ssnamenr"],
+        "ssdistnr": candidate["ssdistnr"],
+        "ssmagnr": candidate["ssmagnr"],
+        "ssnamenr":None if candidate["ssnamenr"] == 'null' else  candidate["ssnamenr"],
     }
     return ss
 
@@ -180,39 +183,39 @@ def parse_ztf_ps1(candidate: dict, oid: str) -> dict:
         "oid": oid,
         "measurement_id": candidate["measurement_id"],
         "objectidps1": (
-            int(candidate["extra_fields"]["objectidps1"])
-            if candidate["extra_fields"]["objectidps1"] != "-999" or candidate["extra_fields"]["objectidps1"] is not None
+            int(candidate["objectidps1"])
+            if candidate["objectidps1"] != "-999" or candidate["objectidps1"] is not None
             else None
         ),
-        "sgmag1": candidate["extra_fields"]["sgmag1"],
-        "srmag1": candidate["extra_fields"]["srmag1"],
-        "simag1": candidate["extra_fields"]["simag1"],
-        "szmag1": candidate["extra_fields"]["szmag1"],
-        "sgscore1": candidate["extra_fields"]["sgscore1"],
-        "distpsnr1": candidate["extra_fields"]["distpsnr1"],
+        "sgmag1": candidate["sgmag1"],
+        "srmag1": candidate["srmag1"],
+        "simag1": candidate["simag1"],
+        "szmag1": candidate["szmag1"],
+        "sgscore1": candidate["sgscore1"],
+        "distpsnr1": candidate["distpsnr1"],
         "objectidps2":(
-            int(candidate["extra_fields"]["objectidps2"])
-            if candidate["extra_fields"]["objectidps2"] != "-999" or candidate["extra_fields"]["objectidps2"] is not None
+            int(candidate["objectidps2"])
+            if candidate["objectidps2"] != "-999" or candidate["objectidps2"] is not None
             else None
         ),
-        "sgmag2": candidate["extra_fields"]["sgmag2"],
-        "srmag2": candidate["extra_fields"]["srmag2"],
-        "simag2": candidate["extra_fields"]["simag2"],
-        "szmag2": candidate["extra_fields"]["szmag2"],
-        "sgscore2": candidate["extra_fields"]["sgscore2"],
-        "distpsnr2": candidate["extra_fields"]["distpsnr2"],
+        "sgmag2": candidate["sgmag2"],
+        "srmag2": candidate["srmag2"],
+        "simag2": candidate["simag2"],
+        "szmag2": candidate["szmag2"],
+        "sgscore2": candidate["sgscore2"],
+        "distpsnr2": candidate["distpsnr2"],
         "objectidps3":(
-            int(candidate["extra_fields"]["objectidps3"])
-            if candidate["extra_fields"]["objectidps3"] != "-999" or candidate["extra_fields"]["objectidps3"] is not None
+            int(candidate["objectidps3"])
+            if candidate["objectidps3"] != "-999" or candidate["objectidps3"] is not None
             else None
         ),
-        "sgmag3": candidate["extra_fields"]["sgmag3"],
-        "srmag3": candidate["extra_fields"]["srmag3"],
-        "simag3": candidate["extra_fields"]["simag3"],
-        "szmag3": candidate["extra_fields"]["szmag3"],
-        "sgscore3": candidate["extra_fields"]["sgscore3"],
-        "distpsnr3": candidate["extra_fields"]["distpsnr3"],
-        "nmtchps": candidate["extra_fields"]["nmtchps"],
+        "sgmag3": candidate["sgmag3"],
+        "srmag3": candidate["srmag3"],
+        "simag3": candidate["simag3"],
+        "szmag3": candidate["szmag3"],
+        "sgscore3": candidate["sgscore3"],
+        "distpsnr3": candidate["distpsnr3"],
+        "nmtchps": candidate["nmtchps"],
     }
     return ps1
 
@@ -220,10 +223,10 @@ def parse_ztf_gaia(candidate: dict, oid: str) -> dict:
     gaia = {
         "oid": oid,
         "measurement_id": candidate["measurement_id"],
-        "neargaia": candidate["extra_fields"]["neargaia"],
-        "neargaiabright": candidate["extra_fields"]["neargaiabright"],
-        "maggaia": candidate["extra_fields"]["maggaia"],
-        "maggaiabright": candidate["extra_fields"]["maggaiabright"],
+        "neargaia": candidate["neargaia"],
+        "neargaiabright": candidate["neargaiabright"],
+        "maggaia": candidate["maggaia"],
+        "maggaiabright": candidate["maggaiabright"],
     }
     return gaia
 
@@ -231,55 +234,55 @@ def parse_ztf_dq(candidate: dict, oid: str) -> dict:
     dq = {
         "oid": oid,
         "measurement_id": candidate["measurement_id"],
-        "xpos": candidate["extra_fields"]["xpos"],
-        "ypos": candidate["extra_fields"]["ypos"],
-        "chipsf": candidate["extra_fields"]["chipsf"],
-        "sky": candidate["extra_fields"]["sky"],
-        "fwhm": candidate["extra_fields"]["fwhm"],
-        "classtar": candidate["extra_fields"]["classtar"],
-        "mindtoedge": candidate["extra_fields"]["mindtoedge"],
-        "seeratio": candidate["extra_fields"]["seeratio"],
-        "aimage": candidate["extra_fields"]["aimage"],
-        "bimage": candidate["extra_fields"]["bimage"],
-        "aimagerat": candidate["extra_fields"]["aimagerat"],
-        "bimagerat": candidate["extra_fields"]["bimagerat"],
-        "nneg": candidate["extra_fields"]["nneg"],
-        "nbad": candidate["extra_fields"]["nbad"],
-        "sumrat": candidate["extra_fields"]["sumrat"],
-        "scorr": candidate["extra_fields"]["scorr"],
-        "dsnrms": candidate["extra_fields"]["dsnrms"],
-        "ssnrms": candidate["extra_fields"]["ssnrms"],
-        "magzpsci": candidate["extra_fields"]["magzpsci"],
-        "magzpsciunc": candidate["extra_fields"]["magzpsciunc"],
-        "magzpscirms": candidate["extra_fields"]["magzpscirms"],
-        "nmatches": candidate["extra_fields"]["nmatches"],
-        "clrcoeff": candidate["extra_fields"]["clrcoeff"],
-        "clrcounc": candidate["extra_fields"]["clrcounc"],
-        "zpclrcov": candidate["extra_fields"]["zpclrcov"],
-        "zpmed": candidate["extra_fields"]["zpmed"],
-        "clrmed": candidate["extra_fields"]["clrmed"],
-        "clrrms": candidate["extra_fields"]["clrrms"],
-        "exptime": candidate["extra_fields"]["exptime"],
+        "xpos": candidate["xpos"],
+        "ypos": candidate["ypos"],
+        "chipsf": candidate["chipsf"],
+        "sky": candidate["sky"],
+        "fwhm": candidate["fwhm"],
+        "classtar": candidate["classtar"],
+        "mindtoedge": candidate["mindtoedge"],
+        "seeratio": candidate["seeratio"],
+        "aimage": candidate["aimage"],
+        "bimage": candidate["bimage"],
+        "aimagerat": candidate["aimagerat"],
+        "bimagerat": candidate["bimagerat"],
+        "nneg": candidate["nneg"],
+        "nbad": candidate["nbad"],
+        "sumrat": candidate["sumrat"],
+        "scorr": candidate["scorr"],
+        "dsnrms": candidate["dsnrms"],
+        "ssnrms": candidate["ssnrms"],
+        "magzpsci": candidate["magzpsci"],
+        "magzpsciunc": candidate["magzpsciunc"],
+        "magzpscirms": candidate["magzpscirms"],
+        "nmatches": candidate["nmatches"],
+        "clrcoeff": candidate["clrcoeff"],
+        "clrcounc": candidate["clrcounc"],
+        "zpclrcov": candidate["zpclrcov"],
+        "zpmed": candidate["zpmed"],
+        "clrmed": candidate["clrmed"],
+        "clrrms": candidate["clrrms"],
+        "exptime": candidate["exptime"],
     }
     return dq
 
 def parse_ztf_refernece(candidate: dict, oid: str) -> dict:
     reference = {
         "oid": oid,
-        "rfid": candidate["extra_fields"]["rfid"],
+        "rfid": candidate["rfid"],
         "measurement_id": candidate["measurement_id"],
         "band": candidate["band"],
-        "rcid": candidate["extra_fields"]["rcid"],
-        "field": candidate["extra_fields"]["field"],
-        "magnr": candidate["extra_fields"]["magnr"],
-        "sigmagnr": candidate["extra_fields"]["sigmagnr"],
-        "chinr": candidate["extra_fields"]["chinr"],
-        "sharpnr": candidate["extra_fields"]["sharpnr"],
-        "ranr": candidate["extra_fields"]["ranr"],
-        "decnr": candidate["extra_fields"]["decnr"],
-        "mjdstartref": candidate["extra_fields"]["jdstartref"] - 2400000.5,
-        "mjdendref": candidate["extra_fields"]["jdendref"] - 2400000.5,
-        "nframesref": candidate["extra_fields"]["nframesref"],
+        "rcid": candidate["rcid"],
+        "field": candidate["field"],
+        "magnr": candidate["magnr"],
+        "sigmagnr": candidate["sigmagnr"],
+        "chinr": candidate["chinr"],
+        "sharpnr": candidate["sharpnr"],
+        "ranr": candidate["ranr"],
+        "decnr": candidate["decnr"],
+        "mjdstartref": candidate["jdstartref"] - 2400000.5,
+        "mjdendref": candidate["jdendref"] - 2400000.5,
+        "nframesref": candidate["nframesref"],
     }
     return reference
 
@@ -300,12 +303,12 @@ def parse_obj_stats(raw_magstats, oid: str) -> dict:
         "corrected": raw_magstats["corrected"],
         "stellar": raw_magstats["stellar"],
     }
-
     return obj
 
-def parse_magstats(sub_magstats: dict, oid: str) -> dict:
+def parse_magstats(sub_magstats: dict, oid: str, sid: int) -> dict:
     magstats = {
         "oid": oid,
+        "sid": sid,
         "band": sub_magstats["band"], 
         "stellar": sub_magstats["stellar"], 
         "corrected": sub_magstats["corrected"], 
@@ -330,5 +333,4 @@ def parse_magstats(sub_magstats: dict, oid: str) -> dict:
         "magfirst_corr": sub_magstats["magfirst_corr"], 
         "saturation_rate": sub_magstats["saturation_rate"], 
     }
-
     return magstats

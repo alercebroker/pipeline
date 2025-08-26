@@ -13,13 +13,16 @@ class ZTFMagnitudeStatistics(BaseMagnitudeStatistics):
     
     def _calculate_stats(self, corrected: bool = False) -> pd.DataFrame:
         """Calculate magnitude statistics (mean, median, max, min, sigma)"""
-        suffix = "_corr" if corrected else ""
-        in_label, out_label = f"mag{suffix}", f"mag{{}}{suffix}"
+        if corrected:
+            in_label = "magpsf_corr"
+            out_label = "mag{}_corr"
+        else:
+            in_label = "mag"
+            out_label = "mag{}"
         
         grouped = self._grouped_detections(corrected=corrected)
         functions = {"mean", "median", "max", "min"}
         functions = {out_label.format(func): func for func in functions}
-        
         stats = grouped[in_label].agg(**functions)
         return stats.join(
             grouped[in_label]
@@ -30,8 +33,12 @@ class ZTFMagnitudeStatistics(BaseMagnitudeStatistics):
     
     def _calculate_stats_over_time(self, corrected: bool = False) -> pd.DataFrame:
         """Calculate first and last magnitude"""
-        suffix = "_corr" if corrected else ""
-        in_label, out_label = f"mag{suffix}", f"mag{{}}{suffix}"
+        if corrected:
+            in_label = "magpsf_corr"
+            out_label = "mag{}_corr"
+        else:
+            in_label = "mag"
+            out_label = "mag{}"  # Keep consistent output naming
         
         first = self._grouped_value(in_label, which="first", corrected=corrected)
         last = self._grouped_value(in_label, which="last", corrected=corrected)
@@ -72,7 +79,7 @@ class ZTFMagnitudeStatistics(BaseMagnitudeStatistics):
         saturated = pd.Series(index=total.index, dtype=float)
         
         for survey, threshold in self._THRESHOLD.items():
-            sat = self._grouped_detections(surveys=(survey,))["mag_corr"].agg(
+            sat = self._grouped_detections(surveys=(survey,))["magpsf_corr"].agg(
                 lambda x: (x < threshold).sum()
             )
             saturated.loc[sat.index] = sat

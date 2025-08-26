@@ -2,11 +2,7 @@ from typing import List, Dict
 from .input_message_parsing import InputMessageParsingStrategy
 import pandas as pd 
 from core.schemas import schema_applier
-
-
-#! TO BE MODIFIED TO FOLLOW LSST INPUT PARSER CLOSELY!!!!!!
-#! PENDING BUT NOT THE PRIORITY RN!!!! :O
-#! FJKSAJHDKJSHADJKHSAJKDHSA WE STILL TRYING TO KEEP THE STRUCTURE AS EASY TO HANDLE ZTF AS POSSIBLE
+import logging
 
 
 class ZTFInputMessageParser(InputMessageParsingStrategy):
@@ -16,10 +12,8 @@ class ZTFInputMessageParser(InputMessageParsingStrategy):
     Key ZTF-specific characteristics:
     - Uses "detections" instead of "sources"
     - Uses "forced_photometries" instead of "forced_sources"  
-    - Does not separate current from previous detections explicitly
     - No survey-specific additional objects (no ss_object/dia_object equivalents)
-    - Uses different field names (e.g., "objectId" instead of "oid", "candid" instead of "measurement_id")
-    
+
     This parser will normalize ZTF's structure into the same standard format
     used by LSST and other surveys in the pipeline.
     """
@@ -30,81 +24,143 @@ class ZTFInputMessageParser(InputMessageParsingStrategy):
         
         Args:
             messages (List[dict]): Raw ZTF messages. Each message typically contains:
-                - objectId: ZTF object identifier (equivalent to LSST's "oid")
-                - candid: Candidate ID (equivalent to LSST's "measurement_id")
+                - oid: ZTF object identifier 
+                - measurement_id: ZTF measurement identifier
                 - detections: List of all detections for this object
                 - forced_photometries: List of forced photometry measurements  
-                - non_detections: List of upper limit measurements
+                - non_detections: List of non-detections
                 
         Returns:
             Dict[str, any]: Parsed data in standardized format. Note that:
                 - All ZTF detections go into 'sources' (no previous_sources separation)
-                - 'previous_sources' will be empty list for ZTF
-                - 'additional_objects' will be empty dict (ZTF has no special objects)
+                - 'additional_objects' will be empty dict (ZTF has no special objects like LSST dia object or dia object)
         
-        TODO: 
-            This is a placeholder implementation. The actual ZTF message structure
-
         """
         # Initialize collectors - simpler structure than LSST
-        all_detections = []        # All ZTF detections (current + historical)
-        all_non_detections = []    # Upper limits when objects weren't detected
-        all_forced_photometries = [] # Forced photometry at known positions
-        msg_data = []              # Basic message metadata
+        logger = logging.getLogger(f"alerce.{self.__class__.__name__}")
+
+        # Get raw parsed data first
+        raw_data = self._parse_raw_messages(messages)
         
-        for msg in messages:
+        # Get schemas
+        schemas = self.get_input_schema_config()
         
-            pass
+        # Apply schemas to create proper DataFrames
+        msg_df = pd.DataFrame(raw_data['msg_data'])
         
+        # Apply schemas to each data type, handling empty cases
+        sources_df = self._apply_schema_or_empty(
+            raw_data['detections'], 
+            schemas['detections_schema']
+        )
+        
+        previous_detections_df = self._apply_schema_or_empty(
+            raw_data['previous_detections'], 
+            schemas['previous_detections_schema']
+        )
+        
+        forced_photometries_df = self._apply_schema_or_empty(
+            raw_data['forced_photometries'], 
+            schemas['forced_photometries_schema']
+        )
+        
+        non_detections_df = self._apply_schema_or_empty(
+            raw_data['non_detections'], 
+            schemas['non_detections_schema']
+        )
+        
+        # Get unique OIDs and measurement IDs for database queries
+        oids = set(msg_df["oid"].unique())
+        measurement_ids = (msg_df.groupby("oid")["measurement_id"]
+                          .apply(lambda x: [str(id) for id in x]).to_dict())
+        
+        log_output = {
+                'counts': {
+                    'Current detections': len(sources_df),
+                    'Previous detections': len(previous_detections_df),
+                    'Forced photometries': len(forced_photometries_df),
+                    'Non-Detections': len(non_detections_df)}
+                }
+
+        for data_type, count in log_output['counts'].items():
+            logger.info(f"Received {count} {data_type}")
+
+        parsed_input = {
+            'data': {
+                'msg_data': msg_df,
+                'detections_df': sources_df,
+                'previous_detections_df': previous_detections_df,
+                'forced_photometries_df': forced_photometries_df,
+                'non_detections_df': non_detections_df
+            },
+            'oids': list(oids),
+            'measurement_ids': measurement_ids
+            }
+
+        return parsed_input
+    def _parse_raw_messages(self, messages: List[dict]) -> Dict[str, any]:
+        """Extract raw data from messages without schema application."""
+        # Initialize collectors for different data types
+        all_detections = []           
+        all_previous_detections = []  
+        all_forced_photometries = []    
+        all_non_detections = []        
+        msg_data = []              
+        for msg in messages:    
+            # Extract basic message identifiers
+            oid = msg["oid"]                    
+            measurement_id = msg["measurement_id"] 
+            msg_data.append({"oid": oid, "measurement_id": measurement_id})
+            
+            # Parse previous sources
+            for prev_det in msg["prv_detections"]:
+                parsed_prv_source = {"new": True, **prev_det}
+                all_previous_detections.append(parsed_prv_source)
+
+            # Parse forced sources
+            for fphot in msg["forced_photometries"]:
+                parsed_forced_photometry = {"new": True, **fphot}
+                all_forced_photometries.append(parsed_forced_photometry)
+
+            # Parse non-detections
+            for non_detection in msg["non_detections"]:
+                parsed_non_detection = {**non_detection}
+                all_non_detections.append(parsed_non_detection)
+
+            # Parse main source
+            for detection in msg["detections"]:
+                parsed_detection = {"new": True, **detection}
+                all_detections.append(parsed_detection)
+
         return {
-        'data': {
-            'detections_df': detections_df,
-            'non_detections_df': non_detections_df,
-            'forced_photometry_df': forced_photometry_df,
-        },
-        'counts': {
-            'Detections': len(detections_df),
-            'Non-Detections': len(non_detections_df),
-            'Forced Photometry': len(forced_photometry_df)
-        },
-        'oids': list(oids),
-        'measurement_ids': measurement_ids
-    }
+            'msg_data': msg_data,
+            'detections': all_detections,
+            'previous_detections': all_previous_detections,
+            'forced_photometries': all_forced_photometries,
+            'non_detections': all_non_detections
+        }
     
     def get_input_schema_config(self) -> Dict[str, any]:
-        """
-        Return ZTF-specific pandas schema configuration for precise data handling.
-                
-        Returns:
-            Dict[str, any]: ZTF schemas
+        """Return ZTF-specific pandas schema configuration for precise data handling."""
+        from core.schemas.ZTF.ZTF_schemas import (
+            non_detection_schema,   
+            candidate_schema,         
+            prv_candidate_schema,                
+            forced_photometry_schema         
+        )
         
-        TODO:
-            This is a placeholder. The actual implementation needs:
-
-        """
-        # TODO: Import ZTF schemas when they are created
-
         return {
-            # ZTF detections schema - all detections use same structure
-            'sources_schema': {},  # TODO: Replace with ztf_detection_schema
-            
-            # ZTF doesn't separate previous sources, so this is unused
-            'previous_sources_schema': {},  
-            
-            # ZTF forced photometry schema
-            'forced_sources_schema': {},  # TODO: Replace with ztf_forced_photometry_schema
-            
-            # ZTF non-detection/upper limit schema
-            'non_detections_schema': {},  # TODO: Replace with ztf_non_detection_schema
-            
-            # ZTF has no additional survey-specific objects
+            'detections_schema': candidate_schema,
+            'previous_detections_schema': prv_candidate_schema,
+            'forced_photometries_schema': forced_photometry_schema,
+            'non_detections_schema': non_detection_schema        
         }
     
 
-#! TODO DO THE SCHEMAS FOR ZTF CORRECTLY AND IMPORT THEM 
-def _apply_schema_or_empty(self, data: List[dict], schema: Dict) -> pd.DataFrame:
+    def _apply_schema_or_empty(self, data: List[dict], schema: Dict) -> pd.DataFrame:
         """Apply schema to data or return empty DataFrame with correct columns."""
         if data:
             return schema_applier.apply_schema(data, schema)
         else:
             return pd.DataFrame(columns=list(schema.keys()))
+        

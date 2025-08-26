@@ -1,6 +1,6 @@
 {
   "type": "record",
-  "name": "magstats_ms_ztf",
+  "name": "correction_ms_ztf",
   "fields": [
     {
       "name": "oid",
@@ -12,13 +12,6 @@
         "type": "array", 
         "items": "long"
         }
-    },
-    { 
-      "name": "meanra", 
-      "type":  ["null", "float"]
-    },
-    { "name": "meandec", 
-    "type": ["null", "float"]
     },
     {
       "name": "detections",

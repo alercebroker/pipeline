@@ -2,13 +2,15 @@ import pandas as pd
 from typing import Dict, Any
 from .surveyDataJoiner import SurveyDataJoiner 
 from .lsstDataJoiner import LSSTDataJoiner
+from .ztfDataJoiner import ZTFDataJoiner
 
 class SurveyDataProcessor:
     """Main processor that handles different survey data joining strategies"""
     
     def __init__(self, logger=None):
         self.joiners = {
-            'lsst': LSSTDataJoiner()
+            'lsst': LSSTDataJoiner(),
+            'ztf': ZTFDataJoiner(),
             }
     
     def register_joiner(self, survey_name: str, joiner: SurveyDataJoiner):

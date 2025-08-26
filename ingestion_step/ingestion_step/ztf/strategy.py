@@ -13,6 +13,8 @@ from ingestion_step.ztf.database import (
 )
 from ingestion_step.ztf.serializer import (
     serialize_detections,
+    serialize_prv_candidates,
+    serialize_forced_photometries,
     serialize_non_detections,
 )
 from ingestion_step.ztf.transforms import (
@@ -36,7 +38,6 @@ class ZtfStrategy(StrategyInterface[ZtfData]):
         candidates = extractor.ZtfCandidatesExtractor.extract(messages)
         prv_candidates = extractor.ZtfPrvCandidatesExtractor.extract(messages)
         fp_hists = extractor.ZtfFpHistsExtractor.extract(messages)
-
         apply_transforms(candidates, CANDIDATES_TRANSFORMS)
         apply_transforms(prv_candidates, PRV_CANDIDATES_TRANSFORMS)
         apply_transforms(fp_hists, FP_TRANSFORMS)
@@ -46,6 +47,8 @@ class ZtfStrategy(StrategyInterface[ZtfData]):
         prv_detections = prv_candidates[prv_candidates["candid"].notnull()]
         non_detections = prv_candidates[prv_candidates["candid"].isnull()]
         forced_photometries = fp_hists
+
+
 
         return ZtfData(
             objects=objects,
@@ -67,8 +70,8 @@ class ZtfStrategy(StrategyInterface[ZtfData]):
     def serialize(cls, parsed_data: ZtfData) -> list[Message]:
         objects = parsed_data["objects"]
         detections = serialize_detections(parsed_data["detections"])
-        prv_detections = serialize_detections(parsed_data["prv_detections"])
-        forced = serialize_detections(parsed_data["forced_photometries"])
+        prv_detections = serialize_prv_candidates(parsed_data["prv_detections"])
+        forced = serialize_forced_photometries(parsed_data["forced_photometries"])
         non_detections = serialize_non_detections(
             parsed_data["non_detections"]
         )
