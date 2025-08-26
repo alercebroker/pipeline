@@ -732,11 +732,11 @@ class Taxonomy(Base):
 
 class Probability(Base):
     __tablename__ = "probability"
-    oid = Column(Integer, primary_key=True)
+    oid = Column(Integer)
     sid = Column(SmallInteger, nullable=False)  # int2,
-    classifier_id = Column(SmallInteger, primary_key=True)
+    classifier_id = Column(SmallInteger)
     classifier_version = Column(SmallInteger)
-    class_id = Column(SmallInteger, primary_key=True)
+    class_id = Column(SmallInteger)
     probability = Column(REAL, nullable=False)
     ranking = Column(SmallInteger, nullable=False)
 
