@@ -40,6 +40,7 @@ COPY --from=builder /app /app
 COPY --from=builder /libs /libs
 COPY --from=builder /schemas /schemas
 
+COPY ingestion_step/generator /app/generator
 COPY ingestion_step/ingestion_step /app/ingestion_step
 COPY ingestion_step/scripts /app/scripts
 COPY ingestion_step/README.md /app/

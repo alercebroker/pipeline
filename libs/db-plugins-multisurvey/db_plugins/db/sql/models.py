@@ -260,7 +260,6 @@ class LsstDetection(Base):
     parentDiaSourceId = Column(BigInteger)
 
     diaSourceId = Column(BigInteger, nullable=True)
-    ssSourceId = Column(BigInteger, nullable=True)
     visit = Column(BigInteger, nullable=False)
     detector = Column(Integer, nullable=False)
     diaObjectId = Column(BigInteger)  # From these two we select measurement_id

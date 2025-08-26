@@ -70,7 +70,6 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
                 LsstDetection.diaObjectId,
                 LsstDetection.ssObjectId,
                 LsstDetection.diaSourceId,
-                LsstDetection.ssSourceId,
                 LsstDetection.parentDiaSourceId,
                 cast(LsstDetection.raErr, DOUBLE_PRECISION).label("raErr"),
                 cast(LsstDetection.decErr, DOUBLE_PRECISION).label("decErr"),

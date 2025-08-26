@@ -63,15 +63,6 @@
         "long"
       ]
     },
-       {
-      "default": null,
-      "doc": "Id of the diaObject this source was associated with, if any. If not, it is set to NULL (each diaSource will be associated with either a diaObject or ssObject).",
-      "name": "ssSourceId",
-      "type": [
-        "null",
-        "long"
-      ]
-    },
     {
       "default": null,
       "doc": "Id of the parent diaSource this diaSource has been deblended from, if any.",

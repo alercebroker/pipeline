@@ -269,7 +269,6 @@ dia_source_lsst_db: dict[str, DType] = {
     "mjd": pd.Float64Dtype(),
     "diaSourceId": pd.Int64Dtype(),
     "ssObjectId": pd.Int64Dtype(),
-    "ssSourceId": pd.Int64Dtype(),
     "diaObjectId": pd.Int64Dtype(),
 }
 
