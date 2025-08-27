@@ -1,4 +1,5 @@
 import pandas as pd
+from db_plugins.db.sql._connection import AsyncPsqlDatabase
 from db_plugins.db.sql.models import (
     Detection,
     ForcedPhotometry,
@@ -8,7 +9,6 @@ from db_plugins.db.sql.models import (
     ZtfNonDetection,
     ZtfObject,
 )
-from sqlalchemy.orm import Session
 
 from ingestion_step.core.database import (
     DETECTION_COLUMNS,
@@ -18,7 +18,7 @@ from ingestion_step.core.database import (
 )
 
 
-def insert_objects(session: Session, objects_df: pd.DataFrame):  # noqa: F821
+async def insert_objects(driver: AsyncPsqlDatabase, objects_df: pd.DataFrame):
     if len(objects_df) == 0:
         return
     # editing the df
@@ -49,11 +49,13 @@ def insert_objects(session: Session, objects_df: pd.DataFrame):  # noqa: F821
     object_sql_stmt = db_statement_builder(Object, objects_dict)
     object_ztf_sql_stmt = db_statement_builder(ZtfObject, objects_ztf_dict)
 
-    session.execute(object_sql_stmt)
-    session.execute(object_ztf_sql_stmt)
+    async with driver.session() as session:
+        await session.execute(object_sql_stmt)
+        await session.execute(object_ztf_sql_stmt)
+        await session.commit()
 
 
-def insert_detections(session: Session, detections_df: pd.DataFrame):
+async def insert_detections(driver: AsyncPsqlDatabase, detections_df: pd.DataFrame):
     if len(detections_df) == 0:
         return
     # editing the df
@@ -103,11 +105,15 @@ def insert_detections(session: Session, detections_df: pd.DataFrame):
     detection_sql_stmt = db_statement_builder(Detection, detections_dict)
     detection_ztf_sql_stmt = db_statement_builder(ZtfDetection, detections_ztf_dict)
 
-    session.execute(detection_sql_stmt)
-    session.execute(detection_ztf_sql_stmt)
+    async with driver.session() as session:
+        await session.execute(detection_sql_stmt)
+        await session.execute(detection_ztf_sql_stmt)
+        await session.commit()
 
 
-def insert_forced_photometry(session: Session, forced_photometry_df: pd.DataFrame):
+async def insert_forced_photometry(
+    driver: AsyncPsqlDatabase, forced_photometry_df: pd.DataFrame
+):
     if len(forced_photometry_df) == 0:
         return
     # editing the df
@@ -172,11 +178,15 @@ def insert_forced_photometry(session: Session, forced_photometry_df: pd.DataFram
         ZtfForcedPhotometry, forced_photometry_ztf_dict
     )
 
-    session.execute(forced_photometry_sql_stmt)
-    session.execute(forced_photometry_ztf_sql_stmt)
+    async with driver.session() as session:
+        await session.execute(forced_photometry_sql_stmt)
+        await session.execute(forced_photometry_ztf_sql_stmt)
+        await session.commit()
 
 
-def insert_non_detections(session: Session, non_detections_df: pd.DataFrame):
+async def insert_non_detections(
+    driver: AsyncPsqlDatabase, non_detections_df: pd.DataFrame
+):
     if len(non_detections_df) == 0:
         return
     non_detections_df = non_detections_df.reset_index()
@@ -192,4 +202,6 @@ def insert_non_detections(session: Session, non_detections_df: pd.DataFrame):
 
     non_detection_sql_stmt = db_statement_builder(ZtfNonDetection, non_detections_dict)
 
-    session.execute(non_detection_sql_stmt)
+    async with driver.session() as session:
+        await session.execute(non_detection_sql_stmt)
+        await session.commit()

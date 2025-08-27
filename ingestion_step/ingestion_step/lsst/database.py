@@ -1,4 +1,5 @@
 import pandas as pd
+from db_plugins.db.sql._connection import AsyncPsqlDatabase
 from db_plugins.db.sql.models import (
     Detection,
     ForcedPhotometry,
@@ -11,7 +12,6 @@ from db_plugins.db.sql.models import (
     # LsstSsObject,
     Object,
 )
-from sqlalchemy.orm import Session
 
 from ingestion_step.core.database import (
     DETECTION_COLUMNS,
@@ -21,7 +21,7 @@ from ingestion_step.core.database import (
 )
 
 
-def insert_dia_objects(session: Session, dia_objects: pd.DataFrame):
+async def insert_dia_objects(driver: AsyncPsqlDatabase, dia_objects: pd.DataFrame):
     if len(dia_objects) == 0:
         return
 
@@ -45,11 +45,13 @@ def insert_dia_objects(session: Session, dia_objects: pd.DataFrame):
         LsstDiaObject, objects_dia_lsst_dict
     )
 
-    session.execute(objects_sql_stmt)
-    session.execute(objects_dia_lsst_sql_stmt)
+    async with driver.session() as session:
+        await session.execute(objects_sql_stmt)
+        await session.execute(objects_dia_lsst_sql_stmt)
+        await session.commit()
 
 
-def insert_mpcorb(session: Session, mpcorbs: pd.DataFrame):
+async def insert_mpcorb(driver: AsyncPsqlDatabase, mpcorbs: pd.DataFrame):
     if len(mpcorbs) == 0:
         return
 
@@ -61,7 +63,9 @@ def insert_mpcorb(session: Session, mpcorbs: pd.DataFrame):
 
     mpcorbs_sql_stmt = db_statement_builder(LsstMpcorb, mpcorbs_dict)
 
-    session.execute(mpcorbs_sql_stmt)
+    async with driver.session() as session:
+        await session.execute(mpcorbs_sql_stmt)
+        await session.commit()
 
 
 # def insert_ss_objects(session: Session, ss_objects: pd.DataFrame):
@@ -79,7 +83,7 @@ def insert_mpcorb(session: Session, mpcorbs: pd.DataFrame):
 #         session.commit()
 
 
-def insert_sources(session: Session, sources: pd.DataFrame):
+async def insert_sources(driver: AsyncPsqlDatabase, sources: pd.DataFrame):
     if len(sources) == 0:
         return
     detections_dict = sources[DETECTION_COLUMNS].to_dict("records")
@@ -94,11 +98,13 @@ def insert_sources(session: Session, sources: pd.DataFrame):
     detections_sql_stmt = db_statement_builder(Detection, detections_dict)
     detections_lsst_sql_stmt = db_statement_builder(LsstDetection, detections_lsst_dict)
 
-    session.execute(detections_sql_stmt)
-    session.execute(detections_lsst_sql_stmt)
+    async with driver.session() as session:
+        await session.execute(detections_sql_stmt)
+        await session.execute(detections_lsst_sql_stmt)
+        await session.commit()
 
 
-def insert_ss_sources(session: Session, sources: pd.DataFrame):
+async def insert_ss_sources(driver: AsyncPsqlDatabase, sources: pd.DataFrame):
     if len(sources) == 0:
         return
 
@@ -110,10 +116,13 @@ def insert_ss_sources(session: Session, sources: pd.DataFrame):
 
     ss_source_sql_stmt = db_statement_builder(LsstSsDetection, ss_sources_dict)
 
-    session.execute(ss_source_sql_stmt)
+    async with driver.session() as session:
+        await session.execute(ss_source_sql_stmt)
 
 
-def insert_forced_sources(session: Session, forced_sources: pd.DataFrame):
+async def insert_forced_sources(
+    driver: AsyncPsqlDatabase, forced_sources: pd.DataFrame
+):
     if len(forced_sources) == 0:
         return
     forced_detections_dict = forced_sources[FORCED_DETECTION_COLUMNS].to_dict("records")
@@ -134,8 +143,10 @@ def insert_forced_sources(session: Session, forced_sources: pd.DataFrame):
         LsstForcedPhotometry, forced_detections_lsst_dict
     )
 
-    session.execute(forced_detections_sql_stmt)
-    session.execute(forced_detections_lsst_sql_stmt)
+    async with driver.session() as session:
+        await session.execute(forced_detections_sql_stmt)
+        await session.execute(forced_detections_lsst_sql_stmt)
+        await session.commit()
 
 
 # def insert_non_detections(session: Session, non_detections: pd.DataFrame):

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Generic, TypedDict, TypeVar
 
-from db_plugins.db.sql._connection import PsqlDatabase
+from db_plugins.db.sql._connection import AsyncPsqlDatabase
 
 from ingestion_step.core.types import Message
 
@@ -36,7 +36,7 @@ class StrategyInterface(ABC, Generic[T]):
 
     @classmethod
     @abstractmethod
-    def insert_into_db(cls, driver: PsqlDatabase, parsed_data: T):
+    async def insert_into_db(cls, driver: AsyncPsqlDatabase, parsed_data: T):
         """
         Insert data obtained from parse method into the given db.
         """

@@ -1,5 +1,7 @@
+import asyncio
+
 import pandas as pd
-from db_plugins.db.sql._connection import PsqlDatabase
+from db_plugins.db.sql._connection import AsyncPsqlDatabase
 
 from ingestion_step.core.strategy import ParsedData, StrategyInterface
 from ingestion_step.core.types import Message
@@ -86,22 +88,23 @@ class LsstStrategy(StrategyInterface[LsstData]):
         )
 
     @classmethod
-    def insert_into_db(cls, driver: PsqlDatabase, parsed_data: LsstData):
-        with driver.session() as session:
-            insert_dia_objects(session, parsed_data["dia_object"])
-            insert_mpcorb(session, parsed_data["mpcorbs"])
-            insert_sources(session, parsed_data["dia_sources"])
-            insert_sources(session, parsed_data["previous_sources"])
-            insert_ss_sources(session, parsed_data["ss_sources"])
-            insert_forced_sources(session, parsed_data["forced_sources"])
-            session.commit()
-        # insert_dia_objects(driver, parsed_data["dia_object"])
-        # # insert_ss_objects(driver, parsed_data["ss_object"])
-        #
-        # insert_sources(driver, parsed_data["dia_sources"])
-        # insert_sources(driver, parsed_data["previous_sources"])
-        # insert_forced_sources(driver, parsed_data["forced_sources"])
-        # # insert_non_detections(driver, parsed_data["non_detections"])
+    async def insert_into_db(cls, driver: AsyncPsqlDatabase, parsed_data: LsstData):
+        await asyncio.gather(
+            insert_dia_objects(driver, parsed_data["dia_object"]),
+            insert_mpcorb(driver, parsed_data["mpcorbs"]),
+            insert_sources(driver, parsed_data["dia_sources"]),
+            insert_sources(driver, parsed_data["previous_sources"]),
+            insert_ss_sources(driver, parsed_data["ss_sources"]),
+            insert_forced_sources(driver, parsed_data["forced_sources"]),
+        )
+
+    # insert_dia_objects(driver, parsed_data["dia_object"])
+    # # insert_ss_objects(driver, parsed_data["ss_object"])
+    #
+    # insert_sources(driver, parsed_data["dia_sources"])
+    # insert_sources(driver, parsed_data["previous_sources"])
+    # insert_forced_sources(driver, parsed_data["forced_sources"])
+    # # insert_non_detections(driver, parsed_data["non_detections"])
 
     @classmethod
     def serialize(cls, parsed_data: LsstData) -> list[Message]:

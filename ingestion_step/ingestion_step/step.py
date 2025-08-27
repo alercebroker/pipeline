@@ -1,10 +1,9 @@
-import time
-from datetime import datetime
+import asyncio
 from typing import Any
 
 import pandas as pd
 from apf.core.step import GenericStep
-from db_plugins.db.sql._connection import PsqlDatabase
+from db_plugins.db.sql._connection import AsyncPsqlDatabase
 
 from ingestion_step.core.select_parser import select_parser
 from ingestion_step.core.strategy import ParsedData
@@ -21,7 +20,7 @@ class IngestionStep(GenericStep):
     ):
         super().__init__(config=config, **kwargs)
         self.Strategy = select_parser(config["SURVEY_STRATEGY"])
-        self.psql_driver = PsqlDatabase(config["PSQL_CONFIG"])
+        self.psql_driver = AsyncPsqlDatabase(config["PSQL_CONFIG"])
 
     def _add_metrics(self, alerts: pd.DataFrame):
         self.metrics: dict[str, Any] = {}
@@ -37,11 +36,9 @@ class IngestionStep(GenericStep):
         parsed_data = self.Strategy.parse(messages)
 
         for key in parsed_data:
-            self.logger.info(
-                f"Parsed {len(parsed_data[key])} objects form {key}"
-            )
+            self.logger.info(f"Parsed {len(parsed_data[key])} objects form {key}")
 
-        self.Strategy.insert_into_db(self.psql_driver, parsed_data)
+        asyncio.run(self.Strategy.insert_into_db(self.psql_driver, parsed_data))
 
         return parsed_data
 

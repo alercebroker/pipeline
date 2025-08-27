@@ -1,5 +1,7 @@
+import asyncio
+
 import pandas as pd
-from db_plugins.db.sql._connection import PsqlDatabase
+from db_plugins.db.sql._connection import AsyncPsqlDatabase
 
 from ingestion_step.core.strategy import ParsedData, StrategyInterface
 from ingestion_step.core.types import Message
@@ -56,14 +58,14 @@ class ZtfStrategy(StrategyInterface[ZtfData]):
         )
 
     @classmethod
-    def insert_into_db(cls, driver: PsqlDatabase, parsed_data: ZtfData):
-        with driver.session() as session:
-            insert_objects(session, parsed_data["objects"])
-            insert_detections(session, parsed_data["detections"])
-            insert_detections(session, parsed_data["prv_detections"])
-            insert_non_detections(session, parsed_data["non_detections"])
-            insert_forced_photometry(session, parsed_data["forced_photometries"])
-            session.commit()
+    async def insert_into_db(cls, driver: AsyncPsqlDatabase, parsed_data: ZtfData):
+        await asyncio.gather(
+            insert_objects(driver, parsed_data["objects"]),
+            insert_detections(driver, parsed_data["detections"]),
+            insert_detections(driver, parsed_data["prv_detections"]),
+            insert_non_detections(driver, parsed_data["non_detections"]),
+            insert_forced_photometry(driver, parsed_data["forced_photometries"]),
+        )
 
     @classmethod
     def serialize(cls, parsed_data: ZtfData) -> list[Message]:

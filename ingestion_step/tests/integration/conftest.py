@@ -2,7 +2,7 @@ import os
 
 import psycopg2
 import pytest
-from db_plugins.db.sql._connection import PsqlDatabase
+from db_plugins.db.sql._connection import AsyncPsqlDatabase, PsqlDatabase
 
 psql_config = {
     "ENGINE": "postgresql",
@@ -59,10 +59,28 @@ def psql_db(docker_ip, docker_services):
         pause=0.1,
         check=lambda: is_responsive_psql(docker_ip, port),
     )
-
     psql_db = PsqlDatabase(psql_config)
+
     psql_db.create_db()
 
     yield psql_db
 
     psql_db.drop_db()
+
+
+@pytest.fixture(scope="session")
+def async_psql_db(docker_ip, docker_services):
+    port = docker_services.port_for("postgres", 5432)
+    docker_services.wait_until_responsive(
+        timeout=30.0,
+        pause=0.1,
+        check=lambda: is_responsive_psql(docker_ip, port),
+    )
+    sync_psql_db = PsqlDatabase(psql_config)
+
+    async_psql_db = AsyncPsqlDatabase(psql_config)
+    sync_psql_db.create_db()
+
+    yield async_psql_db
+
+    sync_psql_db.drop_db()

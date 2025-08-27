@@ -1,20 +1,15 @@
+import asyncio
+
 import pytest
-from db_plugins.db.sql._connection import PsqlDatabase
+from db_plugins.db.sql._connection import AsyncPsqlDatabase
 
 from ingestion_step.core.types import Message
 from ingestion_step.lsst.strategy import LsstStrategy
 
-psql_config = {
-    "ENGINE": "postgresql",
-    "HOST": "localhost",
-    "USER": "postgres",
-    "PASSWORD": "postgres",
-    "PORT": 5432,
-    "DB_NAME": "postgres",
-}
 
-
-@pytest.mark.usefixtures("psql_db")
-def test_process_alerts_lsst(lsst_alerts: list[Message], psql_db: PsqlDatabase):
+@pytest.mark.usefixtures("async_psql_db")
+def test_process_alerts_lsst(
+    lsst_alerts: list[Message], async_psql_db: AsyncPsqlDatabase
+):
     parsed_data = LsstStrategy.parse(lsst_alerts)
-    LsstStrategy.insert_into_db(psql_db, parsed_data)
+    asyncio.run(LsstStrategy.insert_into_db(async_psql_db, parsed_data))
