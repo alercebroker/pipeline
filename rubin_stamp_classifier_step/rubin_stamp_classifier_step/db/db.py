@@ -98,7 +98,7 @@ def classifier_version_str_to_small_integer(version: str) -> int:
 
 
 # TODO: The following function is a placeholder and should be replaced with the actual implementation
-CLASS_LIST = ["AGN", "VS", "asteroid", "bogus", "satellite"]
+CLASS_LIST = ["AGN", "SN","VS", "asteroid", "bogus", "satellite"]
 
 
 def class_name_to_id(class_name: str) -> int:
