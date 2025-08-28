@@ -1,14 +1,14 @@
 version: '3'
 services:
   zookeeper:
-    image: 'bitnami/zookeeper:latest'
+    image: 'bitnamilegacy/zookeeper:latest'
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
       - APPLICATION_SECRET="random-secret"
   kafka:
     ports:
       - "9092:9092"
-    image: 'bitnami/kafka:latest'
+    image: 'bitnamilegacy/kafka:latest'
     environment:
       - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
       - ALLOW_PLAINTEXT_LISTENER=yes
