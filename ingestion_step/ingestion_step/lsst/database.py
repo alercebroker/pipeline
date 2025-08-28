@@ -20,6 +20,8 @@ from ingestion_step.core.database import (
     db_statement_builder,
 )
 
+CHUNK_SIZE = 1000
+
 
 async def insert_dia_objects(driver: AsyncPsqlDatabase, dia_objects: pd.DataFrame):
     if len(dia_objects) == 0:
@@ -40,14 +42,16 @@ async def insert_dia_objects(driver: AsyncPsqlDatabase, dia_objects: pd.DataFram
 
     objects_dia_lsst_dict = dia_objects[list(lsst_columns)].to_dict("records")
 
-    objects_sql_stmt = db_statement_builder(Object, objects_dict)
-    objects_dia_lsst_sql_stmt = db_statement_builder(
-        LsstDiaObject, objects_dia_lsst_dict
-    )
-
     async with driver.session() as session:
-        await session.execute(objects_sql_stmt)
-        await session.execute(objects_dia_lsst_sql_stmt)
+        for i in range(0, len(objects_dict), CHUNK_SIZE):
+            objects_sql_stmt = db_statement_builder(
+                Object, objects_dict[i : i + CHUNK_SIZE]
+            )
+            objects_dia_lsst_sql_stmt = db_statement_builder(
+                LsstDiaObject, objects_dia_lsst_dict[i : i + CHUNK_SIZE]
+            )
+            await session.execute(objects_sql_stmt)
+            await session.execute(objects_dia_lsst_sql_stmt)
         await session.commit()
 
 
@@ -61,10 +65,12 @@ async def insert_mpcorb(driver: AsyncPsqlDatabase, mpcorbs: pd.DataFrame):
 
     mpcorbs_dict = mpcorbs[list(lsst_columns)].to_dict("records")
 
-    mpcorbs_sql_stmt = db_statement_builder(LsstMpcorb, mpcorbs_dict)
-
     async with driver.session() as session:
-        await session.execute(mpcorbs_sql_stmt)
+        for i in range(0, len(mpcorbs_dict), CHUNK_SIZE):
+            mpcorbs_sql_stmt = db_statement_builder(
+                LsstMpcorb, mpcorbs_dict[i : i + CHUNK_SIZE]
+            )
+            await session.execute(mpcorbs_sql_stmt)
         await session.commit()
 
 
@@ -95,12 +101,16 @@ async def insert_sources(driver: AsyncPsqlDatabase, sources: pd.DataFrame):
 
     detections_lsst_dict = sources[list(lsst_columns)].to_dict("records")
 
-    detections_sql_stmt = db_statement_builder(Detection, detections_dict)
-    detections_lsst_sql_stmt = db_statement_builder(LsstDetection, detections_lsst_dict)
-
     async with driver.session() as session:
-        await session.execute(detections_sql_stmt)
-        await session.execute(detections_lsst_sql_stmt)
+        for i in range(0, len(detections_dict), CHUNK_SIZE):
+            detections_sql_stmt = db_statement_builder(
+                Detection, detections_dict[i : i + CHUNK_SIZE]
+            )
+            detections_lsst_sql_stmt = db_statement_builder(
+                LsstDetection, detections_lsst_dict[i : i + CHUNK_SIZE]
+            )
+            await session.execute(detections_sql_stmt)
+            await session.execute(detections_lsst_sql_stmt)
         await session.commit()
 
 
@@ -114,10 +124,13 @@ async def insert_ss_sources(driver: AsyncPsqlDatabase, sources: pd.DataFrame):
 
     ss_sources_dict = sources[list(lsst_columns)].to_dict("records")
 
-    ss_source_sql_stmt = db_statement_builder(LsstSsDetection, ss_sources_dict)
-
     async with driver.session() as session:
-        await session.execute(ss_source_sql_stmt)
+        for i in range(0, len(ss_sources_dict), CHUNK_SIZE):
+            ss_source_sql_stmt = db_statement_builder(
+                LsstSsDetection, ss_sources_dict[i : i + CHUNK_SIZE]
+            )
+            await session.execute(ss_source_sql_stmt)
+        await session.commit()
 
 
 async def insert_forced_sources(
@@ -136,16 +149,16 @@ async def insert_forced_sources(
 
     forced_detections_lsst_dict = forced_sources[list(lsst_columns)].to_dict("records")
 
-    forced_detections_sql_stmt = db_statement_builder(
-        ForcedPhotometry, forced_detections_dict
-    )
-    forced_detections_lsst_sql_stmt = db_statement_builder(
-        LsstForcedPhotometry, forced_detections_lsst_dict
-    )
-
     async with driver.session() as session:
-        await session.execute(forced_detections_sql_stmt)
-        await session.execute(forced_detections_lsst_sql_stmt)
+        for i in range(0, len(forced_detections_dict), CHUNK_SIZE):
+            forced_detections_sql_stmt = db_statement_builder(
+                ForcedPhotometry, forced_detections_dict[i : i + CHUNK_SIZE]
+            )
+            forced_detections_lsst_sql_stmt = db_statement_builder(
+                LsstForcedPhotometry, forced_detections_lsst_dict[i : i + CHUNK_SIZE]
+            )
+            await session.execute(forced_detections_sql_stmt)
+            await session.execute(forced_detections_lsst_sql_stmt)
         await session.commit()
 
 

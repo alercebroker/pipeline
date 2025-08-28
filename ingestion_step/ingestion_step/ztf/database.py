@@ -17,6 +17,8 @@ from ingestion_step.core.database import (
     db_statement_builder,
 )
 
+CHUNK_SIZE = 1000
+
 
 async def insert_objects(driver: AsyncPsqlDatabase, objects_df: pd.DataFrame):
     if len(objects_df) == 0:
@@ -46,12 +48,16 @@ async def insert_objects(driver: AsyncPsqlDatabase, objects_df: pd.DataFrame):
     ]
     objects_ztf_dict = objects_ztf_df_parsed.to_dict("records")
 
-    object_sql_stmt = db_statement_builder(Object, objects_dict)
-    object_ztf_sql_stmt = db_statement_builder(ZtfObject, objects_ztf_dict)
-
     async with driver.session() as session:
-        await session.execute(object_sql_stmt)
-        await session.execute(object_ztf_sql_stmt)
+        for i in range(0, len(objects_dict), CHUNK_SIZE):
+            object_sql_stmt = db_statement_builder(
+                Object, objects_dict[i : i + CHUNK_SIZE]
+            )
+            object_ztf_sql_stmt = db_statement_builder(
+                ZtfObject, objects_ztf_dict[i : i + CHUNK_SIZE]
+            )
+            await session.execute(object_sql_stmt)
+            await session.execute(object_ztf_sql_stmt)
         await session.commit()
 
 
@@ -102,12 +108,16 @@ async def insert_detections(driver: AsyncPsqlDatabase, detections_df: pd.DataFra
 
     detections_ztf_dict = detections_ztf_df_parsed.to_dict("records")
 
-    detection_sql_stmt = db_statement_builder(Detection, detections_dict)
-    detection_ztf_sql_stmt = db_statement_builder(ZtfDetection, detections_ztf_dict)
-
     async with driver.session() as session:
-        await session.execute(detection_sql_stmt)
-        await session.execute(detection_ztf_sql_stmt)
+        for i in range(0, len(detections_dict), CHUNK_SIZE):
+            detection_sql_stmt = db_statement_builder(
+                Detection, detections_dict[i : i + CHUNK_SIZE]
+            )
+            detection_ztf_sql_stmt = db_statement_builder(
+                ZtfDetection, detections_ztf_dict[i : i + CHUNK_SIZE]
+            )
+            await session.execute(detection_sql_stmt)
+            await session.execute(detection_ztf_sql_stmt)
         await session.commit()
 
 
@@ -171,16 +181,16 @@ async def insert_forced_photometry(
     ]
     forced_photometry_ztf_dict = forced_photometry_ztf_df_parsed.to_dict("records")
 
-    forced_photometry_sql_stmt = db_statement_builder(
-        ForcedPhotometry, forced_photometry_dict
-    )
-    forced_photometry_ztf_sql_stmt = db_statement_builder(
-        ZtfForcedPhotometry, forced_photometry_ztf_dict
-    )
-
     async with driver.session() as session:
-        await session.execute(forced_photometry_sql_stmt)
-        await session.execute(forced_photometry_ztf_sql_stmt)
+        for i in range(0, len(forced_photometry_dict), CHUNK_SIZE):
+            forced_photometry_sql_stmt = db_statement_builder(
+                ForcedPhotometry, forced_photometry_dict[i : i + CHUNK_SIZE]
+            )
+            forced_photometry_ztf_sql_stmt = db_statement_builder(
+                ZtfForcedPhotometry, forced_photometry_ztf_dict[i : i + CHUNK_SIZE]
+            )
+            await session.execute(forced_photometry_sql_stmt)
+            await session.execute(forced_photometry_ztf_sql_stmt)
         await session.commit()
 
 
@@ -200,8 +210,10 @@ async def insert_non_detections(
         ]
     ].to_dict("records")
 
-    non_detection_sql_stmt = db_statement_builder(ZtfNonDetection, non_detections_dict)
-
     async with driver.session() as session:
-        await session.execute(non_detection_sql_stmt)
+        for i in range(0, len(non_detections_dict), CHUNK_SIZE):
+            non_detection_sql_stmt = db_statement_builder(
+                ZtfNonDetection, non_detections_dict[i : i + CHUNK_SIZE]
+            )
+            await session.execute(non_detection_sql_stmt)
         await session.commit()
