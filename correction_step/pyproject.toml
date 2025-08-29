@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "correction"
-version = "27.5.7a27"
+version = "27.5.7a28"
 description = "Correction library for ALeRCE pipeline."
 authors = ["ALeRCE Broker <alercebroker@gmail.com>"]
 readme = "README.md"
