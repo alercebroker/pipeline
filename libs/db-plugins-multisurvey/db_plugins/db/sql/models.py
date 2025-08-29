@@ -758,3 +758,27 @@ class Probability(Base):
             postgresql_using="btree",
         ),
     )
+
+
+class Probability(Base):
+    __tablename__ = "probability"
+
+    oid = Column(BigInteger)
+    sid = Column(SmallInteger, nullable=False)
+    classifier_id = Column(SmallInteger)
+    classifier_version = Column(SmallInteger)
+    class_id = Column(SmallInteger, nullable=False)
+    probability = Column(REAL, nullable=False)
+    ranking = Column(SmallInteger)
+    lastmjd = Column(DOUBLE_PRECISION, nullable=False)
+
+    __table_args__ = (
+        PrimaryKeyConstraint(
+            "oid",
+            "classifier_id",
+            "classifier_version",
+            "class_id",
+            name="pk_probability_oid_classifierid_classid",
+        ),
+        Index("ix_probability_oid", "oid", postgresql_using="hash"),
+    )

@@ -235,7 +235,6 @@ class KafkaConsumer(GenericConsumer):
         """
         num_messages, timeout = self.set_basic_config(num_messages, timeout)
 
-        messages = []
         while True:
             if self.dynamic_topic:
                 if self._check_topics():
@@ -272,7 +271,6 @@ class KafkaConsumer(GenericConsumer):
                     deserialized.append(ds_message)
 
             self.messages = messages
-            messages = []
             if len(deserialized) > 0:
                 if num_messages == 1:
                     yield deserialized[0]
