@@ -23,7 +23,7 @@ COPY libs/apf /libs/apf
 COPY libs/db-plugins-multisurvey /libs/db-plugins-multisurvey
 COPY alerce_classifiers /alerce_classifiers
 COPY schemas/rubin_stamp_classifier_step /schemas/rubin_stamp_classifier_step
-COPY schemas/surveys/lsst /schemas/surveys/lsst
+COPY schemas/surveys/lsst_v9.0 /schemas/surveys/lsst_v9.0
 WORKDIR /app
 RUN poetry install --no-root --without=dev --with=rubin
 
