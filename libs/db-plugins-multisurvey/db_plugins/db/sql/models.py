@@ -731,37 +731,6 @@ class Taxonomy(Base):
 
 class Probability(Base):
     __tablename__ = "probability"
-    oid = Column(Integer)
-    sid = Column(SmallInteger, nullable=False)  # int2,
-    classifier_id = Column(SmallInteger)
-    classifier_version = Column(SmallInteger)
-    class_id = Column(SmallInteger)
-    probability = Column(REAL, nullable=False)
-    ranking = Column(SmallInteger, nullable=False)
-
-    updated_date = Column(DateTime, onupdate=func.now())
-
-    __table_args__ = (
-        PrimaryKeyConstraint(
-            "oid",
-            "sid",
-            "classifier_id",
-            "class_id",
-            name="pk_probability_oid_sid_classifier_class",
-        ),
-        Index("ix_probability_probability", "probability", postgresql_using="btree"),
-        Index("ix_probability_ranking", "ranking", postgresql_using="btree"),
-        Index(
-            "ix_classification_rank1",
-            "ranking",
-            postgresql_where=ranking == 1,
-            postgresql_using="btree",
-        ),
-    )
-
-
-class Probability(Base):
-    __tablename__ = "probability"
 
     oid = Column(BigInteger)
     sid = Column(SmallInteger, nullable=False)
@@ -775,10 +744,19 @@ class Probability(Base):
     __table_args__ = (
         PrimaryKeyConstraint(
             "oid",
+            "sid",
             "classifier_id",
             "classifier_version",
             "class_id",
             name="pk_probability_oid_classifierid_classid",
         ),
         Index("ix_probability_oid", "oid", postgresql_using="hash"),
+        Index("ix_probability_probability", "probability", postgresql_using="btree"),
+        Index("ix_probability_ranking", "ranking", postgresql_using="btree"),
+        Index(
+            "ix_classification_rank1",
+            "ranking",
+            postgresql_where=ranking == 1,
+            postgresql_using="btree",
+        ),
     )
