@@ -130,3 +130,6 @@ dmypy.json
 
 .idea
 __SUCCESS__
+
+config.yaml
+config.yml

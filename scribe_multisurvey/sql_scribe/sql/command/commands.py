@@ -155,7 +155,7 @@ class ZTFCorrectionCommand(Command):
             detections_stmt = insert(Detection)
             detections_result = session.connection().execute(
                 detections_stmt.on_conflict_do_update(
-                    constraint="pk_detection_oid_measurementid",
+                    constraint="pk_detection_oid_measurementid_sid",
                     set_=detections_stmt.excluded
                 ),
                 detections
@@ -176,7 +176,7 @@ class ZTFCorrectionCommand(Command):
             fp_stmt = insert(ForcedPhotometry)
             fp_result = session.connection().execute(
                 fp_stmt.on_conflict_do_update(
-                    constraint="pk_forcedphotometry_oid_measurementid",
+                    constraint="pk_forcedphotometry_oid_measurementid_sid",
                     set_=fp_stmt.excluded
                 ),
                 forced_photometries
@@ -275,9 +275,6 @@ class ZTFMagstatCommand(Command):
             objectstat_list.append(single_data["object_stats"])
             magstat_list.extend(single_data["magstats"])      
         
-
-        print(len(magstat_list))
-        print(magstat_list)
         
         # update object
         if len(objectstat_list) > 0:
@@ -307,7 +304,7 @@ class ZTFMagstatCommand(Command):
             magstats_stmt = insert(MagStat)
             magstats_result = session.connection().execute(
                 magstats_stmt.on_conflict_do_update(
-                    constraint="pk_magstat_oid_band",
+                    constraint="pk_magstat_oid_sid_band",
                     set_=magstats_stmt.excluded
                 ),
                 magstat_list

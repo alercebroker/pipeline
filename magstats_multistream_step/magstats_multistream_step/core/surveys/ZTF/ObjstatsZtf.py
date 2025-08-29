@@ -12,16 +12,12 @@ class ZTFObjectStatistics(BaseObjectStatistics):
     
     def calculate_corrected(self) -> pd.DataFrame:
         return pd.DataFrame({
-            "corrected": self._grouped_value(
-                "corrected", which="first", surveys=self._CORRECTED
-            )
-        })
-    
+            "corrected": self._grouped_detections(surveys=self._CORRECTED)["corrected"].any()
+    })
+
     def calculate_stellar(self) -> pd.DataFrame:
         return pd.DataFrame({
-            "stellar": self._grouped_value(
-                "stellar", which="first", surveys=self._STELLAR
-            )
+            "stellar": self._grouped_detections(surveys=self._STELLAR)["stellar"].any()
         })
     
     def calculate_reference_change(self) -> pd.DataFrame:

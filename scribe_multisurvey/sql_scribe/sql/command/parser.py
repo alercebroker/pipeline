@@ -302,6 +302,8 @@ def parse_obj_stats(raw_magstats, oid: str) -> dict:
         "n_non_det": raw_magstats["n_ndet"] if raw_magstats["n_ndet"] else 0,
         "corrected": raw_magstats["corrected"],
         "stellar": raw_magstats["stellar"],
+        "diffpos": raw_magstats.get("diffpos", None),
+        "reference_change": raw_magstats.get("reference_change", None),
     }
     return obj
 

@@ -106,46 +106,82 @@ def is_stellar(detections: pd.DataFrame) -> pd.Series:
 
 def correct(detections: pd.DataFrame) -> pd.DataFrame:
     """Apply magnitude correction and compute its associated errors. See `README` for details"""
+
     need_correction_mask = detections["new"].astype(bool)
     detections_that_need_corr = detections[need_correction_mask]
     detections_that_dont_need_corr = detections[~need_correction_mask]
+    
     corr_mag_column_names = ["magpsf_corr", "sigmapsf_corr", "sigmapsf_corr_ext"]
     if len(detections_that_dont_need_corr) == 0:
         for col in corr_mag_column_names:
             detections_that_dont_need_corr[col] = []
 
     corrected_mags_db_observations = detections_that_dont_need_corr[corr_mag_column_names]
-    aux1 = 10 ** (-0.4 * detections_that_need_corr["magnr"])
-    aux2 = 10 ** (-0.4 * detections_that_need_corr["mag"])
-    aux3 = np.maximum(aux1 + detections_that_need_corr["isdiffpos"] * aux2, 0.0)
-    with warnings.catch_warnings():
-        # possible log10 of 0; this is expected and returned inf is correct value
-        warnings.filterwarnings("ignore", category=RuntimeWarning)
-        mag_corr = -2.5 * np.log10(aux3)
-    aux4 = (aux2 * detections_that_need_corr["e_mag"]) ** 2 - (
-        aux1 * detections_that_need_corr["sigmagnr"]
-    ) ** 2
     
-    with warnings.catch_warnings():
-        # possible sqrt of negative and division by 0; this is expected and returned inf is correct value
-        warnings.filterwarnings("ignore", category=RuntimeWarning)
-        e_mag_corr = pd.Series(np.sqrt(aux4) / aux3).where(aux4 >= 0, np.inf) # Handle NA condition 
-        e_mag_corr_ext = aux2 * detections_that_need_corr["e_mag"] / aux3
+    # Only proceed with correction calculations if there are detections that need correction
+    if len(detections_that_need_corr) > 0:
+        # Use element-wise (scalar) calculations to match manual precision
+        mag_corr_list = []
+        e_mag_corr_list = []
+        e_mag_corr_ext_list = []
+        
+        for idx in detections_that_need_corr.index:
+            row = detections_that_need_corr.loc[idx]
+            
+            # Calculate each value individually using scalar operations
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=RuntimeWarning)
+                aux1_scalar = 10 ** (-0.4 * row["magnr"])
+                aux2_scalar = 10 ** (-0.4 * row["mag"])
+            aux3_scalar = max(aux1_scalar + row["isdiffpos"] * aux2_scalar, 0.0)
+            
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=RuntimeWarning)
+                mag_corr_scalar = -2.5 * np.log10(aux3_scalar)
+            
 
-    mask = (detections_that_need_corr["mag"].notna() & 
-        np.isclose(detections_that_need_corr["mag"].astype(float), _ZERO_MAG)).to_numpy()
-    mag_corr[mask] = np.inf
-    e_mag_corr[mask] = np.inf
-    e_mag_corr_ext[mask] = np.inf
+            aux4_scalar = (aux2_scalar * row["e_mag"]) ** 2 - (aux1_scalar * row["sigmagnr"]) ** 2
+            
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=RuntimeWarning)
+                if aux4_scalar >= 0:
+                    e_mag_corr_scalar = np.sqrt(aux4_scalar) / aux3_scalar
+                else:
+                    e_mag_corr_scalar = np.inf
+                e_mag_corr_ext_scalar = aux2_scalar * row["e_mag"] / aux3_scalar
+            
+            mag_corr_list.append(mag_corr_scalar)
+            e_mag_corr_list.append(e_mag_corr_scalar)
+            e_mag_corr_ext_list.append(e_mag_corr_ext_scalar)
+        
+        # Convert to Series with original index
+        mag_corr = pd.Series(mag_corr_list, index=detections_that_need_corr.index)
+        e_mag_corr = pd.Series(e_mag_corr_list, index=detections_that_need_corr.index)
+        e_mag_corr_ext = pd.Series(e_mag_corr_ext_list, index=detections_that_need_corr.index)
+
+        # Debug: Check if target is affected by first mask (mag ~= _ZERO_MAG)
+        mask1 = (detections_that_need_corr["mag"].notna() & 
+            np.isclose(detections_that_need_corr["mag"].astype(float), _ZERO_MAG)).to_numpy()
+        
+        
+        mag_corr[mask1] = np.inf
+        e_mag_corr[mask1] = np.inf
+        e_mag_corr_ext[mask1] = np.inf
+        
+        # Debug: Check if target is affected by second mask (e_mag ~= _ZERO_MAG)  
+        mask2 = (detections_that_need_corr["e_mag"].notna() &     
+            np.isclose(detections_that_need_corr["e_mag"].astype(float), _ZERO_MAG)).to_numpy()
+        
+        e_mag_corr[mask2] = np.inf
+        e_mag_corr_ext[mask2] = np.inf
+
+        corrected_mags_new_observations = pd.DataFrame(
+            {"magpsf_corr": mag_corr, "sigmapsf_corr": e_mag_corr, "sigmapsf_corr_ext": e_mag_corr_ext}
+        )
     
-    mask = (detections_that_need_corr["e_mag"].notna() &     
-        np.isclose(detections_that_need_corr["e_mag"].astype(float), _ZERO_MAG)).to_numpy()
-    e_mag_corr[mask] = np.inf
-    e_mag_corr_ext[mask] = np.inf
-
-    corrected_mags_new_observations = pd.DataFrame(
-        {"magpsf_corr": mag_corr, "sigmapsf_corr": e_mag_corr, "sigmapsf_corr_ext": e_mag_corr_ext}
-    )
+    else:
+        # If no detections need correction, create empty DataFrame with correct structure
+        corrected_mags_new_observations = pd.DataFrame(columns=corr_mag_column_names)
 
     corrected_mags = pd.concat(
         [corrected_mags_new_observations, corrected_mags_db_observations], axis=0

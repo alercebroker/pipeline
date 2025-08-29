@@ -50,12 +50,12 @@ class ZTFMagnitudeStatistics(BaseMagnitudeStatistics):
     # ZTF-specific statistics corresponding to ztf_MagStats table
     def calculate_corrected(self) -> pd.DataFrame:
         return pd.DataFrame({
-            "corrected": self._grouped_value("corrected", which="first")
+            "corrected": self._grouped_detections()["corrected"].any()
         })
-    
+
     def calculate_stellar(self) -> pd.DataFrame:
         return pd.DataFrame({
-            "stellar": self._grouped_value("stellar", which="first")
+            "stellar": self._grouped_detections()["stellar"].any()
         })
     
     def calculate_ndubious(self) -> pd.DataFrame:

@@ -1,18 +1,17 @@
 from sqlalchemy import (
-    TIMESTAMP,
     VARCHAR,
     BigInteger,
     Boolean,
     Column,
-    ForeignKeyConstraint,
     Index,
     Integer,
     PrimaryKeyConstraint,
     SmallInteger,
+    DateTime,
+    func,
 )
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, REAL
 from sqlalchemy.orm import DeclarativeBase
-
 
 class Base(DeclarativeBase):
     pass
@@ -41,6 +40,11 @@ class Object(Base):
     n_non_det = Column(Integer, nullable=False, default=1)
     corrected = Column(Boolean, nullable=False, default=False)
     stellar = Column(Boolean, nullable=True, default=None)
+    diffpos = Column(Boolean, nullable=True, default=None)
+    reference_change = Column(Boolean, nullable=True, default=None)
+
+    created_date = Column(DateTime, server_default=func.now())
+    updated_date = Column(DateTime, onupdate=func.now())
 
     __table_args__ = (
         PrimaryKeyConstraint("oid", "sid", name="pk_object_oid_sid"),
@@ -61,23 +65,125 @@ class ZtfObject(Base):
     g_r_mean = Column(REAL)
     g_r_mean_corr = Column(REAL)
 
+    created_date = Column(DateTime, server_default=func.now())
+
     __table_args__ = (PrimaryKeyConstraint("oid", name="pk_ztfobject_oid"),)
 
+
+# Ommiting lsst ss object for now
 
 class LsstDiaObject(Base):
     __tablename__ = "lsst_dia_object"
 
     oid = Column(BigInteger, nullable=False)
 
+    # all fields 8.0 draft
+    # diaObjectId = Column(BigInteger, nullable=False) => This is oid
+    validityStartMjdTai = Column(DOUBLE_PRECISION, nullable=False)  # v9 field
+    ra = Column(DOUBLE_PRECISION, nullable=False)
+    raErr = Column(REAL, nullable=True)
+    dec = Column(DOUBLE_PRECISION, nullable=False)
+    decErr = Column(REAL, nullable=True)
+    ra_dec_Cov = Column(REAL, nullable=True)
+    u_psfFluxMean = Column(REAL, nullable=True)
+    u_psfFluxMeanErr = Column(REAL, nullable=True)
+    u_psfFluxSigma = Column(REAL, nullable=True)
+    u_psfFluxNdata = Column(Integer, nullable=True)
+    u_fpFluxMean = Column(REAL, nullable=True)
+    u_fpFluxMeanErr = Column(REAL, nullable=True)
+    g_psfFluxMean = Column(REAL, nullable=True)
+    g_psfFluxMeanErr = Column(REAL, nullable=True)
+    g_psfFluxSigma = Column(REAL, nullable=True)
+    g_psfFluxNdata = Column(Integer, nullable=True)
+    g_fpFluxMean = Column(REAL, nullable=True)
+    g_fpFluxMeanErr = Column(REAL, nullable=True)
+    r_psfFluxMean = Column(REAL, nullable=True)
+    r_psfFluxMeanErr = Column(REAL, nullable=True)
+    r_psfFluxSigma = Column(REAL, nullable=True)
+    r_psfFluxNdata = Column(Integer, nullable=True)
+    r_fpFluxMean = Column(REAL, nullable=True)
+    r_fpFluxMeanErr = Column(REAL, nullable=True)
+    i_psfFluxMean = Column(REAL, nullable=True)
+    i_psfFluxMeanErr = Column(REAL, nullable=True)
+    i_psfFluxSigma = Column(REAL, nullable=True)
+    i_psfFluxNdata = Column(Integer, nullable=True)
+    i_fpFluxMean = Column(REAL, nullable=True)
+    i_fpFluxMeanErr = Column(REAL, nullable=True)
+    z_psfFluxMean = Column(REAL, nullable=True)
+    z_psfFluxMeanErr = Column(REAL, nullable=True)
+    z_psfFluxSigma = Column(REAL, nullable=True)
+    z_psfFluxNdata = Column(Integer, nullable=True)
+    z_fpFluxMean = Column(REAL, nullable=True)
+    z_fpFluxMeanErr = Column(REAL, nullable=True)
+    y_psfFluxMean = Column(REAL, nullable=True)
+    y_psfFluxMeanErr = Column(REAL, nullable=True)
+    y_psfFluxSigma = Column(REAL, nullable=True)
+    y_psfFluxNdata = Column(Integer, nullable=True)
+    y_fpFluxMean = Column(REAL, nullable=True)
+    y_fpFluxMeanErr = Column(REAL, nullable=True)
+    u_scienceFluxMean = Column(REAL, nullable=True)
+    u_scienceFluxMeanErr = Column(REAL, nullable=True)
+    g_scienceFluxMean = Column(REAL, nullable=True)
+    g_scienceFluxMeanErr = Column(REAL, nullable=True)
+    r_scienceFluxMean = Column(REAL, nullable=True)
+    r_scienceFluxMeanErr = Column(REAL, nullable=True)
+    i_scienceFluxMean = Column(REAL, nullable=True)
+    i_scienceFluxMeanErr = Column(REAL, nullable=True)
+    z_scienceFluxMean = Column(REAL, nullable=True)
+    z_scienceFluxMeanErr = Column(REAL, nullable=True)
+    y_scienceFluxMean = Column(REAL, nullable=True)
+    y_scienceFluxMeanErr = Column(REAL, nullable=True)
+    u_psfFluxMin = Column(REAL, nullable=True)
+    u_psfFluxMax = Column(REAL, nullable=True)
+    u_psfFluxMaxSlope = Column(REAL, nullable=True)
+    u_psfFluxErrMean = Column(REAL, nullable=True)
+    g_psfFluxMin = Column(REAL, nullable=True)
+    g_psfFluxMax = Column(REAL, nullable=True)
+    g_psfFluxMaxSlope = Column(REAL, nullable=True)
+    g_psfFluxErrMean = Column(REAL, nullable=True)
+    r_psfFluxMin = Column(REAL, nullable=True)
+    r_psfFluxMax = Column(REAL, nullable=True)
+    r_psfFluxMaxSlope = Column(REAL, nullable=True)
+    r_psfFluxErrMean = Column(REAL, nullable=True)
+    i_psfFluxMin = Column(REAL, nullable=True)
+    i_psfFluxMax = Column(REAL, nullable=True)
+    i_psfFluxMaxSlope = Column(REAL, nullable=True)
+    i_psfFluxErrMean = Column(REAL, nullable=True)
+    z_psfFluxMin = Column(REAL, nullable=True)
+    z_psfFluxMax = Column(REAL, nullable=True)
+    z_psfFluxMaxSlope = Column(REAL, nullable=True)
+    z_psfFluxErrMean = Column(REAL, nullable=True)
+    y_psfFluxMin = Column(REAL, nullable=True)
+    y_psfFluxMax = Column(REAL, nullable=True)
+    y_psfFluxMaxSlope = Column(REAL, nullable=True)
+    y_psfFluxErrMean = Column(REAL, nullable=True)
+    firstDiaSourceMjdTai = Column(DOUBLE_PRECISION, nullable=True)
+    lastDiaSourceMjdTai = Column(DOUBLE_PRECISION, nullable=True)
+    nDiaSources = Column(Integer, nullable=False)
+    created_date = Column(DateTime, server_default=func.now())
+
     __table_args__ = (PrimaryKeyConstraint("oid", name="pk_lsstdiaobject_oid"),)
 
+class LsstMpcorb(Base):
+    __tablename__ = "lsst_mpcorb"
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
 
-class LsstSsObject(Base):
-    __tablename__ = "lsst_ss_object"
+    mpcDesignation = Column(VARCHAR, nullable=True)
+    ssObjectId = Column(BigInteger, nullable=True)
+    mpcH = Column(REAL, nullable=True)
+    epoch = Column(DOUBLE_PRECISION, nullable=True)
+    M = Column(DOUBLE_PRECISION, nullable=True)
+    peri = Column(DOUBLE_PRECISION, nullable=True)
+    node = Column(DOUBLE_PRECISION, nullable=True)
+    incl = Column(DOUBLE_PRECISION, nullable=True)
+    e = Column(DOUBLE_PRECISION, nullable=True)
+    a = Column(DOUBLE_PRECISION, nullable=True)
+    q = Column(DOUBLE_PRECISION, nullable=True)
+    t_p = Column(DOUBLE_PRECISION, nullable=True)
 
-    oid = Column(BigInteger, nullable=False)
+    created_date = Column(DateTime, server_default=func.now())
 
-    __table_args__ = (PrimaryKeyConstraint("oid", name="pk_lsstssobject_oid"),)
+    __table_args__ = (PrimaryKeyConstraint("id", name="pk_lsstmpcorb_id"),)
 
 
 class Detection(Base):
@@ -89,13 +195,14 @@ class Detection(Base):
     mjd = Column(DOUBLE_PRECISION, nullable=False)  # float8,
     ra = Column(DOUBLE_PRECISION, nullable=False)  # float8,
     dec = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    band = Column(SmallInteger, nullable=False)  # int2,
+    band = Column(SmallInteger)  # int2, nulleable because  original schema
+
+    created_date = Column(DateTime, server_default=func.now())
 
     __table_args__ = (
         PrimaryKeyConstraint(
-            "oid", "measurement_id", name="pk_detection_oid_measurementid"
+            "oid", "measurement_id", "sid", name="pk_detection_oid_measurementid_sid"
         ),
-        ForeignKeyConstraint([oid, sid], [Object.oid, Object.sid]),
         Index("ix_detection_oid", "oid", postgresql_using="hash"),
     )
 
@@ -122,22 +229,25 @@ class ZtfDetection(Base):
     magapbig = Column(REAL)  # float4,
     sigmagapbig = Column(REAL)  # float4,
     rfid = Column(BigInteger)  # int8,
-    magpsf_corr = Column(REAL)  # float4,
-    sigmapsf_corr = Column(REAL)  # float4,
-    sigmapsf_corr_ext = Column(REAL)  # float4,
+    magpsf_corr = Column(DOUBLE_PRECISION)  # float4,
+    sigmapsf_corr = Column(DOUBLE_PRECISION)  # float4,
+    sigmapsf_corr_ext = Column(DOUBLE_PRECISION)  # float4,
     corrected = Column(Boolean)  # bool,
     dubious = Column(Boolean)  # bool,
     parent_candid = Column(BigInteger)  # int8,
     has_stamp = Column(Boolean)  # bool,
 
+    created_date = Column(DateTime, server_default=func.now())
+
+
     __table_args__ = (
         PrimaryKeyConstraint(
             "oid", "measurement_id", name="pk_ztfdetection_oid_measurementid"
         ),
-        ForeignKeyConstraint([oid, sid], [Object.oid, Object.sid]),
         Index("ix_ztfdetection_oid", "oid", postgresql_using="hash"),
     )
 
+# Ommiting lsst ss source for now, this is just dia Source
 
 class LsstDetection(Base):
     __tablename__ = "lsst_detection"
@@ -147,24 +257,147 @@ class LsstDetection(Base):
     measurement_id = Column(BigInteger, nullable=False)  # int8,
     parentDiaSourceId = Column(BigInteger)
 
+    diaSourceId = Column(BigInteger, nullable=True)
+    visit = Column(BigInteger, nullable=False)
+    detector = Column(Integer, nullable=False)
+    diaObjectId = Column(BigInteger)  # From these two we select measurement_id
+    ssObjectId = Column(BigInteger)
+    # ra = Column(DOUBLE_PRECISION, nullable=False) goes into detection
+    raErr = Column(REAL)
+    # dec = Column(DOUBLE_PRECISION, nullable=False) goes into detection
+    decErr = Column(REAL)
+    ra_dec_Cov = Column(REAL)
+    x = Column(REAL, nullable=False)
+    xErr = Column(REAL)
+    y = Column(REAL, nullable=False)
+    yErr = Column(REAL)
+    centroid_flag = Column(Boolean)
+    apFlux = Column(REAL)
+    apFluxErr = Column(REAL)
+    apFlux_flag = Column(Boolean)
+    apFlux_flag_apertureTruncated = Column(Boolean)
+    isNegative = Column(Boolean)
+    snr = Column(REAL)
     psfFlux = Column(REAL)
     psfFluxErr = Column(REAL)
-
+    psfLnL = Column(REAL)
+    psfChi2 = Column(REAL)
+    psfNdata = Column(Integer)
     psfFlux_flag = Column(Boolean)
     psfFlux_flag_edge = Column(Boolean)
     psfFlux_flag_noGoodPixels = Column(Boolean)
+    trailFlux = Column(REAL)
+    trailFluxErr = Column(REAL)
+    trailRa = Column(DOUBLE_PRECISION)
+    trailRaErr = Column(REAL)
+    trailDec = Column(DOUBLE_PRECISION)
+    trailDecErr = Column(REAL)
+    trailLength = Column(REAL)
+    trailLengthErr = Column(REAL)
+    trailAngle = Column(REAL)
+    trailAngleErr = Column(REAL)
+    trailChi2 = Column(REAL)
+    trailNdata = Column(Integer)
+    trail_flag_edge = Column(Boolean)
+    dipoleMeanFlux = Column(REAL)
+    dipoleMeanFluxErr = Column(REAL)
+    dipoleFluxDiff = Column(REAL)
+    dipoleFluxDiffErr = Column(REAL)
+    dipoleLength = Column(REAL)
+    dipoleAngle = Column(REAL)
+    dipoleChi2 = Column(REAL)
+    dipoleNdata = Column(Integer)
+    scienceFlux = Column(REAL)
+    scienceFluxErr = Column(REAL)
+    forced_PsfFlux_flag = Column(Boolean)
+    forced_PsfFlux_flag_edge = Column(Boolean)
+    forced_PsfFlux_flag_noGoodPixels = Column(Boolean)
+    templateFlux = Column(REAL)
+    templateFluxErr = Column(REAL)
+    ixx = Column(REAL)
+    iyy = Column(REAL)
+    ixy = Column(REAL)
+    ixxPSF = Column(REAL)
+    iyyPSF = Column(REAL)
+    ixyPSF = Column(REAL)
+    shape_flag = Column(Boolean)
+    shape_flag_no_pixels = Column(Boolean)
+    shape_flag_not_contained = Column(Boolean)
+    shape_flag_parent_source = Column(Boolean)
+    extendedness = Column(REAL)
+    reliability = Column(REAL)
+    # band = Column(SmallInteger) Goes into detection
+    isDipole = Column(Boolean)
+    dipoleFitAttempted = Column(Boolean)
+    timeProcessedMjdTai = Column(DOUBLE_PRECISION, nullable=False)
+    timeWithdrawnMjdTai = Column(DOUBLE_PRECISION, nullable=True)
+    bboxSize = Column(BigInteger)
+    pixelFlags = Column(Boolean)
+    pixelFlags_bad = Column(Boolean)
+    pixelFlags_cr = Column(Boolean)
+    pixelFlags_crCenter = Column(Boolean)
+    pixelFlags_edge = Column(Boolean)
+    pixelFlags_nodata = Column(Boolean)
+    pixelFlags_nodataCenter = Column(Boolean)
+    pixelFlags_interpolated = Column(Boolean)
+    pixelFlags_interpolatedCenter = Column(Boolean)
+    pixelFlags_offimage = Column(Boolean)
+    pixelFlags_saturated = Column(Boolean)
+    pixelFlags_saturatedCenter = Column(Boolean)
+    pixelFlags_suspect = Column(Boolean)
+    pixelFlags_suspectCenter = Column(Boolean)
+    pixelFlags_streak = Column(Boolean)
+    pixelFlags_streakCenter = Column(Boolean)
+    pixelFlags_injected = Column(Boolean)
+    pixelFlags_injectedCenter = Column(Boolean)
+    pixelFlags_injected_template = Column(Boolean)
+    pixelFlags_injected_templateCenter = Column(Boolean)
+    glint_trail = Column(Boolean)
+    has_stamp = Column(Boolean)  # bool,
 
-    raErr = Column(REAL)
-    decErr = Column(REAL)
+    created_date = Column(DateTime, server_default=func.now())
 
     __table_args__ = (
         PrimaryKeyConstraint(
             "oid", "measurement_id", name="pk_lsstdetection_oid_measurementid"
         ),
-        ForeignKeyConstraint([oid, sid], [Object.oid, Object.sid]),
         Index("ix_lsstdetection_oid", "oid", postgresql_using="hash"),
     )
 
+class LsstSsDetection(Base):
+    __tablename__ = "lsst_ss_detection"
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+
+    ssObjectId = Column(BigInteger, nullable=True)
+    diaSourceId = Column(BigInteger, nullable=True)
+    eclipticLambda = Column(DOUBLE_PRECISION, nullable=True)
+    eclipticBeta = Column(DOUBLE_PRECISION, nullable=True)
+    galacticL = Column(DOUBLE_PRECISION, nullable=True)
+    galacticB = Column(DOUBLE_PRECISION, nullable=True)
+    phaseAngle = Column(REAL, nullable=True)
+    heliocentricDist = Column(REAL, nullable=True)
+    topocentricDist = Column(REAL, nullable=True)
+    predictedVMagnitude = Column(REAL, nullable=True)
+    residualRa = Column(DOUBLE_PRECISION, nullable=True)
+    residualDec = Column(DOUBLE_PRECISION, nullable=True)
+    heliocentricX = Column(REAL, nullable=True)
+    heliocentricY = Column(REAL, nullable=True)
+    heliocentricZ = Column(REAL, nullable=True)
+    heliocentricVX = Column(REAL, nullable=True)
+    heliocentricVY = Column(REAL, nullable=True)
+    heliocentricVZ = Column(REAL, nullable=True)
+    topocentricX = Column(REAL, nullable=True)
+    topocentricY = Column(REAL, nullable=True)
+    topocentricZ = Column(REAL, nullable=True)
+    topocentricVX = Column(REAL, nullable=True)
+    topocentricVY = Column(REAL, nullable=True)
+    topocentricVZ = Column(REAL, nullable=True)
+
+    created_date = Column(DateTime, server_default=func.now())
+
+    __table_args__ = (PrimaryKeyConstraint("id", name="pk_lsstssdetection_id"),)
+    
 
 class ForcedPhotometry(Base):
     __tablename__ = "forced_photometry"
@@ -175,13 +408,17 @@ class ForcedPhotometry(Base):
     mjd = Column(DOUBLE_PRECISION, nullable=False)  # float8,
     ra = Column(DOUBLE_PRECISION, nullable=False)  # float8,
     dec = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    band = Column(SmallInteger, nullable=False)  # int2,
+    band = Column(SmallInteger)  # int2, nulleable original schema
+
+    created_date = Column(DateTime, server_default=func.now())
 
     __table_args__ = (
         PrimaryKeyConstraint(
-            "oid", "measurement_id", name="pk_forcedphotometry_oid_measurementid"
+            "oid",
+            "measurement_id",
+            "sid",
+            name="pk_forcedphotometry_oid_measurementid_sid",
         ),
-        ForeignKeyConstraint([oid, sid], [Object.oid, Object.sid]),
         Index("ix_forced_photometry_oid", "oid", postgresql_using="hash"),
     )
 
@@ -228,11 +465,13 @@ class ZtfForcedPhotometry(Base):
     chinr = Column(REAL, nullable=False)  # float8,
     sharpnr = Column(REAL, nullable=False)  # float8
 
+    created_date = Column(DateTime, server_default=func.now())
+
+
     __table_args__ = (
         PrimaryKeyConstraint(
             "oid", "measurement_id", name="pk_ztfforcedphotometry_oid_measurementid"
         ),
-        ForeignKeyConstraint([oid, sid], [Object.oid, Object.sid]),
         Index("ix_ztf_forced_photometry_oid", "oid", postgresql_using="hash"),
     )
 
@@ -246,34 +485,39 @@ class LsstForcedPhotometry(Base):
 
     visit = Column(BigInteger, nullable=False)
     detector = Column(Integer, nullable=False)
+    psfFlux = Column(REAL)
+    psfFluxErr = Column(REAL)
+    scienceFlux = Column(REAL)
+    scienceFluxErr = Column(REAL)
+    timeProcessedMjdTai = Column(DOUBLE_PRECISION, nullable=False)
+    timeWithdrawnMjdTai = Column(DOUBLE_PRECISION, nullable=True)
 
-    psfFlux = Column(REAL, nullable=False)
-    psfFluxErr = Column(REAL, nullable=False)
+    created_date = Column(DateTime, server_default=func.now())
 
     __table_args__ = (
         PrimaryKeyConstraint(
             "oid", "measurement_id", name="pk_lsstforcedphotometry_oid_measurementid"
         ),
-        ForeignKeyConstraint([oid, sid], [Object.oid, Object.sid]),
         Index("ix_lsst_forced_photometry_oid", "oid", postgresql_using="hash"),
     )
 
 
-class NonDetection(Base):
-    __tablename__ = "non_detection"
+
+class ZtfNonDetection(Base):
+    __tablename__ = "ztf_non_detection"
 
     oid = Column(BigInteger, nullable=False)  # int8,
-    sid = Column(SmallInteger, nullable=False)  # int2,
+    sid = Column(SmallInteger, nullable=False)
     band = Column(SmallInteger, nullable=False)  # int2,
     mjd = Column(DOUBLE_PRECISION, nullable=False)  # float8,
     diffmaglim = Column(REAL, nullable=False)  # float4,
 
+    created_date = Column(DateTime, server_default=func.now())
+
     __table_args__ = (
         PrimaryKeyConstraint("oid", "mjd", name="pk_oid_mjd"),
-        ForeignKeyConstraint([oid, sid], [Object.oid, Object.sid]),
         Index("ix_non_detection_oid", "oid", postgresql_using="hash"),
     )
-
 
 class LsstNonDetection(Base):
     __tablename__ = "lsst_non_detection"
@@ -287,9 +531,9 @@ class LsstNonDetection(Base):
 
     __table_args__ = (
         PrimaryKeyConstraint("oid", "mjd", name="pk_lsstnondetection_oid_mjd"),
-        ForeignKeyConstraint([oid, sid], [Object.oid, Object.sid]),
         Index("ix_lsst_non_detection_oid", "oid", postgresql_using="hash"),
     )
+
 
 
 class ZtfSS(Base):
@@ -301,13 +545,14 @@ class ZtfSS(Base):
     ssmagnr = Column(REAL)
     ssnamenr = Column(VARCHAR)
 
+    created_date = Column(DateTime, server_default=func.now())
+
     __table_args__ = (
         PrimaryKeyConstraint(
             "oid", "measurement_id", name="pk_ztfss_oid_measurement_id"
         ),
         Index("ix_zrt_ss_oid", "oid", postgresql_using="btree"),
     )
-
 
 class ZtfPS1(Base):
     __tablename__ = "ztf_ps1"
@@ -337,6 +582,9 @@ class ZtfPS1(Base):
     distpsnr3 = Column(REAL)
     nmtchps = Column(SmallInteger)
 
+    created_date = Column(DateTime, server_default=func.now())
+
+
     __table_args__ = (
         PrimaryKeyConstraint(
             "oid", "measurement_id", name="pk_ztfps1_oid_measurement_id"
@@ -354,6 +602,9 @@ class ZtfGaia(Base):
     neargaiabright = Column(REAL)
     maggaia = Column(REAL)
     maggaiabright = Column(REAL)
+
+    created_date = Column(DateTime, server_default=func.now())
+
 
     __table_args__ = (PrimaryKeyConstraint("oid", name="pk_ztfgaia_oid"),)
 
@@ -393,6 +644,9 @@ class ZtfDataquality(Base):
     clrrms = Column(REAL)
     exptime = Column(REAL)
 
+    created_date = Column(DateTime, server_default=func.now())
+
+
     __table_args__ = (
         PrimaryKeyConstraint(
             "oid", "measurement_id", name="pk_ztfdataquality_oid_measurement_id"
@@ -424,6 +678,9 @@ class ZtfReference(Base):
     mjdstartref = Column(DOUBLE_PRECISION)
     mjdendref = Column(DOUBLE_PRECISION)
     nframesref = Column(Integer)
+
+    created_date = Column(DateTime, server_default=func.now())
+
 
     __table_args__ = (
         PrimaryKeyConstraint("oid", "rfid", name="pk_ztfreference_oid_rfid"),
@@ -460,20 +717,121 @@ class MagStat(Base):
     magfirst_corr = Column(DOUBLE_PRECISION)  # float8
     step_id_corr = Column(VARCHAR)  # varchar
     saturation_rate = Column(DOUBLE_PRECISION)  # float8
-    last_update = Column(TIMESTAMP)  # timestamp
+
+    updated_date = Column(DateTime, onupdate=func.now())
 
     __table_args__ = (
-        PrimaryKeyConstraint("oid", "band", name="pk_magstat_oid_band"),
-        ForeignKeyConstraint([oid, sid], [Object.oid, Object.sid]),
+        PrimaryKeyConstraint("oid", "sid", "band", name="pk_magstat_oid_sid_band"),
     )
 
 
-class LsstIdMapper(Base):
-    __tablename__ = "lsst_idmapper"
+class classifier(Base):
+    __tablename__ = "classifier"
+    classifier_id = Column(Integer, primary_key=True)
+    classifier_name = Column(VARCHAR)
+    classifier_version = Column(SmallInteger)
 
-    lsst_id_serial = Column(BigInteger, autoincrement=True)
-    lsst_diaObjectId = Column(BigInteger)
+    created_date = Column(DateTime, server_default=func.now())
+
+
+class Taxonomy(Base):
+    __tablename__ = "taxonomy"
+    class_id = Column(Integer, primary_key=True)
+    class_name = Column(VARCHAR)
+    order = Column(Integer)
+    classifier_id = Column(SmallInteger)
+
+    created_date = Column(DateTime, server_default=func.now())
+
+
+class Probability(Base):
+    __tablename__ = "probability"
+
+    oid = Column(BigInteger)
+    sid = Column(SmallInteger, nullable=False)
+    classifier_id = Column(SmallInteger)
+    classifier_version = Column(SmallInteger)
+    class_id = Column(SmallInteger, nullable=False)
+    probability = Column(REAL, nullable=False)
+    ranking = Column(SmallInteger)
+    lastmjd = Column(DOUBLE_PRECISION, nullable=False)
 
     __table_args__ = (
-        PrimaryKeyConstraint("lsst_id_serial", name="pk_lsst_idmapper_serial"),
+        PrimaryKeyConstraint(
+            "oid",
+            "sid",
+            "classifier_id",
+            "classifier_version",
+            "class_id",
+            name="pk_probability_oid_classifierid_classid",
+        ),
+        Index("ix_probability_oid", "oid", postgresql_using="hash"),
+        Index("ix_probability_probability", "probability", postgresql_using="btree"),
+        Index("ix_probability_ranking", "ranking", postgresql_using="btree"),
+        Index(
+            "ix_classification_rank1",
+            "ranking",
+            postgresql_where=ranking == 1,
+            postgresql_using="btree",
+        ),
     )
+
+class LsstSsObject(Base):
+    __tablename__ = "lsst_ss_object"
+
+    oid = Column(BigInteger, nullable=False)
+
+    # all fields 7.4
+    discoverySubmissionDate = Column(DOUBLE_PRECISION)
+    firstObservationDate = Column(DOUBLE_PRECISION)
+    arc = Column(REAL)
+    numObs = Column(Integer)
+    MOID = Column(REAL)
+    MOIDTrueAnomaly = Column(REAL)
+    MOIDEclipticLongitude = Column(REAL)
+    MOIDDeltaV = Column(REAL)
+    u_H = Column(REAL)
+    u_G12 = Column(REAL)
+    u_HErr = Column(REAL)
+    u_G12Err = Column(REAL)
+    u_H_u_G12_Cov = Column(REAL)
+    u_Chi2 = Column(REAL)
+    u_Ndata = Column(Integer)
+    g_H = Column(REAL)
+    g_G12 = Column(REAL)
+    g_HErr = Column(REAL)
+    g_G12Err = Column(REAL)
+    g_H_g_G12_Cov = Column(REAL)
+    g_Chi2 = Column(REAL)
+    g_Ndata = Column(Integer)
+    r_H = Column(REAL)
+    r_G12 = Column(REAL)
+    r_HErr = Column(REAL)
+    r_G12Err = Column(REAL)
+    r_H_r_G12_Cov = Column(REAL)
+    r_Chi2 = Column(REAL)
+    r_Ndata = Column(Integer)
+    i_H = Column(REAL)
+    i_G12 = Column(REAL)
+    i_HErr = Column(REAL)
+    i_G12Err = Column(REAL)
+    i_H_i_G12_Cov = Column(REAL)
+    i_Chi2 = Column(REAL)
+    i_Ndata = Column(Integer)
+    z_H = Column(REAL)
+    z_G12 = Column(REAL)
+    z_HErr = Column(REAL)
+    z_G12Err = Column(REAL)
+    z_H_z_G12_Cov = Column(REAL)
+    z_Chi2 = Column(REAL)
+    z_Ndata = Column(Integer)
+    y_H = Column(REAL)
+    y_G12 = Column(REAL)
+    y_HErr = Column(REAL)
+    y_G12Err = Column(REAL)
+    y_H_y_G12_Cov = Column(REAL)
+    y_Chi2 = Column(REAL)
+    y_Ndata = Column(Integer)
+    medianExtendedness = Column(REAL)
+
+    __table_args__ = (PrimaryKeyConstraint("oid", name="pk_lsstssobject_oid"),)

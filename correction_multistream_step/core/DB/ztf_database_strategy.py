@@ -2,7 +2,7 @@ from sqlalchemy import select, cast, Float
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
 from db_plugins.db.sql.models import (
     Detection, ZtfDetection, ZtfForcedPhotometry, 
-    ForcedPhotometry, NonDetection
+    ForcedPhotometry, ZtfNonDetection
 )
 import logging
 from ..schemas.schema_applier import apply_schema
@@ -181,12 +181,12 @@ class ZTFDatabaseStrategy(DatabaseStrategy):
         with self.db_connection.session() as session:
             # Query with casting for precision fields
             stmt = select(
-                NonDetection.oid,
-                NonDetection.sid,
-                NonDetection.band,
-                NonDetection.mjd,
-                cast(NonDetection.diffmaglim, DOUBLE_PRECISION).label('diffmaglim')
-            ).where(NonDetection.oid.in_(oids))
+                ZtfNonDetection.oid,
+                ZtfNonDetection.sid,
+                ZtfNonDetection.band,
+                ZtfNonDetection.mjd,
+                cast(ZtfNonDetection.diffmaglim, DOUBLE_PRECISION).label('diffmaglim')
+            ).where(ZtfNonDetection.oid.in_(oids))
 
             non_detections = session.execute(stmt).all()
             
@@ -216,6 +216,7 @@ class ZTFDatabaseStrategy(DatabaseStrategy):
                     continue
                 else:
                     parsed_d[field] = value
+            parsed_d.pop("created_date", None)
             parsed_dets.append(parsed_d)
 
         det_lookup = {}
@@ -270,6 +271,7 @@ class ZTFDatabaseStrategy(DatabaseStrategy):
                     continue
                 else:
                     parsed_d[field] = value
+            parsed_d.pop("created_date", None)
             parsed_fphots.append(parsed_d)
             
         fp_lookup = {}
