@@ -25,8 +25,8 @@ class LSSTDataJoiner(SurveyDataJoiner):
             processed['db_sql_previous_sources_df'] = pd.DataFrame()
         
         processed['db_sql_forced_photometries_df'] = historical_data.get('forced_photometry', pd.DataFrame())
-        processed['db_sql_non_detections_df'] = historical_data.get('non_detections', pd.DataFrame())
-        processed['db_sql_ss_objects_df'] = historical_data.get('ss_objects', pd.DataFrame())
+        #processed['db_sql_non_detections_df'] = historical_data.get('non_detections', pd.DataFrame()) # Ommited for now, as we are not using detections in schema v8.0
+        #processed['db_sql_ss_objects_df'] = historical_data.get('ss_objects', pd.DataFrame())
         processed['db_sql_dia_objects_df'] = historical_data.get('dia_objects', pd.DataFrame())
         
         return processed
@@ -51,21 +51,33 @@ class LSSTDataJoiner(SurveyDataJoiner):
             msg_data.get('forced_sources_df', pd.DataFrame()),
             historical_data.get('db_sql_forced_photometries_df', pd.DataFrame())
         ], ignore_index=True)
-        
+
+        # Remove from previous sources sources that are already in sources (to not end up with duplicates because of alerts that also appear in prvious_sources)
+        unique_sources_set = set(zip(result['sources']['measurement_id'], result['sources']['oid']))
+        result['previous_sources'] = result['previous_sources'][
+            ~result['previous_sources'].apply(lambda row: (row['measurement_id'], row['oid']) in unique_sources_set, axis=1)
+        ]
+
+        """
+        # Ommited for now, as we are not using non detections in schema v8.0
         result['non_detections'] = pd.concat([
             msg_data.get('non_detections_df', pd.DataFrame()),
             historical_data.get('db_sql_non_detections_df', pd.DataFrame())
         ], ignore_index=True)
+        """
 
         # Added a get for ss_objects and dia_objects in case we eventually extract from the database
         # the SS and DIA objects. If not, they will be empty, or can be modified in the future
+        """
+        # Ommited for now, as we are not using ss_objects/ssources in schema v8.0
         ss_objects = pd.concat([
             msg_data.get('ss_objects_df', pd.DataFrame()),
             historical_data.get('db_sql_ss_objects_df', pd.DataFrame())  
         ], ignore_index=True)
 
         result['ss_object'] = ss_objects.drop_duplicates()
-        
+        """
+
         dia_objects = pd.concat([
             msg_data.get('dia_objects_df', pd.DataFrame()),
             historical_data.get('db_sql_dia_objects_df', pd.DataFrame())  
@@ -93,6 +105,8 @@ class LSSTDataJoiner(SurveyDataJoiner):
                 df = df.drop_duplicates(["measurement_id", "oid"], keep="first")
             result[key] = df
         
+        """
+        # Ommited for now, as we are not using non detections in schema v8.0
         # For non_detections, drop duplicates based on oid, band, mjd, and if empty, add an empty DataFrame
         # with expected columns for LSST
         non_detections_df = combined_data.get('non_detections', pd.DataFrame())
@@ -106,11 +120,14 @@ class LSSTDataJoiner(SurveyDataJoiner):
                 "midpointMjdTai", "mjd", "oid", "ssObjectId"
             ])
         result['non_detections'] = non_detections_df
-        
+        """
+
         # Since we don't extract from the database the SS and DIA object, we only keep the ones from the message, meaning 
         # it is not necessary to drop duplicates 
-        # TODO CHECK THIS LOGIC => do we want to query db objects in the future then combine them?
-        result['ss_object'] = combined_data.get('ss_object', pd.DataFrame())
+        # TODO CHECK THIS LOGIC => do we want to query db objects in the future then combine them!
+
+        # Ommited for now, as we are not using ss_objects/ssources in schema v8.0
+        #result['ss_object'] = combined_data.get('ss_object', pd.DataFrame())
         result['dia_object'] = combined_data.get('dia_object', pd.DataFrame())
 
         logger = logging.getLogger(f"alerce.{self.__class__.__name__}")

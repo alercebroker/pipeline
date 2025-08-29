@@ -1,5 +1,5 @@
 from typing import List, Dict, Tuple
-
+import numpy as np
 # Combine previous sources with sources
 # Change name of coordinates errors to a standard ra_error and dec_error for all surveys 
 # Add a default value to ra_error and dec_error for LSST of 0.01 to replace when raErr and decErr are null
@@ -10,8 +10,16 @@ def extract_lsst_data(msg: Dict) -> Tuple[List[Dict], List[Dict]]:
     
     def add_default_errors(source, default_value=0.01):
         """Add error fields with default values if missing."""
-        source["ra_error"] = source.get("raErr") or default_value
-        source["dec_error"] = source.get("decErr") or default_value
+        ra_err = source.get("raErr")
+        if ra_err is None:
+            source["ra_error"] = default_value
+        else:
+            source["ra_error"] =ra_err
+        dec_err = source.get("decErr")
+        if dec_err is None:
+            source["dec_error"] = default_value
+        else:
+            source["dec_error"] = dec_err
     
     # Process sources
     sources = msg.get("sources", [])

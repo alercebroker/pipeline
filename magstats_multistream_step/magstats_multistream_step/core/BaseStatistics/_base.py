@@ -16,7 +16,8 @@ class BaseStatistics(abc.ABC):
     def __init__(self, detections: List[dict]):
         self._detections = pd.DataFrame.from_records(detections)
         # drop duplicate detections (same candid and oid)
-        self._detections = self._detections.drop_duplicates(["measurement_id", "oid"])
+        self._detections =  self._detections.sort_values(["new"], ascending=[False])
+        self._detections = self._detections.drop_duplicates(["measurement_id", "oid"], keep="first")
         self._detections = self._detections.set_index(
             self._detections["measurement_id"].astype(str)
             + "_"
@@ -27,7 +28,7 @@ class BaseStatistics(abc.ABC):
     def _group(
         cls, df: Union[pd.DataFrame, pd.Series]
     ) -> Union[DataFrameGroupBy, SeriesGroupBy]:
-        return df.groupby(cls._JOIN)
+        return df.groupby(cls._JOIN, dropna=False)
     
     @lru_cache(6)
     def _select_detections(

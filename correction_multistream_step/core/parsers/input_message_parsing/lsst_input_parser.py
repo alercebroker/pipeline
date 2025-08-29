@@ -69,6 +69,8 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
             schemas['forced_sources_schema']
         )
         
+        """
+        # Omitting non-detections and ssobject for now in schema v8.0
         non_detections_df = self._apply_schema_or_empty(
             raw_data['non_detections'], 
             schemas['non_detections_schema']
@@ -78,6 +80,7 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
             raw_data['ss_objects'], 
             schemas['ss_objects']
         )
+        """
         
         dia_objects_df = self._apply_schema_or_empty(
             raw_data['dia_objects'], 
@@ -94,8 +97,8 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
                     'Current Sources': len(sources_df),
                     'Previous Sources': len(previous_sources_df),
                     'Forced Sources': len(forced_sources_df),
-                    'Non-Detections': len(non_detections_df),
-                    'SS Objects': len(ss_objects_df),
+                    #'Non-Detections': len(non_detections_df), # Omitting in schema v8.0
+                    #'SS Objects': len(ss_objects_df),
                     'DIA Objects': len(dia_objects_df)}
                 }
 
@@ -107,9 +110,9 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
                 'msg_data': msg_df,
                 'sources_df': sources_df,
                 'previous_sources_df': previous_sources_df,
-                'forced_sources_df': forced_sources_df,
-                'non_detections_df': non_detections_df,
-                'ss_objects_df': ss_objects_df,
+                'forced_sources_df': forced_sources_df, 
+                #'non_detections_df': non_detections_df, # Omitting in schema v8.0
+                #'ss_objects_df': ss_objects_df,
                 'dia_objects_df': dia_objects_df,
             },
             'oids': list(oids),
@@ -124,8 +127,8 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
         all_sources = []           
         all_previous_sources = []  
         all_forced_sources = []    
-        all_non_detections = []   
-        all_ss_objects = []        
+        #all_non_detections = []   # Ommiting in schema v8.0
+        #all_ss_objects = []        
         all_dia_objects = []       
         msg_data = []              
         
@@ -145,6 +148,7 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
                 parsed_forced_source = {"new": True, **f_source}
                 all_forced_sources.append(parsed_forced_source)
 
+            """
             # Parse non-detections
             for non_detection in msg["non_detections"]:
                 parsed_non_detection = {**non_detection}
@@ -154,6 +158,7 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
             ss_object = msg["ss_object"]
             if ss_object is not None:
                 all_ss_objects.append({**ss_object})
+            """
 
             # Parse dia object
             dia_object = msg["dia_object"]
@@ -170,8 +175,8 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
             'sources': all_sources,
             'previous_sources': all_previous_sources,
             'forced_sources': all_forced_sources,
-            'non_detections': all_non_detections,
-            'ss_objects': all_ss_objects,
+            #'non_detections': all_non_detections,  # Ommiting in schema v8.0
+            #'ss_objects': all_ss_objects,
             'dia_objects': all_dia_objects
             
         }
@@ -186,10 +191,10 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
     def get_input_schema_config(self) -> Dict[str, any]:
         """Return LSST-specific pandas schema configuration for precise data handling."""
         from core.schemas.LSST.LSST_schemas import (
-            dia_non_detection_limit_schema,   
+            #dia_non_detection_limit_schema,   # Omitting non-detections in schema v8.0
             dia_forced_source_schema,         
             dia_source_schema,                
-            ss_object_schema,                 
+            #ss_object_schema,           # Omitting ssobject in schema v8.0
             dia_object_schema                
         )
         
@@ -197,8 +202,8 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
             'sources_schema': dia_source_schema,
             'previous_sources_schema': dia_source_schema,
             'forced_sources_schema': dia_forced_source_schema,
-            'non_detections_schema': dia_non_detection_limit_schema,
-            'ss_objects': ss_object_schema,     
+            #'non_detections_schema': dia_non_detection_limit_schema,   # Omitting in schema v8.0
+            #'ss_objects': ss_object_schema,     # Omitting ssobject in schema v8.0
             'dia_objects': dia_object_schema    
             
         }

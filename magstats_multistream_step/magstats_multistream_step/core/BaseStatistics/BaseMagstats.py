@@ -22,7 +22,7 @@ class BaseMagnitudeStatistics(BaseStatistics):
 
     def calculate_ndet(self) -> pd.DataFrame:
         return pd.DataFrame({
-            "ndet": self._detections.value_counts(subset=self._JOIN, sort=False)
+            "ndet": self._detections.value_counts(subset=self._JOIN, sort=False, dropna=False)
         })
     
     def calculate_firstmjd(self) -> pd.DataFrame:

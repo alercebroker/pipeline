@@ -21,9 +21,9 @@ def scribe_parser_survey(correction_list, survey):
                         "sources": correction["sources"],
                         "previous_sources": correction["previous_sources"],
                         "forced_sources": correction["forced_sources"],
-                        "non_detections": correction["non_detections"],
-                        "dia_object": correction["dia_object"],
-                        "ss_object": correction["ss_object"]
+                        #"non_detections": correction["non_detections"],
+                        "dia_object": correction["dia_object"]
+                        #"ss_object": correction["ss_object"]
                     }
                 }
             )

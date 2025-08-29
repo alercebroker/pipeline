@@ -1,7 +1,9 @@
 import os
 import sys
+from random import Random
 from typing import Any, Iterable
 
+import pandas as pd
 from apf.core import get_class
 from apf.core.settings import config_from_yaml_file
 from apf.core.step import GenericProducer
@@ -9,19 +11,22 @@ from tqdm import tqdm
 
 sys.path.append("tests")
 
-from data.generator_lsst import (  # pyright: ignore
-    generate_alerts as generate_alerts_lsst,
-)
 from data.generator_ztf import (  # pyright: ignore
     generate_alerts as generate_alerts_ztf,
 )
 
+from generator.lsst_alert import LsstAlertGenerator
+
 PRODUCE_SAMPLE_CONFIG: dict[str, Any] = config_from_yaml_file(
-    os.getenv("CONFIG_PRODUCE_SAMPLE_YAML_PATH", "config.produce_sample.yaml")
+    os.getenv(
+        "CONFIG_PRODUCE_SAMPLE_YAML_PATH",
+        "/scripts/config-sample-generator.yaml",
+    )
 )
 
-
-GENERATORS = {"lsst": generate_alerts_lsst, "ztf": generate_alerts_ztf}
+rng = Random(42)
+generator_lsst = LsstAlertGenerator(rng=rng, new_obj_rate=0.1)
+GENERATORS = {"lsst": generator_lsst, "ztf": generate_alerts_ztf}
 
 
 class SampleProducer:
@@ -33,9 +38,14 @@ class SampleProducer:
         self.producer = Producer(config)
         self.producer.set_key_field("alertId")
 
-    def produce(self, msgs: Iterable[dict[str, Any]]):
+    def produce(self, msgs: Iterable[dict[str, Any]], flush: bool = True):
         for msg in tqdm(msgs):
-            self.producer.produce(msg, flush=True)
+            self.producer.produce(msg, flush=False)
+        if flush:
+            self.flush()
+
+    def flush(self):
+        self.producer.producer.flush()
 
 
 def produce():
@@ -51,5 +61,15 @@ def produce():
     survey = survey
     generator = GENERATORS[survey]
     producer = SampleProducer(PRODUCE_SAMPLE_CONFIG["PRODUCER_CONFIG"])
-
-    producer.produce(generator(n_messages))
+    alerts = [generator.generate_alert() for _ in range(n_messages)]
+    objectstats = generator.get_all_objstats_dicts()
+    path_parquet = PRODUCE_SAMPLE_CONFIG.get(
+        "PARQUET_PATH_OBJSTATS", "objstats.parquet"
+    )
+    dataframe_objectstats = pd.DataFrame(objectstats)
+    dataframe_objectstats.to_parquet(path_parquet, index=False)
+    batch_size = PRODUCE_SAMPLE_CONFIG.get("BATCH_SIZE", 100)
+    for i in range(0, len(alerts), batch_size):
+        batch = alerts[i : i + batch_size]
+        producer.produce(batch, flush=False)
+    producer.flush()

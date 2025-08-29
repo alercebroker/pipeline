@@ -1,9 +1,10 @@
 import pandas as pd
 import numpy as np
 import json
+from typing import Dict, List, Any
+from datetime import date, datetime
 
-
-def parse_output_correction(corrected_data: dict, measurement_ids: list, oids: list) -> pd.DataFrame:
+def parse_output_correction(corrected_data: dict, measurement_ids: dict, oids: list) -> List[Dict]:
     """
     Function to parse the output of the correction multisurvey step regardless of survey of the data
     It groups by the oid all of the inner dataframes from corrected data and returns a list of dicts corresponding
@@ -17,51 +18,54 @@ def parse_output_correction(corrected_data: dict, measurement_ids: list, oids: l
     Returns:
         Dictionary with the output of the correction multisurvey step
     """
-    def _create_grouped_data(df: pd.DataFrame) -> pd.core.groupby.DataFrameGroupBy:
-        """Function to safely create grouped data even when the DataFrame is empty"""
-        if not df.empty and "oid" in df.columns:
-            return df.groupby("oid")
-        else:
-            return pd.DataFrame(columns=["oid"]).groupby("oid")
     
-    def _clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:
-        """Function to clean DataFrame by replacing NaN and inf values"""
-        return df.replace({np.nan: None, pd.NA: None, -np.inf: None})
-    
-    def _get_group_safely(grouped_data, oid: str, fallback_value: list = None) -> list:
-        """Function to safely get group data with a default value when there is no data for the oid"""
-        try:
-            group_df = grouped_data.get_group(oid)
-            cleaned_df = _clean_dataframe(group_df)
-            return cleaned_df.to_dict("records")
-        except KeyError:
-            return fallback_value or []
-    
-    # For each key in the corrected data dictionary
-    # Create the group by oid without getting an error if the DataFrame is empty
-    grouped_data = {}
-    for data_type, df in corrected_data.items():
-        grouped_data[data_type] = _create_grouped_data(df)
-    
-    # Create a list to store the output dicts
-    output = []
-    
-    # Group by for each oid in the list
-    for oid in oids:        
-        # Get measurement IDs for this OID
-        unique_measurement_ids = measurement_ids[oid]
-        unique_measurement_ids_long = [int(id_str) for id_str in unique_measurement_ids]
+    def _clean_dataframe_vectorized(df: pd.DataFrame) -> pd.DataFrame:
+        """ Function to clean the dataframe from inf and NaN values in a vectorized way instead of the original code that iterated over the rows """
+        if df.empty:
+            return df
         
-        # Build the output message for this OID
-        # First we create the base message and then we add the grouped data for each of the keys
+        # Replace inf and NaN values in one operation
+        df = df.replace([np.inf, -np.inf, np.nan], None)
+        return df
+    
+    grouped_data = {}
+    valid_oids_set = set(oids)
+    
+    for data_type, df in corrected_data.items():
+        if df.empty or "oid" not in df.columns:
+            grouped_data[data_type] = {oid: [] for oid in oids}
+        else:
+            filtered_df = df[df["oid"].isin(valid_oids_set)]
+            
+            if filtered_df.empty:
+                grouped_data[data_type] = {oid: [] for oid in oids}
+            else:
+                cleaned_df = _clean_dataframe_vectorized(filtered_df)
+                
+                grouped = cleaned_df.groupby("oid", sort=False)
+                grouped_dict = {oid: group.to_dict("records") 
+                              for oid, group in grouped}
+                
+                grouped_data[data_type] = {oid: grouped_dict.get(oid, []) 
+                                         for oid in oids}
+    
+    # Create output list
+    output = []
+    for oid in oids:
+        unique_measurement_ids = measurement_ids[oid]
+        if isinstance(unique_measurement_ids[0], str):
+            unique_measurement_ids_long = [int(id_str) for id_str in unique_measurement_ids]
+        else:
+            unique_measurement_ids_long = unique_measurement_ids
+        
+        # Build message for output
         output_message = {
             "oid": oid,
             "measurement_id": unique_measurement_ids_long,
         }
         
-        # Add all data types from corrected_data using original keys
-        for data_type, grouped in grouped_data.items():
-            output_message[data_type] = _get_group_safely(grouped, oid)
+        for data_type in corrected_data.keys():
+            output_message[data_type] = grouped_data[data_type][oid]
         
         output.append(output_message)
     
@@ -82,4 +86,8 @@ class NumpyEncoder(json.JSONEncoder):
             return None
         elif isinstance(obj, pd._libs.missing.NAType): 
             return None
+        elif isinstance(obj, (date, datetime)):
+            return obj.isoformat()  # Convert date/datetime to ISO string format
+        elif isinstance(obj, pd.Timestamp):
+            return obj.isoformat()  # Handle pandas Timestamp objects
         return super().default(obj)
