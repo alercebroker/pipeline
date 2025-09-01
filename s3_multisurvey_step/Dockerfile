@@ -20,7 +20,7 @@ RUN pip install poetry
 
 COPY libs/apf libs/apf
 COPY ./s3_multisurvey_step/poetry.lock ./s3_multisurvey_step/pyproject.toml /app/
-COPY schemas/surveys/lsst /schemas/surveys/lsst
+COPY schemas/surveys /schemas/surveys
 COPY schemas/ztf /schemas/ztf
 COPY schemas/s3_ms_step /schemas/s3_ms_step
 
