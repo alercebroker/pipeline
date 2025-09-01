@@ -51,8 +51,6 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 
-_build/
-
 # Translations
 *.mo
 *.pot
@@ -69,6 +67,9 @@ instance/
 
 # Scrapy stuff:
 .scrapy
+
+# Sphinx documentation
+docs/_build/
 
 # PyBuilder
 target/
@@ -127,33 +128,6 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+*.avro
+
 .idea
-__SUCCESS__
-
-flycheck*
-
-# Charts values and builds
-values*.override.yaml
-values*.override.yml
-values.staging.yaml
-values.production.yaml
-values.staging.yml
-values.production.yml
-*.tgz
-.vscode/
-
-.terraform/
-.terraform.lock.hcl
-terraform.tfvars
-
-.projectile
-
-*/.build_state.json
-*/.deploy_state.json
-
-**/flake.nix
-**/flake.lock
-**/.envrc
-**/.direnv/
-
-**/config.yaml
