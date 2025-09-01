@@ -1,13 +1,13 @@
 [tool.poetry]
 name = "s3-step"
-version = "27.5.7a30"
+version = "27.5.7a25"
 description = "S3 step"
 authors = []
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "~3.9.0"
-apf_base = "1.0.9"
+python = "^3.10"
+apf-base = { path = "../libs/apf", develop = true }
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.3.0"

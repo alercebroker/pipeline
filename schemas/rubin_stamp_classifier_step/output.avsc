@@ -3,7 +3,6 @@
   "name": "RubinStampClassifierOutput",
   "namespace": "alerce.rubin_stamp_classifier_step",
   "fields": [
-    {"name": "alertId", "type": "long"},
     {"name": "diaObjectId", "type": "long"},
     {"name": "diaSourceId", "type": "long"},
     {"name": "probabilities", "type": {"type": "map", "values": "double"}},
