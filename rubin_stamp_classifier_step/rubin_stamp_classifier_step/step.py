@@ -57,53 +57,54 @@ class StampClassifierStep(GenericStep):
 
         processed_messages = []
         for message in messages:
-            processed_message = {}
+            if message["diaObject"] is not None:
+                processed_message = {}
 
-            # Object identity
-            processed_message["alertId"] = message["alertId"]
-            processed_message["diaObjectId"] = message["diaObject"]["diaObjectId"]
-            processed_message["diaSourceId"] = message["diaSource"]["diaSourceId"]
-            processed_message["midpointMjdTai"] = message["diaSource"]["midpointMjdTai"]
+                # Object identity
+                # processed_message["alertId"] = message["alertId"]
+                processed_message["diaObjectId"] = message["diaObject"]["diaObjectId"]
+                processed_message["diaSourceId"] = message["diaSource"]["diaSourceId"]
+                processed_message["midpointMjdTai"] = message["diaSource"]["midpointMjdTai"]
 
-            # Properties
-            processed_message["ra"] = message["diaSource"]["ra"]
-            processed_message["dec"] = message["diaSource"]["dec"]
+                # Properties
+                processed_message["ra"] = message["diaSource"]["ra"]
+                processed_message["dec"] = message["diaSource"]["dec"]
 
-            processed_message["airmass"] = 1.0
-            processed_message["magLim"] = 25.0
+                processed_message["airmass"] = 1.0
+                processed_message["magLim"] = 25.0
 
-            processed_message["psfFlux"] = message["diaSource"]["psfFlux"]
-            processed_message["psfFluxErr"] = message["diaSource"]["psfFluxErr"]
+                processed_message["psfFlux"] = message["diaSource"]["psfFlux"]
+                processed_message["psfFluxErr"] = message["diaSource"]["psfFluxErr"]
 
-            processed_message["scienceFlux"] = 0.0
-            processed_message["scienceFluxErr"] = 0.0
+                processed_message["scienceFlux"] = 0.0
+                processed_message["scienceFluxErr"] = 0.0
 
-            processed_message["seeing"] = 0.7
+                processed_message["seeing"] = 0.7
 
-            processed_message["snr"] = message["diaSource"]["snr"]
+                processed_message["snr"] = message["diaSource"]["snr"]
 
-            # Stamps
-            processed_message["visit_image"] = extract_image_from_fits(
-                message["cutoutScience"]
-            )
-            processed_message["difference_image"] = extract_image_from_fits(
-                message["cutoutDifference"]
-            )
-            processed_message["reference_image"] = extract_image_from_fits(
-                message["cutoutTemplate"]
-            )
+                # Stamps
+                processed_message["visit_image"] = extract_image_from_fits(
+                    message["cutoutScience"]
+                )
+                processed_message["difference_image"] = extract_image_from_fits(
+                    message["cutoutDifference"]
+                )
+                processed_message["reference_image"] = extract_image_from_fits(
+                    message["cutoutTemplate"]
+                )
 
-            processed_messages.append(processed_message)
+                processed_messages.append(processed_message)
 
         return processed_messages
 
     def _messages_to_dto(self, messages: List[dict]) -> InputDTO:
         df = pd.DataFrame.from_records(messages)
-        df.set_index("alertId", inplace=True)
+        df.set_index("diaObjectId", inplace=True)
 
-        # Check if alertId is unique
+        # Check if diaObjectId is unique
         if not df.index.is_unique:
-            raise ValueError("alertId must be unique in the input messages")
+            raise ValueError("diaObjectId must be unique in the input messages")
 
         # Create the InputDTO
         input_dto = InputDTO(
@@ -148,11 +149,10 @@ class StampClassifierStep(GenericStep):
         output_messages = []
         for message in messages:
             output_message = {
-                "alertId": message["alertId"],
                 "diaObjectId": message["diaObjectId"],
                 "diaSourceId": message["diaSourceId"],
                 "probabilities": predicted_probabilities.loc[
-                    message["alertId"]
+                    message["diaObjectId"]
                 ].to_dict(),
                 "midpointMjdTai": message["midpointMjdTai"],
                 "ra": message["ra"],
