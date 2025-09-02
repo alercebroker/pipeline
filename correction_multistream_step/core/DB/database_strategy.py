@@ -69,68 +69,6 @@ class DatabaseStrategy(ABC):
         """Return the schema for non-detections specific to this survey."""
         pass
     
-    def get_all_historical_data(self, oids: List[str]) -> Dict[str, List[Dict[str, Any]]]:
-        """
-        Get all historical data types for given OIDs.
-        
-        This is the main method called by step.py. It returns a standardized
-        structure that matches the survey's data organization.
-        
-        Args:
-            oids: List of object IDs to query
-            
-        Returns:
-            Dict with keys matching the survey's data structure
-        """
-        return {
-            'detections': self.get_detections(oids),
-            'forced_photometry': self.get_forced_photometry(oids),
-            'non_detections': self.get_non_detections(oids)
-        }
-
-    def get_all_historical_data_as_dataframes(self, oids: List[str]) -> Dict[str, pd.DataFrame]:
-        """
-        Get all historical data types for given OIDs as DataFrames with schemas applied.
-        
-        This is the main method that should be called by step.py for processed data.
-        
-        Args:
-            oids: List of object IDs to query
-            
-        Returns:
-            Dict with DataFrames for each data type, with proper schemas applied
-        """
-        from ..schemas.schema_applier import apply_schema
-        
-        # Get the data as dictionaries first
-        raw_data = self.get_all_historical_data(oids)
-        
-        # Create a result dict to hold the processed data with proper schemas inside each key
-        result = {}
-        
-        # Apply the schemas to detections
-        result['detections'] = apply_schema(
-            raw_data['detections'], 
-            self.get_detection_schema()
-        )
-        
-        # Apply the schemas to forced photometry
-        result['forced_photometry'] = apply_schema(
-            raw_data['forced_photometry'], 
-            self.get_forced_photometry_schema()
-        )
-        
-        # Apply the schemas to non-detections
-        result['non_detections'] = apply_schema(
-            raw_data['non_detections'], 
-            self.get_non_detection_schema()
-        )
-        logger = logging.getLogger(f"alerce.{self.__class__.__name__}")
-        logger.info(f"Retrieved {result['detections'].shape[0]} detections, {result['forced_photometry'].shape[0]} forced photometries and  {result['non_detections'].shape[0]} non detections from the database")
-
-
-        return result
-    
     def _model_to_dict(self, model) -> Dict[str, Any]:
         """Convert SQLAlchemy model to dictionary, handling skipping the fields starting with _"""
         # This can be overridden by subclasses if needed

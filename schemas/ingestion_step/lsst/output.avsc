@@ -13,41 +13,27 @@
     },
     {
       "name": "source",
-      "type": "source"
+      "type": "diaSource"
     },
     {
       "name": "previous_sources",
       "type": {
         "type": "array",
-        "items": "source"
+        "items": "diaSource"
       }
     },
     {
       "name": "forced_sources",
       "type": {
         "type": "array",
-        "items": "forced_source"
-      }
-    },
-    {
-      "name": "non_detections",
-      "type": {
-        "type": "array",
-        "items": "non_detection"
+        "items": "diaForcedSource"
       }
     },
     {
       "name": "dia_object",
       "type": [
         "null",
-        "dia_object"
-      ]
-    },
-    {
-      "name": "ss_object",
-      "type": [
-        "null",
-        "ss_object"
+        "diaObject"
       ]
     }
   ]
