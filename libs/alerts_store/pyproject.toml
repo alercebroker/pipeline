@@ -5,7 +5,10 @@ description = "Store alerts from an inscome script into parquet files."
 authors = [{ name = "hectorxh", email = "hectorplj@gmail.com" }]
 readme = "README.md"
 requires-python = ">=3.10,<3.11"
-dependencies = ["apf-base @ file:///home/hectorxh/ALeRCE/pipeline/libs/apf"]
+dependencies = ["apf-base @ ../apf"]
+
+[tool.poetry]
+packages = [{ include = "alerts_store" }, { include = "scripts" }]
 
 [tool.poetry.scripts]
 step = { callable = "scripts.run_step:step" }
