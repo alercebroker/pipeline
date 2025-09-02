@@ -11,6 +11,7 @@ from db_plugins.db.sql.models import (
     # LsstSsObject,
     Object,
 )
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
 from ingestion_step.core.database import (
@@ -80,6 +81,42 @@ def insert_mpcorb(session: Session, mpcorbs: pd.DataFrame):
 
 
 def insert_sources(session: Session, sources: pd.DataFrame):
+    if len(sources) == 0:
+        return
+    detections_dict = sources[DETECTION_COLUMNS].to_dict("records")
+
+    lsst_columns = (
+        set(sources.columns) - set(DETECTION_COLUMNS) - {"message_id", "midpointMjdTai"}
+    )
+    lsst_columns = lsst_columns.union({"oid", "sid", "measurement_id"})
+
+    detections_lsst_dict = sources[list(lsst_columns)].to_dict("records")
+
+    detections_sql_stmt = insert(Detection).values(detections_dict)
+    detections_sql_stmt = detections_sql_stmt.on_conflict_do_update(
+        constraint=Detection.__table__.primary_key.name,
+        set_={
+            k: v
+            for k, v in detections_sql_stmt.excluded.items()
+            if k not in ["oid", "measurement_id", "sid"]
+        },
+    )
+
+    detections_lsst_sql_stmt = insert(LsstDetection).values(detections_lsst_dict)
+    detections_lsst_sql_stmt = detections_lsst_sql_stmt.on_conflict_do_update(
+        constraint=LsstDetection.__table__.primary_key.name,
+        set_={
+            k: v
+            for k, v in detections_lsst_sql_stmt.excluded.items()
+            if k not in ["oid", "measurement_id"]
+        },
+    )
+
+    session.execute(detections_sql_stmt)
+    session.execute(detections_lsst_sql_stmt)
+
+
+def insert_prv_sources(session: Session, sources: pd.DataFrame):
     if len(sources) == 0:
         return
     detections_dict = sources[DETECTION_COLUMNS].to_dict("records")
