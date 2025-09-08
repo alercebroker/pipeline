@@ -8,6 +8,7 @@ from ingestion_step.lsst.database import (
     insert_dia_objects,
     insert_forced_sources,
     insert_mpcorb,
+    insert_prv_sources,
     # insert_non_detections,
     insert_sources,
     insert_ss_sources,
@@ -91,7 +92,7 @@ class LsstStrategy(StrategyInterface[LsstData]):
             insert_dia_objects(session, parsed_data["dia_object"])
             insert_mpcorb(session, parsed_data["mpcorbs"])
             insert_sources(session, parsed_data["dia_sources"])
-            insert_sources(session, parsed_data["previous_sources"])
+            insert_prv_sources(session, parsed_data["previous_sources"])
             insert_ss_sources(session, parsed_data["ss_sources"])
             insert_forced_sources(session, parsed_data["forced_sources"])
             session.commit()
