@@ -1,0 +1,6 @@
+artifact_location: file:///home/fandrades/desktop/repos/pipeline/training/stamp_classifier/models/experimentation/stamp_rubin/results3/ml-runs/479999527639195346
+creation_time: 1756829364605
+experiment_id: '479999527639195346'
+last_update_time: 1756829364605
+lifecycle_stage: active
+name: classification/rubin_AGN_vs_VS/testing

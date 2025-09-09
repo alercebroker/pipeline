@@ -1,0 +1,12 @@
+              precision    recall  f1-score   support
+
+         AGN       0.43      0.79      0.55        52
+          SN       0.27      0.33      0.30         9
+          VS       0.89      0.90      0.89       454
+    asteroid       0.95      0.96      0.96       200
+       bogus       0.91      0.76      0.83       400
+   satellite       0.54      0.72      0.62        40
+
+    accuracy                           0.85      1155
+   macro avg       0.66      0.74      0.69      1155
+weighted avg       0.87      0.85      0.85      1155

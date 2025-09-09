@@ -1,0 +1,42 @@
+{
+    "ejemplo_0": {
+        "class": "VS",
+        "probability": 0.9182724356651306
+    },
+    "ejemplo_1": {
+        "class": "VS",
+        "probability": 0.9335682392120361
+    },
+    "ejemplo_2": {
+        "class": "AGN",
+        "probability": 0.7838229537010193
+    },
+    "ejemplo_3": {
+        "class": "VS",
+        "probability": 0.8910648226737976
+    },
+    "ejemplo_4": {
+        "class": "VS",
+        "probability": 0.922435998916626
+    },
+    "ejemplo_5": {
+        "class": "VS",
+        "probability": 0.9140452146530151
+    },
+    "ejemplo_6": {
+        "class": "VS",
+        "probability": 0.8796474933624268
+    },
+    "ejemplo_7": {
+        "class": "VS",
+        "probability": 0.9261229038238525
+    },
+    "ejemplo_8": {
+        "class": "VS",
+        "probability": 0.92320317029953
+    },
+    "ejemplo_9": {
+        "class": "VS",
+        "probability": 0.9209988713264465
+    }
+}

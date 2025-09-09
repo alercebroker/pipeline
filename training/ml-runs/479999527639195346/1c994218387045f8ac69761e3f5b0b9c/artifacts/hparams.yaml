@@ -1,0 +1,84 @@
+results_dir: results3
+exp_description: ''
+model_name: stamp_full
+name_dataset_version: rubin_AGN_vs_VS
+dir_data: ./../../../data_acquisition/rubin/data/processed/ts_stamps_v0.0.4_dp1/
+path_partition: ./../../../data_acquisition/rubin/data/processed/partitions/ts_stamps_v0.0.4_dp1/partitions.parquet
+debug: false
+is_searching_hyperparameters: false
+loader:
+  id_col: diaObjectId
+  candid_col: diaSourceId
+  ra_col: ra
+  dec_col: dec
+  class_col: class
+  stamps_cols:
+  - visit_image
+  - difference_image
+  - reference_image
+  cropping:
+    use: false
+    crop_size: 21
+  num_workers: 12
+  coord_type: spherical
+  norm_type: z-score
+  batch_size: 256
+  use_coords: false
+  fold: 0
+arch:
+  conv_config:
+  - filters: 8
+    kernel_size:
+    - 2
+    - 2
+    activation: relu
+    pool: false
+  - filters: 16
+    kernel_size:
+    - 2
+    - 2
+    activation: relu
+    pool: true
+    pool_size:
+    - 2
+    - 2
+  - filters: 8
+    kernel_size:
+    - 2
+    - 2
+    activation: relu
+    pool: false
+    pool_size:
+    - 2
+    - 2
+  - filters: 16
+    kernel_size:
+    - 2
+    - 2
+    activation: relu
+    pool: true
+    pool_size:
+    - 2
+    - 2
+  dense_config:
+  - units: 16
+    activation: tanh
+  dropout_rate: 0.7
+  use_batchnorm_metadata: false
+  use_metadata: false
+training:
+  lr: 0.0007
+  use_focal: false
+  patience: 10
+  num_epochs: 10000
+  monitor: loss
+artifact_path: /home/fandrades/desktop/repos/pipeline/training/stamp_classifier/models/experimentation/stamp_rubin/results3/ml-runs/479999527639195346/1c994218387045f8ac69761e3f5b0b9c/artifacts
+order_features:
+- airmass
+- magLim
+- psfFlux
+- psfFluxErr
+- scienceFlux
+- scienceFluxErr
+- seeing
+- snr

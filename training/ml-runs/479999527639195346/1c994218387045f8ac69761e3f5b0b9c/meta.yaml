@@ -1,0 +1,15 @@
+artifact_uri: file:///home/fandrades/desktop/repos/pipeline/training/stamp_classifier/models/experimentation/stamp_rubin/results3/ml-runs/479999527639195346/1c994218387045f8ac69761e3f5b0b9c/artifacts
+end_time: 1756829765675
+entry_point_name: ''
+experiment_id: '479999527639195346'
+lifecycle_stage: active
+run_id: 1c994218387045f8ac69761e3f5b0b9c
+run_name: Fold_0_2025-09-02_16-09-24
+run_uuid: 1c994218387045f8ac69761e3f5b0b9c
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1756829364660
+status: 3
+tags: []
+user_id: fandrades
