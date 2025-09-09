@@ -1,0 +1,41 @@
+[tool.poetry]
+name = "correction_multistream_step"
+version = "27.4.1a3"
+description = "Correction multistream Step"
+authors = []
+readme = "README.md"
+packages = [{include = "correction_multistream_step"}]
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.12"
+numpy = "~1.24.2"
+pandas = "~1.5.3"
+apf-base = { path = "../libs/apf", develop = true }
+pymongo = "^4.4.1"
+sqlalchemy = {extras = ["asyncio"], version = "^2.0.19"}
+psycopg2-binary = "^2.9.6"
+db-plugins = {path = "../libs/db-plugins-multisurvey", develop = true}
+survey-parser-plugins = {path = "../libs/survey_parser_plugins", develop = true}
+
+[tool.poetry.group.dev.dependencies]
+black = "^22.12.0"
+memray = "^1.11.0"
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.2.0"
+pytest-cov = "^4.0.0"
+pytest-docker = "^1.0.1"
+
+[tool.poetry.scripts]
+step = { callable = "scripts.run_step:step" }
+
+
+[tool.black]
+line-length = 100
+
+[tool.pylint.messages_control]
+disable = ["missing-module-docstring", "missing-function-docstring"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

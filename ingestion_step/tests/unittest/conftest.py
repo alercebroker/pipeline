@@ -1,22 +1,27 @@
+import random
+
 import pytest
 
-from ingestion_step.core.parser_interface import ParsedData
-from ingestion_step.ztf import extractor, parser
-from tests.data.generator_ztf import generate_alerts
+from generator.lsst_alert import LsstAlertGenerator
+from ingestion_step.lsst.strategy import LsstData, LsstStrategy
+from ingestion_step.ztf.strategy import ZtfData, ZtfStrategy
+from tests.data.generator_ztf import generate_alerts as generate_alerts_ztf
 
 
 @pytest.fixture
-def ztf_data() -> extractor.ZTFData:
-    ztf_data = extractor.extract(list(generate_alerts()))
+def ztf_parsed_data() -> ZtfData:
+    msgs = list(generate_alerts_ztf())
+    parsed_data = ZtfStrategy.parse(msgs)
 
-    return ztf_data
+    return parsed_data
 
 
 @pytest.fixture
-def parsed_ztf_data() -> ParsedData:
-    ztf_parser = parser.ZTFParser()
+def lsst_parsed_data() -> LsstData:
+    rng = random.Random(42)
+    generator = LsstAlertGenerator(rng=rng, new_obj_rate=0.4)
+    msgs = [generator.generate_alert() for _ in range(1_000)]
 
-    msgs = list(generate_alerts())
-    parsed_ztf_data = ztf_parser.parse(msgs)
+    parsed_data = LsstStrategy.parse(msgs)
 
-    return parsed_ztf_data
+    return parsed_data

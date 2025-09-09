@@ -1,16 +1,24 @@
 import random
-from typing import Any
 
 import pytest
 
-from tests.data.generator_ztf import generate_alerts
+import tests.data.generator_ztf as ztf
+from generator.lsst_alert import LsstAlertGenerator
+from ingestion_step.core.types import Message
 
 random.seed(42)
 
 
 @pytest.fixture
-def ztf_alerts() -> list[dict[str, Any]]:
-    return list(generate_alerts())
+def ztf_alerts() -> list[Message]:
+    return list(ztf.generate_alerts())
+
+
+@pytest.fixture
+def lsst_alerts() -> list[Message]:
+    rng = random.Random(42)
+    generator = LsstAlertGenerator(rng=rng, new_obj_rate=0.4)
+    return [generator.generate_alert() for _ in range(100)]
 
 
 # Adds a better assertion message for subset comparison

@@ -4,10 +4,14 @@ version = "27.4.1a3"
 description = "Ingestion step"
 authors = []
 readme = "README.md"
-packages = [{ include = "ingestion_step" }]
+packages = [{ include = "ingestion_step" }, { include = "generator" }]
 
 [tool.poetry.scripts]
 step = { callable = "scripts.run_step:step" }
+generate_schemas = { callable = "scripts.generate_pd_schemas:generate" }
+produce_sample = { callable = "scripts.produce_sample:produce" }
+generate_sample = { callable = "generator.main:main" }
+validate = { callable = "scripts.validate:main" }
 
 [tool.poetry.dependencies]
 python = ">=3.10, <3.11"
@@ -19,6 +23,7 @@ db-plugins = { path = "../libs/db-plugins-multisurvey", develop = true }
 idmapper = { path = "../libs/idmapper", develop = true }
 psycopg2-binary = "^2.9.9"
 pandas = "^2.2.1"
+pyarrow = "^21.0.0"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.3.1"
@@ -35,14 +40,12 @@ test-utils = { path = "../libs/test_utils", develop = true }
 [tool.poetry.group.dev.dependencies]
 pandas-stubs = "^2.2.3.241126"
 black = "^25.1.0"
-
-
-[tool.poetry.group.notebook.dependencies]
-notebook = "^7.3.3"
-nbclassic = "^1.2.0"
-jupyter-console = "^6.6.3"
-jupynium = "^0.2.6"
-jupytext = "^1.16.7"
+tqdm = "^4.67.1"
+matplotlib = "^3.10.3"
+matplotlib-backend-wezterm = "^2.1.2"
+ipython = "^8.37"
+polars = "^1.31.0"
+connectorx = "^0.4.3"
 
 [tool.black]
 line-length = 79

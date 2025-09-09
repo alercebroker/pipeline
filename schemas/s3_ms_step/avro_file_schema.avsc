@@ -1,0 +1,10 @@
+{
+	"type": "record",
+	"name": "Stamps",
+	"doc": "Avro Rubin stamps used by Alerce for storage",
+	"fields": [
+		{"name": "cutoutDifference", "type": ["null", "bytes"], "default": null},
+		{"name": "cutoutScience", "type": ["null", "bytes"], "default": null},
+		{"name": "cutoutTemplate", "type": ["null", "bytes"], "default": null}
+    ]
+}

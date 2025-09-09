@@ -22,6 +22,7 @@ class CustomMirrormaker(GenericStep):
             "keep_original_timestamp", False
         )
         self.use_message_topic = step_args.get("use_message_topic", False)
+        self.producer_key = step_args.get("producer_key", None)
 
     def produce(self, messages):
         to_produce = [messages] if isinstance(messages, dict) else messages
@@ -36,6 +37,11 @@ class CustomMirrormaker(GenericStep):
             self.producer.produce(msg, **producer_kwargs)
         if not isinstance(self.producer, DefaultProducer):
             self.logger.info(f"Produced {count} messages")
+
+    def pre_produce(self, result):
+        if self.producer_key and self.consumer.__class__.__name__ != "RawKafkaConsumer":
+            self.producer.set_key_field(self.producer_key)
+        return result
 
     def execute(self, messages):
         return messages
