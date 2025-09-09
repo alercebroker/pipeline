@@ -70,14 +70,14 @@ class DynamicStampModel(tf.keras.Model):
         self.metadata_batchnorm = BatchNormalization(name="bn_metadata") if self.use_batchnorm_metadata else None
 
         # Capa final
-        self.output_layer = Dense(self.num_classes, name="logits")
+        self.output_layer = Dense(self.num_classes, name="logits",activation='softmax')
 
-    def _embed_view(self, img, training):
+    #def _embed_view(self, img, training):
         # Preprocesamiento oficial de ResNetV2
         # Extrae embedding [B, C] (pooling='avg')
-        img = img[:, :, :, :3]  # Asegura que la imagen tenga 3 canales
-        img = tf.image.resize(img, (32, 32))
-        return self.backbone(img, training=training)
+    #    img = img[:, :, :, :3]  # Asegura que la imagen tenga 3 canales
+    #    img = tf.image.resize(img, (32, 32))
+    #    return self.backbone(img, training=training)
         
     def call(self, inputs, training=False):
         x_img, x_metadata = inputs

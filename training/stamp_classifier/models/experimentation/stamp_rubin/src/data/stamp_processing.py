@@ -1,4 +1,5 @@
 import numpy as np
+import logging
 
 def prepare_model_input(stamps, max_h, max_w):
     padded_stamps = []
@@ -39,7 +40,6 @@ def normalize_stamps(stamps_ndarray, padding_mask):
     maxval = np.nanpercentile(abs_ndarray, 99, axis=1)
     minval = np.nanmin(abs_ndarray, axis=1)
 
-    print(stamps_ndarray.shape)
     
     # Normalización per-channel, per-image
     stamps_ndarray = (stamps_ndarray - minval[:, np.newaxis, np.newaxis, :]) / (
@@ -134,24 +134,49 @@ def get_max_hw(stamps):
 
 def pad_stamp_and_mask(stamp, target_h, target_w):
     h, w = stamp.shape
+    target_size = 31
 
-    pad_h = (target_h - h) // 2
-    pad_w = (target_w - w) // 2
-    pad_h_extra = target_h - h - pad_h
-    pad_w_extra = target_w - w - pad_w
+    if h != w:
+        logging.info(f"Stamp was not square ({h} != {w}), padding to biggest dimension")
+        size = max(h, w)
+        pad_h = size - h
+        pad_w = size - w
 
-    padded_stamp = np.pad(
-        stamp,
-        pad_width=((pad_h, pad_h_extra), (pad_w, pad_w_extra)),
-        mode='constant',
-        constant_values=0
-    )
+        # pad_width = ((arriba, abajo), (izquierda, derecha))
+        stamp = np.pad(
+            stamp,
+            pad_width=((0, pad_h), (0, pad_w)),
+            mode="constant",
+            constant_values=0,
+        )
 
-    mask = np.pad(
-        np.ones((h, w), dtype=np.float32),
-        pad_width=((pad_h, pad_h_extra), (pad_w, pad_w_extra)),
-        mode='constant',
-        constant_values=0
-    )
+    h, w = stamp.shape
 
-    return padded_stamp, mask
+    original_stamp_size = h
+    if original_stamp_size > target_size:  # crop
+        start_index = (original_stamp_size - target_size) // 2
+        end_index = start_index + target_size
+        padded_stamp = stamp[start_index:end_index, start_index:end_index]
+        mask = np.ones((target_size, target_size), dtype=np.float32)
+        return padded_stamp, mask
+    else:
+        pad_before = (target_size - original_stamp_size) // 2
+        pad_after = target_size - original_stamp_size - pad_before
+
+        padded_stamp = np.pad(
+            stamp,
+            pad_width=((pad_before, pad_after), (pad_before, pad_after)),
+            mode="constant",
+            constant_values=0,
+        )
+
+        # mask has zeros in the "fake" padding area
+        # and ones in the original stamp area
+        mask = np.pad(
+            np.ones((h, w), dtype=np.float32),
+            pad_width=((pad_before, pad_after), (pad_before, pad_after)),
+            mode="constant",
+            constant_values=0,
+        )
+
+        return padded_stamp, mask

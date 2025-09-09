@@ -4,7 +4,7 @@ hydra:
   output_subdir: null 
 
 stamp_classifier:
-  results_dir: 'results'
+  results_dir: 'results3'
   exp_description: ''
   
   # General Configuration
@@ -14,7 +14,7 @@ stamp_classifier:
   path_partition: './../../../data_acquisition/rubin/data/processed/partitions/ts_stamps_v0.0.4_dp1/partitions.parquet'
   #dir_data: './../../../data_acquisition/rubin/data/processed/rubin_5_classes2/ts_stamps_v0.0.3_dp1/'
   #path_partition: './../../../data_acquisition/rubin/data/processed/partitions/rubin_5_classes2/partitions.parquet'
-  list_folds: [0,1,2,3,4]
+  list_folds: [0]
   debug: false
   is_searching_hyperparameters: false
 

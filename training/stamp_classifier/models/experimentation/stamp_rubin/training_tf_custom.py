@@ -57,9 +57,9 @@ def perform_training(run, args, experiment_name):
         use_metadata=hp['use_metadata']
     )
 
-    loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+    loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)
     if args['training'].get('use_focal', False):
-        loss_object = SparseCategoricalFocalLoss(gamma=2, from_logits=True)
+        loss_object = SparseCategoricalFocalLoss(gamma=2, from_logits=False)
 
     optimizer = Adam(
         learning_rate=args['training']['lr'], beta_1=0.9, beta_2=0.999, amsgrad=False
@@ -98,7 +98,7 @@ def run(config: DictConfig) -> None:
     list_folds = args.pop('list_folds')
 
     # Setup MLflow
-    mlflow.set_tracking_uri(f"file:results/ml-runs")
+    mlflow.set_tracking_uri(f"file:results3/ml-runs")
     experiment_phase = "hp_tuning" if args['is_searching_hyperparameters'] else "testing"
     experiment_name = f"classification/{name_dataset}/{experiment_phase}"
     mlflow.set_experiment(experiment_name)
@@ -116,5 +116,4 @@ def run(config: DictConfig) -> None:
 
 
 if __name__ == "__main__":
-
     run()

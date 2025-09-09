@@ -159,12 +159,30 @@ class Trainer:
         self.test_writer.flush()
 
     def evaluate_and_save(self):
-        _, _, _, _, test_labels, test_predictions = eval_step(self.model, self.test_ds)
+        _, _, _, _, test_labels, test_predictions_og,probs = eval_step(self.model, self.test_ds)
         test_labels = [self.dict_info['dict_mapping_classes'][x] for x in test_labels]
-        test_predictions = [self.dict_info['dict_mapping_classes'][x] for x in test_predictions]
+        test_predictions = [self.dict_info['dict_mapping_classes'][x] for x in test_predictions_og]
         class_names = list(self.dict_info['dict_mapping_classes'].values())
 
         print(self.dict_info['dict_mapping_classes'])
+
+
+        import json
+
+        results_dict = {
+            f"ejemplo_{i}": {
+                "class": class_names[pred],
+                "probability": float(probs[i][pred])
+            }
+            for i, pred in enumerate(test_predictions_og[:10])
+        }
+
+        path_save_metrics = os.path.join(self.artifact_path, "metrics")
+        os.makedirs(path_save_metrics, exist_ok=True)
+
+        with open(os.path.join(path_save_metrics, "predictions.json"), "w") as f:
+            json.dump(results_dict, f, indent=4)
+
         
         # Guardar métricas finales en MLflow
         precision, recall, f1, _ = precision_recall_fscore_support(
@@ -184,8 +202,7 @@ class Trainer:
         mlflow.log_metric("test_precision", precision)
         mlflow.log_metric("test_recall", recall)
 
-        path_save_metrics = os.path.join(self.artifact_path, "metrics")
-        os.makedirs(path_save_metrics, exist_ok=True)
+        
         save_confusion_matrix_and_report(test_labels, test_predictions, path_save_metrics, class_names=class_names)
 
         self.model.save(os.path.join(self.artifact_path, "model.keras"))

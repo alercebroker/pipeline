@@ -59,4 +59,4 @@ def eval_step(model, dataset):
         labels.numpy(), predictions.numpy().argmax(axis=1), average='macro')
     xentropy = balanced_xentropy(labels, predictions)
 
-    return precision, recall, f1, xentropy, labels.numpy(), predictions.numpy().argmax(axis=1)
+    return precision, recall, f1, xentropy, labels.numpy(), predictions.numpy().argmax(axis=1), predictions.numpy()

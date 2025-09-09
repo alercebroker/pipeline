@@ -19,6 +19,8 @@ def partition_data(df, output_path, oid_col, candid_col, class_col,field=None, n
     - DataFrame with columns [oid_col, candid_col, class_col, partition]
     """
 
+    print(df[class_col].value_counts())
+
     assert df[oid_col].is_unique, f"Duplicate '{oid_col}' values found in the input DataFrame"
 
     if field:
@@ -64,8 +66,8 @@ if __name__ == "__main__":
     field = None#'Rubin_SV_095_-25'
 
     # Cargar datos y crear carpeta de salida si no existe
-    output_path = "./data/processed/partitions/rubin_5_classes2/ts_stamps_v0.0.3_dp1/partitions.parquet"
+    output_path = "./data/processed/partitions/ts_stamps_v0.0.4_dp1/partitions.parquet"
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
-    df = pd.read_parquet("./data/processed/rubin_5_classes2/ts_stamps_v0.0.3_dp1/objs.parquet")
+    df = pd.read_parquet("./data/processed/ts_stamps_v0.0.4_dp1/objs.parquet")
     partitioned_df = partition_data(df, output_path, oid_col, candid_col, class_col,field)

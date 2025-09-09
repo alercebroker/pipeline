@@ -130,6 +130,10 @@ def get_tf_datasets(batch_size: int, args: dict):
     #print(data_val[[args_loader['id_col']] + [args_loader['class_col']]].head(20))
 
     data_test = data[data[args_loader['id_col']].isin(oids_test)]
+    #data_test.to_csv("./data_test.csv", index=False)
+    #solo guardar el top 10
+    data_test.head(10).to_pickle("./data_test.pkl")
+
     #print(data_test[[args_loader['id_col']] + [args_loader['class_col']]].head(20))
     a = data_train[args_loader['id_col']].values
     b = data_test[args_loader['id_col']].values
@@ -209,6 +213,8 @@ def get_tf_datasets(batch_size: int, args: dict):
         'label_encoder': label_encoder,
         'dict_mapping_classes': dict_mapping_classes,
     })
+
+    print(dict_mapping_classes)
 
     # Reemplazos de prints actuales:
     logging.info("🧾 Dataset summary:")
