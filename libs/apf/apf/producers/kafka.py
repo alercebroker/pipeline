@@ -1,8 +1,11 @@
-from apf.producers.generic import GenericProducer
-from confluent_kafka import Producer
-import fastavro
-import io
 import importlib
+import io
+from typing import Any, Callable
+
+import fastavro
+from confluent_kafka import Producer
+
+from apf.producers.generic import GenericProducer
 
 
 class KafkaProducer(GenericProducer):
@@ -102,8 +105,9 @@ class KafkaProducer(GenericProducer):
         self.schema = fastavro.schema.load_schema(config["SCHEMA_PATH"])
 
         self.dynamic_topic = False
+        self.key_function = None
         if self.config.get("TOPIC"):
-            self.logger.info(f'Producing to {self.config["TOPIC"]}')
+            self.logger.info(f"Producing to {self.config['TOPIC']}")
             self.topic = (
                 self.config["TOPIC"]
                 if type(self.config["TOPIC"]) is list
@@ -119,7 +123,7 @@ class KafkaProducer(GenericProducer):
                 **self.config["TOPIC_STRATEGY"]["PARAMS"]
             )
             self.topic = self.topic_strategy.get_topics()
-            self.logger.info(f'Using {self.config["TOPIC_STRATEGY"]}')
+            self.logger.info(f"Using {self.config['TOPIC_STRATEGY']}")
             self.logger.info(f"Producing to {self.topic}")
 
     def _serialize_message(self, message):
@@ -141,6 +145,9 @@ class KafkaProducer(GenericProducer):
             )
         except BufferError as err:
             self._handle_buffer_error(err, topic, msg, key, callback, **kwargs)
+
+    def set_key_function(self, function: Callable[[dict[str, Any]], str]):
+        self.key_function = function
 
     def produce(self, message=None, **kwargs):
         """Produce Message to a topic.
@@ -169,7 +176,14 @@ class KafkaProducer(GenericProducer):
 
         key = None
         if message:
-            key = message[self.key_field] if self.key_field else kwargs.pop("key", None)
+            if self.key_function is not None:
+                key = self.key_function(message)
+            else:
+                key = (
+                    message[self.key_field]
+                    if self.key_field
+                    else kwargs.pop("key", None)
+                )
         message = self._serialize_message(message)
         if self.dynamic_topic:
             self.topic = self.topic_strategy.get_topics()

@@ -1,6 +1,17 @@
-from apf.core import get_class
-from apf.core.step import GenericStep, DefaultProducer
-import logging
+from typing import Any, Literal
+
+from apf.core.step import DefaultProducer, GenericStep
+
+
+def lsst_partition(msg: dict[str, Any]) -> str:
+    diaObjectId = msg["diaSource"]["diaObjectId"]
+    ssObjectId = msg["diaSource"]["ssObjectId"]
+
+    key = ssObjectId
+    if key == 0 or key is None:
+        key = diaObjectId
+
+    return str(key)
 
 
 class CustomMirrormaker(GenericStep):
@@ -16,13 +27,26 @@ class CustomMirrormaker(GenericStep):
         Logging level.
     """
 
-    def __init__(self, config=None, **step_args):
+    def __init__(
+        self,
+        config: dict[str, Any],
+        survey: Literal["ztf", "lsst"],
+        keep_original_timestamp: bool = False,
+        use_message_topic: bool = False,
+        producer_key: str = None,
+        **step_args,
+    ):
         super().__init__(config=config)
-        self.keep_original_timestamp = step_args.get(
-            "keep_original_timestamp", False
-        )
-        self.use_message_topic = step_args.get("use_message_topic", False)
-        self.producer_key = step_args.get("producer_key", None)
+        self.keep_original_timestamp = keep_original_timestamp
+        self.use_message_topic = use_message_topic
+        self.survey = survey
+
+        isRawKafkaConsumer = self.consumer.__class__.__name__ != "RawKafkaConsumer"
+
+        if self.survey == "lsst" and isRawKafkaConsumer:
+            self.producer.set_key_function(lsst_partition)
+        elif self.survey == "ztf" and isRawKafkaConsumer:
+            self.producer.set_key_field(producer_key)
 
     def produce(self, messages):
         to_produce = [messages] if isinstance(messages, dict) else messages
@@ -34,14 +58,10 @@ class CustomMirrormaker(GenericStep):
                 producer_kwargs["timestamp"] = msg.timestamp()[1]
             if self.use_message_topic:
                 self.producer.topic = [msg.topic()]
+            msg.pop("timestamp")
             self.producer.produce(msg, **producer_kwargs)
         if not isinstance(self.producer, DefaultProducer):
             self.logger.info(f"Produced {count} messages")
-
-    def pre_produce(self, result):
-        if self.producer_key and self.consumer.__class__.__name__ != "RawKafkaConsumer":
-            self.producer.set_key_field(self.producer_key)
-        return result
 
     def execute(self, messages):
         return messages

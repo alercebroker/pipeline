@@ -98,7 +98,7 @@ def classifier_version_str_to_small_integer(version: str) -> int:
 
 
 # TODO: The following function is a placeholder and should be replaced with the actual implementation
-CLASS_LIST = ["AGN", "SN","VS", "asteroid", "bogus", "satellite"]
+CLASS_DICT = {"SN":0, "AGN":1,"VS":2, "asteroid":3, "bogus":4, "satellite":5}
 
 
 def class_name_to_id(class_name: str) -> int:
@@ -107,7 +107,7 @@ def class_name_to_id(class_name: str) -> int:
     This is a placeholder function and should be replaced with actual logic.
     """
 
-    class_dict = {name: idx for idx, name in enumerate(CLASS_LIST)}
+    class_dict = CLASS_DICT#{name: idx for idx, name in enumerate(CLASS_LIST)}
     return class_dict.get(class_name, -1)  # Return -1 if class_name not found
 
 
@@ -117,5 +117,5 @@ def class_id_to_name(class_id: int) -> str:
     Convert a class ID to a class name.
     This is a placeholder function and should be replaced with actual logic.
     """
-    class_dict = {idx: name for idx, name in enumerate(CLASS_LIST)}
+    class_dict = {idx: name for name, idx in CLASS_DICT.items()}
     return class_dict.get(class_id, "unknown")  # Return "unknown" if class_id not found
