@@ -21,9 +21,9 @@ logging.basicConfig(
 
 step_config = settings["STEP_CONFIG"]
 
-keep_original_timestamp = step_config.pop("keep_original_timestamp")
-use_message_topic = step_config.pop("use_message_topic")
-producer_key = step_config.pop("producer_key")
+keep_original_timestamp = step_config.pop("keep_original_timestamp", False)
+use_message_topic = step_config.pop("use_message_topic", False)
+producer_key = step_config.pop("producer_key", None)
 survey = str(step_config.pop("survey")).lower()
 
 if survey not in ["ztf", "lsst"]:

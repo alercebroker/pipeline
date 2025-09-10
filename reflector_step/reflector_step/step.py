@@ -39,6 +39,7 @@ class CustomMirrormaker(GenericStep):
         super().__init__(config=config)
         self.keep_original_timestamp = keep_original_timestamp
         self.use_message_topic = use_message_topic
+        self.survey = survey
 
         isRawKafkaConsumer = self.consumer.__class__.__name__ != "RawKafkaConsumer"
 
@@ -57,6 +58,7 @@ class CustomMirrormaker(GenericStep):
                 producer_kwargs["timestamp"] = msg.timestamp()[1]
             if self.use_message_topic:
                 self.producer.topic = [msg.topic()]
+            msg.pop("timestamp")
             self.producer.produce(msg, **producer_kwargs)
         if not isinstance(self.producer, DefaultProducer):
             self.logger.info(f"Produced {count} messages")

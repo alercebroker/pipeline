@@ -2,11 +2,11 @@
 line-length = 79
 [tool.poetry]
 name = "reflector-step"
-version = "27.5.7a25"
+version = "27.5.7a26"
 description = "Copy data between Kafka topics"
 authors = ["alercebroker"]
 readme = "README.md"
-packages = [{include = "reflector_step"}]
+packages = [{ include = "reflector_step" }]
 
 [tool.poetry.dependencies]
 python = ">=3.10, <3.11"
