@@ -1,7 +1,6 @@
 import unittest
 from typing import Any
 
-import numpy as np
 import pytest
 from db_plugins.db.sql._connection import PsqlDatabase
 from db_plugins.db.sql.models import (
@@ -98,9 +97,7 @@ class BaseDbTests(unittest.TestCase):
         return result
 
     def test_object(self):
-        with self.psql_db.session() as session:
-            insert_objects(session, msgs.new_objects_df)
-            session.commit()
+        insert_objects(self.psql_db, msgs.new_objects_df)
 
         result = self.query_data(Object)
         result_ztf = self.query_data(ZtfObject)
@@ -115,9 +112,7 @@ class BaseDbTests(unittest.TestCase):
             self.assertDictEqual(res, exp)
 
     def test_detection(self):
-        with self.psql_db.session() as session:
-            insert_detections(session, msgs.new_detections_df)
-            session.commit()
+        insert_detections(self.psql_db, msgs.new_detections_df)
 
         result_detections = self.query_data(Detection)
         result_ztf_detections = self.query_data(ZtfDetection)
@@ -137,9 +132,7 @@ class BaseDbTests(unittest.TestCase):
             self.assertDictEqual(res, exp)
 
     def test_forced_photometry(self):
-        with self.psql_db.session() as session:
-            insert_forced_photometry(session, msgs.new_fp_df)
-            session.commit()
+        insert_forced_photometry(self.psql_db, msgs.new_fp_df)
 
         result_fp = self.query_data(ForcedPhotometry)
         result_ztf_fp = self.query_data(ZtfForcedPhotometry)
@@ -158,9 +151,7 @@ class BaseDbTests(unittest.TestCase):
             self.assertDictAlmostEqual(res, exp)
 
     def test_non_detections(self):
-        with self.psql_db.session() as session:
-            insert_non_detections(session, msgs.new_non_detections_df)
-            session.commit()
+        insert_non_detections(self.psql_db, msgs.new_non_detections_df)
 
         result = self.query_data(ZtfNonDetection)
 
