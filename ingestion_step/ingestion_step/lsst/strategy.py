@@ -8,7 +8,6 @@ from ingestion_step.lsst.database import (
     insert_dia_objects,
     insert_forced_sources,
     insert_mpcorb,
-    insert_prv_sources,
     # insert_non_detections,
     insert_sources,
     insert_ss_sources,
@@ -87,22 +86,22 @@ class LsstStrategy(StrategyInterface[LsstData]):
         )
 
     @classmethod
-    def insert_into_db(cls, driver: PsqlDatabase, parsed_data: LsstData):
-        with driver.session() as session:
-            insert_dia_objects(session, parsed_data["dia_object"])
-            insert_mpcorb(session, parsed_data["mpcorbs"])
-            insert_sources(session, parsed_data["dia_sources"])
-            insert_prv_sources(session, parsed_data["previous_sources"])
-            insert_ss_sources(session, parsed_data["ss_sources"])
-            insert_forced_sources(session, parsed_data["forced_sources"])
-            session.commit()
-        # insert_dia_objects(driver, parsed_data["dia_object"])
-        # # insert_ss_objects(driver, parsed_data["ss_object"])
-        #
-        # insert_sources(driver, parsed_data["dia_sources"])
-        # insert_sources(driver, parsed_data["previous_sources"])
-        # insert_forced_sources(driver, parsed_data["forced_sources"])
-        # # insert_non_detections(driver, parsed_data["non_detections"])
+    def insert_into_db(
+        cls, driver: PsqlDatabase, parsed_data: LsstData, chunk_size: int | None = None
+    ):
+        insert_dia_objects(driver, parsed_data["dia_object"], chunk_size=chunk_size)
+        insert_mpcorb(driver, parsed_data["mpcorbs"], chunk_size=chunk_size)
+        insert_sources(
+            driver,
+            parsed_data["dia_sources"],
+            on_conflict_do_update=True,
+            chunk_size=chunk_size,
+        )
+        insert_sources(driver, parsed_data["previous_sources"], chunk_size=chunk_size)
+        insert_ss_sources(driver, parsed_data["ss_sources"], chunk_size=chunk_size)
+        insert_forced_sources(
+            driver, parsed_data["forced_sources"], chunk_size=chunk_size
+        )
 
     @classmethod
     def serialize(cls, parsed_data: LsstData) -> list[Message]:

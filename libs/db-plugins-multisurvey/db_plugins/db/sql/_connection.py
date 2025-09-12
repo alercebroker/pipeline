@@ -1,9 +1,11 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
-from .models import Base
+import logging
 from contextlib import contextmanager
 from typing import Callable, ContextManager
-import logging
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
+
+from .models import Base
 
 
 def get_db_url(config: dict):
@@ -37,7 +39,7 @@ class PsqlDatabase:
         Base.metadata.drop_all(self._engine)
 
     @contextmanager
-    def session(self) -> Callable[..., ContextManager[Session]]:
+    def session(self):
         session: Session = self._session_factory()
         try:
             yield session
