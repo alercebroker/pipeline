@@ -103,6 +103,7 @@ class LsstStrategy(StrategyInterface[LsstData]):
             driver, parsed_data["forced_sources"], chunk_size=chunk_size
         )
 
+    """
     @classmethod
     def serialize(cls, parsed_data: LsstData) -> list[Message]:
         msg_dia_objects = groupby_messageid(parsed_data["dia_object"])
@@ -142,6 +143,47 @@ class LsstStrategy(StrategyInterface[LsstData]):
                 }
             )
 
+        return messages
+    """
+    
+    @classmethod
+    def serialize(cls, parsed_data: LsstData) -> list[Message]:
+        dia_sources_df = parsed_data["dia_sources"]
+        dia_object_df = parsed_data["dia_object"]
+        previous_sources_df = parsed_data["previous_sources"]
+        forced_sources_df = parsed_data["forced_sources"]
+        dia_sources_records = dia_sources_df.to_dict("records")
+        dia_sources_by_msg = {record["message_id"]: record for record in dia_sources_records}
+        dia_object_lookup = {}
+        if not dia_object_df.empty:
+            dia_object_records = dia_object_df.to_dict("records")
+            dia_object_lookup = {
+                record["message_id"]: {k: v for k, v in record.items() if k != 'message_id'}
+                for record in dia_object_records
+            }
+        prv_sources_groups = {}
+        if not previous_sources_df.empty:
+            prv_sources_groups = (previous_sources_df
+                                    .groupby("message_id")
+                                    .apply(lambda x: x.to_dict("records"), include_groups=False)
+                                    .to_dict())
+        forced_sources_groups = {}
+        if not forced_sources_df.empty:
+            forced_sources_groups = (forced_sources_df
+                                        .groupby("message_id")
+                                        .apply(lambda x: x.to_dict("records"), include_groups=False)
+                                        .to_dict())
+        messages = []
+        for message_id, source in dia_sources_by_msg.items():
+            source_clean = {k: v for k, v in source.items() if k != 'message_id'}
+            messages.append({
+                "oid": source["oid"],
+                "measurement_id": source["measurement_id"],
+                "source": source_clean,
+                "previous_sources": prv_sources_groups.get(message_id, []),
+                "forced_sources": forced_sources_groups.get(message_id, []),
+                "dia_object": dia_object_lookup.get(message_id),
+            })
         return messages
 
     @classmethod
