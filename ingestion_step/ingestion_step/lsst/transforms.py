@@ -50,11 +50,19 @@ def band_to_int(df: pd.DataFrame):
     df.drop(columns=["_band"], inplace=True)
 
 
+def deduplicate(columns: list[str]):
+    def _deduplicate(df: pd.DataFrame):
+        df.drop_duplicates(subset=columns, inplace=True)
+
+    return _deduplicate
+
+
 def get_source_transforms() -> list[Transform]:
     return [
         add_oid,
         add_sid_to_source,
         copy_column("diaSourceId", "measurement_id"),
+        deduplicate(["oid", "sid", "measurement_id"]),
         copy_column("midpointMjdTai", "mjd"),
         band_to_int,
     ]
@@ -69,6 +77,7 @@ def get_forced_source_transforms() -> list[Transform]:
         add_oid,
         add_sid_to_source,
         copy_column("diaForcedSourceId", "measurement_id"),
+        deduplicate(["oid", "sid", "measurement_id"]),
         copy_column("midpointMjdTai", "mjd"),
         band_to_int,
     ]
@@ -88,6 +97,7 @@ def get_dia_object_transforms() -> list[Transform]:
         copy_column("diaObjectId", "oid"),
         add_constant_column("tid", TID, pd.Int32Dtype()),
         add_constant_column("sid", DIA_SID, pd.Int32Dtype()),
+        deduplicate(["oid", "sid"]),
         copy_column("midpointMjdTai", "mjd"),
         copy_column("mjd", "firstmjd"),
         copy_column("mjd", "lastmjd"),

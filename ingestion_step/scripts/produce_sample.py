@@ -24,6 +24,17 @@ PRODUCE_SAMPLE_CONFIG: dict[str, Any] = config_from_yaml_file(
     )
 )
 
+def lsst_partition(msg: dict[str, Any]) -> str:
+    diaObjectId = msg["diaSource"]["diaObjectId"]
+    ssObjectId = msg["diaSource"]["ssObjectId"]
+
+    key = ssObjectId
+    if key == 0 or key is None:
+        key = diaObjectId
+
+    return str(key)
+
+
 rng = Random(42)
 generator_lsst = LsstAlertGenerator(rng=rng, new_obj_rate=0.1)
 GENERATORS = {"lsst": generator_lsst, "ztf": generate_alerts_ztf}
@@ -36,7 +47,10 @@ class SampleProducer:
         Producer = get_class(config["CLASS"])
 
         self.producer = Producer(config)
-        self.producer.set_key_field("alertId")
+        if self.survey == "lsst":
+            self.producer.set_key_function(lsst_partition)
+        elif self.survey == "ztf":
+            self.producer.set_key_field("alertId")
 
     def produce(self, msgs: Iterable[dict[str, Any]], flush: bool = True):
         for msg in tqdm(msgs):

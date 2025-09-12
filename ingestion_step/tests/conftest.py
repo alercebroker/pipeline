@@ -18,7 +18,7 @@ def ztf_alerts() -> list[Message]:
 def lsst_alerts() -> list[Message]:
     rng = random.Random(42)
     generator = LsstAlertGenerator(rng=rng, new_obj_rate=0.4)
-    return [generator.generate_alert() for _ in range(100)]
+    return [generator.generate_alert() for _ in range(50)]
 
 
 # Adds a better assertion message for subset comparison

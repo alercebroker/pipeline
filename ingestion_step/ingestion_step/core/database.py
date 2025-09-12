@@ -1,4 +1,4 @@
-from typing import Any, Hashable, Iterable
+from typing import Any, Hashable
 
 from db_plugins.db.sql.models import (
     DeclarativeBase,
@@ -6,16 +6,24 @@ from db_plugins.db.sql.models import (
 from sqlalchemy.dialects.postgresql import insert
 
 
-def db_statement_builder(
-    model: type[DeclarativeBase],
-    data: list[dict[Hashable, Any]],
-    conflict_columns: Iterable[Any] | None = None,
+def db_insert_on_conflict_do_nothing_builder(
+    model: type[DeclarativeBase], data: list[dict[Hashable, Any]]
 ):
     stmt = insert(model).values(data)
-    if conflict_columns:
-        stmt = stmt.on_conflict_do_nothing(index_elements=conflict_columns)
-    else:
-        stmt = stmt.on_conflict_do_nothing()
+    stmt = stmt.on_conflict_do_nothing()
+
+    return stmt
+
+
+def db_insert_on_conflict_do_update_builder(
+    model: type[DeclarativeBase], data: list[dict[Hashable, Any]], pk: list[str]
+):
+    stmt = insert(model).values(data)
+    stmt = stmt.on_conflict_do_update(
+        constraint=model.__table__.primary_key.name,  # pyright: ignore
+        set_={k: v for k, v in stmt.excluded.items() if k not in pk},
+    )
+
     return stmt
 
 
