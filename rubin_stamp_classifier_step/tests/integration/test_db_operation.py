@@ -98,9 +98,9 @@ class TestRubinStampClassifierStep(unittest.TestCase):
         self.assertEqual(len(processed_messages), len(self.sample_messages))
 
         required_fields = [
-            "alertId",
             "diaObjectId",
             "diaSourceId",
+            "ssObjectId",
             "midpointMjdTai",
             "ra",
             "dec",
@@ -150,7 +150,7 @@ class TestRubinStampClassifierStep(unittest.TestCase):
 
         # Check if the results are stored in the database
         for result in execute_result:
-            oid = result["diaObjectId"]
+            oid = result["diaObjectId"] if result["diaObjectId"] != 0 else result["ssObjectId"]
             with self.db_sql.session() as session:
                 query = select(Probability).where(Probability.oid == oid)
                 db_result = session.execute(query).scalars().all()
