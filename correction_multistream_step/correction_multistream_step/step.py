@@ -29,6 +29,8 @@ class CorrectionMultistreamStep(GenericStep):
             cls = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
             self.scribe_producer = cls(self.config["SCRIBE_PRODUCER_CONFIG"])
         self.survey = self.config.get("SURVEY")
+        self.producer.set_key_field("oid")
+
 
     def execute(self, messages: List[dict]) -> dict:
         # Select the input message parser (to sepate the different data sources from the message into pandas dataframes without losing precision)
@@ -69,8 +71,13 @@ class CorrectionMultistreamStep(GenericStep):
 
     def produce_scribe(self, scribe_payloads):
         for scribe_data in scribe_payloads:
-            payload = {"payload": json.dumps(scribe_data, cls=NumpyEncoder)}
-            self.scribe_producer.produce(payload)
+            payload = {"payload": scribe_data}
+            oid = scribe_data["payload"]["oid"]
+            self.scribe_producer.producer.produce(
+                topic="scribe-multisurvey",
+                key=str(oid).encode("utf-8"),               
+                value=json.dumps(payload, cls=NumpyEncoder).encode("utf-8"), 
+            )
 
     def tear_down(self):
         if isinstance(self.consumer, KafkaConsumer):
