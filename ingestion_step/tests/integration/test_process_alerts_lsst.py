@@ -1,6 +1,8 @@
+import asyncio
+
 import fastavro
 import pytest
-from db_plugins.db.sql._connection import PsqlDatabase
+from db_plugins.db.sql._connection import AsyncPsqlDatabase, PsqlDatabase
 from fastavro.schema import load_schema
 from fastavro.types import Schema
 from sqlalchemy import text
@@ -9,15 +11,17 @@ from sqlalchemy.orm import Session
 from ingestion_step.core.types import Message
 from ingestion_step.lsst.strategy import LsstStrategy
 
+DBs = tuple[PsqlDatabase, AsyncPsqlDatabase]
+
 
 @pytest.mark.usefixtures("psql_db")
-def test_process_alerts(lsst_alerts: list[Message], psql_db: PsqlDatabase):
+def test_process_alerts(lsst_alerts: list[Message], psql_db: DBs):
     parsed_data = LsstStrategy.parse(lsst_alerts)
-    LsstStrategy.insert_into_db(psql_db, parsed_data)
+    asyncio.run(LsstStrategy.insert_into_db(psql_db[1], parsed_data))
 
 
 @pytest.mark.usefixtures("psql_db")
-def test_process_out_of_order(psql_db: PsqlDatabase):
+def test_process_out_of_order(psql_db: DBs):
     schema: Schema = load_schema("../schemas/surveys/lsst_v9.0/lsst.v9_0.alert.avsc")
     with open("./tests/integration/data/lsst_generated_50.avro", "rb") as f:
         reader = fastavro.reader(f, schema)
@@ -25,14 +29,11 @@ def test_process_out_of_order(psql_db: PsqlDatabase):
 
     lsst_alerts.sort(key=lambda msg: msg["diaSource"]["midpointMjdTai"], reverse=True)
 
-    psql_db.drop_db()
-    psql_db.create_db()
-
     for alert in lsst_alerts:
         parsed_data = LsstStrategy.parse([alert])
-        LsstStrategy.insert_into_db(psql_db, parsed_data)
+        asyncio.run(LsstStrategy.insert_into_db(psql_db[1], parsed_data))
 
-    with psql_db.session() as session:
+    with psql_db[0].session() as session:
         assert isinstance(session, Session)
         res = session.execute(
             text("SELECT count(*) FROM lsst_detection WHERE has_stamp = true;")
@@ -46,16 +47,13 @@ def test_process_out_of_order(psql_db: PsqlDatabase):
 
 
 @pytest.mark.usefixtures("psql_db")
-def test_process_duplicated(psql_db: PsqlDatabase, lsst_alerts: list[Message]):
-    psql_db.drop_db()
-    psql_db.create_db()
-
+def test_process_duplicated(psql_db: DBs, lsst_alerts: list[Message]):
     lsst_alerts_duplicated = lsst_alerts + lsst_alerts
 
     parsed_data = LsstStrategy.parse(lsst_alerts_duplicated)
-    LsstStrategy.insert_into_db(psql_db, parsed_data)
+    asyncio.run(LsstStrategy.insert_into_db(psql_db[1], parsed_data))
 
-    with psql_db.session() as session:
+    with psql_db[0].session() as session:
         assert isinstance(session, Session)
         res = session.execute(
             text("SELECT count(*) FROM lsst_detection WHERE has_stamp = true;")

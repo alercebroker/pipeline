@@ -1,8 +1,9 @@
+import asyncio
 import unittest
 from typing import Any
 
 import pytest
-from db_plugins.db.sql._connection import PsqlDatabase
+from db_plugins.db.sql._connection import AsyncPsqlDatabase, PsqlDatabase
 from db_plugins.db.sql.models import (
     DeclarativeBase,
     Detection,
@@ -50,6 +51,7 @@ class BaseDbTests(unittest.TestCase):
     def setUp(self):
         # crear db
         self.psql_db = PsqlDatabase(psql_config)
+        self.async_psql_db = AsyncPsqlDatabase(psql_config)
         self.psql_db.create_db()
 
         # insertar datos existente
@@ -97,7 +99,7 @@ class BaseDbTests(unittest.TestCase):
         return result
 
     def test_object(self):
-        insert_objects(self.psql_db, msgs.new_objects_df)
+        asyncio.run(insert_objects(self.async_psql_db, msgs.new_objects_df))
 
         result = self.query_data(Object)
         result_ztf = self.query_data(ZtfObject)
@@ -112,7 +114,7 @@ class BaseDbTests(unittest.TestCase):
             self.assertDictEqual(res, exp)
 
     def test_detection(self):
-        insert_detections(self.psql_db, msgs.new_detections_df)
+        asyncio.run(insert_detections(self.async_psql_db, msgs.new_detections_df))
 
         result_detections = self.query_data(Detection)
         result_ztf_detections = self.query_data(ZtfDetection)
@@ -132,7 +134,7 @@ class BaseDbTests(unittest.TestCase):
             self.assertDictEqual(res, exp)
 
     def test_forced_photometry(self):
-        insert_forced_photometry(self.psql_db, msgs.new_fp_df)
+        asyncio.run(insert_forced_photometry(self.async_psql_db, msgs.new_fp_df))
 
         result_fp = self.query_data(ForcedPhotometry)
         result_ztf_fp = self.query_data(ZtfForcedPhotometry)
@@ -151,7 +153,9 @@ class BaseDbTests(unittest.TestCase):
             self.assertDictAlmostEqual(res, exp)
 
     def test_non_detections(self):
-        insert_non_detections(self.psql_db, msgs.new_non_detections_df)
+        asyncio.run(
+            insert_non_detections(self.async_psql_db, msgs.new_non_detections_df)
+        )
 
         result = self.query_data(ZtfNonDetection)
 
