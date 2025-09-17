@@ -311,8 +311,6 @@ class LSSTMagstatCommand(Command):
     type = "LSSTMagstatCommand"
 
     def _format_data(self, data):
-        print('wiwiwi2')
-        print(data)
         oid = data["oid"]
 
         object_stats = parse_obj_stats(data, oid)

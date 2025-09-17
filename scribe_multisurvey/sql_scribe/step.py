@@ -73,7 +73,6 @@ class SqlScribe(GenericStep):
         
         # Combine all filtered messages
         messages_filtered = filtered_magstat_messages + filtered_magstat_objects_messages + other_messages
-        print(messages_filtered)
         return messages_filtered
 
     def execute(self, messages):

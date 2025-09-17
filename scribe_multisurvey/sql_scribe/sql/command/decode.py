@@ -70,7 +70,6 @@ def command_factory(msg: str) -> Command:
         )
 
     if survey == "lsst" and step == "magstat_objects":
-        print('UPDATING A DIA OBJECT')
         return LSSTUpdateDiaObjectCommand(
             payload=message["payload"],
             criteria=message.get("criteria", {}),
