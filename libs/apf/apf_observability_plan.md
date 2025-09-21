@@ -8,12 +8,13 @@ The ALeRCE pipeline processes astronomical alerts using a series of containerize
 
 ## Logging
 
-- **All pipeline steps use structured Python logging**, emitting logs (info, debug, warning, error) to stdout/stderr.
-- **Filebeat runs as a DaemonSet in Kubernetes**, collecting logs from all step containers.
-- **Filebeat enriches logs with Kubernetes metadata** (pod name, namespace, node, container, labels).
-- **Logs are shipped directly from Filebeat to OpenSearch** (Elasticsearch), enabling centralized log storage, search, filtering, and audit.
-- **Kibana dashboards** are used for log analytics, troubleshooting, and alerting (errors, discards, exceptions).
+- **All pipeline steps use structured Python logging**, emitting logs (info, debug, warning, error) to stdout/stderr and to log files (e.g., `dummy_step.log`).
+- **Fluent Bit runs as a DaemonSet in Kubernetes (or as a service in local/dev setups)**, collecting logs from all step containers and/or log files.
+- **Fluent Bit enriches logs with Kubernetes metadata** (pod name, namespace, node, container, labels) when running in cluster mode.
+- **Logs are shipped directly from Fluent Bit to OpenSearch** (Elasticsearch-compatible), enabling centralized log storage, search, filtering, and audit.
+- **Kibana (OpenSearch Dashboards) dashboards** are used for log analytics, troubleshooting, and alerting (errors, discards, exceptions).
 - **Log format is structured (JSON preferred)** for easy filtering and correlation with pipeline context (e.g., batch ID, object ID, alert ID, step name, discard reason).
+- **Compatibility Note:** Fluent Bit's default Elasticsearch output may include a deprecated `_type` field, which OpenSearch 2.x rejects. Ensure your Fluent Bit configuration omits `_type` (see [Fluent Bit docs](https://docs.fluentbit.io/manual/pipeline/outputs/elasticsearch#opensearch-compatibility)).
 
 ---
 
@@ -36,6 +37,7 @@ The ALeRCE pipeline processes astronomical alerts using a series of containerize
 - **Log retention and compression** are configured in OpenSearch and in transit.
 - **Kubernetes metadata enrichment** enables correlation between pipeline steps, nodes, and operational context.
 - **Prometheus is the single source of truth for operational metrics** used in Grafana dashboards and alerts.
+- **Fluent Bit configuration should be regularly reviewed for compatibility with OpenSearch and for optimal enrichment/filtering.**
 
 ---
 
@@ -44,8 +46,8 @@ The ALeRCE pipeline processes astronomical alerts using a series of containerize
 | Layer       | Tool/Service            | Purpose                        |
 |-------------|-------------------------|--------------------------------|
 | Metrics     | Prometheus, Grafana     | Rates, timings, discard stats  |
-| Logs        | Filebeat, OpenSearch, Kibana | Centralized logs, error audit, search |
-| Enrichment  | Filebeat                | Add Kubernetes pod/node/labels to logs |
+| Logs        | Fluent Bit, OpenSearch, Kibana | Centralized logs, error audit, search |
+| Enrichment  | Fluent Bit              | Add Kubernetes pod/node/labels to logs |
 | Alerting    | Grafana, Kibana         | Metric/log-based alerts        |
 
 ---
