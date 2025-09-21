@@ -54,7 +54,7 @@ class GenericStep(abc.ABC):
         consumer: Type[GenericConsumer] = DefaultConsumer,
         producer: Type[GenericProducer] = DefaultProducer,
         metrics_sender: Type[GenericMetricsProducer] = DefaultMetricsProducer,
-        level: int = logging.NOTSET,
+        level: int | str = logging.NOTSET,
         config: dict = {},
         prometheus_metrics: PrometheusMetrics = DefaultPrometheusMetrics(),
     ):
@@ -70,6 +70,7 @@ class GenericStep(abc.ABC):
         if self.metrics_config:
             self.extra_metrics = self.metrics_config.get("EXTRA_METRICS", ["candid"])
         self.commit = self.config.get("COMMIT", True)
+        self.survey = self.config.get("SURVEY", None)
         self.prometheus_metrics = prometheus_metrics
 
     @property
@@ -164,7 +165,12 @@ class GenericStep(abc.ABC):
 
     def _pre_consume(self):
         self.logger.info("Starting step. Begin processing")
-        self.pre_consume()
+
+        try:
+            self.pre_consume()
+        except Exception as e:
+            self.logger.error("Unrecoverable exception in pre_consume", exc_info=True)
+            raise e
 
     def pre_consume(self):
         """
@@ -173,7 +179,9 @@ class GenericStep(abc.ABC):
         pass
 
     def _pre_execute(self, message: Union[dict, List[dict]]):
-        self.logger.info("Received message. Begin preprocessing")
+        n_messages = len(message) if isinstance(message, list) else 1
+        extra = {"n_messages": n_messages}
+        self.logger.info("Received message. Begin preprocessing", extra=extra)
         self.metrics["timestamp_received"] = datetime.datetime.now(
             datetime.timezone.utc
         )
@@ -187,8 +195,7 @@ class GenericStep(abc.ABC):
         try:
             preprocessed = self.pre_execute(self.message)
         except Exception as error:
-            self.logger.debug("Error at pre_execute")
-            self.logger.debug(f"The message(s) that caused the error: {message}")
+            self.logger.error("Unrecoverable exception in pre_execute", exc_info=True)
             raise error
         return preprocessed
 
@@ -221,8 +228,7 @@ class GenericStep(abc.ABC):
         try:
             final_result = self.post_execute(result)
         except Exception as error:
-            self.logger.debug("Error at post_execute")
-            self.logger.debug(f"The result that caused the error: {result}")
+            self.logger.error("Unrecoverable exception in post_execute", exc_info=True)
             raise error
         self.metrics["timestamp_sent"] = datetime.datetime.now(datetime.timezone.utc)
         time_difference = (
@@ -263,8 +269,7 @@ class GenericStep(abc.ABC):
         try:
             message_to_produce = self.pre_produce(result)
         except Exception as error:
-            self.logger.debug("Error at pre_produce")
-            self.logger.debug(f"The result that caused the error: {result}")
+            self.logger.error("Unrecoverable exception in pre_produce", exc_info=True)
             raise error
         return message_to_produce
 
@@ -285,7 +290,7 @@ class GenericStep(abc.ABC):
             if self.commit:
                 self.consumer.commit()
         except Exception as error:
-            self.logger.debug("Error at post_produce")
+            self.logger.error("Unrecoverable exception in post_produce", exc_info=True)
             raise error
 
     def post_produce(self):
@@ -452,7 +457,7 @@ class GenericStep(abc.ABC):
         try:
             self.tear_down()
         except Exception as error:
-            self.logger.debug("Error at tear_down")
+            self.logger.error("Unrecoverable exception in tear_down", exc_info=True)
             raise error
         self._write_success()
 
