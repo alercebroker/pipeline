@@ -166,11 +166,11 @@ class TestKafkaOutput(unittest.TestCase):
             "Output topic message count does not match execute results.",
         )
         # Order execute_results and deserialized_outputs by a key to ensure comparison is valid
-        execute_results = sorted(execute_results, key=lambda x: x["alertId"])
-        deserialized_outputs = sorted(deserialized_outputs, key=lambda x: x["alertId"])
+        execute_results = sorted(execute_results, key=lambda x: x["diaSourceId"])
+        deserialized_outputs = sorted(deserialized_outputs, key=lambda x: x["diaSourceId"])
         id_fields = [
-            "alertId",
             "diaObjectId",
+            "ssObjectId",
             "diaSourceId",
         ]
         floating_point_fields = [

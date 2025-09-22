@@ -56,14 +56,33 @@ class StampClassifierStep(GenericStep):
         logging.warning("Seeing is not available in schema v7.4, setting to 0.7")
 
         processed_messages = []
-        for message in messages:
-            if message["diaObject"] is not None:
-                processed_message = {}
+        #aqui deberia considerar todos los mensajes, si diaobject is none, entonces diasource no lo es
+        for cont,message in enumerate(messages):
+            #if message["diaObject"] is not None:
+            processed_message = {}
+            
+            processed_message["diaObjectId"] = message["diaSource"]["diaObjectId"]
+            processed_message["diaSourceId"] = message["diaSource"]["diaSourceId"]
+            processed_message["ssObjectId"] = message["diaSource"]["ssObjectId"]
 
-                # Object identity
-                # processed_message["alertId"] = message["alertId"]
-                processed_message["diaObjectId"] = message["diaObject"]["diaObjectId"]
-                processed_message["diaSourceId"] = message["diaSource"]["diaSourceId"]
+            obj_id = message["diaSource"]["diaObjectId"]
+            src_id = message["diaSource"]["ssObjectId"]
+            # Normalizamos: consideramos None o 0 como "falso"
+            obj_ok = obj_id not in (None, 0)
+            src_ok = src_id not in (None, 0)
+
+            if obj_ok and src_ok:
+                logging.info(
+                    f"Both DiaObjectId and ssObjectId exists: obj_id={obj_id}, ss_id={src_id}"
+                )
+            elif not obj_ok and not src_ok:
+                logging.info(
+                    f"Both DiaObjectId and ssObjectId are None or 0"
+                )
+
+            # XOR lógico: solo pasa si uno es True y el otro False
+            elif obj_ok ^ src_ok:
+
                 processed_message["midpointMjdTai"] = message["diaSource"]["midpointMjdTai"]
 
                 # Properties
@@ -99,6 +118,7 @@ class StampClassifierStep(GenericStep):
         return processed_messages
 
     def _messages_to_dto(self, messages: List[dict]) -> InputDTO:
+        
         df = pd.DataFrame.from_records(messages)
         df.set_index("diaObjectId", inplace=True)
 
@@ -142,14 +162,20 @@ class StampClassifierStep(GenericStep):
     def execute(
         self, messages: List[dict]
     ) -> Union[Iterable[Dict[str, Any]], Dict[str, Any]]:
-        input_dto = self._messages_to_dto(messages)
+        
+        #aqui tengo que hacer la distincion si es diaobject none o no
+
+        messages_to_process = [message for message in messages if message["diaObjectId"] is not None and message["diaObjectId"] != 0]
+        messages_asteroids = [message for message in messages if message["ssObjectId"] is not None and message["ssObjectId"] != 0]
+        input_dto = self._messages_to_dto(messages_to_process)
         output_dto: OutputDTO = self.model.predict(input_dto)
         predicted_probabilities = output_dto.probabilities
 
         output_messages = []
-        for message in messages:
+        for message in messages_to_process:
             output_message = {
                 "diaObjectId": message["diaObjectId"],
+                'ssObjectId': 0,
                 "diaSourceId": message["diaSourceId"],
                 "probabilities": predicted_probabilities.loc[
                     message["diaObjectId"]
@@ -158,7 +184,26 @@ class StampClassifierStep(GenericStep):
                 "ra": message["ra"],
                 "dec": message["dec"],
             }
+            #print(output_message['probabilities'])
             output_messages.append(output_message)
+
+        for message in messages_asteroids:
+            output_message = {
+                "diaObjectId": 0,
+                'ssObjectId': message["ssObjectId"],
+                "diaSourceId": message["diaSourceId"],
+                "probabilities": {'AGN': 0.0, 
+                                  'SN': 0.0, 
+                                  'VS': 0.0, 
+                                  'asteroid': 1.0, 
+                                  'bogus': 0.0,
+                                    'satellite': 0.0},  # All probability to asteroid class
+                "midpointMjdTai": message["midpointMjdTai"],
+                "ra": message["ra"],
+                "dec": message["dec"],
+            }
+            output_messages.append(output_message)
+
         return output_messages
 
     def post_execute(self, messages: List[dict]) -> List[dict]:

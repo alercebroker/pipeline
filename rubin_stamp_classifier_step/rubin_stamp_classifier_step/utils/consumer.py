@@ -15,5 +15,6 @@ class LsstKafkaConsumer(KafkaConsumer):
         bytes_io = io.BytesIO(message.value())
         magic, schema_id = unpack(">bI", bytes_io.read(5))
         assert schema_id == 704
+        #print(self.schema)
         data = schemaless_reader(bytes_io, self.schema)
         return data
