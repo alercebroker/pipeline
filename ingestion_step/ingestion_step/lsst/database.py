@@ -8,8 +8,6 @@ from db_plugins.db.sql.models import (
     LsstForcedPhotometry,
     LsstMpcorb,
     LsstSsDetection,
-    # LsstNonDetection,
-    # LsstSsObject,
     Object,
 )
 
@@ -65,35 +63,17 @@ def insert_mpcorb(
     if chunk_size is None:
         chunk_size = len(mpcorbs)
 
-    lsst_columns = set(mpcorbs.columns) - {
-        "message_id",
-    }
+    lsst_columns = set(mpcorbs.columns) - {"message_id", "midpointMjdTai"}
 
     mpcorbs_dict = mpcorbs[list(lsst_columns)].to_dict("records")
 
     with driver.session() as session:
         for i in range(0, len(mpcorbs), chunk_size):
-            mpcorbs_sql_stmt = db_insert_on_conflict_do_nothing_builder(
-                LsstMpcorb,
-                mpcorbs_dict[i : i + chunk_size],
+            mpcorbs_sql_stmt = db_insert_on_conflict_do_update_builder(
+                LsstMpcorb, mpcorbs_dict[i : i + chunk_size], pk=["ssObjectId"]
             )
             session.execute(mpcorbs_sql_stmt)
         session.commit()
-
-
-# def insert_ss_objects(driver: PsqlDatabase, ss_objects: pd.DataFrame):
-#     if len(ss_objects) == 0:
-#         return
-#     objects_dict = ss_objects[OBJECT_COLUMNS].to_dict("records")
-#     objects_ss_lsst_dict = ss_objects[["oid"]].to_dict("records")
-#
-#     objects_sql_stmt = db_statement_builder(Object, objects_dict)
-#     objects_ss_lsst_sql_stmt = db_statement_builder(LsstSsObject, objects_ss_lsst_dict)
-#
-#     with driver.session() as session:
-#         session.execute(objects_sql_stmt)
-#         session.execute(objects_ss_lsst_sql_stmt)
-#         session.commit()
 
 
 def insert_sources(
@@ -152,7 +132,7 @@ def insert_ss_sources(
     if chunk_size is None:
         chunk_size = len(sources)
 
-    lsst_columns = set(sources.columns) - {"message_id"}
+    lsst_columns = set(sources.columns) - {"message_id", "midpointMjdTai"}
 
     ss_sources_dict = sources[list(lsst_columns)].to_dict("records")
 
@@ -199,26 +179,3 @@ def insert_forced_sources(
             session.execute(forced_detections_sql_stmt)
             session.execute(forced_detections_lsst_sql_stmt)
         session.commit()
-
-
-# def insert_non_detections(driver: PsqlDatabase, non_detections: pd.DataFrame):
-#     if len(non_detections) == 0:
-#         return
-#     non_detections_lsst_dict = non_detections[
-#         [
-#             "oid",
-#             "sid",
-#             "ccdVisitId",
-#             "band",
-#             "mjd",
-#             "diaNoise",
-#         ]
-#     ].to_dict("records")
-#
-#     non_detections_sql_stmt = db_statement_builder(
-#         LsstNonDetection, non_detections_lsst_dict
-#     )
-#
-#     with driver.session() as session:
-#         session.execute(non_detections_sql_stmt)
-#         session.commit()

@@ -167,10 +167,11 @@ class LsstDiaObject(Base):
 
 class LsstMpcorb(Base):
     __tablename__ = "lsst_mpcorb"
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    ssObjectId = Column(BigInteger, nullable=False)
+
+    diaSourceId = Column(BigInteger, nullable=False)
 
     mpcDesignation = Column(VARCHAR, nullable=True)
-    ssObjectId = Column(BigInteger, nullable=True)
     mpcH = Column(REAL, nullable=True)
     epoch = Column(DOUBLE_PRECISION, nullable=True)
     M = Column(DOUBLE_PRECISION, nullable=True)
@@ -184,7 +185,7 @@ class LsstMpcorb(Base):
 
     created_date = Column(DateTime, server_default=func.now())
 
-    __table_args__ = (PrimaryKeyConstraint("id", name="pk_lsstmpcorb_id"),)
+    __table_args__ = (PrimaryKeyConstraint("ssObjectId", name="pk_lsstmpcorb_ssObjectId"),)
 
 
 class Detection(Base):
@@ -370,10 +371,10 @@ class LsstDetection(Base):
 class LsstSsDetection(Base):
     __tablename__ = "lsst_ss_detection"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    measurement_id = Column(BigInteger, nullable=False)  # int8,
 
     ssObjectId = Column(BigInteger, nullable=True)
-    diaSourceId = Column(BigInteger, nullable=True)
+    diaSourceId = Column(BigInteger, nullable=False)
     eclipticLambda = Column(DOUBLE_PRECISION, nullable=True)
     eclipticBeta = Column(DOUBLE_PRECISION, nullable=True)
     galacticL = Column(DOUBLE_PRECISION, nullable=True)
@@ -399,7 +400,7 @@ class LsstSsDetection(Base):
 
     created_date = Column(DateTime, server_default=func.now())
 
-    __table_args__ = (PrimaryKeyConstraint("id", name="pk_lsstssdetection_id"),)
+    __table_args__ = (PrimaryKeyConstraint("measurement_id", name="pk_lsstssdetection_measurementid"),)
 
 
 class ForcedPhotometry(Base):
