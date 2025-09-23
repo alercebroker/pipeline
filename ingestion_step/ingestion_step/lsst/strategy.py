@@ -1,11 +1,9 @@
-import asyncio
-
 import pandas as pd
-from db_plugins.db.sql._connection import AsyncPsqlDatabase
+from db_plugins.db.sql._connection import PsqlDatabase
 
 from ingestion_step.core.strategy import ParsedData, StrategyInterface
 from ingestion_step.core.types import Message
-from ingestion_step.core.utils import apply_transforms
+from ingestion_step.core.utils import apply_transforms, groupby_messageid
 from ingestion_step.lsst.database import (
     insert_dia_objects,
     insert_forced_sources,
@@ -88,30 +86,21 @@ class LsstStrategy(StrategyInterface[LsstData]):
         )
 
     @classmethod
-    async def insert_into_db(
-        cls,
-        driver: AsyncPsqlDatabase,
-        parsed_data: LsstData,
-        chunk_size: int | None = None,
+    def insert_into_db(
+        cls, driver: PsqlDatabase, parsed_data: LsstData, chunk_size: int | None = None
     ):
-        await asyncio.gather(
-            insert_dia_objects(
-                driver, parsed_data["dia_object"], chunk_size=chunk_size
-            ),
-            insert_mpcorb(driver, parsed_data["mpcorbs"], chunk_size=chunk_size),
-            insert_sources(
-                driver,
-                parsed_data["dia_sources"],
-                on_conflict_do_update=True,
-                chunk_size=chunk_size,
-            ),
-            insert_sources(
-                driver, parsed_data["previous_sources"], chunk_size=chunk_size
-            ),
-            insert_ss_sources(driver, parsed_data["ss_sources"], chunk_size=chunk_size),
-            insert_forced_sources(
-                driver, parsed_data["forced_sources"], chunk_size=chunk_size
-            ),
+        insert_dia_objects(driver, parsed_data["dia_object"], chunk_size=chunk_size)
+        insert_mpcorb(driver, parsed_data["mpcorbs"], chunk_size=chunk_size)
+        insert_sources(
+            driver,
+            parsed_data["dia_sources"],
+            on_conflict_do_update=True,
+            chunk_size=chunk_size,
+        )
+        insert_sources(driver, parsed_data["previous_sources"], chunk_size=chunk_size)
+        insert_ss_sources(driver, parsed_data["ss_sources"], chunk_size=chunk_size)
+        insert_forced_sources(
+            driver, parsed_data["forced_sources"], chunk_size=chunk_size
         )
 
     """
@@ -156,7 +145,7 @@ class LsstStrategy(StrategyInterface[LsstData]):
 
         return messages
     """
-
+    
     @classmethod
     def serialize(cls, parsed_data: LsstData) -> list[Message]:
         dia_sources_df = parsed_data["dia_sources"]
@@ -164,45 +153,37 @@ class LsstStrategy(StrategyInterface[LsstData]):
         previous_sources_df = parsed_data["previous_sources"]
         forced_sources_df = parsed_data["forced_sources"]
         dia_sources_records = dia_sources_df.to_dict("records")
-        dia_sources_by_msg = {
-            record["message_id"]: record for record in dia_sources_records
-        }
+        dia_sources_by_msg = {record["message_id"]: record for record in dia_sources_records}
         dia_object_lookup = {}
         if not dia_object_df.empty:
             dia_object_records = dia_object_df.to_dict("records")
             dia_object_lookup = {
-                record["message_id"]: {
-                    k: v for k, v in record.items() if k != "message_id"
-                }
+                record["message_id"]: {k: v for k, v in record.items() if k != 'message_id'}
                 for record in dia_object_records
             }
         prv_sources_groups = {}
         if not previous_sources_df.empty:
-            prv_sources_groups = (
-                previous_sources_df.groupby("message_id")
-                .apply(lambda x: x.to_dict("records"), include_groups=False)
-                .to_dict()
-            )
+            prv_sources_groups = (previous_sources_df
+                                    .groupby("message_id")
+                                    .apply(lambda x: x.to_dict("records"), include_groups=False)
+                                    .to_dict())
         forced_sources_groups = {}
         if not forced_sources_df.empty:
-            forced_sources_groups = (
-                forced_sources_df.groupby("message_id")
-                .apply(lambda x: x.to_dict("records"), include_groups=False)
-                .to_dict()
-            )
+            forced_sources_groups = (forced_sources_df
+                                        .groupby("message_id")
+                                        .apply(lambda x: x.to_dict("records"), include_groups=False)
+                                        .to_dict())
         messages = []
         for message_id, source in dia_sources_by_msg.items():
-            source_clean = {k: v for k, v in source.items() if k != "message_id"}
-            messages.append(
-                {
-                    "oid": source["oid"],
-                    "measurement_id": source["measurement_id"],
-                    "source": source_clean,
-                    "previous_sources": prv_sources_groups.get(message_id, []),
-                    "forced_sources": forced_sources_groups.get(message_id, []),
-                    "dia_object": dia_object_lookup.get(message_id),
-                }
-            )
+            source_clean = {k: v for k, v in source.items() if k != 'message_id'}
+            messages.append({
+                "oid": source["oid"],
+                "measurement_id": source["measurement_id"],
+                "source": source_clean,
+                "previous_sources": prv_sources_groups.get(message_id, []),
+                "forced_sources": forced_sources_groups.get(message_id, []),
+                "dia_object": dia_object_lookup.get(message_id),
+            })
         return messages
 
     @classmethod

@@ -1,8 +1,8 @@
 import os
 
-import psycopg
+import psycopg2
 import pytest
-from db_plugins.db.sql._connection import AsyncPsqlDatabase, PsqlDatabase
+from db_plugins.db.sql._connection import PsqlDatabase
 
 psql_config = {
     "ENGINE": "postgresql",
@@ -29,7 +29,7 @@ def docker_compose_command():
 
 def is_responsive_psql(host: str, port: int):
     try:
-        conn = psycopg.connect(
+        conn = psycopg2.connect(
             f"dbname='postgres' user='postgres' host={host} port={port} password='postgres'"
         )
         conn.close()
@@ -50,7 +50,7 @@ def psql_service(docker_ip: str, docker_services):
     )
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def psql_db(docker_ip: str, docker_services):
     port = docker_services.port_for("postgres", 5432)
     docker_services.wait_until_responsive(
@@ -60,9 +60,8 @@ def psql_db(docker_ip: str, docker_services):
     )
 
     psql_db = PsqlDatabase(psql_config)
-    async_psql_db = AsyncPsqlDatabase(psql_config)
     psql_db.create_db()
 
-    yield psql_db, async_psql_db
+    yield psql_db
 
     psql_db.drop_db()

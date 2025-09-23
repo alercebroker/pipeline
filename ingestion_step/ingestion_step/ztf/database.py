@@ -1,5 +1,5 @@
 import pandas as pd
-from db_plugins.db.sql._connection import AsyncPsqlDatabase
+from db_plugins.db.sql._connection import PsqlDatabase
 from db_plugins.db.sql.models import (
     Detection,
     ForcedPhotometry,
@@ -18,8 +18,8 @@ from ingestion_step.core.database import (
 )
 
 
-async def insert_objects(
-    driver: AsyncPsqlDatabase, objects_df: pd.DataFrame, chunk_size: int | None = None
+def insert_objects(
+    driver: PsqlDatabase, objects_df: pd.DataFrame, chunk_size: int | None = None
 ):
     if len(objects_df) == 0:
         return
@@ -51,7 +51,7 @@ async def insert_objects(
     ]
     objects_ztf_dict = objects_ztf_df_parsed.to_dict("records")
 
-    async with driver.session() as session:
+    with driver.session() as session:
         for i in range(0, len(objects_df), chunk_size):
             object_sql_stmt = db_insert_on_conflict_do_nothing_builder(
                 Object,
@@ -62,15 +62,13 @@ async def insert_objects(
                 objects_ztf_dict[i : i + chunk_size],
             )
 
-            await session.execute(object_sql_stmt)
-            await session.execute(object_ztf_sql_stmt)
-        await session.commit()
+            session.execute(object_sql_stmt)
+            session.execute(object_ztf_sql_stmt)
+        session.commit()
 
 
-async def insert_detections(
-    driver: AsyncPsqlDatabase,
-    detections_df: pd.DataFrame,
-    chunk_size: int | None = None,
+def insert_detections(
+    driver: PsqlDatabase, detections_df: pd.DataFrame, chunk_size: int | None = None
 ):
     if len(detections_df) == 0:
         return
@@ -121,7 +119,7 @@ async def insert_detections(
 
     detections_ztf_dict = detections_ztf_df_parsed.to_dict("records")
 
-    async with driver.session() as session:
+    with driver.session() as session:
         for i in range(0, len(detections_df), chunk_size):
             detection_sql_stmt = db_insert_on_conflict_do_nothing_builder(
                 Detection,
@@ -132,13 +130,13 @@ async def insert_detections(
                 detections_ztf_dict[i : i + chunk_size],
             )
 
-            await session.execute(detection_sql_stmt)
-            await session.execute(detection_ztf_sql_stmt)
-        await session.commit()
+            session.execute(detection_sql_stmt)
+            session.execute(detection_ztf_sql_stmt)
+        session.commit()
 
 
-async def insert_forced_photometry(
-    driver: AsyncPsqlDatabase,
+def insert_forced_photometry(
+    driver: PsqlDatabase,
     forced_photometry_df: pd.DataFrame,
     chunk_size: int | None = None,
 ):
@@ -201,7 +199,7 @@ async def insert_forced_photometry(
     ]
     forced_photometry_ztf_dict = forced_photometry_ztf_df_parsed.to_dict("records")
 
-    async with driver.session() as session:
+    with driver.session() as session:
         for i in range(0, len(forced_photometry_df), chunk_size):
             forced_photometry_sql_stmt = db_insert_on_conflict_do_nothing_builder(
                 ForcedPhotometry,
@@ -212,15 +210,13 @@ async def insert_forced_photometry(
                 forced_photometry_ztf_dict[i : i + chunk_size],
             )
 
-            await session.execute(forced_photometry_sql_stmt)
-            await session.execute(forced_photometry_ztf_sql_stmt)
-        await session.commit()
+            session.execute(forced_photometry_sql_stmt)
+            session.execute(forced_photometry_ztf_sql_stmt)
+        session.commit()
 
 
-async def insert_non_detections(
-    driver: AsyncPsqlDatabase,
-    non_detections_df: pd.DataFrame,
-    chunk_size: int | None = None,
+def insert_non_detections(
+    driver: PsqlDatabase, non_detections_df: pd.DataFrame, chunk_size: int | None = None
 ):
     if len(non_detections_df) == 0:
         return
@@ -238,12 +234,12 @@ async def insert_non_detections(
         ]
     ].to_dict("records")
 
-    async with driver.session() as session:
+    with driver.session() as session:
         for i in range(0, len(non_detections_df), chunk_size):
             non_detection_sql_stmt = db_insert_on_conflict_do_nothing_builder(
                 ZtfNonDetection,
                 non_detections_dict[i : i + chunk_size],
             )
 
-            await session.execute(non_detection_sql_stmt)
-        await session.commit()
+            session.execute(non_detection_sql_stmt)
+        session.commit()

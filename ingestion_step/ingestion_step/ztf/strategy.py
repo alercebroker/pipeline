@@ -1,7 +1,5 @@
-import asyncio
-
 import pandas as pd
-from db_plugins.db.sql._connection import AsyncPsqlDatabase
+from db_plugins.db.sql._connection import PsqlDatabase
 
 from ingestion_step.core.strategy import ParsedData, StrategyInterface
 from ingestion_step.core.types import Message
@@ -58,21 +56,14 @@ class ZtfStrategy(StrategyInterface[ZtfData]):
         )
 
     @classmethod
-    async def insert_into_db(
-        cls,
-        driver: AsyncPsqlDatabase,
-        parsed_data: ZtfData,
-        chunk_size: int | None = None,
+    def insert_into_db(
+        cls, driver: PsqlDatabase, parsed_data: ZtfData, chunk_size: int | None = None
     ):
-        await asyncio.gather(
-            insert_objects(driver, parsed_data["objects"], chunk_size),
-            insert_detections(driver, parsed_data["detections"], chunk_size),
-            insert_detections(driver, parsed_data["prv_detections"], chunk_size),
-            insert_non_detections(driver, parsed_data["non_detections"], chunk_size),
-            insert_forced_photometry(
-                driver, parsed_data["forced_photometries"], chunk_size
-            ),
-        )
+        insert_objects(driver, parsed_data["objects"], chunk_size)
+        insert_detections(driver, parsed_data["detections"], chunk_size)
+        insert_detections(driver, parsed_data["prv_detections"], chunk_size)
+        insert_non_detections(driver, parsed_data["non_detections"], chunk_size)
+        insert_forced_photometry(driver, parsed_data["forced_photometries"], chunk_size)
 
     @classmethod
     def serialize(cls, parsed_data: ZtfData) -> list[Message]:

@@ -1,9 +1,8 @@
-import asyncio
 from typing import Any
 
 import pandas as pd
 from apf.core.step import GenericStep
-from db_plugins.db.sql._connection import AsyncPsqlDatabase
+from db_plugins.db.sql._connection import PsqlDatabase
 
 from ingestion_step.core.select_parser import select_parser
 from ingestion_step.core.strategy import ParsedData
@@ -20,7 +19,7 @@ class IngestionStep(GenericStep):
     ):
         super().__init__(config=config, **kwargs)
         self.Strategy = select_parser(config["SURVEY_STRATEGY"])
-        self.psql_driver = AsyncPsqlDatabase(config["PSQL_CONFIG"])
+        self.psql_driver = PsqlDatabase(config["PSQL_CONFIG"])
         self.insert_batch_size = config.get("INSERT_BATCH_SIZE")
 
     def _add_metrics(self, alerts: pd.DataFrame):
@@ -39,10 +38,8 @@ class IngestionStep(GenericStep):
         for key in parsed_data:
             self.logger.info(f"Parsed {len(parsed_data[key])} objects form {key}")
 
-        asyncio.run(
-            self.Strategy.insert_into_db(
-                self.psql_driver, parsed_data, chunk_size=self.insert_batch_size
-            )
+        self.Strategy.insert_into_db(
+            self.psql_driver, parsed_data, chunk_size=self.insert_batch_size
         )
 
         return parsed_data
