@@ -19,6 +19,7 @@ from db_plugins.db.sql.models import (
     ZtfDataquality,
     ZtfReference,
     MagStat,
+    LsstDiaObject,
 )
 from sqlalchemy import update, bindparam
 from sqlalchemy.dialects.postgresql import insert
@@ -36,6 +37,7 @@ from .parser import (
     parse_ztf_refernece,
     parse_obj_stats,
     parse_magstats,
+    parse_dia_object,
 )
 
 
@@ -309,7 +311,6 @@ class LSSTMagstatCommand(Command):
     type = "LSSTMagstatCommand"
 
     def _format_data(self, data):
-        
         oid = data["oid"]
 
         object_stats = parse_obj_stats(data, oid)
@@ -351,19 +352,120 @@ class LSSTMagstatCommand(Command):
                 }),
                 objectstat_list
             )
+
+
+class LSSTUpdateDiaObjectCommand(Command):
+    type = "LSSTUpdateDiaObjectCommand"
+
+    def _format_data(self, data):
         
-        # insert magstats => TODO in the future 
-        """
-        if len(magstat_list) > 0:
-            magstats_stmt = insert(MagStat)
-            magstats_result = session.connection().execute(
-                magstats_stmt.on_conflict_do_update(
-                    constraint="pk_magstat_oid_band",
-                    set_=magstats_stmt.excluded
-                ),
-                magstat_list
+        oid = data["oid"]
+
+        dia_object = parse_dia_object(data, oid)
+        
+
+        return {
+            "dia_object": dia_object,
+        }
+
+    @staticmethod
+    def db_operation(session: Session, data: List):
+        objects_update_list = []
+
+        for single_data in data:
+            objects_update_list.append(single_data["dia_object"])
+        
+        # update dia object
+        if len(objects_update_list) > 0:
+            object_stmt = update(LsstDiaObject)
+            object_result = session.connection().execute(
+                object_stmt
+                .where(LsstDiaObject.oid == bindparam('_oid'))
+                .values({
+                    "validityStartMjdTai": bindparam("validityStartMjdTai"),
+                    "ra": bindparam("ra"),
+                    "raErr": bindparam("raErr"),
+                    "dec": bindparam("dec"),
+                    "decErr": bindparam("decErr"),
+                    "ra_dec_Cov": bindparam("ra_dec_Cov"),
+                    "u_psfFluxMean": bindparam("u_psfFluxMean"),
+                    "u_psfFluxMeanErr": bindparam("u_psfFluxMeanErr"),
+                    "u_psfFluxSigma": bindparam("u_psfFluxSigma"),
+                    "u_psfFluxNdata": bindparam("u_psfFluxNdata"),
+                    "u_fpFluxMean": bindparam("u_fpFluxMean"),
+                    "u_fpFluxMeanErr": bindparam("u_fpFluxMeanErr"),
+                    "g_psfFluxMean": bindparam("g_psfFluxMean"),
+                    "g_psfFluxMeanErr": bindparam("g_psfFluxMeanErr"),
+                    "g_psfFluxSigma": bindparam("g_psfFluxSigma"),
+                    "g_psfFluxNdata": bindparam("g_psfFluxNdata"),
+                    "g_fpFluxMean": bindparam("g_fpFluxMean"),
+                    "g_fpFluxMeanErr": bindparam("g_fpFluxMeanErr"),
+                    "r_psfFluxMean": bindparam("r_psfFluxMean"),
+                    "r_psfFluxMeanErr": bindparam("r_psfFluxMeanErr"),
+                    "r_psfFluxSigma": bindparam("r_psfFluxSigma"),
+                    "r_psfFluxNdata": bindparam("r_psfFluxNdata"),
+                    "r_fpFluxMean": bindparam("r_fpFluxMean"),
+                    "r_fpFluxMeanErr": bindparam("r_fpFluxMeanErr"),
+                    "i_psfFluxMean": bindparam("i_psfFluxMean"),
+                    "i_psfFluxMeanErr": bindparam("i_psfFluxMeanErr"),
+                    "i_psfFluxSigma": bindparam("i_psfFluxSigma"),
+                    "i_psfFluxNdata": bindparam("i_psfFluxNdata"),
+                    "i_fpFluxMean": bindparam("i_fpFluxMean"),
+                    "i_fpFluxMeanErr": bindparam("i_fpFluxMeanErr"),
+                    "z_psfFluxMean": bindparam("z_psfFluxMean"),
+                    "z_psfFluxMeanErr": bindparam("z_psfFluxMeanErr"),
+                    "z_psfFluxSigma": bindparam("z_psfFluxSigma"),
+                    "z_psfFluxNdata": bindparam("z_psfFluxNdata"),
+                    "z_fpFluxMean": bindparam("z_fpFluxMean"),
+                    "z_fpFluxMeanErr": bindparam("z_fpFluxMeanErr"),
+                    "y_psfFluxMean": bindparam("y_psfFluxMean"),
+                    "y_psfFluxMeanErr": bindparam("y_psfFluxMeanErr"),
+                    "y_psfFluxSigma": bindparam("y_psfFluxSigma"),
+                    "y_psfFluxNdata": bindparam("y_psfFluxNdata"),
+                    "y_fpFluxMean": bindparam("y_fpFluxMean"),
+                    "y_fpFluxMeanErr": bindparam("y_fpFluxMeanErr"),
+                    "u_scienceFluxMean": bindparam("u_scienceFluxMean"),
+                    "u_scienceFluxMeanErr": bindparam("u_scienceFluxMeanErr"),
+                    "g_scienceFluxMean": bindparam("g_scienceFluxMean"),
+                    "g_scienceFluxMeanErr": bindparam("g_scienceFluxMeanErr"),
+                    "r_scienceFluxMean": bindparam("r_scienceFluxMean"),
+                    "r_scienceFluxMeanErr": bindparam("r_scienceFluxMeanErr"),
+                    "i_scienceFluxMean": bindparam("i_scienceFluxMean"),
+                    "i_scienceFluxMeanErr": bindparam("i_scienceFluxMeanErr"),
+                    "z_scienceFluxMean": bindparam("z_scienceFluxMean"),
+                    "z_scienceFluxMeanErr": bindparam("z_scienceFluxMeanErr"),
+                    "y_scienceFluxMean": bindparam("y_scienceFluxMean"),
+                    "y_scienceFluxMeanErr": bindparam("y_scienceFluxMeanErr"),
+                    "u_psfFluxMin": bindparam("u_psfFluxMin"),
+                    "u_psfFluxMax": bindparam("u_psfFluxMax"),
+                    "u_psfFluxMaxSlope": bindparam("u_psfFluxMaxSlope"),
+                    "u_psfFluxErrMean": bindparam("u_psfFluxErrMean"),
+                    "g_psfFluxMin": bindparam("g_psfFluxMin"),
+                    "g_psfFluxMax": bindparam("g_psfFluxMax"),
+                    "g_psfFluxMaxSlope": bindparam("g_psfFluxMaxSlope"),
+                    "g_psfFluxErrMean": bindparam("g_psfFluxErrMean"),
+                    "r_psfFluxMin": bindparam("r_psfFluxMin"),
+                    "r_psfFluxMax": bindparam("r_psfFluxMax"),
+                    "r_psfFluxMaxSlope": bindparam("r_psfFluxMaxSlope"),
+                    "r_psfFluxErrMean": bindparam("r_psfFluxErrMean"),
+                    "i_psfFluxMin": bindparam("i_psfFluxMin"),
+                    "i_psfFluxMax": bindparam("i_psfFluxMax"),
+                    "i_psfFluxMaxSlope": bindparam("i_psfFluxMaxSlope"),
+                    "i_psfFluxErrMean": bindparam("i_psfFluxErrMean"),
+                    "z_psfFluxMin": bindparam("z_psfFluxMin"),
+                    "z_psfFluxMax": bindparam("z_psfFluxMax"),
+                    "z_psfFluxMaxSlope": bindparam("z_psfFluxMaxSlope"),
+                    "z_psfFluxErrMean": bindparam("z_psfFluxErrMean"),
+                    "y_psfFluxMin": bindparam("y_psfFluxMin"),
+                    "y_psfFluxMax": bindparam("y_psfFluxMax"),
+                    "y_psfFluxMaxSlope": bindparam("y_psfFluxMaxSlope"),
+                    "y_psfFluxErrMean": bindparam("y_psfFluxErrMean"),
+                    "firstDiaSourceMjdTai": bindparam("firstDiaSourceMjdTai"),
+                    "lastDiaSourceMjdTai": bindparam("lastDiaSourceMjdTai"),
+                    "nDiaSources": bindparam("nDiaSources"),
+                }),
+                objects_update_list
             )
-        """
 
 
 ### ###### ###

@@ -5,7 +5,8 @@ from typing import List
 from apf.core.step import GenericStep, get_class
 from importlib.metadata import version
 import copy
-from .core.parsers.parser_scribe import scribe_parser, NumpyEncoder, remove_timestamp
+from .core.parsers.object_update_lsst import update_object
+from .core.parsers.parser_scribe import scribe_parser, scribe_parser_objects, NumpyEncoder, remove_timestamp
 from .core.parsers.add_meancoordinates import refresh_mean_coordinates
 from .core.StatisticsSelector.statistics_selector import get_object_statistics_class, get_magnitude_statistics_class
 from .core.parsers.survey_preparser import SurveyDataSelector
@@ -23,6 +24,8 @@ class MagstatsStep_Multistream(GenericStep):
         self.scribe_producer = cls(config["SCRIBE_PRODUCER_CONFIG"])
         self.survey = config["SURVEY"]
         self.data_selector = SurveyDataSelector(self.survey)
+        self.producer.set_key_field("oid")
+
 
     def execute(self, messages: List[dict]):
         
@@ -42,9 +45,11 @@ class MagstatsStep_Multistream(GenericStep):
         )
         for oid in objstats:
             self.parse_magstats_result(magstats, oid, objstats)
-        
         messages_updated = refresh_mean_coordinates(messages_original, objstats)
-        result = [messages_updated, objstats] # Send the updated messages and objstats together to produce the results correctly
+        update_object_list = []
+        if self.survey.lower() == "lsst":
+            update_object_list = update_object(messages_updated, objstats)
+        result = [messages_updated, objstats, update_object_list] # Send the updated messages, objstats and the objects to be updated in scribe together to produce the results correctly
         return result
 
     
@@ -99,13 +104,17 @@ class MagstatsStep_Multistream(GenericStep):
     def post_execute(self, result: List[dict]):
         messages_updated = result[0]
         objstats = result[1]
+        objects_to_update = result[2]
         self.produce_scribe(scribe_parser(objstats, self.survey))
+        self.produce_scribe(scribe_parser_objects(objects_to_update, self.survey))
         return messages_updated
+
 
     def produce_scribe(self, scribe_payloads):
         for scribe_data in scribe_payloads:
-            payload = {"payload": json.dumps(scribe_data, cls=NumpyEncoder)}
-            self.scribe_producer.produce(payload)
-
-
-
+            oid = scribe_data["oid"]
+            self.scribe_producer.producer.produce(
+                topic="scribe-multisurvey",
+                key=str(oid).encode("utf-8"),               
+                value=json.dumps(scribe_data).encode("utf-8"),  
+            )
