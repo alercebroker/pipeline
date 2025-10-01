@@ -6,6 +6,128 @@ from lc_classifier.utils import mag2flux, mag_err_2_flux_err
 from typing import List, Dict, Optional
 
 
+DETECTION_KEYS_MAP = {
+    "oid": "oid",
+    "sid": "sid",
+    "mjd": "mjd",
+    "ra": "ra",
+    "dec": "dec",
+    "tid": "tid",
+    "band": "band",  # LSST usa 'band', ZTF usa 'fid'
+    "diaObjectId": "diaObjectId",  # LSST 'diaObjectId' ≈ ZTF 'candid'
+    "candid": "diaObjectId",
+    "aid": "aid",
+    "fid": "band",  # ZTF 'fid' ≈ LSST 'band'
+    "isdiffpos": "isdiffpos",
+    "forced": "forced",
+    "pid": "pid"
+}
+
+
+def add_mag_and_flux_lsst(a: pd.DataFrame) -> pd.DataFrame:
+    """
+    Placeholder para lógica de magnitud y flujo para LSST.
+    """
+    # Aquí irá la lógica específica para LSST
+    #aqui tengo que terminar con las columnas brigthness y unit
+
+    a.rename(
+        columns={"psfFlux": "brightness", "psfFluxErr": "e_brightness"},
+        inplace=True,
+    )
+
+    a["unit"] = "magnitude"
+
+    a_flux = a.copy()
+    # TODO: check this
+    a_flux["e_brightness"] = a["scienceFlux"]#mag_err_2_flux_err(a["e_mag"], a["mag"])#esto preguntar
+    a_flux["brightness"] = a["scienceFluxErr"]#mag2flux(a["mag"]) * a["isdiffpos"] #esto preguntar
+    a_flux["unit"] = "diff_flux"
+    a = pd.concat([a, a_flux], axis=0)
+    a.set_index("aid", inplace=True)
+    for col in ["mag", "e_mag"]:
+        if col in a.columns:
+            a.drop(columns=[col], inplace=True)
+    return a
+
+def detections_to_astro_object_lsst(
+    detections: list,
+    forced: list,
+    xmatches: dict = None,
+    references_db: pd.DataFrame = None,
+) -> AstroObject:
+    
+    #lo primero es estandarizar los nombres. Voy a hacer eso. Voy a revisar el schema de correction y ocupar las claves minimas.
+
+    #psfFlux es mag_corr
+    #scienceFlux es mag
+    detection_keys = ["oid","sid","mjd","ra","dec",
+                      "psfFlux","psfFluxErr","scienceFlux",
+                      "scienceFluxErr","tid","band","diaObjectId"]
+    
+    #quiero estandarizar las detection keys con la otra funcion
+
+
+
+
+    #pid no va
+    #fid es band
+    #isdiffpos no va
+    #forced se trata por separado
+    #aid no se usa creo
+    #candid que es?
+    #diaobjectid es candid entonces
+    #detection_keys = [
+    #     "candid", "aid", "forced"
+    #]
+
+    values = []
+    for detection in detections:
+        values.append([detection.get(key, None) for key in detection_keys])
+
+    a = pd.DataFrame(data=values, columns=detection_keys)
+    a.fillna(value=np.nan, inplace=True)
+
+    a = add_mag_and_flux_lsst(a)
+    
+    aid = a.index.values[0]
+    oid = a["oid"].iloc[0]
+
+    aid_forced = None#a[a["forced"]] #que hacer con las forced?
+    aid_detections = a#a[~a["forced"]]
+
+    astro_object = AstroObject(
+        detections=aid_detections,
+        forced_photometry=aid_forced,
+        metadata=None,
+        reference=None,
+    )
+    return astro_object
+def add_mag_and_flux_columns(a: pd.DataFrame) -> pd.DataFrame:
+    """
+    Toma un DataFrame con columnas 'mag', 'e_mag', 'mag_corr', 'e_mag_corr_ext', 'isdiffpos', 'forced',
+    y retorna un DataFrame con columnas de magnitud y flujo, renombradas y calculadas.
+    """
+    a = a[(a["mag"] != 100) | (a["e_mag"] != 100)].copy()
+    a.rename(
+        columns={"mag_corr": "brightness", "e_mag_corr_ext": "e_brightness"},
+        inplace=True,
+    )
+    a["unit"] = "magnitude"
+    a_flux = a.copy()
+    # TODO: check this
+    a_flux["e_brightness"] = mag_err_2_flux_err(a["e_mag"], a["mag"])
+    a_flux["brightness"] = mag2flux(a["mag"]) * a["isdiffpos"]
+    a_flux["unit"] = "diff_flux"
+    a = pd.concat([a, a_flux], axis=0)
+    a.set_index("aid", inplace=True)
+    for col in ["mag", "e_mag"]:
+        if col in a.columns:
+            a.drop(columns=[col], inplace=True)
+    return a
+
+
+
 def get_bogus_flags_for_each_detection(detections: List[Dict]):
     # for each detection, it looks for the real-bogus score (available only for
     # detections) and procstatus flag (available only for forced
@@ -112,22 +234,7 @@ def detections_to_astro_object(
     )
     a = pd.concat([a, bogus_flags_for_each_detection], axis=1)
 
-    a = a[(a["mag"] != 100) | (a["e_mag"] != 100)].copy()
-    a.rename(
-        columns={"mag_corr": "brightness", "e_mag_corr_ext": "e_brightness"},
-        inplace=True,
-    )
-    a["unit"] = "magnitude"
-    a_flux = a.copy()
-    # TODO: check this
-    a_flux["e_brightness"] = mag_err_2_flux_err(a["e_mag"], a["mag"])
-    a_flux["brightness"] = mag2flux(a["mag"]) * a["isdiffpos"]
-    a_flux["unit"] = "diff_flux"
-    a = pd.concat([a, a_flux], axis=0)
-    a.set_index("aid", inplace=True)
-    for col in ["mag", "e_mag"]:
-        if col in a.columns:
-            a.drop(columns=[col], inplace=True)
+    a = add_mag_and_flux_columns(a)
 
     aid = a.index.values[0]
     oid = a["oid"].iloc[0]
@@ -206,7 +313,7 @@ def fid_mapper_for_db(band: str):
     return 0
 
 
-def prepare_ao_features_for_db(astro_object: AstroObject) -> pd.DataFrame:
+def prepare_ao_features_for_db(astro_object: AstroObject) -> pd.DataFrame: #esto tengo que verlo
     ao_features = astro_object.features[["name", "fid", "value"]].copy()
     ao_features["fid"] = ao_features["fid"].apply(fid_mapper_for_db)
     ao_features.replace({np.nan: None, np.inf: None, -np.inf: None}, inplace=True)
@@ -289,7 +396,7 @@ def parse_scribe_payload(
 
 def parse_output(
     astro_objects: List[AstroObject], messages: List[Dict], candids: Dict
-) -> list[dict]:
+) -> list[dict]: #esto igual tengo que verlo
     """
     Parse output of the step. It uses the input data to extend the schema to
     add the features of each object, identified by its oid.

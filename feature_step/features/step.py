@@ -8,8 +8,11 @@ from apf.core.step import GenericStep
 from apf.consumers import KafkaConsumer
 
 from lc_classifier.features.core.base import AstroObject, discard_bogus_detections
-from lc_classifier.features.preprocess.ztf import ZTFLightcurvePreprocessor
-from lc_classifier.features.composites.ztf import ZTFFeatureExtractor
+from lc_classifier.features.preprocess.ztf import ZTFLightcurvePreprocessor #me falta crear esto
+from lc_classifier.features.composites.ztf import ZTFFeatureExtractor #me falta crear esto
+from lc_classifier.features.composites.lsst import LSSTFeatureExtractor 
+from lc_classifier.features.preprocess.lsst import LSSTLightcurvePreprocessor
+
 
 from .database import (
     PSQLConnection,
@@ -18,12 +21,12 @@ from .database import (
 
 from .utils.metrics import get_sid
 from .utils.parsers import parse_output, parse_scribe_payload
-from .utils.parsers import detections_to_astro_object
+from .utils.parsers import detections_to_astro_object,detections_to_astro_object_lsst
 
 from importlib.metadata import version
 
 
-class FeatureStep(GenericStep):
+class FeatureStep(GenericStep): #qua la saque del environment
     """FeatureStep Description
 
     Parameters
@@ -54,6 +57,7 @@ class FeatureStep(GenericStep):
 
         self.db_sql = db_sql
         self.logger = logging.getLogger("alerce.FeatureStep")
+        self.survey = "LSST"#config.get("SURVEY", "ZTF")
 
         self.min_detections_features = config.get("MIN_DETECTIONS_FEATURES", None)
         if self.min_detections_features is None:
@@ -102,16 +106,45 @@ class FeatureStep(GenericStep):
 
         for message in messages:
             filtered_message = message.copy()
-            filtered_message["detections"] = discard_bogus_detections(
-                filtered_message["detections"]
-            )
-            filtered_messages.append(filtered_message)
+            #me falta implementar el discard_bogus_detections para lsst
+            if self.survey == "ZTF":
+                filtered_message["detections"] = discard_bogus_detections(
+                    filtered_message["detections"]
+                )
+            if self.survey == "LSST":
+                # Ejemplo de mensaje falso con los campos LSST
+                message = {"oid": "oid_falso","diaObjectId":"diaObjectId_falso",
+                    "detections": [
+                        {
+                            "oid": "oid_falso",
+                            "sid": "sid_falso",
+                            "mjd": 12345.6,
+                            "ra": 12.345,
+                            "dec": -45.678,
+                            "psfFlux": 123.4,
+                            "psfFluxErr": 1.2,
+                            "scienceFlux": 234.5,
+                            "scienceFluxErr": 2.3,
+                            "tid": "tid_falso",
+                            "band": "g",
+                            "diaObjectId": "diaObjectId_falso"
+                        }
+                    ]
+                }
+        filtered_messages.append(filtered_message)
 
-        def has_enough_detections(message: dict) -> bool:
+        def has_enough_detections(message: dict) -> bool: #esto va a fallar, por no tener el campo forced
             n_dets = len([True for det in message["detections"] if not det["forced"]])
             return n_dets >= self.min_detections_features
+        
+        def has_enough_detections_lsst(message: dict) -> bool: #esto va a fallar, por no tener el campo forced
+            n_dets = len([True for det in message["detections"]])
+            return True#n_dets >= self.min_detections_features
 
-        filtered_messages = filter(has_enough_detections, filtered_messages)
+        if self.survey == "ZTF":
+            filtered_messages = filter(has_enough_detections, filtered_messages)
+        if self.survey == "LSST":
+            filtered_messages = filter(has_enough_detections_lsst, filtered_messages)
         filtered_messages = list(filtered_messages)
         return filtered_messages
 
@@ -123,25 +156,48 @@ class FeatureStep(GenericStep):
         oids = set()
         for msg in messages:
             oids.add(msg["oid"])
-        references_db = self._get_sql_references(list(oids))
 
-        for message in messages:
-            if not message["oid"] in candids:
-                candids[message["oid"]] = []
-            candids[message["oid"]].extend(message["candid"])
-            m = map(
-                lambda x: {**x, "index_column": str(x["candid"]) + "_" + x["oid"]},
-                message.get("detections", []),
-            )
-            xmatch_data = message["xmatches"]
+        if self.survey == "ZTF":
+            references_db = self._get_sql_references(list(oids))
 
-            ao = detections_to_astro_object(list(m), xmatch_data, references_db)
-            astro_objects.append(ao)
-            messages_to_process.append(message)
+        if self.survey == "ZTF":
+            for message in messages: #que hace aqui? para lsst, en vez de candid, ocupare diapbjectId
+                if not message["oid"] in candids:
+                    candids[message["oid"]] = []
+                candids[message["oid"]].extend(message["candid"]) #guarda los candid de cada oid
+                m = map(
+                    lambda x: {**x, "index_column": str(x["candid"]) + "_" + x["oid"]},
+                    message.get("detections", []),
+                )
+                xmatch_data = message["xmatches"]
+
+                ao = detections_to_astro_object(list(m), xmatch_data, references_db)
+                astro_objects.append(ao)
+                messages_to_process.append(message)
+
+        if self.survey == "LSST":
+            for message in messages: #que hace aqui? para lsst, en vez de candid, ocupare diapbjectId
+                if not message["oid"] in candids:
+                    candids[message["oid"]] = []
+                candids[message["oid"]].extend(message["diaObjectId"]) #guarda los candid de cada oid
+                m = map(
+                    lambda x: {**x, "index_column": str(x["diaObjectId"]) + "_" + x["oid"]},
+                    message.get("detections", []),
+                )
+                #xmatch_data = message["xmatches"]
+                forced = message.get("forced", False)
+                #me falta incluir la photometria forzada en el input
+
+                ao = detections_to_astro_object_lsst(list(m), forced)
+                astro_objects.append(ao)
+                messages_to_process.append(message)
 
         self.lightcurve_preprocessor.preprocess_batch(astro_objects)
         self.feature_extractor.compute_features_batch(astro_objects, progress_bar=False)
 
+        print("Llegue aqui")
+
+        #me falta la parsear la salida
         self.produce_to_scribe(astro_objects)
         output = parse_output(astro_objects, messages_to_process, candids)
         return output
