@@ -10,7 +10,7 @@ from ..core.base import LightcurvePreprocessor, AstroObject
 from ..core.base import discard_bogus_detections
 
 
-class ZTFLightcurvePreprocessor(LightcurvePreprocessor):
+class LSSTLightcurvePreprocessor(LightcurvePreprocessor):
     def __init__(self, drop_bogus: bool = False):
         self.drop_bogus = drop_bogus
 

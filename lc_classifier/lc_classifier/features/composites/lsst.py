@@ -13,6 +13,6 @@ class LSSTFeatureExtractor(FeatureExtractorComposite):
         bands = list("gr")
 
         feature_extractors = [
-            DummyExtractor(bands)
+            DummyExtractor()
         ]
         return feature_extractors

@@ -44,7 +44,7 @@ def add_mag_and_flux_lsst(a: pd.DataFrame) -> pd.DataFrame:
     a_flux["brightness"] = a["scienceFluxErr"]#mag2flux(a["mag"]) * a["isdiffpos"] #esto preguntar
     a_flux["unit"] = "diff_flux"
     a = pd.concat([a, a_flux], axis=0)
-    a.set_index("aid", inplace=True)
+    #a.set_index("aid", inplace=True)
     for col in ["mag", "e_mag"]:
         if col in a.columns:
             a.drop(columns=[col], inplace=True)
@@ -90,16 +90,23 @@ def detections_to_astro_object_lsst(
 
     a = add_mag_and_flux_lsst(a)
     
-    aid = a.index.values[0]
+    #aid = a.index.values[0]
     oid = a["oid"].iloc[0]
 
     aid_forced = None#a[a["forced"]] #que hacer con las forced?
     aid_detections = a#a[~a["forced"]]
 
+    metadata = pd.DataFrame(
+        [
+            ["aid", "aid"],
+            ["oid", oid],
+        ],
+        columns=["name", "value"],)
+
     astro_object = AstroObject(
         detections=aid_detections,
         forced_photometry=aid_forced,
-        metadata=None,
+        metadata=metadata,
         reference=None,
     )
     return astro_object

@@ -25,20 +25,10 @@ class AstroObject:
         if "aid" not in self.metadata["name"].values:
             raise ValueError("'aid' is a mandatory field of metadata")
 
-        #mandatory_detection_columns = {
-        #    "candid",
-        #    "tid",
-        #    "mjd",
-        #    "sid",
-        #    "fid",
-        #    "pid",
-        #    "ra",
-        #    "dec",
-        #    "brightness",
-        #    "e_brightness",
-        #    "unit",
-        #}
-        mandatory_detection_columns = {"sid"}#condicional al survey
+        mandatory_detection_columns = { #condicional al survey
+            "oid",
+            "sid",
+        }
 
         missing_detections_columns = mandatory_detection_columns - set(
             self.detections.columns
@@ -154,9 +144,9 @@ def astro_object_from_dict(d: Dict) -> AstroObject:
         metadata=d["metadata"],
         detections=d["detections"],
         non_detections=d["non_detections"],
-        forced_photometry=d["forced_photometry"],
-        xmatch=d["xmatch"],
-        reference=d["reference"],
+        forced_photometry=d["forced_photometry"], #mandatory
+        xmatch=d["xmatch"], 
+        reference=d["reference"], 
         stamps=d["stamps"],
         features=d["features"],
         predictions=d["predictions"],

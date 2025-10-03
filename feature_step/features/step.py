@@ -47,8 +47,7 @@ class FeatureStep(GenericStep): #qua la saque del environment
 
         super().__init__(config=config, **step_args)
         # Bogus detections are dropped in pre_execute
-        self.lightcurve_preprocessor = ZTFLightcurvePreprocessor()  # (drop_bogus=True)
-        self.feature_extractor = ZTFFeatureExtractor()
+       
 
         scribe_class = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
         self.scribe_producer = scribe_class(self.config["SCRIBE_PRODUCER_CONFIG"])
@@ -59,6 +58,12 @@ class FeatureStep(GenericStep): #qua la saque del environment
         self.logger = logging.getLogger("alerce.FeatureStep")
         self.survey = "LSST"#config.get("SURVEY", "ZTF")
 
+        if self.survey == "ZTF":
+            self.lightcurve_preprocessor = ZTFLightcurvePreprocessor(drop_bogus=True)
+            self.feature_extractor = ZTFFeatureExtractor()
+        if self.survey == "LSST":
+            self.lightcurve_preprocessor = LSSTLightcurvePreprocessor()
+            self.feature_extractor = LSSTFeatureExtractor()
         self.min_detections_features = config.get("MIN_DETECTIONS_FEATURES", None)
         if self.min_detections_features is None:
             self.min_detections_features = 1
@@ -111,26 +116,6 @@ class FeatureStep(GenericStep): #qua la saque del environment
                 filtered_message["detections"] = discard_bogus_detections(
                     filtered_message["detections"]
                 )
-            if self.survey == "LSST":
-                # Ejemplo de mensaje falso con los campos LSST
-                message = {"oid": "oid_falso","diaObjectId":"diaObjectId_falso",
-                    "detections": [
-                        {
-                            "oid": "oid_falso",
-                            "sid": "sid_falso",
-                            "mjd": 12345.6,
-                            "ra": 12.345,
-                            "dec": -45.678,
-                            "psfFlux": 123.4,
-                            "psfFluxErr": 1.2,
-                            "scienceFlux": 234.5,
-                            "scienceFluxErr": 2.3,
-                            "tid": "tid_falso",
-                            "band": "g",
-                            "diaObjectId": "diaObjectId_falso"
-                        }
-                    ]
-                }
         filtered_messages.append(filtered_message)
 
         def has_enough_detections(message: dict) -> bool: #esto va a fallar, por no tener el campo forced
@@ -185,7 +170,7 @@ class FeatureStep(GenericStep): #qua la saque del environment
                     message.get("detections", []),
                 )
                 #xmatch_data = message["xmatches"]
-                forced = message.get("forced", False)
+                forced = message.get("forced", False) #si no hay detections, filtrar forced photometry
                 #me falta incluir la photometria forzada en el input
 
                 ao = detections_to_astro_object_lsst(list(m), forced)
