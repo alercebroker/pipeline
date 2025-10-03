@@ -29,7 +29,6 @@ def load_sample_messages() -> list[dict]:
                 assert schema_id == 704
 
                 content = schemaless_reader(bytes_io, schema)
-                content["diaSource"]['diaObjectId'] = cont%3
                 sample_messages.append(content)
     return sample_messages
 

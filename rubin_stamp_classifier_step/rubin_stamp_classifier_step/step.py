@@ -120,11 +120,9 @@ class StampClassifierStep(GenericStep):
     def _messages_to_dto(self, messages: List[dict]) -> InputDTO:
         
         df = pd.DataFrame.from_records(messages)
-        print(df.shape)
         df = df.sort_values(by="midpointMjdTai").drop_duplicates(subset="diaObjectId", keep="first")
 
         df.set_index("diaObjectId", inplace=True)
-        print(df.shape)
 
         # Check if diaObjectId is unique
         if not df.index.is_unique:
