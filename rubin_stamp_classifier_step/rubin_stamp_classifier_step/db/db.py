@@ -46,9 +46,6 @@ def store_probability(
 
     with psql_connection.session() as session:
         data = _format_data(classifier_id, classifier_version, predictions)
-        #print(list(zip(predictions,data)))
-        print(predictions)
-        print(data)
 
         insert_stmt = insert(Probability)
         insert_stmt = insert_stmt.on_conflict_do_nothing()

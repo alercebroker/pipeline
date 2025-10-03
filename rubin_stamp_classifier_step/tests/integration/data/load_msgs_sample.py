@@ -21,7 +21,7 @@ def load_sample_messages() -> list[dict]:
     # Loop over all avro files in the directory in alphabetical order
     sample_messages = []
     avro_dir = os.path.join(script_dir, "avro_messages")
-    for filename in sorted(os.listdir(avro_dir)):
+    for cont,filename in enumerate(sorted(os.listdir(avro_dir))):
         if filename.endswith(".avro"):
             with open(os.path.join(avro_dir, filename), "rb") as f:
                 bytes_io = io.BytesIO(f.read())
@@ -29,6 +29,7 @@ def load_sample_messages() -> list[dict]:
                 assert schema_id == 704
 
                 content = schemaless_reader(bytes_io, schema)
+                content["diaSource"]['diaObjectId'] = cont%3
                 sample_messages.append(content)
     return sample_messages
 
@@ -36,7 +37,6 @@ def load_sample_messages() -> list[dict]:
 if __name__ == "__main__":
     # Get list of sample messages
     msgs = load_sample_messages()
-
     # Print the keys of each message
     for i, msg in enumerate(msgs):
         print(f"Message {i} keys: {msg.keys()}")

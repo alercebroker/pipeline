@@ -120,7 +120,11 @@ class StampClassifierStep(GenericStep):
     def _messages_to_dto(self, messages: List[dict]) -> InputDTO:
         
         df = pd.DataFrame.from_records(messages)
+        print(df.shape)
+        df = df.sort_values(by="midpointMjdTai").drop_duplicates(subset="diaObjectId", keep="first")
+
         df.set_index("diaObjectId", inplace=True)
+        print(df.shape)
 
         # Check if diaObjectId is unique
         if not df.index.is_unique:
@@ -164,12 +168,12 @@ class StampClassifierStep(GenericStep):
     ) -> Union[Iterable[Dict[str, Any]], Dict[str, Any]]:
         
         #aqui tengo que hacer la distincion si es diaobject none o no
-
         messages_to_process = [message for message in messages if message["diaObjectId"] is not None and message["diaObjectId"] != 0]
         messages_asteroids = [message for message in messages if message["ssObjectId"] is not None and message["ssObjectId"] != 0]
-        input_dto = self._messages_to_dto(messages_to_process)
-        output_dto: OutputDTO = self.model.predict(input_dto)
-        predicted_probabilities = output_dto.probabilities
+        if len(messages_to_process) > 0:
+            input_dto = self._messages_to_dto(messages_to_process)
+            output_dto: OutputDTO = self.model.predict(input_dto)
+            predicted_probabilities = output_dto.probabilities
 
         output_messages = []
         for message in messages_to_process:
@@ -184,7 +188,6 @@ class StampClassifierStep(GenericStep):
                 "ra": message["ra"],
                 "dec": message["dec"],
             }
-            #print(output_message['probabilities'])
             output_messages.append(output_message)
 
         for message in messages_asteroids:
