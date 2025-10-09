@@ -18,7 +18,7 @@ def generate_alert(oid: str, band: str, num_messages: int, identifier: int, **kw
     survey_id = kwargs.get("survey", "LSST")
 
     for i in range(num_messages):
-        alert = {
+        alert = { #esto tengo que cambiarlo por los campos reales.
             "oid": oid,
             "sid": survey_id,
             "mjd": random.uniform(59000, 60000),
@@ -30,7 +30,8 @@ def generate_alert(oid: str, band: str, num_messages: int, identifier: int, **kw
             "scienceFluxErr": random.uniform(1, 5),
             "tid": survey_id,
             "band": band,
-            "diaObjectId": f"diaObject_{identifier}",
+            "diaObjectId": random.randint(1000000, 9000000),
+            'measurement_id': random.randint(1000000, 9000000),
         }
         alerts.append(alert)
     return alerts
@@ -52,7 +53,7 @@ def generate_input_batch_lsst(n: int, bands: list[str], offset=0, survey="LSST")
 
         msg = {
             "oid": oid,
-            "diaObjectId": f"diaObject_{m}",
+            "measurement_id": random.randint(1000000, 9000000),
             "detections": detections,
             "non_detections": [],  
             "xmatches": {} , #esto no deberia ir

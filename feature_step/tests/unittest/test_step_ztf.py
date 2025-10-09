@@ -63,7 +63,7 @@ class StepTestCase(unittest.TestCase):
         self.step.scribe_producer.produce = mock.MagicMock()
 
     def test_execute(self):
-        messages = generate_input_batch_lsst(10, ["g", "r"], survey="ZTF")
+        messages = generate_input_batch(10, ["g", "r"], survey="ZTF")
         result_messages = self.step.execute(messages)
 
         self.assertEqual(len(messages), len(result_messages))
@@ -87,7 +87,7 @@ class StepTestCase(unittest.TestCase):
         # 2 times the len of messages 1 for objects and 1 for features
         self.assertEqual(scribe_producer_call_count, len(messages) * 2)
 
-    """def test_tough_examples(self):
+    def test_tough_examples(self):
         messages = spm_messages
         pre_messages = self.step.pre_execute(messages)
         result_messages = self.step.execute(pre_messages)
@@ -104,10 +104,10 @@ class StepTestCase(unittest.TestCase):
                 n_features_prev = n_features
 
         self.step.scribe_producer.produce.assert_called()
-        scribe_producer_call_count = self.step.scribe_producer.produce.call_count"""
+        scribe_producer_call_count = self.step.scribe_producer.produce.call_count
 
-    """def test_period_consistency(self):
-        messages = generate_input_batch_lsst(10, ["g", "r"], survey="ZTF")
+    def test_period_consistency(self):
+        messages = generate_input_batch(10, ["g", "r"], survey="ZTF")
         result_messages = self.step.execute(messages)
 
         self.assertEqual(len(messages), len(result_messages))
@@ -120,9 +120,9 @@ class StepTestCase(unittest.TestCase):
         ].values.astype(np.float64)[0]
         multiband_period_message = result_message["features"]["Multiband_period_12"]
 
-        assert multiband_period_scribe == multiband_period_message"""
+        assert multiband_period_scribe == multiband_period_message
 
-    """def test_pre_execute_not_enough_detections(self):
+    def test_pre_execute_not_enough_detections(self):
         step_config = {
             "PRODUCER_CONFIG": PRODUCER_CONFIG,
             "CONSUMER_CONFIG": CONSUMER_CONFIG,
@@ -145,9 +145,9 @@ class StepTestCase(unittest.TestCase):
         messages = [spm_messages[2]]  # has only 1 detection
         result_messages = step.pre_execute(messages)
 
-        self.assertEqual(0, len(result_messages))"""
+        self.assertEqual(0, len(result_messages))
 
-    """def test_pre_execute_drop_bogus(self):
+    def test_pre_execute_drop_bogus(self):
         messages = [spm_messages[3]]
 
         for message in messages:
@@ -184,9 +184,9 @@ class StepTestCase(unittest.TestCase):
             )
 
             self.assertEqual(n_dets_after, n_dets_before - 1)
-            self.assertEqual(n_forced_after, n_forced_before - 1)"""
+            self.assertEqual(n_forced_after, n_forced_before - 1)
 
-    """@mock.patch("features.step.FeatureStep._get_sql_references")
+    @mock.patch("features.step.FeatureStep._get_sql_references")
     def test_read_empty_reference_from_db(self, _get_sql_ref):
         _get_sql_ref.return_value = []
 
@@ -195,18 +195,18 @@ class StepTestCase(unittest.TestCase):
         for msg in messages:
             oids.add(msg["oid"])
         result_references_from_db = self.step._get_sql_references(list(oids))
-        self.assertEqual(0, len(result_references_from_db))"""
+        self.assertEqual(0, len(result_references_from_db))
 
-    """@mock.patch("features.step.FeatureStep._get_sql_references")
+    @mock.patch("features.step.FeatureStep._get_sql_references")
     def test_references_are_in_messages_only(self, _get_sql_ref):
         _get_sql_ref.return_value = None
 
         messages = [spm_messages[3]]
         result_messages = self.step.execute(messages)
 
-        self.assertEqual(4, len(result_messages[0]["reference"]))"""
+        self.assertEqual(4, len(result_messages[0]["reference"]))
 
-    """@mock.patch("features.step.FeatureStep._get_sql_references")
+    @mock.patch("features.step.FeatureStep._get_sql_references")
     def test_references_some_are_in_db(self, _get_sql_ref):
         rfid = 783120150
         _get_sql_ref.return_value = pd.DataFrame(
@@ -236,9 +236,9 @@ class StepTestCase(unittest.TestCase):
             pd.DataFrame(result_references.loc[rfid]),
             pd.DataFrame(result_references_from_db.loc[rfid]),
             check_like=True,
-        )"""
+        )
 
-    """@mock.patch("features.step.FeatureStep._get_sql_references")
+    @mock.patch("features.step.FeatureStep._get_sql_references")
     def test_references_are_all_in_db(self, _get_sql_ref):
         _get_sql_ref.return_value = pd.DataFrame(
             [
@@ -267,10 +267,10 @@ class StepTestCase(unittest.TestCase):
             pd.DataFrame(result_messages[0]["reference"]).set_index("rfid"),
             pd.DataFrame(_get_sql_ref.return_value)[columns].set_index("rfid"),
             check_like=True,
-        )"""
+        )
 
     def test_post_execute(self):
-        messages = generate_input_batch_lsst(10, ["g", "r"], survey="ZTF")
+        messages = generate_input_batch(10, ["g", "r"], survey="ZTF")
         result_messages = self.step.execute(messages)
         result_messages = self.step.post_execute(result_messages)
 

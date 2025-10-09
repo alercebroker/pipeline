@@ -9,8 +9,7 @@ PACKAGE_PATH = os.path.abspath(os.path.join(SCRIPT_PATH, ".."))
 sys.path.append(PACKAGE_PATH)
 if os.getenv("CONFIG_FROM_YAML"):
     from apf.core.settings import config_from_yaml_file
-
-    STEP_CONFIG = config_from_yaml_file("/config/config.yaml")
+    STEP_CONFIG = config_from_yaml_file("./config.yaml")
 else:
     from settings import STEP_CONFIG
 

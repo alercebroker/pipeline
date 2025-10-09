@@ -22,12 +22,13 @@ class AstroObject:
     predictions: Optional[pd.DataFrame] = None
 
     def __post_init__(self):
-        if "aid" not in self.metadata["name"].values:
-            raise ValueError("'aid' is a mandatory field of metadata")
+        #if "aid" not in self.metadata["name"].values: #esto tengo que cambiarlo. porque no tengo aid
+        #    raise ValueError("'aid' is a mandatory field of metadata")
 
         mandatory_detection_columns = { #condicional al survey
             "oid",
             "sid",
+            'fid',
         }
 
         missing_detections_columns = mandatory_detection_columns - set(
@@ -135,7 +136,7 @@ def discard_bogus_detections(detections: List[Dict]) -> list[dict]:
 
 
 def empty_normal_dataframe() -> pd.DataFrame:
-    df = pd.DataFrame(columns=["name", "value", "fid", "sid", "version"])
+    df = pd.DataFrame(columns=["name", "value", "fid", "sid", "version"]) #cambie fid a band
     return df
 
 
