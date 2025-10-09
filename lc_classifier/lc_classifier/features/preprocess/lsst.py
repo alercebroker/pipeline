@@ -16,8 +16,8 @@ class LSSTLightcurvePreprocessor(LightcurvePreprocessor):
 
     def preprocess_single_object(self, astro_object: AstroObject):
         #tengo que poder correr esto
-        #self._helio_time_correction(astro_object)
-        #self.drop_absurd_detections(astro_object)
+        self._helio_time_correction(astro_object)
+        self.drop_absurd_detections(astro_object)
         # TODO: does error need a np.maximum(error, 0.01) ?
         # the factor depends on the units
 
@@ -76,7 +76,7 @@ class LSSTLightcurvePreprocessor(LightcurvePreprocessor):
             return table
 
         astro_object.detections = drop_absurd(astro_object.detections)
-        astro_object.forced_photometry = drop_absurd(astro_object.forced_photometry)
+        #astro_object.forced_photometry = drop_absurd(astro_object.forced_photometry) #todavia no tengo forced
 
     def drop_bogus_detections(self, astro_object: AstroObject): #esto es placeholder para LSST
         def drop_bogus_dets(table):
