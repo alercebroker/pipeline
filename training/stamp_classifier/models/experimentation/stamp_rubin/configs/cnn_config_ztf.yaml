@@ -1,0 +1,88 @@
+hydra:
+  run:
+    dir: .
+  output_subdir: null 
+
+stamp_classifier:
+  results_dir: 'results_ztf'
+  exp_description: 'ztf_crop31_gridsearch_quick'
+  
+  # General Configuration
+  model_name: 'stamp_full' # no usado
+  name_dataset_version: 'ztf'
+  #dir_data: './../../../data_acquisition/rubin/data/processed/ts_stamps_v0.0.4_dp1/'
+  #path_partition: './../../../data_acquisition/rubin/data/processed/partitions/ts_stamps_v0.0.4_dp1/partitions.parquet'
+  dir_data: './../../../data_acquisition/rubin/data/processed/ztf_as_rubin_v0.0/'
+  path_partition: './../../../data_acquisition/rubin/data/processed/partitions/ztf_as_rubin_v0.0/partitions.parquet'
+  #dir_data: './../../../data_acquisition/rubin/data/processed/rubin_5_classes2/ts_stamps_v0.0.3_dp1/'
+  #path_partition: './../../../data_acquisition/rubin/data/processed/partitions/rubin_5_classes2/partitions.parquet'
+  list_folds: [0, 1, 2, 3, 4]
+  debug: false
+  is_searching_hyperparameters: false
+
+  # Loaders Configuration  
+  loader:
+    id_col: oid
+    candid_col: candid
+    ra_col: ra
+    dec_col: dec
+    class_col: class
+    stamps_cols:
+    - science
+    - diff
+    - reference
+    cropping:
+      use: true
+      crop_size: 31
+    num_workers: 12
+    coord_type: spherical
+    norm_type: z-score
+    batch_size: 256
+    use_coords: false
+    fold: 0
+
+  arch:
+    conv_config:
+    - filters: 16
+      kernel_size:
+      - 3
+      - 3
+      activation: relu
+      pool: true
+      pool_size:
+      - 2
+      - 2
+    - filters: 32
+      kernel_size:
+      - 3
+      - 3
+      activation: relu
+      pool: true
+      pool_size:
+      - 2
+      - 2
+    - filters: 64
+      kernel_size:
+      - 3
+      - 3
+      activation: relu
+      pool: true
+      pool_size:
+      - 2
+      - 2
+
+    dense_config:
+    - units: 64
+      activation: tanh
+
+    dropout_rate: 0.5
+    use_batchnorm_metadata: false
+    use_metadata: false
+
+  training:
+    lr: 0.0005
+    use_focal: false
+    patience: 10
+    num_epochs: 10000
+    monitor: loss
+    eval_train_at_the_epoch_end: false

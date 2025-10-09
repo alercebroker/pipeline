@@ -60,14 +60,14 @@ def partition_data(df, output_path, oid_col, candid_col, class_col,field=None, n
 
 if __name__ == "__main__":
     # Definición de columnas según el dataset actual
-    oid_col = 'diaObjectId'
-    candid_col = 'diaSourceId'
+    oid_col = 'oid'
+    candid_col = 'measurement_id'
     class_col = 'class'
     field = None#'Rubin_SV_095_-25'
 
     # Cargar datos y crear carpeta de salida si no existe
-    output_path = "./data/processed/partitions/ts_stamps_v0.0.4_dp1/partitions.parquet"
+    output_path = "./data/processed/partitions/ts_stamps_v0.0.1_comm_4candmax_nosatellite_clean/partitions.parquet"
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
-    df = pd.read_parquet("./data/processed/ts_stamps_v0.0.4_dp1/objs.parquet")
-    partitioned_df = partition_data(df, output_path, oid_col, candid_col, class_col,field)
+    df = pd.read_parquet("./data/processed/ts_stamps_v0.0.1_comm_4candmax_nosatellite_clean/first_detections_clean.parquet")
+    partitioned_df = partition_data(df, output_path, oid_col, candid_col, class_col, field)

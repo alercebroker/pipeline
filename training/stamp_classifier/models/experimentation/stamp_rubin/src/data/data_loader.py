@@ -43,8 +43,23 @@ def process_stamp(data, args):
     if args['cropping']['use']:
         padded_stamps = crop_stamps_ndarray(padded_stamps, args['cropping']['crop_size'])
         padding_masks = crop_stamps_ndarray(padding_masks, args['cropping']['crop_size'])
-    #aqui
-    padded_stamps = flip_negative_flux(padded_stamps,data['psfFlux'].values)
+    #aqui 
+    if 'isdiffpos' in data.columns:
+        negative_flux_mask = data['isdiffpos'] == -1
+        if np.any(negative_flux_mask):
+            logging.info(f"Flipping {np.sum(negative_flux_mask)} stamps with negative flux values to positive.")
+            padded_stamps[negative_flux_mask, :, :, 1] *= -1
+        else:
+            logging.info("No stamps with negative flux values found.")
+
+    else:
+        if 'psfFlux' in data.columns:
+            #print('data:\n', data)
+            #print('psfFlux:\n', data['psfFlux'].values)
+            padded_stamps = flip_negative_flux(padded_stamps, data['psfFlux'].values)
+        else:
+            raise ValueError("No difference column found in data.")
+
     #padded_stamps = flip_negative_flux(padded_stamps,data['psfFlux'].values)
 
     padded_stamps = normalize_batches(padded_stamps, padding_masks, args['batch_size'])
@@ -60,10 +75,18 @@ def process_metadata(
         is_test_only=False
         ):
     
-    columns_to_rm = args['stamps_cols'] + [args['candid_col']] + ["target_name"] # nuevo
+    if 'target_name' in data.columns:
+        columns_to_rm = args['stamps_cols'] + [args['candid_col']] + ["target_name"] # nuevo
+    else:
+        columns_to_rm = args['stamps_cols'] + [args['candid_col']]
+
     metadata = data.drop(columns=columns_to_rm, axis=1)
     metadata = metadata.set_index(args['id_col'])
     use_coords = args['use_coords']
+
+    metadata = metadata[['ra', 'dec']]
+
+    #print('metadata:\n', metadata)
 
     if use_coords:
         coord_df = process_coordinates(
@@ -72,10 +95,14 @@ def process_metadata(
             dec=metadata[args['dec_col']].values,
             coord_type=args['coord_type'],
         )
-        metadata = pd.concat([metadata, coord_df], axis=1)
+        #metadata = pd.concat([metadata, coord_df], axis=1)
+        metadata = coord_df.copy()
+
    
-    metadata = metadata.drop(columns=[args['ra_col'], args['dec_col']])
-    metadata = metadata.fillna(-999)
+    #############
+    #metadata = metadata.drop(columns=[args['ra_col'], args['dec_col']])
+    #metadata = metadata.fillna(-999)
+    #############
     
     # Esto es solo si se quiere usar con ZTF
     #metadata = fill_and_clipping_metadata(metadata)
@@ -101,7 +128,7 @@ def process_metadata(
     else:
         return metadata
 
-def get_tf_datasets(batch_size: int, args: dict):
+def get_tf_datasets(batch_size: int, args: dict, load_pretrained_model: bool = False):
     # Dictionary config saved
     args_loader = args['loader']
     dict_info_model = dict()  
@@ -123,13 +150,19 @@ def get_tf_datasets(batch_size: int, args: dict):
     oids_val = partition[partition['partition'] == f'validation_{fold}'][args_loader['id_col']].tolist()
     oids_test = partition[partition['partition'] == 'test'][args_loader['id_col']].tolist()
 
+    candid_val = partition[partition['partition'] == f'validation_{fold}'][args_loader['candid_col']].tolist()
+    candid_test = partition[partition['partition'] == 'test'][args_loader['candid_col']].tolist()
+    
     data_train = data[data[args_loader['id_col']].isin(oids_train)]
 
     #print(data_train[[args_loader['id_col']] + [args_loader['class_col']]].sort_values(by=args_loader['id_col']).head(20))
-    data_val = data[data[args_loader['id_col']].isin(oids_val)]
+    #data_val = data[data[args_loader['id_col']].isin(oids_val)]
+    data_val = data[(data[args_loader['id_col']].isin(oids_val)) & 
+                     (data[args_loader['candid_col']].isin(candid_val))]
     #print(data_val[[args_loader['id_col']] + [args_loader['class_col']]].head(20))
 
-    data_test = data[data[args_loader['id_col']].isin(oids_test)]
+    data_test = data[(data[args_loader['id_col']].isin(oids_test)) & 
+                     (data[args_loader['candid_col']].isin(candid_test))]
     #data_test.to_csv("./data_test.csv", index=False)
     #solo guardar el top 10
     data_test.head(10).to_pickle("./data_test.pkl")
@@ -172,45 +205,75 @@ def get_tf_datasets(batch_size: int, args: dict):
         norm_type=norm_type, path_norm_dir=args['artifact_path'], is_test_only=True
     )
 
-    tol = 1e-3  # tolerancia
-    match_matrix = np.all(
-    np.isclose(md_train.values[:, None, :], md_test.values[None, :, :], atol=tol),
-    axis=2
-    )
+    md_train = md_train.to_numpy(dtype='float32')
+    md_val = md_val.to_numpy(dtype='float32')
+    md_test = md_test.to_numpy(dtype='float32')
 
-    # Saber si existe al menos un match
-    hay_match = np.any(match_matrix)
 
-    train_idx, test_idx = np.where(match_matrix)
-
-    # Filas que coinciden
-    coincidencias_train = data_train.iloc[train_idx,[i for i in range(10)]]
-    coincidencias_test = data_test.iloc[test_idx,[i for i in range(10)]]
-
-    # Mostrar resultados
-    print("Pares de índices (train, test):")
-    for ti, te in zip(train_idx, test_idx):
-        print(f"Train idx {ti}  <->  Test idx {te}")
-
-    print("\nFilas coincidentes en md_train:")
-    print(coincidencias_train)
-
-    print("\nFilas coincidentes en md_test:")
-    print(coincidencias_test)
-
-    print(f"\nCantidad de coincidencias: {len(train_idx)}")
+    #tol = 1e-3  # tolerancia
+    #match_matrix = np.all(
+    #np.isclose(md_train.values[:, None, :], md_test.values[None, :, :], atol=tol),
+    #axis=2
+    #)
+#
+    ## Saber si existe al menos un match
+    #hay_match = np.any(match_matrix)
+#
+    #train_idx, test_idx = np.where(match_matrix)
+#
+    ## Filas que coinciden
+    #coincidencias_train = data_train.iloc[train_idx,[i for i in range(10)]]
+    #coincidencias_test = data_test.iloc[test_idx,[i for i in range(10)]]
+#
+    ## Mostrar resultados
+    #print("Pares de índices (train, test):")
+    #for ti, te in zip(train_idx, test_idx):
+    #    print(f"Train idx {ti}  <->  Test idx {te}")
+#
+    #print("\nFilas coincidentes en md_train:")
+    #print(coincidencias_train)
+#
+    #print("\nFilas coincidentes en md_test:")
+    #print(coincidencias_test)
+#
+    #print(f"\nCantidad de coincidencias: {len(train_idx)}")
 
     # --- Encode labels ---
-    label_encoder = LabelEncoder()
-    y_train = label_encoder.fit_transform(y_train)
-    y_val = label_encoder.transform(y_val)
-    y_test = label_encoder.transform(y_test)
 
-    dict_mapping_classes = {
-        idx: class_label for idx, class_label in enumerate(label_encoder.classes_)
-    }
+    if not load_pretrained_model:
+        print(np.unique(y_train))
+        print(np.unique(y_val))
+        print(np.unique(y_test))
+        label_encoder = LabelEncoder()
+        y_train = label_encoder.fit_transform(y_train)
+        y_val = label_encoder.transform(y_val)
+        y_test = label_encoder.transform(y_test)
+
+        dict_mapping_classes = {
+            idx: class_label for idx, class_label in enumerate(label_encoder.classes_)
+        }
+
+    else:
+        # CASO 2: Cargando un modelo pre-entrenado. DEBEMOS usar el mapeo de clases original.
+        print("Using existing class mapping from pretrained model.")
+        # Se espera que el mapeo venga en la configuración 'args'
+        dict_mapping_classes = args['dict_mapping_classes']
+        
+        # Invertimos el diccionario para obtener un mapeo de clase a índice (ej: {'ClaseA': 0, 'ClaseB': 1})
+        class_to_idx = {class_label: idx for idx, class_label in dict_mapping_classes.items()}
+
+        # Aplicamos el mapeo existente a las etiquetas actuales
+        try:
+            y_train = np.array([class_to_idx[label] for label in y_train])
+            y_val = np.array([class_to_idx[label] for label in y_val])
+            y_test = np.array([class_to_idx[label] for label in y_test])
+        except KeyError as e:
+            print(f"Error: La etiqueta '{e.args[0]}' encontrada en los datos no existe en el mapeo de clases del modelo pre-entrenado.")
+            raise
+
+
     dict_info_model.update({
-        'label_encoder': label_encoder,
+        #'label_encoder': label_encoder,
         'dict_mapping_classes': dict_mapping_classes,
     })
 
@@ -239,6 +302,8 @@ def get_tf_datasets(batch_size: int, args: dict):
     for class_index in range(n_classes):
         class_slice = y_train == class_index
         inputs = (stamp_train[class_slice], md_train[class_slice])
+        #print(stamp_train)
+        #print(md_train)
         labels = y_train[class_slice]
 
         class_dataset = (
@@ -255,10 +320,12 @@ def get_tf_datasets(batch_size: int, args: dict):
         training_datasets_per_class)
     training_dataset = training_dataset.batch(batch_size).prefetch(5)
 
+    train_ds_for_eval = tf.data.Dataset.from_tensors(((stamp_train, md_train), y_train))
     validation_dataset = tf.data.Dataset.from_tensors(((stamp_val, md_val), y_val))
     test_dataset = tf.data.Dataset.from_tensors(((stamp_test, md_test), y_test))
 
+    train_ds_for_eval = train_ds_for_eval.unbatch().batch(batch_size).prefetch(5)
     validation_dataset = validation_dataset.unbatch().batch(batch_size).prefetch(5)
     test_dataset = test_dataset.unbatch().batch(batch_size).prefetch(5)
     
-    return training_dataset, validation_dataset, test_dataset, dict_info_model
+    return training_dataset, train_ds_for_eval, validation_dataset, test_dataset, oids_test, dict_info_model

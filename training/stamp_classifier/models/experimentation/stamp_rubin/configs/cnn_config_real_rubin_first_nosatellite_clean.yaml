@@ -4,30 +4,38 @@ hydra:
   output_subdir: null 
 
 stamp_classifier:
-  results_dir: 'results3'
+  results_dir: 'results_rubin_real_first_nosatellite_clean'
   exp_description: ''
   
+  # Load pretrained model
+  load_pretrained_model: false
+  checkpoint: {
+    exp_name: classification/ztf/testing,
+    run_name: 2025-09-25_13-18-27,
+    results_dir: results_ztf
+  }
+
   # General Configuration
   model_name: 'stamp_full' # no usado
-  name_dataset_version: 'rubin_AGN_vs_VS'
-  #dir_data: './../../../data_acquisition/rubin/data/processed/ts_stamps_v0.0.4_dp1/'
-  #path_partition: './../../../data_acquisition/rubin/data/processed/partitions/ts_stamps_v0.0.4_dp1/partitions.parquet'
-  dir_data: './../../../data_acquisition/rubin/data/processed/ztf_as_rubin_v0.0/'
-  path_partition: './../../../data_acquisition/rubin/data/processed/partitions/ts_stamps_v0.0.4_dp1/partitions.parquet'
+  name_dataset_version: 'rubin_real'
+  dir_data: './../../../data_acquisition/rubin/data/processed/ts_stamps_v0.0.1_comm_4candmax_first_stamp_nosatellite_clean'
+  path_partition: './../../../data_acquisition/rubin/data/processed/partitions/ts_stamps_v0.0.1_comm_4candmax_nosatellite_clean/partitions.parquet'
+  #dir_data: './../../../data_acquisition/rubin/data/processed/ztf_as_rubin_v0.0/'
+  #path_partition: './../../../data_acquisition/rubin/data/processed/partitions/ztf_as_rubin_v0.0/partitions.parquet'
   #dir_data: './../../../data_acquisition/rubin/data/processed/rubin_5_classes2/ts_stamps_v0.0.3_dp1/'
   #path_partition: './../../../data_acquisition/rubin/data/processed/partitions/rubin_5_classes2/partitions.parquet'
-  list_folds: [0]
+  list_folds: [0, 1, 2]
   debug: false
   is_searching_hyperparameters: false
 
   # Loaders Configuration
   loader:
-    id_col: 'diaObjectId'
-    candid_col: 'diaSourceId'
+    id_col: 'oid'
+    candid_col: 'measurement_id'
     ra_col: 'ra'
     dec_col: 'dec'
     class_col: 'class'
-    stamps_cols: ['visit_image', 'difference_image', 'reference_image']
+    stamps_cols: ['flux_Science_data', 'flux_Difference_data', 'flux_Template_data']
     cropping: {
       use: false,
       crop_size: 21
@@ -40,28 +48,18 @@ stamp_classifier:
     
   arch:
     conv_config:
-      - filters: 8
-        kernel_size: [2, 2]
-        activation: relu
-        pool: false
-
       - filters: 16
         kernel_size: [2, 2]
         activation: relu
         pool: true
         pool_size: [2, 2]
 
-      - filters:  8
-        kernel_size: [2, 2]
-        activation: relu
-        pool: false
-        pool_size: [2, 2]
-
-      - filters: 16
+      - filters: 32
         kernel_size: [2, 2]
         activation: relu
         pool: true
         pool_size: [2, 2]
+
       #- filters: 8
       #  kernel_size: [2, 2]
       #  activation: relu
@@ -73,7 +71,7 @@ stamp_classifier:
       - units: 16
         activation: tanh
 
-    dropout_rate: 0.7
+    dropout_rate: 0.6
     use_batchnorm_metadata: false
     use_metadata: false
 
@@ -85,4 +83,4 @@ stamp_classifier:
     patience: 10
     num_epochs: 10000
     monitor: 'loss'
-  
+    eval_train_at_the_epoch_end: true
