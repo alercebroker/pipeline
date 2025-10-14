@@ -137,4 +137,4 @@ class LsstStrategy(StrategyInterface[LsstData]):
 
     @classmethod
     def get_key(cls) -> str:
-        return "diaSourceId"
+        return "oid"
