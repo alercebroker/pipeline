@@ -132,7 +132,7 @@ def insert_ss_sources(
     if chunk_size is None:
         chunk_size = len(sources)
 
-    lsst_columns = set(sources.columns) - {"message_id", "midpointMjdTai"}
+    lsst_columns = set(sources.columns) - {"message_id", "midpointMjdTai", "parentDiaSourceId"}
 
     ss_sources_dict = sources[list(lsst_columns)].to_dict("records")
 

@@ -40,6 +40,7 @@ class LsstSsSourceExtractor(BaseExtractor):
     field = "ssSource"
     schema = ss_source_schema
     extra_columns_schema = {
+        "parentDiaSourceId": pd.Int64Dtype(),
         "midpointMjdTai": pd.Float64Dtype(),
     }
 
@@ -49,7 +50,7 @@ class LsstSsSourceExtractor(BaseExtractor):
     ) -> dict[str, list[Any]]:
         source = message["diaSource"]
         return {
-            "diaSourceId": [message["diaSourceId"]] * len(measurements),
+            "parentDiaSourceId": [message["diaSourceId"]] * len(measurements),
             "midpointMjdTai": [source["midpointMjdTai"]] * len(measurements),
         }
 

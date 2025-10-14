@@ -83,7 +83,8 @@ def get_forced_source_transforms() -> list[Transform]:
 
 def get_ss_source_transforms() -> list[Transform]:
     return [
-        copy_column("diaSourceId", "measurement_id"),
+        copy_column("parentDiaSourceId", "measurement_id"),
+        copy_column("parentDiaSourceId", "diaSourceId"),
         deduplicate(["measurement_id"], sort="midpointMjdTai"),
     ]
 
