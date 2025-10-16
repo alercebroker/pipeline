@@ -2,7 +2,7 @@
 line-length = 79
 [tool.poetry]
 name = "reflector-step"
-version = "27.5.7a27"
+version = "27.5.7a28"
 description = "Copy data between Kafka topics"
 authors = ["alercebroker"]
 readme = "README.md"
@@ -11,13 +11,13 @@ packages = [{ include = "reflector_step" }]
 [tool.poetry.dependencies]
 python = ">=3.10, <3.11"
 apf_base = { path = "../libs/apf", develop = true }
-confluent_kafka = "2.0.2"
+confluent_kafka = "2.12.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"
 pytest-docker = "^1.0.1"
 pytest-cov = "^4.1.0"
-confluent-kafka = "2.0.2"
+confluent-kafka = "2.12.0"
 
 [build-system]
 requires = ["poetry-core"]
