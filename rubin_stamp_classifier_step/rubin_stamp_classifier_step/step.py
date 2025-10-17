@@ -22,7 +22,7 @@ import pandas as pd
 # In a real implementation, this would query a database or a configuration file.
 # TODO: Replace with actual implementation
 def classifier_name_to_id(classifier_name: str) -> int:
-    return 0
+    return 1
 
 
 class StampClassifierStep(GenericStep):
@@ -36,6 +36,7 @@ class StampClassifierStep(GenericStep):
         self.model = StampClassifierModel(
             model_path=config["MODEL_CONFIG"]["MODEL_PATH"]
         )
+        self.dict_mapping_classes = self.model.dict_mapping_classes
         self.psql_connection = PSQLConnection(config["DB_CONFIG"])
 
     def pre_execute(self, messages: List[dict]) -> List[dict]:
@@ -172,6 +173,10 @@ class StampClassifierStep(GenericStep):
             input_dto = self._messages_to_dto(messages_to_process)
             output_dto: OutputDTO = self.model.predict(input_dto)
             predicted_probabilities = output_dto.probabilities
+            #logging.info('input_dto:\n', input_dto)
+            #logging.info('predicted_probabilities:\n', predicted_probabilities)
+
+        #exit()
 
         output_messages = []
         for message in messages_to_process:
@@ -198,7 +203,7 @@ class StampClassifierStep(GenericStep):
                                   'VS': 0.0, 
                                   'asteroid': 1.0, 
                                   'bogus': 0.0,
-                                    'satellite': 0.0},  # All probability to asteroid class
+                                  'satellite': 0.0},  # All probability to asteroid class
                 "midpointMjdTai": message["midpointMjdTai"],
                 "ra": message["ra"],
                 "dec": message["dec"],
@@ -208,6 +213,7 @@ class StampClassifierStep(GenericStep):
         return output_messages
 
     def post_execute(self, messages: List[dict]) -> List[dict]:
+        #exit()
         # Write probabilities in the database
         store_probability(
             self.psql_connection,
