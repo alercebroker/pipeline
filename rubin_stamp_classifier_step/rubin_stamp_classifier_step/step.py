@@ -22,7 +22,7 @@ import pandas as pd
 # In a real implementation, this would query a database or a configuration file.
 # TODO: Replace with actual implementation
 def classifier_name_to_id(classifier_name: str) -> int:
-    return 1
+    return 0
 
 
 class StampClassifierStep(GenericStep):
