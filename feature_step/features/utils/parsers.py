@@ -32,13 +32,9 @@ def fluxnjy2mag(flux):
 
 def add_mag_and_flux_lsst(a: pd.DataFrame) -> pd.DataFrame:
     """
-    Placeholder para lógica de magnitud y flujo para LSST.
+    Lógica de magnitud y flujo para LSST.
     """
-    # Aquí irá la lógica específica para LSST
-    #aqui tengo que terminar con las columnas brigthness y unit
 
-    #psfflux esta en njy
-    #scienceflux esta en njy
     a['psfFluxErr'] = a.apply(lambda row: flux_err_2_mag_err(row['psfFluxErr'], abs(row['psfFlux'])), axis=1)
     a['psfFlux'] = a['psfFlux'].apply(fluxnjy2mag)
 
@@ -50,13 +46,10 @@ def add_mag_and_flux_lsst(a: pd.DataFrame) -> pd.DataFrame:
     a["unit"] = "magnitude"
 
     a_flux = a.copy()
-    # TODO: check this
-    #conversion a flujo? averiguar
     a_flux["brightness"] = a["scienceFlux"]/1000 #njy #lo paso a microjy
     a_flux["e_brightness"] = a["scienceFluxErr"]/1000
     a_flux["unit"] = "diff_flux"
     a = pd.concat([a, a_flux], axis=0,ignore_index=True)
-    #a.set_index("aid", inplace=True)
     for col in ["psfFlux", "psfFluxErr","scienceFlux","scienceFluxErr"]:
         if col in a.columns:
             a.drop(columns=[col], inplace=True)
@@ -69,18 +62,10 @@ def detections_to_astro_object_lsst(
     references_db: pd.DataFrame = None,
 ) -> AstroObject:
     
-    #print(detections)
-    
-    #lo primero es estandarizar los nombres. Voy a hacer eso. Voy a revisar el schema de correction y ocupar las claves minimas.
-
-    #psfFlux es mag_corr
-    #scienceFlux es mag
     detection_keys = ["oid","sid","mjd","ra","dec",
                       "psfFlux","psfFluxErr","scienceFlux",
                       "scienceFluxErr","tid","band","measurement_id"]
     
-    #quiero estandarizar las detection keys con la otra funcion
-
     values = []
     for detection in detections:
         values.append([detection.get(key, None) for key in detection_keys])
@@ -98,20 +83,14 @@ def detections_to_astro_object_lsst(
 
     a = add_mag_and_flux_lsst(a)
 
-    #print(a.unit.unique())
-    
-    #aid = a.index.values[0]
     oid = a["oid"].iloc[0]
 
-    aid_forced = None#a[a["forced"]] #que hacer con las forced?
-    aid_detections = a#a[~a["forced"]]
-
-    #me falta ver la photometria forzada
-    #tengo que definir que hacer con el aid
+    aid_forced = None #falta la photometria forzada
+    aid_detections = a
 
     metadata = pd.DataFrame(
         [
-            ["aid", "aid"],
+            ["aid", "aid"], #placeholder
             ["oid", oid],
         ],
         columns=["name", "value"],)
@@ -123,6 +102,7 @@ def detections_to_astro_object_lsst(
         reference=None,
     )
     return astro_object
+
 def add_mag_and_flux_columns(a: pd.DataFrame) -> pd.DataFrame:
     """
     Toma un DataFrame con columnas 'mag', 'e_mag', 'mag_corr', 'e_mag_corr_ext', 'isdiffpos', 'forced',
