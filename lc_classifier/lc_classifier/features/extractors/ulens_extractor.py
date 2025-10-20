@@ -53,7 +53,7 @@ class MicroLensExtractor(FeatureExtractor):
             )
         observations = observations[observations["unit"] == self.unit]
         observations = observations[observations["brightness"].notna()]
-        observations = observations[observations["e_brightness"] < 1.0]
+        #observations = observations[observations["e_brightness"] < 1.0] lo saco por mientras
         observations["mjd"] -= np.min(observations["mjd"])
         return observations
 

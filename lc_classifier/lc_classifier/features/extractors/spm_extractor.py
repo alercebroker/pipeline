@@ -41,7 +41,7 @@ class SPMExtractor(FeatureExtractor):
             "r": 6223.0,
             "i": 7546.0,
             "z": 8691.0,
-            "Y": 9712.0,
+            "y": 9712.0,
         }
         for band in bands:
             if band not in self.cws.keys():
@@ -125,6 +125,7 @@ class SPMExtractor(FeatureExtractor):
             extinction_color_excess = float(extinction_color_excess)
 
         observations = self.get_observations(astro_object)
+        #print(len(observations))
 
         if len(observations) == 0:
             parameters = []
@@ -214,7 +215,7 @@ class SNModel:
         # Parameter guess
         tol = 1e-2
 
-        prefered_order = list("irzYgu")
+        prefered_order = list("irzygu")
         for c in prefered_order:
             if c in available_bands:
                 best_available_band = c
@@ -261,7 +262,7 @@ class SNModel:
 
             initial_guess.append(p0)
         initial_guess = np.concatenate(initial_guess, axis=0)
-        band_mapper = dict(zip("ugrizY", range(6)))
+        band_mapper = dict(zip("ugrizy", range(6)))
 
         # debugging
         # for g, b in zip(initial_guess, bounds):

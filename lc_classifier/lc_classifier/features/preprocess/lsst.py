@@ -66,7 +66,7 @@ class LSSTLightcurvePreprocessor(LightcurvePreprocessor):
                         (
                             (mag_det["brightness"] < 30.0) #queda igual
                             & (mag_det["brightness"] > 6.0) #queda igual
-                            & (mag_det["e_brightness"] < 1.0)
+                            & (mag_det["e_brightness"] < 1.0) #e_brightness me esta quedando entre 18 y 20 #esto era 1.0
                         )
                     ],
                     table[~magnitude_mask],

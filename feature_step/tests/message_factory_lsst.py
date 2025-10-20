@@ -2,62 +2,76 @@ import pandas as pd
 import random
 from test_utils.mockdata.extra_fields.elasticc import generate_extra_fields
 from features.utils.parsers import fid_mapper_for_db
+import copy
+import os
+import json
+import pathlib
 
 random.seed(8798, version=2)
 
 ELASTICC_BANDS = ["u", "g", "r", "i", "z", "y"]
-#measurement_id es candid
+# measurement_id es candid
 
 
+def _default_jsons_dir() -> str:
+    # tests/ -> ../jsons
+    here = pathlib.Path(__file__).resolve()
+    return str(here.parent.parent / "jsons")
 
-def generate_alert(oid: str, band: str, num_messages: int, identifier: int, **kwargs) -> list[dict]:
-    """
-    Generate a list of detections for a given object ID and band.
-    """
-    alerts = []
-    survey_id = kwargs.get("survey", "LSST")
 
-    for i in range(num_messages):
-        alert = { #esto tengo que cambiarlo por los campos reales.
-            "oid": oid,
-            "sid": survey_id,
-            "mjd": random.uniform(59000, 60000),
-            "ra": random.uniform(0, 360),
-            "dec": random.uniform(-90, 90),
-            "psfFlux": random.uniform(100, 200),
-            "psfFluxErr": random.uniform(1, 5),
-            "scienceFlux": random.uniform(200, 300),
-            "scienceFluxErr": random.uniform(1, 5),
-            "tid": survey_id,
-            "band": band,
-            "diaObjectId": random.randint(1000000, 9000000),
-            'measurement_id': random.randint(1000000, 9000000),
-        }
-        alerts.append(alert)
-    return alerts
+def load_messages_from_jsons(jsons_dir: str | None = None, limit: int | None = None) -> list[dict]:
+    jsons_dir = jsons_dir or _default_jsons_dir()
+    if not os.path.isdir(jsons_dir):
+        return []
+    files = [
+        os.path.join(jsons_dir, f)
+        for f in os.listdir(jsons_dir)
+        if f.endswith(".json") and f.startswith("messages_")
+    ]
+    # ordenar por mtime descendente para priorizar los más recientes
+    files.sort(key=lambda p: os.path.getmtime(p), reverse=True)
+    if limit is not None:
+        files = files[:limit]
 
+    messages: list[dict] = []
+    for fp in files:
+        try:
+            with open(fp, "r", encoding="utf-8") as fh:
+                data = json.load(fh)
+                if isinstance(data, list):
+                    messages.append(data[0])
+                elif isinstance(data, dict):
+                    messages.append(data)
+        except Exception:
+            # ignorar archivos corruptos
+            continue
+    return messages
+
+
+def _ensure_message_keys(msg: dict) -> dict:
+    msg = dict(msg)
+    msg.setdefault("sources", [])
+    msg.setdefault("previous_sources", [])
+    msg.setdefault("forced_sources", [])
+    msg.setdefault("dia_object", [])
+    msg.setdefault("timestamp", 0)
+    if "measurement_id" not in msg:
+        # derivar measurement_id desde sources si existe
+        if msg.get("sources"):
+            msg["measurement_id"] = [
+                src.get("measurement_id", i) for i, src in enumerate(msg["sources"])
+            ]
+        else:
+            msg["measurement_id"] = []
+    return msg
 
 
 def generate_input_batch_lsst(n: int, bands: list[str], offset=0, survey="LSST") -> list[dict]:
     """
-    Generate a batch of fake LSST messages with minimal fields.
+    Carga un batch de mensajes LSST desde ../jsons en lugar de generarlos sintéticamente.
+    Ignora los parámetros n y bands; devuelve todos los mensajes encontrados.
     """
-    batch = []
-    for m in range(1, n + 1):
-        oid = f"AL2X{str(m+offset).zfill(5)}"
-        detections = []
-        for band in bands:
-            detections.extend(
-                generate_alert(oid, band, random.randint(60, 100), m, survey=survey)
-            )
-
-        msg = {
-            "oid": oid,
-            "measurement_id": random.randint(1000000, 9000000),
-            "detections": detections,
-            "non_detections": [],  
-            "xmatches": {} , #esto no deberia ir
-        }
-        batch.append(msg)
+    loaded = load_messages_from_jsons(limit=5)
+    batch = [_ensure_message_keys(m) for m in loaded]
     return batch
 

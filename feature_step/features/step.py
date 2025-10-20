@@ -1,6 +1,8 @@
 import pandas as pd
 import logging
 import json
+import os
+import uuid
 from typing import Any, Dict, Iterable, List, Optional
 
 from apf.core import get_class
@@ -22,8 +24,60 @@ from .database import (
 from .utils.metrics import get_sid
 from .utils.parsers import parse_output, parse_scribe_payload
 from .utils.parsers import detections_to_astro_object,detections_to_astro_object_lsst
+from .utils.parsers import parse_output_lsst
+
 
 from importlib.metadata import version
+
+
+def clean_and_flatten_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Aplana columnas con listas y remueve saltos de línea en strings."""
+    for col in df.columns:
+        if df[col].apply(lambda x: isinstance(x, list)).any():
+            df = df.explode(col)
+        df[col] = df[col].apply(lambda x: str(x).replace('\n', ' ') if isinstance(x, str) else x)
+    return df
+
+
+def save_astro_objects_to_csvs(
+    astro_objects: List["AstroObject"],
+    messages_to_process: List[dict],
+    base_folder: str = "csvs",
+) -> str:
+    """Guarda detections y features de cada AstroObject en CSVs por OID.
+
+    Crea una carpeta base si no existe y un subfolder por batch con UUID.
+    Retorna la ruta del folder del batch.
+    """
+    if not os.path.exists(base_folder):
+        os.makedirs(base_folder)
+
+    batch_id = str(uuid.uuid4())
+    batch_folder = os.path.join(base_folder, batch_id)
+    os.makedirs(batch_folder)
+    #print(len(astro_objects))
+
+    for i, (ao, msg) in enumerate(zip(astro_objects, messages_to_process)):
+        oid = getattr(ao, "oid", msg.get("oid", f"obj_{i}"))
+        #print(oid)
+        detections_csv_path = os.path.join(batch_folder, f"{oid}_detections.csv")
+        features_csv_path = os.path.join(batch_folder, f"{oid}_features.csv")
+
+        detections_df = clean_and_flatten_columns(ao.detections)
+        features_df = clean_and_flatten_columns(ao.features)
+
+        if "sid" in detections_df.columns:
+            detections_df = detections_df.drop(columns=["sid"])
+        if "sid" in features_df.columns:
+            features_df = features_df.drop(columns=["sid"])
+
+        detections_df.to_csv(detections_csv_path, index=False)
+        features_df.to_csv(features_csv_path, index=False)
+
+        print(f"Saved: {detections_csv_path}")
+        print(f"Saved: {features_csv_path}")
+
+    return batch_folder
 
 
 class FeatureStep(GenericStep): #qua la saque del environment
@@ -63,6 +117,7 @@ class FeatureStep(GenericStep): #qua la saque del environment
             self.feature_extractor = ZTFFeatureExtractor()
             self.extractor_group = ZTFFeatureExtractor.__name__
             self.detections_to_astro_object_fn = detections_to_astro_object
+            self.parse_output_fn = parse_output
 
         if self.survey == "LSST":
             self.id_column = "measurement_id"
@@ -70,6 +125,7 @@ class FeatureStep(GenericStep): #qua la saque del environment
             self.feature_extractor = LSSTFeatureExtractor()
             self.extractor_group = LSSTFeatureExtractor.__name__
             self.detections_to_astro_object_fn = detections_to_astro_object_lsst
+            self.parse_output_fn = parse_output_lsst
 
         self.min_detections_features = config.get("MIN_DETECTIONS_FEATURES", None)
         if self.min_detections_features is None:
@@ -114,35 +170,52 @@ class FeatureStep(GenericStep): #qua la saque del environment
         return db_references
 
     def pre_execute(self, messages: List[dict]):
+        # Guardar en JSON los messages que cumplan que len(sources)+len(previous_sources) > 10
+        try:
+            msgs_to_save = [
+                m for m in messages
+                if (len(m.get("sources", [])) + len(m.get("previous_sources", []))) > 10
+            ]
+            if msgs_to_save:
+                jsons_folder = "jsons"
+                os.makedirs(jsons_folder, exist_ok=True)
+                file_id = str(uuid.uuid4())
+                json_path = os.path.join(jsons_folder, f"messages_{file_id}.json")
+                with open(json_path, "w", encoding="utf-8") as f:
+                    json.dump(msgs_to_save, f, ensure_ascii=False, indent=2)
+                self.logger.info(f"Saved filtered messages JSON: {json_path} ({len(msgs_to_save)} items)")
+        except Exception as e:
+            self.logger.exception(f"Failed to save filtered messages JSON: {e}")
+
         filtered_messages = []
-        print(messages[0].keys())
+        #print(messages[0])
 
         for message in messages:
+            filtered_message = message.copy()
             if self.survey == "ZTF":
                 filtered_message["detections"] = discard_bogus_detections(
-                    filtered_message["detections"]
+                    filtered_message.get("detections", [])
                 )
+                filtered_messages.append(filtered_message)
             elif self.survey == "LSST":
-                message['detections'] = message['sources'] + message['previous_sources'] #aqui creo que tengo que hacer algo de deduplicacion
+                # Solo conservar mensajes con >10 (sources + previous_sources)
+                total_src = len(filtered_message.get('sources', [])) + len(filtered_message.get('previous_sources', []))
+                if total_src <= 10:
+                    continue
+                dets = filtered_message.get('sources', []) + filtered_message.get('previous_sources', [])
+                dets = [elem for elem in dets if elem.get('band') is not None]
+                filtered_message['detections'] = dets
+                filtered_messages.append(filtered_message)
 
-            filtered_message = message.copy()
-            #me falta implementar el discard_bogus_detections para lsst
-            
-        filtered_messages.append(filtered_message)
-
-        def has_enough_detections(message: dict) -> bool: #
-            n_dets = len([True for det in message["detections"] if not det["forced"]])
+        def has_enough_detections(message: dict) -> bool: # (ZTF)
+            n_dets = len([True for det in message["detections"] if not det.get("forced", False)])
             return n_dets >= self.min_detections_features
         
-        def has_enough_detections_lsst(message: dict) -> bool: 
-            n_dets = len([True for det in message["detections"]])
-            return n_dets >= self.min_detections_features
-
+        # En LSST ya filtramos por >10 sources+previous_sources, no aplicar filtro adicional
         if self.survey == "ZTF":
-            filtered_messages = filter(has_enough_detections, filtered_messages)
-        if self.survey == "LSST":
-            filtered_messages = filter(has_enough_detections_lsst, filtered_messages)
-        filtered_messages = list(filtered_messages)
+            filtered_messages = list(filter(has_enough_detections, filtered_messages))
+        else:
+            filtered_messages = list(filtered_messages)
         return filtered_messages
 
     def execute(self, messages):
@@ -156,7 +229,6 @@ class FeatureStep(GenericStep): #qua la saque del environment
 
         if self.survey == "ZTF":
             references_db = self._get_sql_references(list(oids))
-
         for message in messages: #que hace aqui? para lsst, en vez de candid, ocupare measurement_id"
             if not message["oid"] in candids:
                 candids[message["oid"]] = []
@@ -172,6 +244,7 @@ class FeatureStep(GenericStep): #qua la saque del environment
             else:
                 forced = message.get("forced", False) #si no hay detections, filtrar forced photometry
                 ao = self.detections_to_astro_object_fn(list(m), forced)
+                #print('FID:',ao.detections['fid'].unique())
 
             astro_objects.append(ao)
             messages_to_process.append(message)
@@ -179,19 +252,14 @@ class FeatureStep(GenericStep): #qua la saque del environment
         self.lightcurve_preprocessor.preprocess_batch(astro_objects)
         self.feature_extractor.compute_features_batch(astro_objects, progress_bar=False)
 
-        #me falta parsear la salida
-        #print("METADATA",astro_objects[0].metadata)
-        #print("DETECTIONS",astro_objects[0].detections.dtypes)
-        #print("DETECTIONS",astro_objects[0].detections.isna().sum())
-        print("FEATURES",astro_objects[0].features)
-        print("FEATURES",astro_objects[0].features.name.values)
-
-
+        # Guardar resultados en CSVs por objeto usando función externa
+        #batch_folder = save_astro_objects_to_csvs(astro_objects, messages_to_process, base_folder="csvs")
         #self.produce_to_scribe(astro_objects)
-        output = parse_output(astro_objects, messages_to_process, candids,self.survey)
+        output = self.parse_output_fn(astro_objects, messages_to_process, candids)
         return output
 
     def post_execute(self, result):
+        
         self.metrics["sid"] = get_sid(result)
 
         for message in result:

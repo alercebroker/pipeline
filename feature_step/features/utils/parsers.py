@@ -39,9 +39,8 @@ def add_mag_and_flux_lsst(a: pd.DataFrame) -> pd.DataFrame:
 
     #psfflux esta en njy
     #scienceflux esta en njy
-
-    a['psfFLux'] = a['psfFlux'].apply(fluxnjy2mag)
-    a['psfFluxErr'] = a.apply(lambda row: flux_err_2_mag_err(row['psfFluxErr'], row['psfFlux']), axis=1)
+    a['psfFluxErr'] = a.apply(lambda row: flux_err_2_mag_err(row['psfFluxErr'], abs(row['psfFlux'])), axis=1)
+    a['psfFlux'] = a['psfFlux'].apply(fluxnjy2mag)
 
     a.rename(
         columns={"psfFlux": "brightness", "psfFluxErr": "e_brightness"},
@@ -56,7 +55,7 @@ def add_mag_and_flux_lsst(a: pd.DataFrame) -> pd.DataFrame:
     a_flux["brightness"] = a["scienceFlux"]/1000 #njy #lo paso a microjy
     a_flux["e_brightness"] = a["scienceFluxErr"]/1000
     a_flux["unit"] = "diff_flux"
-    a = pd.concat([a, a_flux], axis=0)
+    a = pd.concat([a, a_flux], axis=0,ignore_index=True)
     #a.set_index("aid", inplace=True)
     for col in ["psfFlux", "psfFluxErr","scienceFlux","scienceFluxErr"]:
         if col in a.columns:
@@ -69,6 +68,8 @@ def detections_to_astro_object_lsst(
     xmatches: dict = None,
     references_db: pd.DataFrame = None,
 ) -> AstroObject:
+    
+    #print(detections)
     
     #lo primero es estandarizar los nombres. Voy a hacer eso. Voy a revisar el schema de correction y ocupar las claves minimas.
 
@@ -89,7 +90,6 @@ def detections_to_astro_object_lsst(
 
     # Renombrar las columnas de 'a' de acuerdo con DETECTION_KEYS_MAP
     a.rename(columns=DETECTION_KEYS_MAP, inplace=True)
-
     a["sid"] = str(a["sid"])
     #transformar bandas a sus strings
     band_map = {"u": 0, "g": 1, "r": 2, "i": 3, "z": 4, "y": 5}
@@ -97,6 +97,8 @@ def detections_to_astro_object_lsst(
     a["fid"] = a["fid"].map(band_map_inverse)
 
     a = add_mag_and_flux_lsst(a)
+
+    #print(a.unit.unique())
     
     #aid = a.index.values[0]
     oid = a["oid"].iloc[0]
@@ -398,7 +400,7 @@ def parse_scribe_payload(
             "type": "update_object_from_stats",
             "criteria": {"oid": oid},
             "data": {
-                "g_r_max": get_color_from_features("g_r_max", features_list), #por que obtiene colores?
+                "g_r_max": get_color_from_features("g_r_max", features_list), #ZTF: antes estaban en tabla objetos.
                 "g_r_mean": get_color_from_features("g_r_mean", features_list),
                 "g_r_max_corr": get_color_from_features("g_r_max_corr", features_list),
                 "g_r_mean_corr": get_color_from_features(
@@ -416,8 +418,8 @@ def parse_scribe_payload(
 
 
 def parse_output(
-    astro_objects: List[AstroObject], messages: List[Dict], candids: Dict,survey: str
-) -> list[dict]: #esto igual tengo que verlo #esto tiene que cambiar porque tenemos varias bandas y los campos ahora se llaman distinto
+    astro_objects: List[AstroObject], messages: List[Dict], candids: Dict
+) -> list[dict]:
     """
     Parse output of the step. It uses the input data to extend the schema to
     add the features of each object, identified by its oid.
@@ -431,24 +433,22 @@ def parse_output(
     """
 
     output_messages = []
-    for message, astro_object in zip(messages, astro_objects): #asume el mismo orden, entonces los campos del astroobject se pueden llamar distinto"
+    for message, astro_object in zip(messages, astro_objects):
         oid = message["oid"]
         candid = candids[oid]
 
-        ao_features = astro_object.features[["name", "fid", "value"]].copy() #esto rea fid, lo cambie a band
-        fid_map = {"g": "_1", "r": "_2", "g,r": "_12", None: ""} #esto depende del survey
-        ao_features["name"] += ao_features["fid"].map(fid_map).fillna("otra_banda")
+        ao_features = astro_object.features[["name", "fid", "value"]].copy()
+        fid_map = {"g": "_1", "r": "_2", "g,r": "_12", None: ""}
+        ao_features["name"] += ao_features["fid"].map(fid_map)
         ao_features = ao_features.sort_values("name")
         ao_features.replace({np.nan: None, np.inf: None, -np.inf: None}, inplace=True)
         oid_ao = query_ao_table(astro_object.metadata, "oid")
         assert oid_ao == oid
         feature_names = [f.replace("-", "_") for f in ao_features["name"].values]
 
-        if survey == "ZTF":
-
-            reference = astro_object.reference
-            if reference is not None:
-                reference = astro_object.reference.reset_index(drop=True).to_dict("records")
+        reference = astro_object.reference
+        if reference is not None:
+            reference = astro_object.reference.reset_index(drop=True).to_dict("records")
 
         features_for_oid = dict(
             zip(feature_names, ao_features["value"].astype(np.double))
@@ -458,23 +458,70 @@ def parse_output(
                 None if np.isnan(features_for_oid[key]) else features_for_oid[key]
             )
 
-        if survey == "ZTF":
-            out_message = {
-                "oid": oid,
-                "candid": candid,
-                "detections": message["detections"],
-                "non_detections": message["non_detections"],
-                "xmatches": message["xmatches"],
-                "features": features_for_oid,
-                "reference": reference,
-            }
-        elif survey == "LSST":
-            out_message = {
-                "oid": oid,
-                "measurement_id": candid,
-                "detections": message["detections"],
-                "features": features_for_oid,
-            }
+        out_message = {
+            "oid": oid,
+            "candid": candid,
+            "detections": message["detections"],
+            "non_detections": message["non_detections"],
+            "xmatches": message["xmatches"],
+            "features": features_for_oid,
+            "reference": reference,
+        }
+        output_messages.append(out_message)
+
+    return output_messages
+
+def parse_output_lsst(
+    astro_objects: List[AstroObject],
+    messages: List[Dict],
+    candids: Dict,
+) -> list[dict]:
+    """
+    Generate LSST-specific output messages from astro objects and their input messages.
+
+    Each output contains:
+      - oid
+      - measurement_id (from candids[oid])
+      - detections (as received in the input message)
+      - features (flattened dict with band-suffixed names)
+
+    Band suffix mapping follows LSST bands u,g,r,i,z,y -> _0,_1,_2,_3,_4,_5
+    and combined colors like "g,r" -> _12 when present.
+    """
+    output_messages: list[dict] = []
+
+    # LSST band -> suffix index mapping
+    suffix_map = {"u": "_0", "g": "_1", "r": "_2", "i": "_3", "z": "_4", "y": "_5", "g,r": "_12", None: ""}
+
+    for message, astro_object in zip(messages, astro_objects):
+        oid = message["oid"]
+        measurement_id = candids[oid]
+
+        # Ensure AO metadata oid matches message oid
+        oid_ao = query_ao_table(astro_object.metadata, "oid") #es esto necesario?
+        assert oid_ao == oid
+
+        ao_features = astro_object.features[["name", "fid", "value"]].copy()
+        # Append band suffix to feature name
+        ao_features["name"] += ao_features["fid"].map(suffix_map).fillna("")
+        ao_features = ao_features.sort_values("name")
+        ao_features.replace({np.nan: None, np.inf: None, -np.inf: None}, inplace=True)
+
+        # Sanitize feature names
+        feature_names = [f.replace("-", "_") for f in ao_features["name"].values]
+        features_for_oid = dict(
+            zip(feature_names, ao_features["value"].astype(float))
+        )
+        for key in list(features_for_oid.keys()):
+            val = features_for_oid[key]
+            features_for_oid[key] = None if (val is None or (isinstance(val, float) and np.isnan(val))) else val
+
+        out_message = {
+            "oid": oid,
+            "measurement_id": measurement_id,
+            "detections": message.get("detections", []),
+            "features": features_for_oid,
+        }
         output_messages.append(out_message)
 
     return output_messages
