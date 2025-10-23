@@ -760,3 +760,21 @@ class Probability(Base):
             postgresql_using="btree",
         ),
     )
+
+
+class Feature(Base):
+    __tablename__ = "feature"
+    oid = Column(BigInteger, nullable=False)
+    sid = Column(SmallInteger, nullable=False)  # int2,
+    feature_id = Column(SmallInteger, nullable=False)
+    band = Column(SmallInteger, nullable=False)
+    version = Column(SmallInteger, nullable=False)
+    value = Column(DOUBLE_PRECISION)
+    last_update = Column(DateTime, onupdate=func.now())
+    __table_args__ = (
+        PrimaryKeyConstraint("oid", "sid", "feature_id", "band", name="pk_feature_oid_featureid_band"),
+    )
+class FeatureNameLut(Base):
+    __tablename__ = "feature_name_lut"
+    feature_id = Column(SmallInteger, primary_key=True, autoincrement=True)
+    feature_name = Column(VARCHAR)
