@@ -70,15 +70,14 @@ def detections_to_astro_object_lsst(
     
     values = []
     for detection in detections:
-        values.append([detection.get(key, None) for key in detection_keys])
+        values.append([detection.get(key, None) if key != 'sid' else str(detection.get(key, None)) for key in detection_keys])
+
 
     a = pd.DataFrame(data=values, columns=detection_keys)
     a.fillna(value=np.nan, inplace=True)
-
     # Renombrar las columnas de 'a' de acuerdo con DETECTION_KEYS_MAP
     a.rename(columns=DETECTION_KEYS_MAP, inplace=True)
-    a["sid"] = str(a["sid"])
-    #transformar bandas a sus strings
+    
     band_map = {"u": 0, "g": 1, "r": 2, "i": 3, "z": 4, "y": 5}
     band_map_inverse = {v: k for k, v in band_map.items()}
     a["fid"] = a["fid"].map(band_map_inverse)
@@ -481,7 +480,7 @@ def parse_scribe_payload_lsst(
         oid = query_ao_table(astro_object.metadata, "oid")
 
         features_list = ao_features.to_dict("records")
-
+        sid = astro_object.detections["sid"].values[0]
         # New envelope format required downstream
         upsert_features_command = {
             "step": "features", #cual tiene que ser el nombre aqui?
@@ -489,6 +488,7 @@ def parse_scribe_payload_lsst(
             "payload": {
                 "oid": int(oid),
                 "features_version": features_version,
+                "sid": sid,
                 #"features_group": features_group, # esto va? como puedo saber?
                 "features": features_list,
             },

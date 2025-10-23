@@ -129,7 +129,7 @@ class FeatureStep(GenericStep): #qua la saque del environment
             self.detections_to_astro_object_fn = detections_to_astro_object_lsst
             self.parse_output_fn = parse_output_lsst
             self.parse_scribe_payload = parse_scribe_payload_lsst
-            self.extractor_version = version("feature-step-lsst")
+            self.extractor_version = version("feature-step")
 
 
 
