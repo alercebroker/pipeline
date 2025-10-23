@@ -7,7 +7,6 @@ import pandas as pd
 from pandas.testing import assert_frame_equal
 import numpy as np
 from ..message_factory import generate_input_batch
-from ..message_factory_lsst import generate_input_batch_lsst
 
 from .message_example import messages as spm_messages
 

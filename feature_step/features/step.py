@@ -24,7 +24,7 @@ from .database import (
 from .utils.metrics import get_sid
 from .utils.parsers import parse_output, parse_scribe_payload
 from .utils.parsers import detections_to_astro_object,detections_to_astro_object_lsst
-from .utils.parsers import parse_output_lsst
+from .utils.parsers import parse_output_lsst,parse_scribe_payload_lsst
 
 
 from importlib.metadata import version
@@ -105,7 +105,6 @@ class FeatureStep(GenericStep): #qua la saque del environment
 
         scribe_class = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
         self.scribe_producer = scribe_class(self.config["SCRIBE_PRODUCER_CONFIG"])
-        self.extractor_version = version("feature-step")
 
         self.db_sql = db_sql
         self.logger = logging.getLogger("alerce.FeatureStep")
@@ -118,6 +117,9 @@ class FeatureStep(GenericStep): #qua la saque del environment
             self.extractor_group = ZTFFeatureExtractor.__name__
             self.detections_to_astro_object_fn = detections_to_astro_object
             self.parse_output_fn = parse_output
+            self.parse_scribe_payload = parse_scribe_payload
+            self.extractor_version = version("feature-step")
+
 
         if self.survey == "LSST":
             self.id_column = "measurement_id"
@@ -126,6 +128,10 @@ class FeatureStep(GenericStep): #qua la saque del environment
             self.extractor_group = LSSTFeatureExtractor.__name__
             self.detections_to_astro_object_fn = detections_to_astro_object_lsst
             self.parse_output_fn = parse_output_lsst
+            self.parse_scribe_payload = parse_scribe_payload_lsst
+            self.extractor_version = version("feature-step-lsst")
+
+
 
         self.min_detections_features = config.get("MIN_DETECTIONS_FEATURES", None)
         if self.min_detections_features is None:
@@ -134,13 +140,14 @@ class FeatureStep(GenericStep): #qua la saque del environment
             self.min_detections_features = int(self.min_detections_features)
 
     def produce_to_scribe(self, astro_objects: List[AstroObject]):
-        commands = parse_scribe_payload(
+        commands = self.parse_scribe_payload(
             astro_objects,
             self.extractor_version,
             self.extractor_group,
-        )
-        update_object_cmds = commands["update_object"]
-        update_features_cmds = commands["upserting_features"]
+        ) #llegar hasta aqui es facil. Correr ZTF y correr LSST
+        #print(commands)
+        update_object_cmds = commands.get("update_object", [])
+        update_features_cmds = commands["payload"]
 
         count_objs = 0
         flush = False
@@ -224,12 +231,13 @@ class FeatureStep(GenericStep): #qua la saque del environment
         messages_to_process = []
 
         oids = set()
+        bands = set()
         for msg in messages:
             oids.add(msg["oid"])
 
         if self.survey == "ZTF":
             references_db = self._get_sql_references(list(oids))
-        for message in messages: #que hace aqui? para lsst, en vez de candid, ocupare measurement_id"
+        for message in messages:
             if not message["oid"] in candids:
                 candids[message["oid"]] = []
             candids[message["oid"]].extend(message[self.id_column]) #guarda los candid de cada oid
@@ -243,18 +251,25 @@ class FeatureStep(GenericStep): #qua la saque del environment
                 ao = self.detections_to_astro_object_fn(list(m), xmatch_data,references_db)
             else:
                 forced = message.get("forced", False) #si no hay detections, filtrar forced photometry
+                #print(len(list(m)))
                 ao = self.detections_to_astro_object_fn(list(m), forced)
                 #print('FID:',ao.detections['fid'].unique())
+                #print(list(m))
+                #for source in message['detections']:
+                #    bands.add(source['band'])
+                #    if source['band'] == 2:
+                #        print(msg["oid"])
 
             astro_objects.append(ao)
             messages_to_process.append(message)
+        #print(bands)
 
         self.lightcurve_preprocessor.preprocess_batch(astro_objects)
         self.feature_extractor.compute_features_batch(astro_objects, progress_bar=False)
 
         # Guardar resultados en CSVs por objeto usando función externa
         #batch_folder = save_astro_objects_to_csvs(astro_objects, messages_to_process, base_folder="csvs")
-        #self.produce_to_scribe(astro_objects)
+        self.produce_to_scribe(astro_objects)
         output = self.parse_output_fn(astro_objects, messages_to_process, candids)
         return output
 

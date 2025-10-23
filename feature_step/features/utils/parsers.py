@@ -4,6 +4,8 @@ import pandas as pd
 from lc_classifier.features.core.base_lsst import AstroObject, query_ao_table
 from lc_classifier.utils import mag2flux, mag_err_2_flux_err
 from typing import List, Dict, Optional
+import os
+import json
 
 
 DETECTION_KEYS_MAP = {
@@ -315,6 +317,31 @@ def fid_mapper_for_db(band: str):
         return fid_map[band]
     return 0
 
+def fid_mapper_for_db_lsst(band: str) -> int:
+    """
+    Map LSST band identifiers to DB fid codes using explicit mapping.
+
+    Singles: u,g,r,i,z,y -> 0,1,2,3,4,5
+    Valid combinations: u,g g,r r,i i,z z,y -> 12,23,34,45,56
+    """
+    if band is None:
+        return 0
+    band = str(band).strip()
+    band_to_fid = {
+        "u": 1,
+        "g": 2,
+        "r": 3,
+        "i": 4,
+        "z": 5,
+        "y": 6,
+        "u,g": 12,
+        "g,r": 23,
+        "r,i": 34,
+        "i,z": 45,
+        "z,y": 56,
+    }
+    return band_to_fid.get(band, 0)
+
 
 def prepare_ao_features_for_db(astro_object: AstroObject) -> pd.DataFrame: #esto tengo que verlo
     ao_features = astro_object.features[["name", "fid", "value"]].copy()
@@ -331,6 +358,48 @@ def prepare_ao_features_for_db(astro_object: AstroObject) -> pd.DataFrame: #esto
     )
     return ao_features
 
+
+def prepare_ao_features_for_db_lsst(astro_object: AstroObject) -> pd.DataFrame:
+    """
+    Prepare LSST AstroObject.features for DB upsert.
+    - Keep only name, fid, value
+    - Map fid using fid_mapper_for_db_lsst
+    - Sanitize NaN/inf
+    - Apply backward-compat name replacements
+        """
+    ao_features = astro_object.features[["name", "fid", "value"]].copy()
+    ao_features["band"] = ao_features["fid"].apply(fid_mapper_for_db_lsst)
+    ao_features.replace({np.nan: None, np.inf: None, -np.inf: None}, inplace=True)
+    ao_features["name"] = ao_features["name"].replace( #hay mas power_rate?
+        {
+            "Power_rate_1_4": "Power_rate_1/4",
+            "Power_rate_1_3": "Power_rate_1/3",
+            "Power_rate_1_2": "Power_rate_1/2",
+        }
+    )
+
+    #print(list(ao_features.name.values))
+
+
+    # Build stable mapping name -> index (sorted for determinism)
+    unique_names = sorted(ao_features["name"].unique().tolist())
+    name_to_idx = {name: idx for idx, name in enumerate(unique_names)}
+    ao_features["feature_id"] = ao_features["name"].map(name_to_idx)
+
+
+    # Persist mapping to jsons/lsst_features_name_mapping.json
+    try:
+        out_dir = "./"
+        out_path = os.path.join(out_dir, "lsst_features_name_mapping.json")
+        with open(out_path, "w", encoding="utf-8") as f:
+            json.dump(name_to_idx, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        logging.getLogger("alerce.FeatureStep").warning(f"Failed to write LSST feature name mapping JSON: {e}")
+
+    # Ensure fid is JSON-serializable primitive
+    ao_features.drop(columns=["fid","name"], inplace=True)
+
+    return ao_features
 
 def parse_scribe_payload(
     astro_objects: List[AstroObject], features_version, features_group
@@ -396,6 +465,37 @@ def parse_scribe_payload(
         "upserting_features": upsert_features_commands_list,
     }
 
+def parse_scribe_payload_lsst(
+    astro_objects: List[AstroObject], features_version, features_group
+):
+    """Create scribe commands for LSST without color updates.
+
+    Builds only update_features commands and returns them under
+    the 'upserting_features' key. No update_object commands are
+    created or returned.
+    """
+    upsert_features_commands_list = []
+
+    for astro_object in astro_objects:
+        ao_features = prepare_ao_features_for_db_lsst(astro_object)
+        oid = query_ao_table(astro_object.metadata, "oid")
+
+        features_list = ao_features.to_dict("records")
+
+        # New envelope format required downstream
+        upsert_features_command = {
+            "step": "features", #cual tiene que ser el nombre aqui?
+            "survey": "lsst",
+            "payload": {
+                "oid": int(oid),
+                "features_version": features_version,
+                #"features_group": features_group, # esto va? como puedo saber?
+                "features": features_list,
+            },
+        }
+        upsert_features_commands_list.append(upsert_features_command)
+
+    return {"payload": upsert_features_commands_list}
 
 def parse_output(
     astro_objects: List[AstroObject], messages: List[Dict], candids: Dict
@@ -471,7 +571,11 @@ def parse_output_lsst(
     output_messages: list[dict] = []
 
     # LSST band -> suffix index mapping
-    suffix_map = {"u": "_0", "g": "_1", "r": "_2", "i": "_3", "z": "_4", "y": "_5", "g,r": "_12", None: ""}
+    suffix_map = {
+        "u": "_1", "g": "_2", "r": "_3", "i": "_4", "z": "_5", "y": "_6",
+        "u,g": "_12", "g,r": "_23", "r,i": "_34", "i,z": "_45", "z,y": "_56",
+        None: "",
+    }
 
     for message, astro_object in zip(messages, astro_objects):
         oid = message["oid"]

@@ -61,12 +61,12 @@ class LSSTFeatureExtractor(FeatureExtractorComposite):
             ),
             FleetExtractor(bands), #calcula
             ColorVariationExtractor(window_len=10, band_1="u", band_2="g"), # que pares usar?
-            ColorVariationExtractor(window_len=10, band_1="g", band_2="r"), # que pares usar?
-            ColorVariationExtractor(window_len=10, band_1="r", band_2="i"), # que pares usar?
-            ColorVariationExtractor(window_len=10, band_1="i", band_2="z"), # que pares usar?
-            ColorVariationExtractor(window_len=10, band_1="z", band_2="y"), # que pares usar?
+            ColorVariationExtractor(window_len=10, band_1="g", band_2="r"), 
+            ColorVariationExtractor(window_len=10, band_1="r", band_2="i"), 
+            ColorVariationExtractor(window_len=10, band_1="i", band_2="z"), 
+            ColorVariationExtractor(window_len=10, band_1="z", band_2="y"), 
 
-            SNExtractor(bands, unit="diff_flux", use_forced_photo=False), #esto es photmetria forzada
+            SNExtractor(bands, unit="diff_flux", use_forced_photo=False), #esto es photometria forzada
             MicroLensExtractor(bands), #calcula, cambie treshold en e_brightness
         ]
         return feature_extractors

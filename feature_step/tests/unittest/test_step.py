@@ -79,15 +79,14 @@ class StepTestCase(unittest.TestCase):
                 self.assertEqual(n_features, n_features_prev)
                 n_features_prev = n_features
 
-        """scribe_args = self.step.scribe_producer.produce.call_args
+        scribe_args = self.step.scribe_producer.produce.call_args
         assert (
-            len(json.loads(scribe_args[0][0]["payload"])["data"]["features"])
+            len(json.loads(scribe_args[0][0]["payload"])["payload"]["features"])
             == n_features
         )
         self.step.scribe_producer.produce.assert_called()
         scribe_producer_call_count = self.step.scribe_producer.produce.call_count
-        # 2 times the len of messages 1 for objects and 1 for features
-        self.assertEqual(scribe_producer_call_count, len(messages) * 2)"""
+        self.assertEqual(scribe_producer_call_count, len(messages) * 1)
 
     def test_post_execute(self):
         messages = generate_input_batch_lsst(10, [0,1,2,3,4,5], survey="ZTF")
