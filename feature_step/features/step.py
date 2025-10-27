@@ -178,7 +178,7 @@ class FeatureStep(GenericStep): #qua la saque del environment
 
     def pre_execute(self, messages: List[dict]):
         # Guardar en JSON los messages que cumplan que len(sources)+len(previous_sources) > 10
-        try:
+        """try:
             msgs_to_save = [
                 m for m in messages
                 if (len(m.get("sources", [])) + len(m.get("previous_sources", []))) > 10
@@ -192,7 +192,7 @@ class FeatureStep(GenericStep): #qua la saque del environment
                     json.dump(msgs_to_save, f, ensure_ascii=False, indent=2)
                 self.logger.info(f"Saved filtered messages JSON: {json_path} ({len(msgs_to_save)} items)")
         except Exception as e:
-            self.logger.exception(f"Failed to save filtered messages JSON: {e}")
+            self.logger.exception(f"Failed to save filtered messages JSON: {e}")"""
 
         filtered_messages = []
         #print(messages[0])
@@ -206,9 +206,9 @@ class FeatureStep(GenericStep): #qua la saque del environment
                 filtered_messages.append(filtered_message)
             elif self.survey == "LSST":
                 # Solo conservar mensajes con >10 (sources + previous_sources)
-                total_src = len(filtered_message.get('sources', [])) + len(filtered_message.get('previous_sources', []))
-                if total_src <= 10:
-                    continue
+                #total_src = len(filtered_message.get('sources', [])) + len(filtered_message.get('previous_sources', []))
+                #if total_src <= 10:
+                #    continue
                 dets = filtered_message.get('sources', []) + filtered_message.get('previous_sources', [])
                 dets = [elem for elem in dets if elem.get('band') is not None]
                 filtered_message['detections'] = dets
@@ -222,7 +222,7 @@ class FeatureStep(GenericStep): #qua la saque del environment
         if self.survey == "ZTF":
             filtered_messages = list(filter(has_enough_detections, filtered_messages))
         else:
-            filtered_messages = list(filtered_messages)
+            filtered_messages = list(filter(has_enough_detections, filtered_messages))
         return filtered_messages
 
     def execute(self, messages):
