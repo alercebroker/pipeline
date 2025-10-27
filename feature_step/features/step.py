@@ -102,13 +102,12 @@ class FeatureStep(GenericStep): #qua la saque del environment
         super().__init__(config=config, **step_args)
         # Bogus detections are dropped in pre_execute
        
-
         scribe_class = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
         self.scribe_producer = scribe_class(self.config["SCRIBE_PRODUCER_CONFIG"])
 
         self.db_sql = db_sql
         self.logger = logging.getLogger("alerce.FeatureStep")
-        self.survey = "LSST"#config.get("SURVEY", "ZTF") #tengo que llevar esto a archivo de config
+        self.survey = "LSST"
 
         if self.survey == "ZTF":
             self.id_column = "candid"
@@ -131,8 +130,6 @@ class FeatureStep(GenericStep): #qua la saque del environment
             self.parse_scribe_payload = parse_scribe_payload_lsst
             self.extractor_version = version("feature-step")
 
-
-
         self.min_detections_features = config.get("MIN_DETECTIONS_FEATURES", None)
         if self.min_detections_features is None:
             self.min_detections_features = 1
@@ -144,8 +141,8 @@ class FeatureStep(GenericStep): #qua la saque del environment
             astro_objects,
             self.extractor_version,
             self.extractor_group,
-        ) #llegar hasta aqui es facil. Correr ZTF y correr LSST
-        #print(commands)
+        )
+
         update_object_cmds = commands.get("update_object", [])
         update_features_cmds = commands["payload"]
 
@@ -177,26 +174,7 @@ class FeatureStep(GenericStep): #qua la saque del environment
         return db_references
 
     def pre_execute(self, messages: List[dict]):
-        # Guardar en JSON los messages que cumplan que len(sources)+len(previous_sources) > 10
-        """try:
-            msgs_to_save = [
-                m for m in messages
-                if (len(m.get("sources", [])) + len(m.get("previous_sources", []))) > 10
-            ]
-            if msgs_to_save:
-                jsons_folder = "jsons"
-                os.makedirs(jsons_folder, exist_ok=True)
-                file_id = str(uuid.uuid4())
-                json_path = os.path.join(jsons_folder, f"messages_{file_id}.json")
-                with open(json_path, "w", encoding="utf-8") as f:
-                    json.dump(msgs_to_save, f, ensure_ascii=False, indent=2)
-                self.logger.info(f"Saved filtered messages JSON: {json_path} ({len(msgs_to_save)} items)")
-        except Exception as e:
-            self.logger.exception(f"Failed to save filtered messages JSON: {e}")"""
-
         filtered_messages = []
-        #print(messages[0])
-
         for message in messages:
             filtered_message = message.copy()
             if self.survey == "ZTF":
@@ -205,10 +183,6 @@ class FeatureStep(GenericStep): #qua la saque del environment
                 )
                 filtered_messages.append(filtered_message)
             elif self.survey == "LSST":
-                # Solo conservar mensajes con >10 (sources + previous_sources)
-                #total_src = len(filtered_message.get('sources', [])) + len(filtered_message.get('previous_sources', []))
-                #if total_src <= 10:
-                #    continue
                 dets = filtered_message.get('sources', []) + filtered_message.get('previous_sources', [])
                 dets = [elem for elem in dets if elem.get('band') is not None]
                 filtered_message['detections'] = dets
@@ -250,19 +224,10 @@ class FeatureStep(GenericStep): #qua la saque del environment
                 xmatch_data = message["xmatches"]
                 ao = self.detections_to_astro_object_fn(list(m), xmatch_data,references_db)
             else:
-                forced = message.get("forced", False) #si no hay detections, filtrar forced photometry
-                #print(len(list(m)))
+                forced = message.get("forced_sources", None) #si no hay detections, filtrar forced photometry
                 ao = self.detections_to_astro_object_fn(list(m), forced)
-                #print('FID:',ao.detections['fid'].unique())
-                #print(list(m))
-                #for source in message['detections']:
-                #    bands.add(source['band'])
-                #    if source['band'] == 2:
-                #        print(msg["oid"])
-
             astro_objects.append(ao)
             messages_to_process.append(message)
-        #print(bands)
 
         self.lightcurve_preprocessor.preprocess_batch(astro_objects)
         self.feature_extractor.compute_features_batch(astro_objects, progress_bar=False)

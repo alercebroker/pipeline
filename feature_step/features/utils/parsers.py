@@ -37,19 +37,23 @@ def add_mag_and_flux_lsst(a: pd.DataFrame) -> pd.DataFrame:
     Lógica de magnitud y flujo para LSST.
     """
 
-    a['psfFluxErr'] = a.apply(lambda row: flux_err_2_mag_err(row['psfFluxErr'], abs(row['psfFlux'])), axis=1)
-    a['psfFlux'] = a['psfFlux'].apply(fluxnjy2mag)
+    a['scienceFluxErr'] = a.apply(lambda row: flux_err_2_mag_err(row['scienceFluxErr'], abs(row['scienceFluxErr'])), axis=1)
+    a['scienceFlux'] = a['scienceFlux'].apply(fluxnjy2mag)
 
     a.rename(
-        columns={"psfFlux": "brightness", "psfFluxErr": "e_brightness"},
+        columns={"scienceFlux": "brightness", "scienceFluxErr": "e_brightness"},
         inplace=True,
     )
+    # astrobject, pssFlux -> magnitude
+    # magpsfcorr -> diff_flux
 
+    #ScienceFLux deberia estar en magnitude
+    #psfFLux diff_flux
     a["unit"] = "magnitude"
 
     a_flux = a.copy()
-    a_flux["brightness"] = a["scienceFlux"]/1000 #njy #lo paso a microjy
-    a_flux["e_brightness"] = a["scienceFluxErr"]/1000
+    a_flux["brightness"] = a["psfFlux"] #njy #lo paso a microjy
+    a_flux["e_brightness"] = a["psfFluxErr"]
     a_flux["unit"] = "diff_flux"
     a = pd.concat([a, a_flux], axis=0,ignore_index=True)
     for col in ["psfFlux", "psfFluxErr","scienceFlux","scienceFluxErr"]:
@@ -68,12 +72,19 @@ def detections_to_astro_object_lsst(
                       "psfFlux","psfFluxErr","scienceFlux",
                       "scienceFluxErr","tid","band","measurement_id"]
     
+    detections_og = detections.copy()
+    detections = detections+forced
+    #print(detections)
+    
     values = []
     for detection in detections:
         values.append([detection.get(key, None) if key != 'sid' else str(detection.get(key, None)) for key in detection_keys])
 
 
     a = pd.DataFrame(data=values, columns=detection_keys)
+    
+    a['forced'] = False
+    a.iloc[len(detections_og):, a.columns.get_loc('forced')] = True
     a.fillna(value=np.nan, inplace=True)
     # Renombrar las columnas de 'a' de acuerdo con DETECTION_KEYS_MAP
     a.rename(columns=DETECTION_KEYS_MAP, inplace=True)
@@ -86,8 +97,9 @@ def detections_to_astro_object_lsst(
 
     oid = a["oid"].iloc[0]
 
-    aid_forced = None #falta la photometria forzada
-    aid_detections = a
+    aid_forced = a[a["forced"]]
+    aid_detections = a[~a["forced"]]
+
 
     metadata = pd.DataFrame(
         [
