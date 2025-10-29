@@ -36,6 +36,9 @@ def add_mag_and_flux_lsst(a: pd.DataFrame) -> pd.DataFrame:
     """
     Lógica de magnitud y flujo para LSST.
     """
+    a_flux = a.copy()
+    # Filter to keep only rows with positive scienceFlux and scienceFluxErr
+    a = a[(a['scienceFlux'] > 0) & (a['scienceFluxErr'] > 0)].copy()
 
     a['scienceFluxErr'] = a.apply(lambda row: flux_err_2_mag_err(row['scienceFluxErr'], abs(row['scienceFluxErr'])), axis=1)
     a['scienceFlux'] = a['scienceFlux'].apply(fluxnjy2mag)
@@ -51,9 +54,8 @@ def add_mag_and_flux_lsst(a: pd.DataFrame) -> pd.DataFrame:
     #psfFLux diff_flux
     a["unit"] = "magnitude"
 
-    a_flux = a.copy()
-    a_flux["brightness"] = a["psfFlux"] #njy #lo paso a microjy
-    a_flux["e_brightness"] = a["psfFluxErr"]
+    a_flux["brightness"] = a_flux["psfFlux"]/1000 #njy #aqui dividia por 1000 para pasar a microjy
+    a_flux["e_brightness"] = a_flux["psfFluxErr"]/1000
     a_flux["unit"] = "diff_flux"
     a = pd.concat([a, a_flux], axis=0,ignore_index=True)
     for col in ["psfFlux", "psfFluxErr","scienceFlux","scienceFluxErr"]:
@@ -72,24 +74,27 @@ def detections_to_astro_object_lsst(
                       "psfFlux","psfFluxErr","scienceFlux",
                       "scienceFluxErr","tid","band","measurement_id"]
     
-    detections_og = detections.copy()
-    detections = detections+forced
-    #print(detections)
-    
+    # Build values list with forced flag included from the start
     values = []
-    for detection in detections:
-        values.append([detection.get(key, None) if key != 'sid' else str(detection.get(key, None)) for key in detection_keys])
-
-
-    a = pd.DataFrame(data=values, columns=detection_keys)
     
-    a['forced'] = False
-    a.iloc[len(detections_og):, a.columns.get_loc('forced')] = True
+    # Process regular detections (forced=False)
+    for detection in detections:
+        row = [detection.get(key, None) if key != 'sid' else str(detection.get(key, None)) for key in detection_keys]
+        row.append(False)  # forced = False
+        values.append(row)
+    
+    # Process forced photometry (forced=True)  
+    for detection in forced:
+        row = [detection.get(key, None) if key != 'sid' else str(detection.get(key, None)) for key in detection_keys]
+        row.append(True)  # forced = True
+        values.append(row)
+
+    a = pd.DataFrame(data=values, columns=detection_keys + ['forced'])
     a.fillna(value=np.nan, inplace=True)
     # Renombrar las columnas de 'a' de acuerdo con DETECTION_KEYS_MAP
     a.rename(columns=DETECTION_KEYS_MAP, inplace=True)
     
-    band_map = {"u": 0, "g": 1, "r": 2, "i": 3, "z": 4, "y": 5}
+    band_map = {"g": 1, "r": 2, "i": 3, "z": 4, "y": 5, "u": 6}
     band_map_inverse = {v: k for k, v in band_map.items()}
     a["fid"] = a["fid"].map(band_map_inverse)
 
@@ -109,7 +114,7 @@ def detections_to_astro_object_lsst(
         columns=["name", "value"],)
     
     astro_object = AstroObject(
-        detections=aid_detections,
+        detections=aid_detections, #detections deberian mantenerse en njy 
         forced_photometry=aid_forced,
         metadata=metadata,
         reference=None,
@@ -332,24 +337,24 @@ def fid_mapper_for_db_lsst(band: str) -> int:
     """
     Map LSST band identifiers to DB fid codes using explicit mapping.
 
-    Singles: u,g,r,i,z,y -> 0,1,2,3,4,5
-    Valid combinations: u,g g,r r,i i,z z,y -> 12,23,34,45,56
+    Singles: u,g,r,i,z,y -> 6,1,2,3,4,5 #esto cambiar
+    Valid combinations: u,g g,r r,i i,z z,y -> 61,12,23,34,45
     """
     if band is None:
         return 0
     band = str(band).strip()
     band_to_fid = {
-        "u": 1,
-        "g": 2,
-        "r": 3,
-        "i": 4,
-        "z": 5,
-        "y": 6,
-        "u,g": 12,
-        "g,r": 23,
-        "r,i": 34,
-        "i,z": 45,
-        "z,y": 56,
+        "u": 6, #0 
+        "g": 1, #1
+        "r": 2,
+        "i": 3,
+        "z": 4,
+        "y": 5,
+        "u,g": 61, # 10
+        "g,r": 12,
+        "r,i": 23,
+        "i,z": 34,
+        "z,y": 45,
     }
     return band_to_fid.get(band, 0)
 
@@ -375,7 +380,6 @@ def prepare_ao_features_for_db_lsst(astro_object: AstroObject) -> pd.DataFrame:
     Prepare LSST AstroObject.features for DB upsert.
     - Keep only name, fid, value
     - Map fid using fid_mapper_for_db_lsst
-    - Sanitize NaN/inf
     - Apply backward-compat name replacements
         """
     ao_features = astro_object.features[["name", "fid", "value"]].copy()
@@ -388,9 +392,6 @@ def prepare_ao_features_for_db_lsst(astro_object: AstroObject) -> pd.DataFrame:
             "Power_rate_1_2": "Power_rate_1/2",
         }
     )
-
-    #print(list(ao_features.name.values))
-
 
     # Build stable mapping name -> index (sorted for determinism)
     unique_names = sorted(ao_features["name"].unique().tolist())
@@ -553,7 +554,7 @@ def parse_output(
         out_message = {
             "oid": oid,
             "candid": candid,
-            "detections": message["detections"],
+            "detections": message["detections"], #photometria forzada
             "non_detections": message["non_detections"],
             "xmatches": message["xmatches"],
             "features": features_for_oid,
@@ -577,15 +578,15 @@ def parse_output_lsst(
       - detections (as received in the input message)
       - features (flattened dict with band-suffixed names)
 
-    Band suffix mapping follows LSST bands u,g,r,i,z,y -> _0,_1,_2,_3,_4,_5
+    Band suffix mapping follows LSST bands u,g,r,i,z,y -> _6,_1,_2,_3,_4,_5
     and combined colors like "g,r" -> _12 when present.
     """
     output_messages: list[dict] = []
 
     # LSST band -> suffix index mapping
-    suffix_map = {
-        "u": "_1", "g": "_2", "r": "_3", "i": "_4", "z": "_5", "y": "_6",
-        "u,g": "_12", "g,r": "_23", "r,i": "_34", "i,z": "_45", "z,y": "_56",
+    suffix_map = { #u = 6
+        "u": "_6", "g": "_1", "r": "_2", "i": "_3", "z": "_4", "y": "_5",
+        "u,g": "_61", "g,r": "_12", "r,i": "_23", "i,z": "_34", "z,y": "_45",
         None: "",
     }
 
@@ -615,8 +616,9 @@ def parse_output_lsst(
         out_message = {
             "oid": oid,
             "measurement_id": measurement_id,
-            "detections": message.get("detections", []),
-            "features": features_for_oid,
+            "detections": message.get("detections", []), #nyj
+            "features": features_for_oid, #features fueron calculados con microjy
+            #features en que unidades quedaran.
         }
         output_messages.append(out_message)
 

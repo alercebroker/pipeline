@@ -63,6 +63,16 @@ def _ensure_message_keys(msg: dict) -> dict:
             ]
         else:
             msg["measurement_id"] = []
+
+    # Si no hay forced_sources, rellenar con algunas sources al azar
+    if len(msg.get("forced_sources")) == 0:
+        candidates = [
+            s for s in (msg.get("sources", []) + msg.get("previous_sources", [])) if isinstance(s, dict)
+        ]
+        if candidates:
+            k = random.randint(1, min(3, len(candidates)))
+            #msg["forced_sources"] = copy.deepcopy(random.sample(candidates, k))
+
     return msg
 
 
@@ -71,7 +81,7 @@ def generate_input_batch_lsst(n: int, bands: list[str], offset=0, survey="LSST")
     Carga un batch de mensajes LSST desde ../jsons en lugar de generarlos sintéticamente.
     Ignora los parámetros n y bands; devuelve todos los mensajes encontrados.
     """
-    loaded = load_messages_from_jsons(limit=5)
+    loaded = load_messages_from_jsons(limit = 5)
     batch = [_ensure_message_keys(m) for m in loaded]
     return batch
 

@@ -80,7 +80,7 @@ def save_astro_objects_to_csvs(
     return batch_folder
 
 
-class FeatureStep(GenericStep): #qua la saque del environment
+class FeatureStep(GenericStep):
     """FeatureStep Description
 
     Parameters
@@ -192,7 +192,6 @@ class FeatureStep(GenericStep): #qua la saque del environment
             n_dets = len([True for det in message["detections"] if not det.get("forced", False)])
             return n_dets >= self.min_detections_features
         
-        # En LSST ya filtramos por >10 sources+previous_sources, no aplicar filtro adicional
         if self.survey == "ZTF":
             filtered_messages = list(filter(has_enough_detections, filtered_messages))
         else:
