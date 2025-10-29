@@ -21,7 +21,6 @@ class LSSTLightcurvePreprocessor(LightcurvePreprocessor):
         # TODO: does error need a np.maximum(error, 0.01) ?
         # the factor depends on the units
 
-        pass
         if self.drop_bogus:
             self.drop_bogus_detections(astro_object)
 
@@ -76,7 +75,7 @@ class LSSTLightcurvePreprocessor(LightcurvePreprocessor):
             return table
 
         astro_object.detections = drop_absurd(astro_object.detections)
-        #astro_object.forced_photometry = drop_absurd(astro_object.forced_photometry) #todavia no tengo forced
+        astro_object.forced_photometry = drop_absurd(astro_object.forced_photometry)
 
     def drop_bogus_detections(self, astro_object: AstroObject): #esto es placeholder para LSST
         def drop_bogus_dets(table):

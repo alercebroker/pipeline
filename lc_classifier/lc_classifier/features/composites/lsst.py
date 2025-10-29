@@ -25,7 +25,7 @@ class LSSTFeatureExtractor(FeatureExtractorComposite):
     version = "1.0.1"
 
     def _instantiate_extractors(self) -> List[FeatureExtractor]:
-        bands = ["u", "g", "r", "i", "z", "y"]
+        bands = ["u", "g", "r", "i", "z", "y"] #0 ,1, 2, 3, 4, 5
         #bands = range(6)  # LSST bands as integers 0-5
 
         feature_extractors = [
@@ -33,26 +33,25 @@ class LSSTFeatureExtractor(FeatureExtractorComposite):
             TimespanExtractor(), #calcula
             CoordinateExtractor(), #calcula
             TDETailExtractor(bands), #calcula
-            PeriodExtractor( #calcula
+            PeriodExtractor(
                 bands,
                 unit="magnitude",
                 smallest_period=0.045,
-                largest_period=50.0,
-                trim_lightcurve_to_n_days=500.0,
-                min_length=3,
-                use_forced_photo=False,
+                largest_period=100.0,
+                trim_lightcurve_to_n_days=1000.0,
+                min_length=15,
+                use_forced_photo=True,
                 return_power_rates=True,
                 shift=0.1,
-            ),  # TODO: consider LPVs + be within comp. budget
-
+            ),
             MHPSExtractor(bands, unit="diff_flux"), #calcula
             MHPSExtractor(bands, unit="diff_flux", t1=365.0, t2=30.0), #calcula
             GPDRWExtractor(bands, unit="diff_flux"), #calcula
 
             FoldedKimExtractor(bands, unit="magnitude"), #calcula
-            HarmonicsExtractor(bands, unit="magnitude", use_forced_photo=False), #calcula
+            HarmonicsExtractor(bands, unit="magnitude", use_forced_photo=True),
             TurboFatsExtractor(bands, unit="magnitude"),  #calcula
-            SPMExtractor( #calcula 
+            SPMExtractor( #calcula , # args = unidad de flujo njy o microjy 
                 bands,
                 unit="diff_flux",
                 redshift=None,
@@ -66,7 +65,7 @@ class LSSTFeatureExtractor(FeatureExtractorComposite):
             ColorVariationExtractor(window_len=10, band_1="i", band_2="z"), 
             ColorVariationExtractor(window_len=10, band_1="z", band_2="y"), 
 
-            SNExtractor(bands, unit="diff_flux", use_forced_photo=False), #esto es photometria forzada
+            SNExtractor(bands, unit="diff_flux", use_forced_photo=True), #esto es photometria forzada
             MicroLensExtractor(bands), #calcula, cambie treshold en e_brightness
         ]
         return feature_extractors
