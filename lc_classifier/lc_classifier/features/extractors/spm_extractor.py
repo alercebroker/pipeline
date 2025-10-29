@@ -125,7 +125,6 @@ class SPMExtractor(FeatureExtractor):
             extinction_color_excess = float(extinction_color_excess)
 
         observations = self.get_observations(astro_object)
-        #print(len(observations))
 
         if len(observations) == 0:
             parameters = []
@@ -262,7 +261,7 @@ class SNModel:
 
             initial_guess.append(p0)
         initial_guess = np.concatenate(initial_guess, axis=0)
-        band_mapper = dict(zip("ugrizy", range(6)))
+        band_mapper = dict(zip("grizyu", range(1,7)))
 
         # debugging
         # for g, b in zip(initial_guess, bounds):
