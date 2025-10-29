@@ -9,9 +9,6 @@ import pathlib
 
 random.seed(8798, version=2)
 
-ELASTICC_BANDS = ["u", "g", "r", "i", "z", "y"]
-# measurement_id es candid
-
 
 def _default_jsons_dir() -> str:
     # tests/ -> ../jsons
@@ -76,12 +73,12 @@ def _ensure_message_keys(msg: dict) -> dict:
     return msg
 
 
-def generate_input_batch_lsst(n: int, bands: list[str], offset=0, survey="LSST") -> list[dict]:
+def generate_input_batch_lsst(n: int) -> list[dict]:
     """
     Carga un batch de mensajes LSST desde ../jsons en lugar de generarlos sintéticamente.
     Ignora los parámetros n y bands; devuelve todos los mensajes encontrados.
     """
-    loaded = load_messages_from_jsons(limit = 5)
+    loaded = load_messages_from_jsons(limit = n)
     batch = [_ensure_message_keys(m) for m in loaded]
     return batch
 

@@ -4,13 +4,8 @@ from apf.producers import GenericProducer
 from features.step import FeatureStep
 import json
 import pandas as pd
-from pandas.testing import assert_frame_equal
 import numpy as np
-from ..message_factory import generate_input_batch
 from ..message_factory_lsst import generate_input_batch_lsst
-
-from .message_example import messages as spm_messages
-
 
 CONSUMER_CONFIG = {
     "CLASS": "unittest.mock.MagicMock",
@@ -56,6 +51,7 @@ class StepTestCase(unittest.TestCase):
                 "STEP_COMMENTS": "feature",
                 "FEATURE_VERSION": "1.0-test",
             },
+            "SURVEY":"lsst"
         }
         db_sql = mock.MagicMock()
         self.step = FeatureStep(config=self.step_config, db_sql=db_sql)
@@ -63,7 +59,7 @@ class StepTestCase(unittest.TestCase):
         self.step.scribe_producer.produce = mock.MagicMock()
 
     def test_execute(self):
-        messages = generate_input_batch_lsst(50, [0,1,2,3,4,5], survey="ZTF")
+        messages = generate_input_batch_lsst(50)
         messages = self.step.pre_execute(messages)
         
         result_messages = self.step.execute(messages)
@@ -89,7 +85,7 @@ class StepTestCase(unittest.TestCase):
         self.assertEqual(scribe_producer_call_count, len(messages) * 1)
 
     def test_post_execute(self):
-        messages = generate_input_batch_lsst(10, [0,1,2,3,4,5], survey="ZTF")
+        messages = generate_input_batch_lsst(10)
         messages = self.step.pre_execute(messages)
 
         result_messages = self.step.execute(messages)

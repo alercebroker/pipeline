@@ -1,7 +1,7 @@
 import logging
 import numpy as np
 import pandas as pd
-from lc_classifier.features.core.base_lsst import AstroObject, query_ao_table
+from lc_classifier.features.core.base import AstroObject, query_ao_table
 from lc_classifier.utils import mag2flux, mag_err_2_flux_err
 from typing import List, Dict, Optional
 import os
@@ -508,7 +508,7 @@ def parse_scribe_payload_lsst(
         }
         upsert_features_commands_list.append(upsert_features_command)
 
-    return {"payload": upsert_features_commands_list}
+    return {"upserting_features": upsert_features_commands_list}
 
 def parse_output(
     astro_objects: List[AstroObject], messages: List[Dict], candids: Dict

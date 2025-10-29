@@ -107,9 +107,9 @@ class FeatureStep(GenericStep):
 
         self.db_sql = db_sql
         self.logger = logging.getLogger("alerce.FeatureStep")
-        self.survey = "LSST"
+        self.survey = self.config.get("SURVEY")
 
-        if self.survey == "ZTF":
+        if self.survey == "ztf":
             self.id_column = "candid"
             self.lightcurve_preprocessor = ZTFLightcurvePreprocessor(drop_bogus=True)
             self.feature_extractor = ZTFFeatureExtractor()
@@ -120,7 +120,7 @@ class FeatureStep(GenericStep):
             self.extractor_version = version("feature-step")
 
 
-        if self.survey == "LSST":
+        if self.survey == "lsst":
             self.id_column = "measurement_id"
             self.lightcurve_preprocessor = LSSTLightcurvePreprocessor()
             self.feature_extractor = LSSTFeatureExtractor()
@@ -144,7 +144,7 @@ class FeatureStep(GenericStep):
         )
 
         update_object_cmds = commands.get("update_object", [])
-        update_features_cmds = commands["payload"]
+        update_features_cmds = commands["upserting_features"]
 
         count_objs = 0
         flush = False
@@ -177,12 +177,12 @@ class FeatureStep(GenericStep):
         filtered_messages = []
         for message in messages:
             filtered_message = message.copy()
-            if self.survey == "ZTF":
+            if self.survey == "ztf":
                 filtered_message["detections"] = discard_bogus_detections(
                     filtered_message.get("detections", [])
                 )
                 filtered_messages.append(filtered_message)
-            elif self.survey == "LSST":
+            elif self.survey == "lsst":
                 dets = filtered_message.get('sources', []) + filtered_message.get('previous_sources', [])
                 dets = [elem for elem in dets if elem.get('band') is not None]
                 filtered_message['detections'] = dets
@@ -192,7 +192,7 @@ class FeatureStep(GenericStep):
             n_dets = len([True for det in message["detections"] if not det.get("forced", False)])
             return n_dets >= self.min_detections_features
         
-        if self.survey == "ZTF":
+        if self.survey == "ztf":
             filtered_messages = list(filter(has_enough_detections, filtered_messages))
         else:
             filtered_messages = list(filter(has_enough_detections, filtered_messages))
@@ -208,7 +208,7 @@ class FeatureStep(GenericStep):
         for msg in messages:
             oids.add(msg["oid"])
 
-        if self.survey == "ZTF":
+        if self.survey == "ztf":
             references_db = self._get_sql_references(list(oids))
         for message in messages:
             if not message["oid"] in candids:
@@ -219,7 +219,7 @@ class FeatureStep(GenericStep):
                 message.get("detections", []),
             )
 
-            if self.survey == "ZTF":
+            if self.survey == "ztf":
                 xmatch_data = message["xmatches"]
                 ao = self.detections_to_astro_object_fn(list(m), xmatch_data,references_db)
             else:

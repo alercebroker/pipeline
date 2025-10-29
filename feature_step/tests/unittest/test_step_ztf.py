@@ -55,6 +55,7 @@ class StepTestCase(unittest.TestCase):
                 "STEP_COMMENTS": "feature",
                 "FEATURE_VERSION": "1.0-test",
             },
+            "SURVEY": "ztf"
         }
         db_sql = mock.MagicMock()
         self.step = FeatureStep(config=self.step_config, db_sql=db_sql)
