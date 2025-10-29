@@ -22,23 +22,12 @@ class AstroObject:
     predictions: Optional[pd.DataFrame] = None
 
     def __post_init__(self):
-        if "aid" not in self.metadata["name"].values:
-            raise ValueError("'aid' is a mandatory field of metadata")
 
-        #mandatory_detection_columns = {
-        #    "candid",
-        #    "tid",
-        #    "mjd",
-        #    "sid",
-        #    "fid",
-        #    "pid",
-        #    "ra",
-        #    "dec",
-        #    "brightness",
-        #    "e_brightness",
-        #    "unit",
-        #}
-        mandatory_detection_columns = {"sid"}#condicional al survey
+        mandatory_detection_columns = { #condicional al survey
+            "oid",
+            "sid",
+            'fid',
+        }
 
         missing_detections_columns = mandatory_detection_columns - set(
             self.detections.columns
