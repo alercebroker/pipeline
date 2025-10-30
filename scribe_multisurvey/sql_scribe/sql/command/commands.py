@@ -19,6 +19,7 @@ from db_plugins.db.sql.models import (
     ZtfDataquality,
     ZtfReference,
     MagStat,
+    Feature,
 )
 from sqlalchemy import update, bindparam
 from sqlalchemy.dialects.postgresql import insert
@@ -365,6 +366,43 @@ class LSSTMagstatCommand(Command):
             )
         """
 
+class LSSTFeatureCommand(Command):
+    type = "LSSTFeatureCommand"
+
+    def _format_data(self, data):
+        
+        oid = data["oid"]
+        sid = data["sid"]
+        feature_version = data["features_version"].split('.')[0] if isinstance(data["features_version"], str) else data["features_version"]
+        
+
+        features_list = []
+
+        for feature in data["features"]:
+            features_list.append(
+                {
+                    "oid": oid,
+                    "sid": sid,
+                    "feature_id": feature["feature_id"],
+                    "value": feature["value"],
+                    "band": feature["band"],
+                    "version": feature_version,
+                }
+            )
+        return features_list
+
+    @staticmethod
+    def db_operation(session: Session, data: List):
+        # hacer deduplicacion!
+        if len(data) > 0:
+            features_stmt = insert(Feature)
+            features_result = session.connection().execute(
+                features_stmt.on_conflict_do_update(
+                    constraint="pk_feature_oid_featureid_band",
+                    set_=features_stmt.excluded
+                ),
+                data
+            )
 
 ### ###### ###
 ### LEGACY ###
