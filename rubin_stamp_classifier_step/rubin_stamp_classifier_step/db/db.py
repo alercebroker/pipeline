@@ -101,7 +101,8 @@ def classifier_version_str_to_small_integer(version: str) -> int:
 
 # TODO: The following function is a placeholder and should be replaced with the actual implementation
 CLASS_DICT = {"SN":0, "AGN":1,"VS":2, "asteroid":3, "bogus":4, "satellite":5}
-
+# CLASS_DICT = {"SN":0, "AGN":1, "VS":2, "asteroid":3, "bogus":4}
+# Hay que agregar las multisuvery credentials a la config env
 
 def class_name_to_id(class_name: str) -> int:
     """

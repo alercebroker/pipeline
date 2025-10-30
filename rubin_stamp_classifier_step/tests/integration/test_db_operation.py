@@ -62,7 +62,7 @@ class TestRubinStampClassifierStep(unittest.TestCase):
         )
 
         self.sample_messages = load_sample_messages()
-        self.N_CLASSES = 6
+        self.N_CLASSES = len(self.step.dict_mapping_classes)
 
     def tearDown(self):
         """Clean up after each test."""
