@@ -40,7 +40,7 @@ def add_mag_and_flux_lsst(a: pd.DataFrame) -> pd.DataFrame:
     # Filter to keep only rows with positive scienceFlux and scienceFluxErr
     a = a[(a['scienceFlux'] > 0) & (a['scienceFluxErr'] > 0)].copy()
 
-    a['scienceFluxErr'] = a.apply(lambda row: flux_err_2_mag_err(row['scienceFluxErr'], abs(row['scienceFluxErr'])), axis=1)
+    a['scienceFluxErr'] = a.apply(lambda row: flux_err_2_mag_err(row['scienceFluxErr'], abs(row['scienceFlux'])), axis=1)
     a['scienceFlux'] = a['scienceFlux'].apply(fluxnjy2mag)
 
     a.rename(
@@ -53,7 +53,6 @@ def add_mag_and_flux_lsst(a: pd.DataFrame) -> pd.DataFrame:
     #ScienceFLux deberia estar en magnitude
     #psfFLux diff_flux
     a["unit"] = "magnitude"
-
     a_flux["brightness"] = a_flux["psfFlux"]/1000 #njy #aqui dividia por 1000 para pasar a microjy
     a_flux["e_brightness"] = a_flux["psfFluxErr"]/1000
     a_flux["unit"] = "diff_flux"
@@ -61,6 +60,7 @@ def add_mag_and_flux_lsst(a: pd.DataFrame) -> pd.DataFrame:
     for col in ["psfFlux", "psfFluxErr","scienceFlux","scienceFluxErr"]:
         if col in a.columns:
             a.drop(columns=[col], inplace=True)
+
     return a
 
 def detections_to_astro_object_lsst(
@@ -613,10 +613,13 @@ def parse_output_lsst(
             val = features_for_oid[key]
             features_for_oid[key] = None if (val is None or (isinstance(val, float) and np.isnan(val))) else val
 
+        #esto lo voy a hacer distinto.
+        #mantener schema original de sources
+        #eso es sources, previous_sources, photometry forzada, replicar lo del message.
         out_message = {
             "oid": oid,
             "measurement_id": measurement_id,
-            "detections": message.get("detections", []), #nyj
+            "detections": message.get("detections", []), #nyj 
             "features": features_for_oid, #features fueron calculados con microjy
             #features en que unidades quedaran.
         }

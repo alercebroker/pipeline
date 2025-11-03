@@ -174,6 +174,7 @@ class FeatureStep(GenericStep):
         return db_references
 
     def pre_execute(self, messages: List[dict]):
+
         filtered_messages = []
         for message in messages:
             filtered_message = message.copy()
@@ -196,9 +197,16 @@ class FeatureStep(GenericStep):
             filtered_messages = list(filter(has_enough_detections, filtered_messages))
         else:
             filtered_messages = list(filter(has_enough_detections, filtered_messages))
+
+        if len(filtered_messages) > 0:
+            self.logger.info("TIENE LENGTH MAYOR A CERO")
+
         return filtered_messages
+    
+
 
     def execute(self, messages):
+
         candids = {}
         astro_objects = []
         messages_to_process = []
