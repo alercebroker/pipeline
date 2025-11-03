@@ -16,9 +16,9 @@ class ColorFeatureExtractor(FeatureExtractor):
         self, detections: pd.DataFrame
     ) -> Tuple[pd.DataFrame, pd.DataFrame]:
         detections = detections[detections["brightness"].notna()]
-        #print("AQUI:", len(detections))
 
         corrected_mags = detections[detections.unit == "magnitude"]
+
         corrected_mags = corrected_mags[corrected_mags["e_brightness"] < 1.0]
 
         diff_fluxes = detections[detections.unit == "diff_flux"].copy()
@@ -29,8 +29,6 @@ class ColorFeatureExtractor(FeatureExtractor):
         diff_fluxes["brightness"] = flux2mag(diff_fluxes["brightness"])
         diff_fluxes["unit"] = "diff_magnitude"
         diff_magnitudes = diff_fluxes
-        #print("diff_magnitudes",diff_magnitudes)
-        #print("corr_mahs",corrected_mags)
 
         return corrected_mags, diff_magnitudes
 
@@ -57,10 +55,7 @@ class ColorFeatureExtractor(FeatureExtractor):
             )
             corr_colors = self._magnitude_colors(corrected_mags, feature_suffix="_corr")
             colors = self._magnitude_colors(diff_magnitudes)
-            #print('colors',colors)
-            #print('corr_colors',corr_colors)
             features = colors + corr_colors
-            #print('features',colors)
 
         features_df = pd.DataFrame(data=features, columns=["name", "value"])
 
@@ -100,23 +95,17 @@ class ColorFeatureExtractor(FeatureExtractor):
         band_means = []
         band_maxima = []
         for band in self.bands:
-            #print(detections["fid"].unique())
-            #print('BAND',band)
             band_detections = detections[detections["fid"] == band]
-            #print('band_detections',band_detections)
             if len(band_detections) == 0:
                 band_means.append(np.nan)
                 band_maxima.append(np.nan)
             else:
                 band_mean = np.mean(band_detections["brightness"])
                 band_means.append(band_mean)
-                #print('band_mean',band_mean)
 
                 # max brightness, min magnitude
                 band_max = np.min(band_detections["brightness"])
                 band_maxima.append(band_max)
-        #print('band_means',band_means)
-        #print('band_maxima',band_maxima)
         features = []
         for i in range(len(self.bands) - 1):
             feature_name = f"{self.bands[i]}-{self.bands[i+1]}_mean" + feature_suffix
