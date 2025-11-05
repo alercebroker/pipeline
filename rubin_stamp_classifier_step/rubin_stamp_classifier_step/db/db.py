@@ -46,9 +46,6 @@ def store_probability(
 
     with psql_connection.session() as session:
         data = _format_data(classifier_id, classifier_version, predictions)
-        #print(list(zip(predictions,data)))
-        print(predictions)
-        print(data)
 
         insert_stmt = insert(Probability)
         insert_stmt = insert_stmt.on_conflict_do_nothing()
@@ -104,7 +101,8 @@ def classifier_version_str_to_small_integer(version: str) -> int:
 
 # TODO: The following function is a placeholder and should be replaced with the actual implementation
 CLASS_DICT = {"SN":0, "AGN":1,"VS":2, "asteroid":3, "bogus":4, "satellite":5}
-
+# CLASS_DICT = {"SN":0, "AGN":1, "VS":2, "asteroid":3, "bogus":4}
+# Hay que agregar las multisuvery credentials a la config env
 
 def class_name_to_id(class_name: str) -> int:
     """

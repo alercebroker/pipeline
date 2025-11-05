@@ -36,6 +36,7 @@ class StampClassifierStep(GenericStep):
         self.model = StampClassifierModel(
             model_path=config["MODEL_CONFIG"]["MODEL_PATH"]
         )
+        self.dict_mapping_classes = self.model.dict_mapping_classes
         self.psql_connection = PSQLConnection(config["DB_CONFIG"])
 
     def pre_execute(self, messages: List[dict]) -> List[dict]:
@@ -120,6 +121,8 @@ class StampClassifierStep(GenericStep):
     def _messages_to_dto(self, messages: List[dict]) -> InputDTO:
         
         df = pd.DataFrame.from_records(messages)
+        df = df.sort_values(by="midpointMjdTai").drop_duplicates(subset="diaObjectId", keep="first")
+
         df.set_index("diaObjectId", inplace=True)
 
         # Check if diaObjectId is unique
@@ -164,12 +167,16 @@ class StampClassifierStep(GenericStep):
     ) -> Union[Iterable[Dict[str, Any]], Dict[str, Any]]:
         
         #aqui tengo que hacer la distincion si es diaobject none o no
-
         messages_to_process = [message for message in messages if message["diaObjectId"] is not None and message["diaObjectId"] != 0]
         messages_asteroids = [message for message in messages if message["ssObjectId"] is not None and message["ssObjectId"] != 0]
-        input_dto = self._messages_to_dto(messages_to_process)
-        output_dto: OutputDTO = self.model.predict(input_dto)
-        predicted_probabilities = output_dto.probabilities
+        if len(messages_to_process) > 0:
+            input_dto = self._messages_to_dto(messages_to_process)
+            output_dto: OutputDTO = self.model.predict(input_dto)
+            predicted_probabilities = output_dto.probabilities
+            #logging.info('input_dto:\n', input_dto)
+            #logging.info('predicted_probabilities:\n', predicted_probabilities)
+
+        #exit()
 
         output_messages = []
         for message in messages_to_process:
@@ -184,7 +191,6 @@ class StampClassifierStep(GenericStep):
                 "ra": message["ra"],
                 "dec": message["dec"],
             }
-            #print(output_message['probabilities'])
             output_messages.append(output_message)
 
         for message in messages_asteroids:
@@ -197,7 +203,7 @@ class StampClassifierStep(GenericStep):
                                   'VS': 0.0, 
                                   'asteroid': 1.0, 
                                   'bogus': 0.0,
-                                    'satellite': 0.0},  # All probability to asteroid class
+                                  'satellite': 0.0},  # All probability to asteroid class
                 "midpointMjdTai": message["midpointMjdTai"],
                 "ra": message["ra"],
                 "dec": message["dec"],
@@ -207,6 +213,7 @@ class StampClassifierStep(GenericStep):
         return output_messages
 
     def post_execute(self, messages: List[dict]) -> List[dict]:
+        #exit()
         # Write probabilities in the database
         store_probability(
             self.psql_connection,
