@@ -105,7 +105,6 @@ class KafkaProducer(GenericProducer):
         self.schema = fastavro.schema.load_schema(config["SCHEMA_PATH"])
 
         self.dynamic_topic = False
-        self.key_function = None
         if self.config.get("TOPIC"):
             self.logger.info(f"Producing to {self.config['TOPIC']}")
             self.topic = (
@@ -145,9 +144,6 @@ class KafkaProducer(GenericProducer):
             )
         except BufferError as err:
             self._handle_buffer_error(err, topic, msg, key, callback, **kwargs)
-
-    def set_key_function(self, function: Callable[[dict[str, Any]], str]):
-        self.key_function = function
 
     def produce(self, message=None, **kwargs):
         """Produce Message to a topic.
