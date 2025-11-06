@@ -39,8 +39,6 @@ class Object(Base):
     n_det = Column(Integer, nullable=False, default=1)
     n_forced = Column(Integer, nullable=False, default=1)
     n_non_det = Column(Integer, nullable=False, default=1)
-    corrected = Column(Boolean, nullable=False, default=False)
-    stellar = Column(Boolean, nullable=True, default=None)
 
     created_date = Column(DateTime, server_default=func.now())
     updated_date = Column(DateTime, onupdate=func.now())
@@ -63,6 +61,8 @@ class ZtfObject(Base):
     g_r_max_corr = Column(REAL)
     g_r_mean = Column(REAL)
     g_r_mean_corr = Column(REAL)
+    corrected = Column(Boolean, nullable=False, default=False)
+    stellar = Column(Boolean, nullable=True, default=None)
 
     created_date = Column(DateTime, server_default=func.now())
 
