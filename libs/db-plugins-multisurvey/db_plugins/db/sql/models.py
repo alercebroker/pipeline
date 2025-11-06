@@ -27,7 +27,6 @@ class Object(Base):
     __tablename__ = "object"
 
     oid = Column(BigInteger, nullable=False)
-    tid = Column(SmallInteger, nullable=False)
     sid = Column(SmallInteger, nullable=False)
     meanra = Column(DOUBLE_PRECISION, nullable=False)
     meandec = Column(DOUBLE_PRECISION, nullable=False)
@@ -715,7 +714,6 @@ class classifier(Base):
     classifier_id = Column(Integer, primary_key=True)
     classifier_name = Column(VARCHAR)
     classifier_version = Column(VARCHAR)
-    tid = Column(SmallInteger)
 
     created_date = Column(DateTime, server_default=func.now())
 
@@ -726,7 +724,6 @@ class Taxonomy(Base):
     class_name = Column(VARCHAR)
     order = Column(Integer)
     classifier_id = Column(SmallInteger)
-    tid = Column(SmallInteger)
 
     created_date = Column(DateTime, server_default=func.now())
 
@@ -788,7 +785,6 @@ class SidLut(Base):
     __tablename__ = "sid_lut"
     
     sid = Column(SmallInteger, primary_key=True, autoincrement=False)
-    tid = Column(SmallInteger)
     survey_name = Column(VARCHAR)
 
 
@@ -796,6 +792,5 @@ class Bands(Base):
     __tablename__ = "bands"
     
     sid = Column(SmallInteger, primary_key=True, autoincrement=False)
-    tid = Column(SmallInteger, primary_key=True, autoincrement=False)
     band = Column(SmallInteger, primary_key=True, autoincrement=False)
     band_name = Column(VARCHAR)
