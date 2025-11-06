@@ -260,7 +260,6 @@ class LsstDetection(Base):
     measurement_id = Column(BigInteger, nullable=False)  # int8,
     parentDiaSourceId = Column(BigInteger)
 
-    diaSourceId = Column(BigInteger, nullable=True)
     visit = Column(BigInteger, nullable=False)
     detector = Column(Integer, nullable=False)
     diaObjectId = Column(BigInteger)  # From these two we select measurement_id
@@ -374,7 +373,6 @@ class LsstSsDetection(Base):
     measurement_id = Column(BigInteger, nullable=False)  # int8,
 
     ssObjectId = Column(BigInteger, nullable=True)
-    diaSourceId = Column(BigInteger, nullable=False)
     eclipticLambda = Column(DOUBLE_PRECISION, nullable=True)
     eclipticBeta = Column(DOUBLE_PRECISION, nullable=True)
     galacticL = Column(DOUBLE_PRECISION, nullable=True)

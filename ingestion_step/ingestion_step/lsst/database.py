@@ -88,7 +88,9 @@ def insert_sources(
         chunk_size = len(sources)
 
     lsst_columns = (
-        set(sources.columns) - set(DETECTION_COLUMNS) - {"message_id", "midpointMjdTai"}
+        set(sources.columns)
+        - set(DETECTION_COLUMNS)
+        - {"message_id", "midpointMjdTai", "diaSourceId"}
     )
     lsst_columns = lsst_columns.union({"oid", "sid", "measurement_id"})
 
@@ -132,7 +134,12 @@ def insert_ss_sources(
     if chunk_size is None:
         chunk_size = len(sources)
 
-    lsst_columns = set(sources.columns) - {"message_id", "midpointMjdTai", "parentDiaSourceId"}
+    lsst_columns = set(sources.columns) - {
+        "message_id",
+        "midpointMjdTai",
+        "parentDiaSourceId",
+        "diaSourceId",
+    }
 
     ss_sources_dict = sources[list(lsst_columns)].to_dict("records")
 
