@@ -715,7 +715,6 @@ class classifier(Base):
     classifier_id = Column(Integer, primary_key=True)
     classifier_name = Column(VARCHAR)
     classifier_version = Column(VARCHAR)
-    tid = Column(SmallInteger)
 
     created_date = Column(DateTime, server_default=func.now())
 
@@ -726,7 +725,6 @@ class Taxonomy(Base):
     class_name = Column(VARCHAR)
     order = Column(Integer)
     classifier_id = Column(SmallInteger)
-    tid = Column(SmallInteger)
 
     created_date = Column(DateTime, server_default=func.now())
 
