@@ -7,7 +7,7 @@ readme = "README.md"
 packages = [{include = "mongo_scribe"}]
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.11"
+python = ">=3.10,<3.11"
 apf-base = { path = "../libs/apf", develop = true }
 db-plugins = {path = "../libs/db-plugins", develop = true}
 pandas = "1.5.3"

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sorting-hat-step"
-version = "27.5.7a30"
+version = "27.5.7a33.dev1"
 description = "Sorting hat step"
 authors = []
 readme = "README.md"
@@ -12,7 +12,6 @@ step = { callable = "scripts.run_step:step" }
 [tool.poetry.dependencies]
 apf_base = { path = "../libs/apf", develop = true }
 boto3 = "1.26.69"
-confluent_kafka = "2.0.2"
 numpy = "^1.24.3"
 python = ">=3.10,<3.11"
 scipy = "1.10.1"

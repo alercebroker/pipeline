@@ -30,7 +30,7 @@ COPY schemas/feature_step /schemas/feature_step
 COPY schemas/scribe_step /schemas/scribe_step
 WORKDIR /app
 RUN poetry run python -m pip install setuptools wheel Cython==0.29.36 numpy
-RUN poetry run python -m pip install ../mhps --no-use-pep517
+RUN poetry run python -m pip install ../mhps 
 RUN poetry install --no-root --without=dev --without=test --with=${model}
 
 

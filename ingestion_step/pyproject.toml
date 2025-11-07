@@ -17,7 +17,6 @@ validate = { callable = "scripts.validate:main" }
 python = ">=3.10, <3.11"
 apf_base = { path = "../libs/apf", develop = true }
 boto3 = "1.26.69"
-confluent_kafka = "2.0.2"
 survey-parser-plugins = { path = "../libs/survey_parser_plugins", develop = true }
 db-plugins = { path = "../libs/db-plugins-multisurvey", develop = true }
 idmapper = { path = "../libs/idmapper", develop = true }
