@@ -39,7 +39,17 @@ def decode_message(encoded_message: str) -> dict:
         encoded_message = encoded_message + "}"
     
     decoded = loads(encoded_message)
+    
+    if (
+        "payload" in decoded
+        and isinstance(decoded["payload"], dict)
+        and "step" in decoded["payload"]
+        and "survey" in decoded["payload"]
+    ):
+        decoded = decoded["payload"]  # unwrap one layer
+
     valid_message = validate(decoded)
+
     return valid_message
 
 

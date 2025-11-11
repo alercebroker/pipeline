@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "scribe-multisurvey"
-version = "27.5.7a12"
+version = "27.5.7a11.dev1"
 description = "SQL scribe for multisurvey pipeline"
 authors = []
 readme = "README.md"
@@ -13,6 +13,7 @@ db-plugins = {path = "../libs/db-plugins-multisurvey", develop = true}
 pandas = "1.5.3"
 sqlalchemy = "2.0.19"
 psycopg2-binary = "^2.9.7"
+confluent_kafka = "2.12.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.12.0"

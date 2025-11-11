@@ -347,8 +347,6 @@ class LSSTMagstatCommand(Command):
                     "n_det": bindparam("n_det"),
                     "n_forced": bindparam("n_forced"),
                     "n_non_det": bindparam("n_non_det"),
-                    "corrected": bindparam("corrected"),
-                    "stellar": bindparam("stellar"),
                 }),
                 objectstat_list
             )
