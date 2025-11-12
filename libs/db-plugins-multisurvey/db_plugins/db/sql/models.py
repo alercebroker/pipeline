@@ -798,3 +798,4 @@ class Bands(Base):
     tid = Column(SmallInteger, primary_key=True, autoincrement=False)
     band = Column(SmallInteger, primary_key=True, autoincrement=False)
     band_name = Column(VARCHAR)
+    order = Column(Integer) 
