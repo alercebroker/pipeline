@@ -39,8 +39,6 @@ class Object(Base):
     n_det = Column(Integer, nullable=False, default=1)
     n_forced = Column(Integer, nullable=False, default=1)
     n_non_det = Column(Integer, nullable=False, default=1)
-    corrected = Column(Boolean, nullable=False, default=False)
-    stellar = Column(Boolean, nullable=True, default=None)
 
     created_date = Column(DateTime, server_default=func.now())
     updated_date = Column(DateTime, onupdate=func.now())
@@ -63,6 +61,8 @@ class ZtfObject(Base):
     g_r_max_corr = Column(REAL)
     g_r_mean = Column(REAL)
     g_r_mean_corr = Column(REAL)
+    corrected = Column(Boolean, nullable=False, default=False)
+    stellar = Column(Boolean, nullable=True, default=None)
 
     created_date = Column(DateTime, server_default=func.now())
 
@@ -167,10 +167,11 @@ class LsstDiaObject(Base):
 
 class LsstMpcorb(Base):
     __tablename__ = "lsst_mpcorb"
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    ssObjectId = Column(BigInteger, nullable=False)
+
+    diaSourceId = Column(BigInteger, nullable=False)
 
     mpcDesignation = Column(VARCHAR, nullable=True)
-    ssObjectId = Column(BigInteger, nullable=True)
     mpcH = Column(REAL, nullable=True)
     epoch = Column(DOUBLE_PRECISION, nullable=True)
     M = Column(DOUBLE_PRECISION, nullable=True)
@@ -184,7 +185,7 @@ class LsstMpcorb(Base):
 
     created_date = Column(DateTime, server_default=func.now())
 
-    __table_args__ = (PrimaryKeyConstraint("id", name="pk_lsstmpcorb_id"),)
+    __table_args__ = (PrimaryKeyConstraint("ssObjectId", name="pk_lsstmpcorb_ssObjectId"),)
 
 
 class Detection(Base):
@@ -259,7 +260,6 @@ class LsstDetection(Base):
     measurement_id = Column(BigInteger, nullable=False)  # int8,
     parentDiaSourceId = Column(BigInteger)
 
-    diaSourceId = Column(BigInteger, nullable=True)
     visit = Column(BigInteger, nullable=False)
     detector = Column(Integer, nullable=False)
     diaObjectId = Column(BigInteger)  # From these two we select measurement_id
@@ -370,10 +370,9 @@ class LsstDetection(Base):
 class LsstSsDetection(Base):
     __tablename__ = "lsst_ss_detection"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    measurement_id = Column(BigInteger, nullable=False)  # int8,
 
     ssObjectId = Column(BigInteger, nullable=True)
-    diaSourceId = Column(BigInteger, nullable=True)
     eclipticLambda = Column(DOUBLE_PRECISION, nullable=True)
     eclipticBeta = Column(DOUBLE_PRECISION, nullable=True)
     galacticL = Column(DOUBLE_PRECISION, nullable=True)
@@ -399,7 +398,7 @@ class LsstSsDetection(Base):
 
     created_date = Column(DateTime, server_default=func.now())
 
-    __table_args__ = (PrimaryKeyConstraint("id", name="pk_lsstssdetection_id"),)
+    __table_args__ = (PrimaryKeyConstraint("measurement_id", name="pk_lsstssdetection_measurementid"),)
 
 
 class ForcedPhotometry(Base):
