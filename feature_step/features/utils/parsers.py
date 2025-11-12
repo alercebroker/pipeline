@@ -341,7 +341,7 @@ def fid_mapper_for_db_lsst(band: str) -> int:
     Valid combinations: u,g g,r r,i i,z z,y -> 61,12,23,34,45
     """
     if band is None:
-        return 0
+        return 0 #reemplazamos valor nulo por 0
     band = str(band).strip()
     band_to_fid = {
         "u": 6, #0 
@@ -375,17 +375,18 @@ def prepare_ao_features_for_db(astro_object: AstroObject) -> pd.DataFrame: #esto
     return ao_features
 
 
-def prepare_ao_features_for_db_lsst(astro_object: AstroObject) -> pd.DataFrame:
+def prepare_ao_features_for_db_lsst(astro_object: AstroObject, feature_name_lut) -> pd.DataFrame:
     """
     Prepare LSST AstroObject.features for DB upsert.
     - Keep only name, fid, value
     - Map fid using fid_mapper_for_db_lsst
     - Apply backward-compat name replacements
-        """
+    - Use provided feature_name_lut to map feature names to IDs
+    """
     ao_features = astro_object.features[["name", "fid", "value"]].copy()
     ao_features["band"] = ao_features["fid"].apply(fid_mapper_for_db_lsst)
     ao_features.replace({np.nan: None, np.inf: None, -np.inf: None}, inplace=True)
-    ao_features["name"] = ao_features["name"].replace( #hay mas power_rate?
+    ao_features["name"] = ao_features["name"].replace( 
         {
             "Power_rate_1_4": "Power_rate_1/4",
             "Power_rate_1_3": "Power_rate_1/3",
@@ -393,28 +394,27 @@ def prepare_ao_features_for_db_lsst(astro_object: AstroObject) -> pd.DataFrame:
         }
     )
 
-    # Build stable mapping name -> index (sorted for determinism)
-    unique_names = sorted(ao_features["name"].unique().tolist())
-    name_to_idx = {name: idx for idx, name in enumerate(unique_names)}
-    ao_features["feature_id"] = ao_features["name"].map(name_to_idx)
+    # Use the provided feature_name_lut to map feature names to IDs
+    # Create reverse mapping: name -> id
+    name_to_id = {name: feature_id for feature_id, name in feature_name_lut.items()}
+    
+    # Map feature names to their IDs using the lookup table
+    ao_features["feature_id"] = ao_features["name"].map(name_to_id)
+    
+    # Log warning for unmapped features
+    unmapped_features = ao_features[ao_features["feature_id"].isna()]["name"].unique()
+    if len(unmapped_features) > 0:
+        logging.getLogger("alerce.FeatureStep").warning(
+            f"Features not found in lookup table: {list(unmapped_features)}"
+        )
 
-
-    # Persist mapping to jsons/lsst_features_name_mapping.json
-    try:
-        out_dir = "./"
-        out_path = os.path.join(out_dir, "lsst_features_name_mapping.json")
-        with open(out_path, "w", encoding="utf-8") as f:
-            json.dump(name_to_idx, f, ensure_ascii=False, indent=2)
-    except Exception as e:
-        logging.getLogger("alerce.FeatureStep").warning(f"Failed to write LSST feature name mapping JSON: {e}")
-
-    # Ensure fid is JSON-serializable primitive
-    ao_features.drop(columns=["fid","name"], inplace=True)
+    # Drop original columns, keep only the mapped data
+    ao_features.drop(columns=["fid", "name"], inplace=True)
 
     return ao_features
 
 def parse_scribe_payload(
-    astro_objects: List[AstroObject], features_version, features_group
+    astro_objects: List[AstroObject], features_version, features_group,feature_name_lut
 ):
     """Create the json with the messages for the scribe producer from the
     features dataframe. It adds the fid and correct the name.
@@ -478,7 +478,7 @@ def parse_scribe_payload(
     }
 
 def parse_scribe_payload_lsst(
-    astro_objects: List[AstroObject], features_version, features_group
+    astro_objects: List[AstroObject], features_version, features_group, feature_name_lut
 ):
     """Create scribe commands for LSST without color updates.
 
@@ -489,7 +489,7 @@ def parse_scribe_payload_lsst(
     upsert_features_commands_list = []
 
     for astro_object in astro_objects:
-        ao_features = prepare_ao_features_for_db_lsst(astro_object)
+        ao_features = prepare_ao_features_for_db_lsst(astro_object,feature_name_lut)
         oid = query_ao_table(astro_object.metadata, "oid")
 
         features_list = ao_features.to_dict("records")
@@ -546,6 +546,7 @@ def parse_output(
         features_for_oid = dict(
             zip(feature_names, ao_features["value"].astype(np.double))
         )
+        #print(features_for_oid)
         for key in features_for_oid.keys():
             features_for_oid[key] = (
                 None if np.isnan(features_for_oid[key]) else features_for_oid[key]
@@ -609,6 +610,7 @@ def parse_output_lsst(
         features_for_oid = dict(
             zip(feature_names, ao_features["value"].astype(float))
         )
+        #print(features_for_oid)
         for key in list(features_for_oid.keys()):
             val = features_for_oid[key]
             features_for_oid[key] = None if (val is None or (isinstance(val, float) and np.isnan(val))) else val

@@ -118,6 +118,8 @@ class FeatureStep(GenericStep):
             self.parse_output_fn = parse_output
             self.parse_scribe_payload = parse_scribe_payload
             self.extractor_version = version("feature-step")
+            self.feature_name_lut = None
+
 
 
         if self.survey == "lsst":
@@ -128,7 +130,13 @@ class FeatureStep(GenericStep):
             self.detections_to_astro_object_fn = detections_to_astro_object_lsst
             self.parse_output_fn = parse_output_lsst
             self.parse_scribe_payload = parse_scribe_payload_lsst
-            self.extractor_version = version("feature-step")
+            
+            # Get version name and resolve version_id from version_lut table
+            version_name = version("feature-step")
+            self.extractor_version = self._get_or_create_version_id(version_name)
+            
+            # Fetch feature name lookup table from multisurvey schema
+            self.feature_name_lut = self._get_feature_name_lut()
 
         self.min_detections_features = config.get("MIN_DETECTIONS_FEATURES", None)
         if self.min_detections_features is None:
@@ -136,11 +144,78 @@ class FeatureStep(GenericStep):
         else:
             self.min_detections_features = int(self.min_detections_features)
 
+    def _get_feature_name_lut(self) -> dict:
+        """Fetch feature name lookup table from multisurvey schema for LSST survey."""
+        if self.db_sql is None:
+            self.logger.warning("No database connection available for feature name lookup")
+            return {}
+        
+        try:
+            from sqlalchemy import text
+            
+            with self.db_sql.session() as session:
+                # Query the feature_name_lut table from multisurvey schema
+                query = text("SELECT feature_id, feature_name FROM multisurvey.feature_name_lut ORDER BY feature_id")
+                result = session.execute(query)
+                
+                # Create dictionary with id as key and name as value
+                feature_lut = {row[0]: row[1] for row in result.fetchall()}
+                
+                self.logger.info(f"Loaded {len(feature_lut)} feature names from lookup table")
+                return feature_lut
+                
+        except Exception as e:
+            self.logger.error(f"Error fetching feature name lookup table: {e}")
+            return {}
+
+    def _get_or_create_version_id(self, version_name: str) -> int:
+        """Get version_id from version_lut table, or create it if it doesn't exist."""
+        if self.db_sql is None:
+            self.logger.warning("No database connection available for version lookup")
+            return None
+            
+        try:
+            from sqlalchemy import text
+            
+            with self.db_sql.session() as session:
+                # First, try to get existing version_id
+                select_query = text("SELECT version_id FROM multisurvey_api.version_lut WHERE version_name = :version_name")
+                result = session.execute(select_query, {"version_name": version_name})
+                row = result.fetchone()
+                
+                if row:
+                    version_id = row[0]
+                    self.logger.info(f"Found existing version_id {version_id} for version_name '{version_name}'")
+                    return version_id
+                else:
+                    # Insert new version_name and get the generated version_id
+                    insert_query = text(
+                        "INSERT INTO multisurvey_api.version_lut (version_name) VALUES (:version_name) RETURNING version_id"
+                    )
+                    result = session.execute(insert_query, {"version_name": version_name})
+                    version_id = result.fetchone()[0]
+                    session.commit()
+                    
+                    self.logger.info(f"Created new version_id {version_id} for version_name '{version_name}'")
+                    return version_id
+                    
+        except Exception as e:
+            self.logger.error(f"Error handling version_lut table: {e}")
+            return None
+
+    def _get_sql_references(self, oids: List[str]) -> Optional[pd.DataFrame]: #esto es solo ZTF
+        db_references = get_sql_references(
+            oids, self.db_sql, keys=["oid", "rfid", "sharpnr", "chinr"]
+        )
+        db_references = db_references[db_references["chinr"] >= 0.0].copy()
+        return db_references
+
     def produce_to_scribe(self, astro_objects: List[AstroObject]):
         commands = self.parse_scribe_payload(
             astro_objects,
             self.extractor_version,
             self.extractor_group,
+            self.feature_name_lut
         )
 
         update_object_cmds = commands.get("update_object", [])
@@ -165,13 +240,6 @@ class FeatureStep(GenericStep):
     def pre_produce(self, result: Iterable[Dict[str, Any]] | Dict[str, Any]):
         self.set_producer_key_field("oid")
         return result
-
-    def _get_sql_references(self, oids: List[str]) -> Optional[pd.DataFrame]: #esto es solo ZTF
-        db_references = get_sql_references(
-            oids, self.db_sql, keys=["oid", "rfid", "sharpnr", "chinr"]
-        )
-        db_references = db_references[db_references["chinr"] >= 0.0].copy()
-        return db_references
 
     def pre_execute(self, messages: List[dict]):
 

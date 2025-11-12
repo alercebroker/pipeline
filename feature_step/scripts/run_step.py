@@ -40,6 +40,7 @@ if STEP_CONFIG["FEATURE_FLAGS"]["USE_PROFILING"]:
         application_name="step.Feature",
         server_address=STEP_CONFIG["PYROSCOPE_SERVER"],
     )
+
 db_sql = PSQLConnection(STEP_CONFIG["DB_CONFIG"])
 step = FeatureStep(config=STEP_CONFIG, db_sql=db_sql)
 step.start()
