@@ -5,9 +5,9 @@ from .commands import (
     ZTFCorrectionCommand,
     ZTFMagstatCommand,
     LSSTMagstatCommand,
+    LSSTUpdateDiaObjectCommand,
     LSSTFeatureCommand
 )
-
 
 def validate(message: dict) -> dict:
     """Checks if a dictionary has a valid command format. Returns the dictionary if valid.
@@ -30,12 +30,27 @@ def validate(message: dict) -> dict:
 
 def decode_message(encoded_message: str) -> dict:
     """
-    Get the JSON string and transforms it into a Python dictionary.
+    Get the JSON string and transform it into a Python dictionary.
     """
+    # Ensure valid JSON: wrap if missing curly braces
+    if not encoded_message.strip().startswith("{"):
+        encoded_message = "{" + encoded_message
+    if not encoded_message.strip().endswith("}"):
+        encoded_message = encoded_message + "}"
+    
     decoded = loads(encoded_message)
-    valid_message = validate(decoded)
-    return valid_message
+    
+    if (
+        "payload" in decoded
+        and isinstance(decoded["payload"], dict)
+        and "step" in decoded["payload"]
+        and "survey" in decoded["payload"]
+    ):
+        decoded = decoded["payload"]  # unwrap one layer
 
+    valid_message = validate(decoded)
+
+    return valid_message
 
 def command_factory(msg: str) -> Command:
     message = decode_message(msg)
@@ -48,7 +63,18 @@ def command_factory(msg: str) -> Command:
     if survey == "ztf" and step == "magstat":
         return ZTFMagstatCommand(**message)
     if survey == "lsst" and step == "magstat":
-        return LSSTMagstatCommand(**message)
+        return LSSTMagstatCommand(
+            payload=message["payload"],
+            criteria=message.get("criteria", {}),
+            options=message.get("options", {})
+        )
+
+    if survey == "lsst" and step == "magstat_objects":
+        return LSSTUpdateDiaObjectCommand(
+            payload=message["payload"],
+            criteria=message.get("criteria", {}),
+            options=message.get("options", {})
+        )
     if survey == "lsst" and step == "features":
         return LSSTFeatureCommand(**message)
     raise ValueError(f"Unrecognized command type {survey} in table {step}.")
