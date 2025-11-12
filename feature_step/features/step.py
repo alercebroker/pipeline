@@ -108,6 +108,9 @@ class FeatureStep(GenericStep):
         self.db_sql = db_sql
         self.logger = logging.getLogger("alerce.FeatureStep")
         self.survey = self.config.get("SURVEY")
+        
+        # Get schema from configuration
+        self.schema = self.config.get("DB_CONFIG", {}).get("SCHEMA", "multisurvey")
 
         if self.survey == "ztf":
             self.id_column = "candid"
@@ -153,13 +156,9 @@ class FeatureStep(GenericStep):
         try:
             from sqlalchemy import text
             
-            # Get schema for feature_name_lut table - use a separate config key if available,
-            # otherwise fall back to multisurvey for backwards compatibility
-            feature_schema = self.config.get("DB_CONFIG", {}).get("FEATURE_SCHEMA", "multisurvey")
-            
             with self.db_sql.session() as session:
                 # Query the feature_name_lut table from configured schema
-                query = text(f"SELECT feature_id, feature_name FROM {feature_schema}.feature_name_lut ORDER BY feature_id")
+                query = text(f"SELECT feature_id, feature_name FROM {self.schema}.feature_name_lut ORDER BY feature_id")
                 result = session.execute(query)
                 
                 # Create dictionary with id as key and name as value
@@ -181,12 +180,9 @@ class FeatureStep(GenericStep):
         try:
             from sqlalchemy import text
             
-            # Get schema from configuration
-            schema = self.config.get("DB_CONFIG", {}).get("SCHEMA", "multisurvey_api")
-            
             with self.db_sql.session() as session:
                 # First, try to get existing version_id
-                select_query = text(f"SELECT version_id FROM {schema}.version_lut WHERE version_name = :version_name")
+                select_query = text(f"SELECT version_id FROM {self.schema}.version_lut WHERE version_name = :version_name")
                 result = session.execute(select_query, {"version_name": version_name})
                 row = result.fetchone()
                 
@@ -197,7 +193,7 @@ class FeatureStep(GenericStep):
                 else:
                     # Insert new version_name and get the generated version_id
                     insert_query = text(
-                        f"INSERT INTO {schema}.version_lut (version_name) VALUES (:version_name) RETURNING version_id"
+                        f"INSERT INTO {self.schema}.version_lut (version_name) VALUES (:version_name) RETURNING version_id"
                     )
                     result = session.execute(insert_query, {"version_name": version_name})
                     version_id = result.fetchone()[0]
