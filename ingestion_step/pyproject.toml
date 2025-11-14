@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ingestion-step"
-version = "27.4.1a6"
+version = "27.4.1a8.dev1"
 description = "Ingestion step"
 authors = []
 readme = "README.md"
@@ -17,6 +17,7 @@ validate = { callable = "scripts.validate:main" }
 python = ">=3.10, <3.11"
 apf_base = { path = "../libs/apf", develop = true }
 boto3 = "1.26.69"
+confluent_kafka = "2.12.0"
 survey-parser-plugins = { path = "../libs/survey_parser_plugins", develop = true }
 db-plugins = { path = "../libs/db-plugins-multisurvey", develop = true }
 idmapper = { path = "../libs/idmapper", develop = true }

@@ -21,6 +21,8 @@ class IngestionStep(GenericStep):
         self.Strategy = select_parser(config["SURVEY_STRATEGY"])
         self.psql_driver = PsqlDatabase(config["PSQL_CONFIG"])
         self.insert_batch_size = config.get("INSERT_BATCH_SIZE")
+        self.producer.set_key_field("oid")
+
 
     def _add_metrics(self, alerts: pd.DataFrame):
         self.metrics: dict[str, Any] = {}

@@ -242,25 +242,6 @@ class LsstAlertGenerator:
         )[-30:]
         self.fps[obj_info.oid] = forced_sources
 
-        # if self.rng.random() < self.new_non_det_rate:
-        #     n_new_non_det = self.rng.randint(1, 5)
-        #     for _ in range(n_new_non_det):
-        #         base_mjd = (
-        #             self.non_dets[obj_info.oid][-10]["midpointMjdTai"]
-        #             if len(self.non_dets[obj_info.oid]) > 10
-        #             else mjd - 100.0
-        #         )
-        #         new_non_det = self._random_non_detection(
-        #             self.rng.uniform(base_mjd, mjd)
-        #         )
-        #         self.non_dets[obj_info.oid].append(new_non_det)
-        #         objstats.n_non_det += 1
-        #
-        # non_detections = sorted(
-        #     self.non_dets[obj_info.oid], key=lambda x: x["midpointMjdTai"]
-        # )[-50:]
-        # self.non_dets[obj_info.oid] = non_detections
-
         self.lightcurves[obj_info.oid].append(source)
 
         self.objstats[obj_info.oid] = objstats
@@ -274,11 +255,7 @@ class LsstAlertGenerator:
             "prvDiaForcedSources": forced_sources
             if obj_info.otype == "dia" or len(forced_sources) > 0
             else None,
-            # "prvDiaNondetectionLimits": non_detections
-            # if len(non_detections) > 0
-            # else None,
             "diaObject": obj_info.obj if obj_info.otype == "dia" else None,
-            # "ssObject": obj_info.obj if obj_info.otype == "ss" else None,
             "ssSource": self._random_ss_source(
                 obj_info, dia_source_id=source["diaSourceId"]
             )
@@ -308,11 +285,6 @@ class LsstAlertGenerator:
     def _new_object(self) -> ObjectInfo:
         otype: ObjectTypes = self.rng.choice(["dia", "ss"])
         oid = self._new_id()
-
-        # if otype == "dia":
-        #     obj = self._random_dia_object(oid)
-        # elif otype == "ss":
-        #     obj = self._random_ss_object(oid)
 
         if otype == "dia":
             obj = self._random_dia_object(oid)
