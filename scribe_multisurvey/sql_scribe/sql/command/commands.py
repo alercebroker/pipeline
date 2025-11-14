@@ -505,7 +505,7 @@ class LSSTFeatureCommand(Command):
 
             features_stmt = insert(Feature).on_conflict_do_update(
                 constraint="pk_feature_oid_featureid_band",
-                set_=insert(Feature).excluded,  # your original set_ logic
+                set_=insert(Feature).excluded, 
             )
 
             session.connection().execute(features_stmt, deduplicated_data)
