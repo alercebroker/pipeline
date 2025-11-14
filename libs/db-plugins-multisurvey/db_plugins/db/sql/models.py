@@ -792,6 +792,12 @@ class FeatureNameLut(Base):
     created_date = Column(Date, server_default=func.now())
 
 
+class FeatureVersionLut(Base):
+    __tablename__ = "feature_version_lut"
+    version_id = Column(SmallInteger, primary_key=True, autoincrement=True)
+    version_name = Column(VARCHAR) 
+
+
 class SidLut(Base):
     __tablename__ = "sid_lut"
 
