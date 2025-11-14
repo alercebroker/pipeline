@@ -3,7 +3,7 @@ from sqlalchemy import (
     BigInteger,
     Boolean,
     Column,
-    DateTime,
+    Date,
     Index,
     Integer,
     PrimaryKeyConstraint,
@@ -42,8 +42,8 @@ class Object(Base):
     corrected = Column(Boolean, nullable=False, default=False)
     stellar = Column(Boolean, nullable=True, default=None)
 
-    created_date = Column(DateTime, server_default=func.now())
-    updated_date = Column(DateTime, onupdate=func.now())
+    created_date = Column(Date, server_default=func.now())
+    updated_date = Column(Date, onupdate=func.now())
 
     __table_args__ = (
         PrimaryKeyConstraint("oid", "sid", name="pk_object_oid_sid"),
@@ -64,7 +64,7 @@ class ZtfObject(Base):
     g_r_mean = Column(REAL)
     g_r_mean_corr = Column(REAL)
 
-    created_date = Column(DateTime, server_default=func.now())
+    created_date = Column(Date, server_default=func.now())
 
     __table_args__ = (PrimaryKeyConstraint("oid", name="pk_ztfobject_oid"),)
 
@@ -160,7 +160,7 @@ class LsstDiaObject(Base):
     firstDiaSourceMjdTai = Column(DOUBLE_PRECISION, nullable=True)
     lastDiaSourceMjdTai = Column(DOUBLE_PRECISION, nullable=True)
     nDiaSources = Column(Integer, nullable=False)
-    created_date = Column(DateTime, server_default=func.now())
+    created_date = Column(Date, server_default=func.now())
 
     __table_args__ = (PrimaryKeyConstraint("oid", name="pk_lsstdiaobject_oid"),)
 
@@ -182,7 +182,7 @@ class LsstMpcorb(Base):
     q = Column(DOUBLE_PRECISION, nullable=True)
     t_p = Column(DOUBLE_PRECISION, nullable=True)
 
-    created_date = Column(DateTime, server_default=func.now())
+    created_date = Column(Date, server_default=func.now())
 
     __table_args__ = (PrimaryKeyConstraint("id", name="pk_lsstmpcorb_id"),)
 
@@ -198,7 +198,7 @@ class Detection(Base):
     dec = Column(DOUBLE_PRECISION, nullable=False)  # float8,
     band = Column(SmallInteger)  # int2, nulleable because  original schema
 
-    created_date = Column(DateTime, server_default=func.now())
+    created_date = Column(Date, server_default=func.now())
 
     __table_args__ = (
         PrimaryKeyConstraint(
@@ -238,7 +238,7 @@ class ZtfDetection(Base):
     parent_candid = Column(BigInteger)  # int8,
     has_stamp = Column(Boolean)  # bool,
 
-    created_date = Column(DateTime, server_default=func.now())
+    created_date = Column(Date, server_default=func.now())
 
     __table_args__ = (
         PrimaryKeyConstraint(
@@ -357,7 +357,7 @@ class LsstDetection(Base):
     glint_trail = Column(Boolean)
     has_stamp = Column(Boolean)  # bool,
 
-    created_date = Column(DateTime, server_default=func.now())
+    created_date = Column(Date, server_default=func.now())
 
     __table_args__ = (
         PrimaryKeyConstraint(
@@ -397,7 +397,7 @@ class LsstSsDetection(Base):
     topocentricVY = Column(REAL, nullable=True)
     topocentricVZ = Column(REAL, nullable=True)
 
-    created_date = Column(DateTime, server_default=func.now())
+    created_date = Column(Date, server_default=func.now())
 
     __table_args__ = (PrimaryKeyConstraint("id", name="pk_lsstssdetection_id"),)
 
@@ -413,7 +413,7 @@ class ForcedPhotometry(Base):
     dec = Column(DOUBLE_PRECISION, nullable=False)  # float8,
     band = Column(SmallInteger)  # int2, nulleable original schema
 
-    created_date = Column(DateTime, server_default=func.now())
+    created_date = Column(Date, server_default=func.now())
 
     __table_args__ = (
         PrimaryKeyConstraint(
@@ -468,7 +468,7 @@ class ZtfForcedPhotometry(Base):
     chinr = Column(REAL, nullable=False)  # float8,
     sharpnr = Column(REAL, nullable=False)  # float8
 
-    created_date = Column(DateTime, server_default=func.now())
+    created_date = Column(Date, server_default=func.now())
 
     __table_args__ = (
         PrimaryKeyConstraint(
@@ -494,7 +494,7 @@ class LsstForcedPhotometry(Base):
     timeProcessedMjdTai = Column(DOUBLE_PRECISION, nullable=False)
     timeWithdrawnMjdTai = Column(DOUBLE_PRECISION, nullable=True)
 
-    created_date = Column(DateTime, server_default=func.now())
+    created_date = Column(Date, server_default=func.now())
 
     __table_args__ = (
         PrimaryKeyConstraint(
@@ -513,7 +513,7 @@ class ZtfNonDetection(Base):
     mjd = Column(DOUBLE_PRECISION, nullable=False)  # float8,
     diffmaglim = Column(REAL, nullable=False)  # float4,
 
-    created_date = Column(DateTime, server_default=func.now())
+    created_date = Column(Date, server_default=func.now())
 
     __table_args__ = (
         PrimaryKeyConstraint("oid", "mjd", name="pk_oid_mjd"),
@@ -533,7 +533,7 @@ class ZtfSS(Base):
     ssmagnr = Column(REAL)
     ssnamenr = Column(VARCHAR)
 
-    created_date = Column(DateTime, server_default=func.now())
+    created_date = Column(Date, server_default=func.now())
 
     __table_args__ = (
         PrimaryKeyConstraint(
@@ -571,7 +571,7 @@ class ZtfPS1(Base):
     distpsnr3 = Column(REAL)
     nmtchps = Column(SmallInteger)
 
-    created_date = Column(DateTime, server_default=func.now())
+    created_date = Column(Date, server_default=func.now())
 
     __table_args__ = (
         PrimaryKeyConstraint(
@@ -591,7 +591,7 @@ class ZtfGaia(Base):
     maggaia = Column(REAL)
     maggaiabright = Column(REAL)
 
-    created_date = Column(DateTime, server_default=func.now())
+    created_date = Column(Date, server_default=func.now())
 
     __table_args__ = (PrimaryKeyConstraint("oid", name="pk_ztfgaia_oid"),)
 
@@ -631,7 +631,7 @@ class ZtfDataquality(Base):
     clrrms = Column(REAL)
     exptime = Column(REAL)
 
-    created_date = Column(DateTime, server_default=func.now())
+    created_date = Column(Date, server_default=func.now())
 
     __table_args__ = (
         PrimaryKeyConstraint(
@@ -665,7 +665,7 @@ class ZtfReference(Base):
     mjdendref = Column(DOUBLE_PRECISION)
     nframesref = Column(Integer)
 
-    created_date = Column(DateTime, server_default=func.now())
+    created_date = Column(Date, server_default=func.now())
 
     __table_args__ = (
         PrimaryKeyConstraint("oid", "rfid", name="pk_ztfreference_oid_rfid"),
@@ -703,7 +703,7 @@ class MagStat(Base):
     step_id_corr = Column(VARCHAR)  # varchar
     saturation_rate = Column(DOUBLE_PRECISION)  # float8
 
-    updated_date = Column(DateTime, onupdate=func.now())
+    updated_date = Column(Date, onupdate=func.now())
 
     __table_args__ = (
         PrimaryKeyConstraint("oid", "sid", "band", name="pk_magstat_oid_sid_band"),
@@ -717,7 +717,7 @@ class classifier(Base):
     classifier_version = Column(VARCHAR)
     tid = Column(SmallInteger)
 
-    created_date = Column(DateTime, server_default=func.now())
+    created_date = Column(Date, server_default=func.now())
 
 
 class Taxonomy(Base):
@@ -728,7 +728,7 @@ class Taxonomy(Base):
     classifier_id = Column(SmallInteger)
     tid = Column(SmallInteger)
 
-    created_date = Column(DateTime, server_default=func.now())
+    created_date = Column(Date, server_default=func.now())
 
 
 class Probability(Base):
@@ -772,9 +772,13 @@ class Feature(Base):
     band = Column(SmallInteger, nullable=False)
     version = Column(SmallInteger, nullable=False)
     value = Column(DOUBLE_PRECISION)
-    last_update = Column(DateTime, onupdate=func.now())
+
+    updated_date = Column(Date, onupdate=func.now())
+
     __table_args__ = (
-        PrimaryKeyConstraint("oid", "sid", "feature_id", "band", name="pk_feature_oid_featureid_band"),
+        PrimaryKeyConstraint(
+            "oid", "sid", "feature_id", "band", name="pk_feature_oid_featureid_band"
+        ),
     )
 
 
@@ -783,19 +787,25 @@ class FeatureNameLut(Base):
     feature_id = Column(SmallInteger, primary_key=True, autoincrement=True)
     feature_name = Column(VARCHAR)
 
+    created_date = Column(Date, server_default=func.now())
+
 
 class SidLut(Base):
     __tablename__ = "sid_lut"
-    
+
     sid = Column(SmallInteger, primary_key=True, autoincrement=False)
     tid = Column(SmallInteger)
     survey_name = Column(VARCHAR)
 
+    created_date = Column(Date, server_default=func.now())
+
 
 class Bands(Base):
     __tablename__ = "bands"
-    
+
     sid = Column(SmallInteger, primary_key=True, autoincrement=False)
     tid = Column(SmallInteger, primary_key=True, autoincrement=False)
     band = Column(SmallInteger, primary_key=True, autoincrement=False)
     band_name = Column(VARCHAR)
+
+    created_date = Column(Date, server_default=func.now())
