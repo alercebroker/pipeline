@@ -28,7 +28,8 @@ COPY schemas/feature_step /schemas/feature_step
 COPY schemas/xmatch_step /schemas/xmatch_step
 COPY schemas/scribe_step /schemas/scribe_step
 RUN poetry run python -m pip install setuptools wheel Cython==0.29.36 numpy
-RUN poetry run python -m pip install ../mhps --no-use-pep517
+RUN poetry run python -m pip install ../mhps
+RUN poetry run python -m pip install -r ../P4J/requirements.txt
 RUN poetry install --without=test --no-root
 COPY feature_step/scripts /app/scripts
 COPY feature_step/settings.py /app/settings.py

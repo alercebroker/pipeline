@@ -31,11 +31,6 @@
       ]
     },
     {
-      "doc": "Unique identifier of this DiaSource.",
-      "name": "diaSourceId",
-      "type": "long"
-    },
-    {
       "doc": "Id of the visit where this diaSource was measured.",
       "name": "visit",
       "type": "long"

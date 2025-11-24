@@ -4,7 +4,8 @@ from .commands import (
     Command,
     ZTFCorrectionCommand,
     ZTFMagstatCommand,
-    LSSTMagstatCommand
+    LSSTMagstatCommand,
+    LSSTUpdateDiaObjectCommand,
 )
 
 
@@ -29,10 +30,26 @@ def validate(message: dict) -> dict:
 
 def decode_message(encoded_message: str) -> dict:
     """
-    Get the JSON string and transforms it into a Python dictionary.
+    Get the JSON string and transform it into a Python dictionary.
     """
+    # Ensure valid JSON: wrap if missing curly braces
+    if not encoded_message.strip().startswith("{"):
+        encoded_message = "{" + encoded_message
+    if not encoded_message.strip().endswith("}"):
+        encoded_message = encoded_message + "}"
+    
     decoded = loads(encoded_message)
+    
+    if (
+        "payload" in decoded
+        and isinstance(decoded["payload"], dict)
+        and "step" in decoded["payload"]
+        and "survey" in decoded["payload"]
+    ):
+        decoded = decoded["payload"]  # unwrap one layer
+
     valid_message = validate(decoded)
+
     return valid_message
 
 
@@ -41,11 +58,32 @@ def command_factory(msg: str) -> Command:
     survey = message.pop("survey")
     step = message.pop("step")
 
-    # here it comes
     if survey == "ztf" and step == "correction":
-        return ZTFCorrectionCommand(**message)
+        return ZTFCorrectionCommand(
+            payload=message["payload"],
+            criteria=message.get("criteria", {}),
+            options=message.get("options", {})
+        )
+
     if survey == "ztf" and step == "magstat":
-        return ZTFMagstatCommand(**message)
+        return ZTFMagstatCommand(
+            payload=message["payload"],
+            criteria=message.get("criteria", {}),
+            options=message.get("options", {})
+        ) 
+
     if survey == "lsst" and step == "magstat":
-        return LSSTMagstatCommand(**message)
+        return LSSTMagstatCommand(
+            payload=message["payload"],
+            criteria=message.get("criteria", {}),
+            options=message.get("options", {})
+        )
+
+    if survey == "lsst" and step == "magstat_objects":
+        return LSSTUpdateDiaObjectCommand(
+            payload=message["payload"],
+            criteria=message.get("criteria", {}),
+            options=message.get("options", {})
+        )
+
     raise ValueError(f"Unrecognized command type {survey} in table {step}.")
