@@ -127,7 +127,16 @@ class FeatureStep(GenericStep):
             count_features += 1
             if count_features == len(update_features_cmds):
                 flush = True
-            self.scribe_producer.produce({"payload": json.dumps(command)}, flush=flush)
+            oid = command["payload"]["oid"]
+            self.scribe_producer.producer.produce(
+                topic= self.scribe_topic_name,
+                value=json.dumps(command).encode("utf-8"),
+                key=str(oid).encode("utf-8"),
+            )
+
+            if flush:
+                self.scribe_producer.producer.flush()
+
 
     def pre_produce(self, result: Iterable[Dict[str, Any]] | Dict[str, Any]):
         self.set_producer_key_field("oid")
