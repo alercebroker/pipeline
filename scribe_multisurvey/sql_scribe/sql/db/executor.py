@@ -6,7 +6,8 @@ from sql_scribe.sql.command.commands import (
     Command,
     ZTFCorrectionCommand, 
     ZTFMagstatCommand,
-    LSSTMagstatCommand
+    LSSTMagstatCommand,
+    LSSTUpdateDiaObjectCommand
 )
 
 class CommandHandler:
@@ -36,7 +37,8 @@ class SQLCommandExecutor:
         commands_list = (
             ZTFCorrectionCommand,
             ZTFMagstatCommand,
-            LSSTMagstatCommand
+            LSSTMagstatCommand,
+            LSSTUpdateDiaObjectCommand
         )
         self.handlers: Dict[str, CommandHandler] = {
             c.type: CommandHandler(c.db_operation) for c in commands_list
