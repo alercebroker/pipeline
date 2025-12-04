@@ -406,9 +406,6 @@ class ZtfDetection(Base):
     )
 
 
-# Ommiting lsst ss source for now, this is just dia Source
-
-
 class LsstDetection(Base):
     __tablename__ = "lsst_detection"
 

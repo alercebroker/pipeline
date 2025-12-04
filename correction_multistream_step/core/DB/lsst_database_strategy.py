@@ -2,7 +2,8 @@ from sqlalchemy import select, cast, Float
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
 from db_plugins.db.sql.models import (
     Detection, LsstDetection, LsstForcedPhotometry, 
-    ForcedPhotometry#, LsstNonDetection # Ommited in schema v8.0
+    ForcedPhotometry, LsstSsDetection
+    # LsstNonDetection # Ommited in schema v10.0
 )
 from ..schemas.schema_applier import apply_schema
 
@@ -26,14 +27,16 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
         """Load schemas for LSST survey"""
         if self._schemas is None:
             from core.schemas.LSST.LSST_schemas import (
-                #dia_non_detection_lsst_db, # Ommited in schema v8.0
+                #dia_non_detection_lsst_db, # Ommited in schema v10.0
                 dia_forced_sources_lsst_db, 
-                dia_source_lsst_db
+                dia_source_lsst_db,
+                ss_source_lsst_db
             )
             self._schemas = {
                 'detections': dia_source_lsst_db,
-                'forced_photometry': dia_forced_sources_lsst_db
-                # 'non_detections': dia_non_detection_lsst_db # Ommited in schema v8.0
+                'forced_photometry': dia_forced_sources_lsst_db,
+                # 'non_detections': dia_non_detection_lsst_db # Ommited in schema v10.0
+                'ss_detections': ss_source_lsst_db
             }
         return self._schemas
     
@@ -48,7 +51,11 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
     def get_non_detection_schema(self) -> Dict[str, Any]:
         """Return the schema for LSST non-detections."""
         #return self._get_schemas()['non_detections']
-        return {}  # Non-detection schema omitted in LSST v8.0 and not implemented in the schema
+        return {}  # Non-detection schema omitted in LSST v10.0 and not implemented in the schema
+    
+    def get_ss_detections_schema(self) -> Dict[str, Any]:
+        """Return the schema for LSST ss source schema."""
+        return self._get_schemas()['ss_detections']
     
     def get_detections(self, oids: List[str]) -> List[Dict[str, Any]]:
         """
@@ -58,6 +65,7 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
             return []
             
         oids = [int(oid) for oid in oids]
+        sids = 1 # DiaSources in LSST have sid=1, while ssSources have sid=2, so we filter by sid=1 here.
         
         with self.db_connection.session() as session:
             # Query LSST-specific detection data with casting
@@ -158,11 +166,11 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
                 LsstDetection.pixelFlags_injected_template,
                 LsstDetection.pixelFlags_injected_templateCenter,
                 LsstDetection.glint_trail
-            ).where(LsstDetection.oid.in_(oids))
+            ).where(LsstDetection.oid.in_(oids)  & LsstDetection.sid.in_(sids))
             lsst_detections = session.execute(lsst_stmt).all()
             
             # Query general detection data
-            stmt = select(Detection).where(Detection.oid.in_(oids))
+            stmt = select(Detection).where(Detection.oid.in_(oids) & Detection.sid.in_(sids))
             detections = session.execute(stmt).all()
             
             # Parse the results
@@ -204,6 +212,128 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
             # Parse the results
             return self._parse_lsst_forced_photometry(lsst_forced, forced)
     
+    #! FUNCTION IN PROGRESSSSSSSSSSSSSSSSS AAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    def get_ss_detections(self, oids: List[str]) -> List[Dict[str, Any]]:
+        """
+        Get LSST detections with proper casting for precision fields.
+        """
+        if not oids:
+            return []
+            
+        oids = [int(oid) for oid in oids]
+        sids = 2 # SSSources in LSST have sid=2, while diaSources have sid=1, so we filter by sid=2 here.
+        
+        with self.db_connection.session() as session:
+            # Query LSST-specific detection data with casting
+            lsst_stmt = select(
+                LsstDetection.sid,
+                LsstDetection.measurement_id,
+                LsstDetection.oid,
+                LsstDetection.visit,
+                LsstDetection.detector,
+                LsstDetection.diaObjectId,
+                LsstDetection.ssObjectId,
+                LsstDetection.parentDiaSourceId,
+                cast(LsstDetection.raErr, DOUBLE_PRECISION).label("raErr"),
+                cast(LsstDetection.decErr, DOUBLE_PRECISION).label("decErr"),
+                cast(LsstDetection.ra_dec_Cov, DOUBLE_PRECISION).label("ra_dec_Cov"),
+                cast(LsstDetection.x, DOUBLE_PRECISION).label("x"),
+                cast(LsstDetection.xErr, DOUBLE_PRECISION).label("xErr"),
+                cast(LsstDetection.y, DOUBLE_PRECISION).label("y"),
+                cast(LsstDetection.yErr, DOUBLE_PRECISION).label("yErr"),
+                LsstDetection.centroid_flag,
+                cast(LsstDetection.apFlux, DOUBLE_PRECISION).label("apFlux"),
+                cast(LsstDetection.apFluxErr, DOUBLE_PRECISION).label("apFluxErr"),
+                LsstDetection.apFlux_flag,
+                LsstDetection.apFlux_flag_apertureTruncated,
+                LsstDetection.isNegative,
+                cast(LsstDetection.snr, DOUBLE_PRECISION).label("snr"),
+                cast(LsstDetection.psfFlux, DOUBLE_PRECISION).label("psfFlux"),
+                cast(LsstDetection.psfFluxErr, DOUBLE_PRECISION).label("psfFluxErr"),
+                cast(LsstDetection.psfLnL, DOUBLE_PRECISION).label("psfLnL"),
+                cast(LsstDetection.psfChi2, DOUBLE_PRECISION).label("psfChi2"),
+                LsstDetection.psfNdata,
+                LsstDetection.psfFlux_flag,
+                LsstDetection.psfFlux_flag_edge,
+                LsstDetection.psfFlux_flag_noGoodPixels,
+                cast(LsstDetection.trailFlux, DOUBLE_PRECISION).label("trailFlux"),
+                cast(LsstDetection.trailFluxErr, DOUBLE_PRECISION).label("trailFluxErr"),
+                cast(LsstDetection.trailRa, DOUBLE_PRECISION).label("trailRa"),
+                cast(LsstDetection.trailRaErr, DOUBLE_PRECISION).label("trailRaErr"),
+                cast(LsstDetection.trailDec, DOUBLE_PRECISION).label("trailDec"),
+                cast(LsstDetection.trailDecErr, DOUBLE_PRECISION).label("trailDecErr"),
+                cast(LsstDetection.trailLength, DOUBLE_PRECISION).label("trailLength"),
+                cast(LsstDetection.trailLengthErr, DOUBLE_PRECISION).label("trailLengthErr"),
+                cast(LsstDetection.trailAngle, DOUBLE_PRECISION).label("trailAngle"),
+                cast(LsstDetection.trailAngleErr, DOUBLE_PRECISION).label("trailAngleErr"),
+                cast(LsstDetection.trailChi2, DOUBLE_PRECISION).label("trailChi2"),
+                LsstDetection.trailNdata,
+                LsstDetection.trail_flag_edge,
+                cast(LsstDetection.dipoleMeanFlux, DOUBLE_PRECISION).label("dipoleMeanFlux"),
+                cast(LsstDetection.dipoleMeanFluxErr, DOUBLE_PRECISION).label("dipoleMeanFluxErr"),
+                cast(LsstDetection.dipoleFluxDiff, DOUBLE_PRECISION).label("dipoleFluxDiff"),
+                cast(LsstDetection.dipoleFluxDiffErr, DOUBLE_PRECISION).label("dipoleFluxDiffErr"),
+                cast(LsstDetection.dipoleLength, DOUBLE_PRECISION).label("dipoleLength"),
+                cast(LsstDetection.dipoleAngle, DOUBLE_PRECISION).label("dipoleAngle"),
+                cast(LsstDetection.dipoleChi2, DOUBLE_PRECISION).label("dipoleChi2"),
+                LsstDetection.dipoleNdata,
+                cast(LsstDetection.scienceFlux, DOUBLE_PRECISION).label("scienceFlux"),
+                cast(LsstDetection.scienceFluxErr, DOUBLE_PRECISION).label("scienceFluxErr"),
+                LsstDetection.forced_PsfFlux_flag,
+                LsstDetection.forced_PsfFlux_flag_edge,
+                LsstDetection.forced_PsfFlux_flag_noGoodPixels,
+                cast(LsstDetection.templateFlux, DOUBLE_PRECISION).label("templateFlux"),
+                cast(LsstDetection.templateFluxErr, DOUBLE_PRECISION).label("templateFluxErr"),
+                cast(LsstDetection.ixx, DOUBLE_PRECISION).label("ixx"),
+                cast(LsstDetection.iyy, DOUBLE_PRECISION).label("iyy"),
+                cast(LsstDetection.ixy, DOUBLE_PRECISION).label("ixy"),
+                cast(LsstDetection.ixxPSF, DOUBLE_PRECISION).label("ixxPSF"),
+                cast(LsstDetection.iyyPSF, DOUBLE_PRECISION).label("iyyPSF"),
+                cast(LsstDetection.ixyPSF, DOUBLE_PRECISION).label("ixyPSF"),
+                LsstDetection.shape_flag,
+                LsstDetection.shape_flag_no_pixels,
+                LsstDetection.shape_flag_not_contained,
+                LsstDetection.shape_flag_parent_source,
+                cast(LsstDetection.extendedness, DOUBLE_PRECISION).label("extendedness"),
+                cast(LsstDetection.reliability, DOUBLE_PRECISION).label("reliability"),
+                LsstDetection.isDipole,
+                LsstDetection.dipoleFitAttempted,
+                LsstDetection.timeProcessedMjdTai,
+                LsstDetection.timeWithdrawnMjdTai,
+                LsstDetection.bboxSize,
+                LsstDetection.pixelFlags,
+                LsstDetection.pixelFlags_bad,
+                LsstDetection.pixelFlags_cr,
+                LsstDetection.pixelFlags_crCenter,
+                LsstDetection.pixelFlags_edge,
+                LsstDetection.pixelFlags_nodata,
+                LsstDetection.pixelFlags_nodataCenter,
+                LsstDetection.pixelFlags_interpolated,
+                LsstDetection.pixelFlags_interpolatedCenter,
+                LsstDetection.pixelFlags_offimage,
+                LsstDetection.pixelFlags_saturated,
+                LsstDetection.pixelFlags_saturatedCenter,
+                LsstDetection.pixelFlags_suspect,
+                LsstDetection.pixelFlags_suspectCenter,
+                LsstDetection.pixelFlags_streak,
+                LsstDetection.pixelFlags_streakCenter,
+                LsstDetection.pixelFlags_injected,
+                LsstDetection.pixelFlags_injectedCenter,
+                LsstDetection.pixelFlags_injected_template,
+                LsstDetection.pixelFlags_injected_templateCenter,
+                LsstDetection.glint_trail
+            ).where(LsstDetection.oid.in_(oids)  & LsstDetection.sid.in_(sids))
+            lsst_ss_detections = session.execute(lsst_stmt).all()
+            
+            # Query general detection data
+            stmt = select(Detection).where(Detection.oid.in_(oids) & Detection.sid.in_(sids))
+            ss_detections = session.execute(stmt).all()
+            
+            # Parse the results
+            return self._parse_lsst_ss_detections(lsst_ss_detections, ss_detections)
+
+
+
     def get_non_detections(self, oids: List[str]) -> List[Dict[str, Any]]:
         """
         Get LSST non-detections with proper casting for precision fields.

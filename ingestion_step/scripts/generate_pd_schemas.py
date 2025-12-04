@@ -79,11 +79,12 @@ DType = (
 
 survey_schemas = {
     "lsst": {
-        "dia_forced_source": "../schemas/surveys/lsst_v9.0/lsst.v9_0.diaForcedSource.avsc",
-        "dia_source": "../schemas/surveys/lsst_v9.0/lsst.v9_0.diaSource.avsc",
-        "ss_source": "../schemas/surveys/lsst_v9.0/lsst.v9_0.ssSource.avsc",
-        "dia_object": "../schemas/surveys/lsst_v9.0/lsst.v9_0.diaObject.avsc",
-        "mpcorb": "../schemas/surveys/lsst_v9.0/lsst.v9_0.MPCORB.avsc",
+        "dia_forced_source": "../schemas/surveys/lsst_v10.0/lsst.v10_0.diaForcedSource.avsc",
+        "dia_source": "../schemas/surveys/lsst_v10.0/lsst.v10_0.diaSource.avsc",
+        "ss_source": "../schemas/surveys/lsst_v10.0/lsst.v10_0.ssSource.avsc",
+        "ss_object": "../schemas/surveys/lsst_v10.0/lsst.v10_0.ssObject.avsc",          
+        "dia_object": "../schemas/surveys/lsst_v10.0/lsst.v10_0.diaObject.avsc",
+        "mpcorb": "../schemas/surveys/lsst_v10.0/lsst.v10_0.mpc_orbits.avsc",
     },
     "ztf": {
         "candidate": "../schemas/ztf/candidate.avsc",
@@ -103,3 +104,6 @@ def generate(args: list[str] = sys.argv):
     pd_schemas = {name: process_schema(schema) for name, schema in schemas.items()}
 
     print_schemas(pd_schemas)
+
+if __name__ == "__main__":
+    generate()
