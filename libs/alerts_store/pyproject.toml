@@ -1,18 +1,17 @@
-[project]
+[tool.poetry]
 name = "alerts-store"
 version = "0.1.0"
 description = "Store alerts from an inscome script into parquet files."
-authors = [{ name = "hectorxh", email = "hectorplj@gmail.com" }]
+authors = ["hectorxh <hectorplj@gmail.com>"]
 readme = "README.md"
-requires-python = ">=3.10,<3.11"
-dependencies = ["apf-base @ ../apf"]
-
-[tool.poetry]
 packages = [{ include = "alerts_store" }, { include = "scripts" }]
 
 [tool.poetry.scripts]
 step = { callable = "scripts.run_step:step" }
 
+[tool.poetry.dependencies]
+python = ">=3.10, <3.11"
+apf_base = { path = "../apf", develop = true }
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.12.11"
