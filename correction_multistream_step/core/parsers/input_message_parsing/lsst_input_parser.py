@@ -37,6 +37,7 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
                 - 'previous_sources_df': DataFrame with historical detections
                 - 'forced_sources_df': DataFrame with forced photometry
                 - 'non_detections_df': DataFrame with ndets
+                - 'ss_sources_df': DataFrame with solar system sources
                 - 'ss_objects_df': DataFrame with solar system objects
                 - 'dia_objects_df': DataFrame with DIA objects
                 - 'oids': Set of unique object IDs
@@ -69,17 +70,14 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
             schemas['forced_sources_schema']
         )
         
-        """
-        # Omitting non-detections and ssobject for now in schema v8.0
-        non_detections_df = self._apply_schema_or_empty(
-            raw_data['non_detections'], 
-            schemas['non_detections_schema']
-        )
-        """
-        
         dia_objects_df = self._apply_schema_or_empty(
             raw_data['dia_objects'], 
             schemas['dia_objects']
+        )
+
+        ss_sources_df = self._apply_schema_or_empty(
+            raw_data['ss_sources'], 
+            schemas['ss_sources']
         )
 
         ss_objects_df = self._apply_schema_or_empty(
@@ -87,10 +85,13 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
             schemas['ss_objects']
         )
 
-        ss_sources_df = self._apply_schema_or_empty(
-            raw_data['ss_sources'], 
-            schemas['ss_sources']
+        """
+        # Omitting non-detections and ssobject for now in schema v10.0
+        non_detections_df = self._apply_schema_or_empty(
+            raw_data['non_detections'], 
+            schemas['non_detections_schema']
         )
+        """
         
         # Get unique OIDs and measurement IDs for database queries
         oids = set(msg_df["oid"].unique())
@@ -102,10 +103,11 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
                     'Current Sources': len(sources_df),
                     'Previous Sources': len(previous_sources_df),
                     'Forced Sources': len(forced_sources_df),
-                    #'Non-Detections': len(non_detections_df), # Omitting in schema v8.0
                     'DIA Objects': len(dia_objects_df)},
                     'SS Sources': len(ss_sources_df),
                     'SS Objects': len(ss_objects_df)
+                    #'Non-Detections': len(non_detections_df), # Omitting in schema v10.0
+
                 }
 
         for data_type, count in log_output['counts'].items():
@@ -117,10 +119,10 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
                 'sources_df': sources_df,
                 'previous_sources_df': previous_sources_df,
                 'forced_sources_df': forced_sources_df, 
-                #'non_detections_df': non_detections_df, # Omitting in schema v8.0
                 'dia_objects_df': dia_objects_df,
                 'ss_sources_df': ss_sources_df,
                 'ss_objects_df': ss_objects_df,
+                #'non_detections_df': non_detections_df, # Omitting in schema v10.0
             },
             'oids': list(oids),
             'measurement_ids': measurement_ids
@@ -134,10 +136,10 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
         all_sources = []           
         all_previous_sources = []  
         all_forced_sources = []    
-        #all_non_detections = []   # Ommiting in schema v8.0
         all_dia_objects = []     
         all_ss_sources = []
-        all_ss_objects = []        
+        all_ss_objects = [] 
+        #all_non_detections = []   # Ommiting in schema v10.0       
         msg_data = []              
         
         for msg in messages:    
@@ -155,31 +157,28 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
             for f_source in msg["forced_sources"]:
                 parsed_forced_source = {"new": True, **f_source}
                 all_forced_sources.append(parsed_forced_source)
-
-            """
-            # Parse non-detections
-            for non_detection in msg["non_detections"]:
-                parsed_non_detection = {**non_detection}
-                all_non_detections.append(parsed_non_detection)
-            """
             
             # Parse ss sources
             for ss_source in msg["ss_sources"]:
                 parsed_ss_source = {"new": True, **ss_source}
                 all_ss_sources.append(parsed_ss_source)
 
-
             # Parse dia object
             dia_object = msg["dia_object"]
             if dia_object is not None:
                 all_dia_objects.append({**dia_object})
 
-
-            # Parse ss objects #!(do we need them for the next steps?)
+            # Parse ss objects
             ss_object = msg["ss_object"]
             if ss_object is not None:
                 all_ss_objects.append({**ss_object})
             
+            """
+            # Parse non-detections
+            for non_detection in msg["non_detections"]:
+                parsed_non_detection = {**non_detection}
+                all_non_detections.append(parsed_non_detection)
+            """
 
             # Parse main source
             source = msg["source"]
@@ -191,10 +190,10 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
             'sources': all_sources,
             'previous_sources': all_previous_sources,
             'forced_sources': all_forced_sources,
-            #'non_detections': all_non_detections,  # Ommiting in schema v10.0
             'ss_sources': all_ss_sources,
             'ss_objects': all_ss_objects,
             'dia_objects': all_dia_objects
+            #'non_detections': all_non_detections,  # Ommiting in schema v10.0
             
         }
     
@@ -208,21 +207,22 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
     def get_input_schema_config(self) -> Dict[str, any]:
         """Return LSST-specific pandas schema configuration for precise data handling."""
         from core.schemas.LSST.LSST_schemas import (
-            #dia_non_detection_limit_schema,   # Omitting non-detections in schema v10.0
             dia_forced_source_schema,         
             dia_source_schema,
             ss_source_schema,                
             ss_object_schema,  
-            dia_object_schema                
+            dia_object_schema          
+            #dia_non_detection_limit_schema,   # Omitting non-detections in schema v10.0
+      
         )
         
         return {
             'sources_schema': dia_source_schema,
             'previous_sources_schema': dia_source_schema,
             'forced_sources_schema': dia_forced_source_schema,
-            #'non_detections_schema': dia_non_detection_limit_schema,   # Omitting in schema v10.0
             'ss_sources_schema': ss_source_schema,
             'ss_objects': ss_object_schema, 
             'dia_objects': dia_object_schema    
+            #'non_detections_schema': dia_non_detection_limit_schema,   # Omitting in schema v10.0
             
         }

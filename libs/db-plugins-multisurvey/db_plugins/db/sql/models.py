@@ -521,39 +521,57 @@ class LsstDetection(Base):
     )
 
 
-class LsstSsDetection(Base):
+class LsstSsSource(Base):
     __tablename__ = "lsst_ss_detection"
 
-    measurement_id = Column(BigInteger, nullable=False)  # int8,
-
-    ssObjectId = Column(BigInteger, nullable=True)
-    eclipticLambda = Column(DOUBLE_PRECISION, nullable=True)
-    eclipticBeta = Column(DOUBLE_PRECISION, nullable=True)
-    galacticL = Column(DOUBLE_PRECISION, nullable=True)
-    galacticB = Column(DOUBLE_PRECISION, nullable=True)
-    phaseAngle = Column(REAL, nullable=True)
-    heliocentricDist = Column(REAL, nullable=True)
-    topocentricDist = Column(REAL, nullable=True)
-    predictedVMagnitude = Column(REAL, nullable=True)
-    residualRa = Column(DOUBLE_PRECISION, nullable=True)
-    residualDec = Column(DOUBLE_PRECISION, nullable=True)
-    heliocentricX = Column(REAL, nullable=True)
-    heliocentricY = Column(REAL, nullable=True)
-    heliocentricZ = Column(REAL, nullable=True)
-    heliocentricVX = Column(REAL, nullable=True)
-    heliocentricVY = Column(REAL, nullable=True)
-    heliocentricVZ = Column(REAL, nullable=True)
-    topocentricX = Column(REAL, nullable=True)
-    topocentricY = Column(REAL, nullable=True)
-    topocentricZ = Column(REAL, nullable=True)
-    topocentricVX = Column(REAL, nullable=True)
-    topocentricVY = Column(REAL, nullable=True)
-    topocentricVZ = Column(REAL, nullable=True)
+    diaSourceId = Column(BigInteger, nullable=False)
+    ssObjectId = Column(BigInteger, nullable=False)
+    designation = Column(String) #!!!!!!!
+    eclLambda = Column(DOUBLE_PRECISION, nullable=False)
+    eclBeta = Column(DOUBLE_PRECISION, nullable=False)
+    galLon = Column(DOUBLE_PRECISION, nullable=False)
+    galLat = Column(DOUBLE_PRECISION, nullable=False)
+    elongation = Column(REAL)
+    phaseAngle = Column(REAL)
+    topoRange = Column(REAL)
+    topoRangeRate = Column(REAL)
+    helioRange = Column(REAL)
+    helioRangeRate = Column(REAL)
+    ephRa = Column(DOUBLE_PRECISION)
+    ephDec = Column(DOUBLE_PRECISION)
+    ephVmag = Column(REAL)
+    ephRate = Column(REAL)
+    ephRateRa = Column(REAL)
+    ephRateDec = Column(REAL)
+    ephOffset = Column(REAL)
+    ephOffsetRa = Column(DOUBLE_PRECISION)
+    ephOffsetDec = Column(DOUBLE_PRECISION)
+    ephOffsetAlongTrack = Column(REAL)
+    ephOffsetCrossTrack = Column(REAL)
+    helio_x = Column(REAL)
+    helio_y = Column(REAL)
+    helio_z = Column(REAL)
+    helio_vx = Column(REAL)
+    helio_vy = Column(REAL)
+    helio_vz = Column(REAL)
+    helio_vtot = Column(REAL)
+    topo_x = Column(REAL)
+    topo_y = Column(REAL)
+    topo_z = Column(REAL)
+    topo_vx = Column(REAL)
+    topo_vy = Column(REAL)
+    topo_vz = Column(REAL)
+    topo_vtot = Column(REAL)
+    diaDistanceRank = Column(Integer)
 
     created_date = Column(Date, server_default=func.now())
 
+    #! CHECK
     __table_args__ = (
-        PrimaryKeyConstraint("measurement_id", name="pk_lsstssdetection_measurementid"),
+        PrimaryKeyConstraint(
+            "oid", "measurement_id", name="pk_lsstssdetection_oid_measurementid"
+        ),
+        Index("ix_lsstssdetection_ssobjectid", "oid", postgresql_using="hash"),
     )
 
 

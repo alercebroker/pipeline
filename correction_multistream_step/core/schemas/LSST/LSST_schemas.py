@@ -400,10 +400,12 @@ ss_source_schema: dict[str, DType] = {
     "diaDistanceRank": pd.Int32Dtype(),
 }
 
-ss_source_schema_db: dict[str, DType] = { #! TO BE FILLED SOOOOOOOON!
+ss_source_lsst_db: dict[str, DType] = { #! TO BE FILLED SOOOOOOOON!
 }
 
 ss_object_schema: dict[str, DType] = {
+    "sid": pd.Int32Dtype(),
+    "tid": pd.Int32Dtype(),
     "ssObjectId": pd.Int64Dtype(),
     "designation": pd.StringDtype(),
     "nObs": pd.Int32Dtype(),

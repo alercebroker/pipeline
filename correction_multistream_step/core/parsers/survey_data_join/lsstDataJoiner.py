@@ -25,9 +25,12 @@ class LSSTDataJoiner(SurveyDataJoiner):
             processed['db_sql_previous_sources_df'] = pd.DataFrame()
         
         processed['db_sql_forced_photometries_df'] = historical_data.get('forced_photometry', pd.DataFrame())
-        #processed['db_sql_non_detections_df'] = historical_data.get('non_detections', pd.DataFrame()) # Ommited for now, as we are not using detections in schema v8.0
+        processed['db_sql_ss_sources_df'] = historical_data.get('ss_detections', pd.DataFrame())
+        
+        #processed['db_sql_non_detections_df'] = historical_data.get('non_detections', pd.DataFrame()) # Ommited for now, as we are not using non detections in schema v10.0
+        # Not using the ss_objects and dia_objects from the database for now, and instead keeping only the ones from the message
         #processed['db_sql_ss_objects_df'] = historical_data.get('ss_objects', pd.DataFrame())
-        processed['db_sql_dia_objects_df'] = historical_data.get('dia_objects', pd.DataFrame())
+        #processed['db_sql_dia_objects_df'] = historical_data.get('dia_objects', pd.DataFrame())
         
         return processed
     
@@ -35,7 +38,6 @@ class LSSTDataJoiner(SurveyDataJoiner):
                     historical_data: Dict[str, pd.DataFrame]) -> Dict[str, pd.DataFrame]:
         """Combine LSST message and historical data."""
         result = {}
-        
 
         result['sources'] = pd.concat([
             msg_data.get('sources_df', pd.DataFrame()),
@@ -58,33 +60,33 @@ class LSSTDataJoiner(SurveyDataJoiner):
             ~result['previous_sources'].apply(lambda row: (row['measurement_id'], row['oid']) in unique_sources_set, axis=1)
         ]
 
-        """
-        # Ommited for now, as we are not using non detections in schema v8.0
-        result['non_detections'] = pd.concat([
-            msg_data.get('non_detections_df', pd.DataFrame()),
-            historical_data.get('db_sql_non_detections_df', pd.DataFrame())
+        result['ss_sources'] = pd.concat([
+            msg_data.get('ss_sources_df', pd.DataFrame()),
+            historical_data.get('db_sql_ss_detections_df', pd.DataFrame())
         ], ignore_index=True)
-        """
 
-        # Added a get for ss_objects and dia_objects in case we eventually extract from the database
-        # the SS and DIA objects. If not, they will be empty, or can be modified in the future
-        """
-        # Ommited for now, as we are not using ss_objects/ssources in schema v8.0
+        dia_objects = pd.concat([
+            msg_data.get('dia_objects_df', pd.DataFrame()),
+            historical_data.get('db_sql_dia_objects_df', pd.DataFrame())  
+        ], ignore_index=True)
+    
+        result['dia_object'] = dia_objects
+
         ss_objects = pd.concat([
             msg_data.get('ss_objects_df', pd.DataFrame()),
             historical_data.get('db_sql_ss_objects_df', pd.DataFrame())  
         ], ignore_index=True)
 
         result['ss_object'] = ss_objects.drop_duplicates()
+
         """
-
-        dia_objects = pd.concat([
-            msg_data.get('dia_objects_df', pd.DataFrame()),
-            historical_data.get('db_sql_dia_objects_df', pd.DataFrame())  
+        # Ommited for now, as we are not using non detections in schema v.10
+        result['non_detections'] = pd.concat([
+            msg_data.get('non_detections_df', pd.DataFrame()),
+            historical_data.get('db_sql_non_detections_df', pd.DataFrame())
         ], ignore_index=True)
-
-        result['dia_object'] = dia_objects
-        
+        """
+    
         return result
 
 
@@ -96,7 +98,7 @@ class LSSTDataJoiner(SurveyDataJoiner):
         
         # For sources previous sources and forced photometries order so new ones are on top, and 
         # drop duplicates based on measurement_id and oid
-        for key in ['sources', 'previous_sources', 'forced_sources']:
+        for key in ['sources', 'previous_sources', 'forced_sources', 'ss_detection']:
             df = combined_data.get(key, pd.DataFrame())
             if not df.empty:
                 # Sort by 'new' column (new=True will be on top)
@@ -106,7 +108,7 @@ class LSSTDataJoiner(SurveyDataJoiner):
             result[key] = df
         
         """
-        # Ommited for now, as we are not using non detections in schema v8.0
+        # Ommited for now, as we are not using non detections in schema v10.0
         # For non_detections, drop duplicates based on oid, band, mjd, and if empty, add an empty DataFrame
         # with expected columns for LSST
         non_detections_df = combined_data.get('non_detections', pd.DataFrame())
@@ -123,18 +125,17 @@ class LSSTDataJoiner(SurveyDataJoiner):
         """
 
         # Since we don't extract from the database the SS and DIA object, we only keep the ones from the message, meaning 
-        # it is not necessary to drop duplicates 
-        # TODO CHECK THIS LOGIC => do we want to query db objects in the future then combine them!
+        # it is not necessary to drop duplicates  # TODO CHECK THIS LOGIC => do we want to query db objects in the future then combine them!
 
-        # Ommited for now, as we are not using ss_objects/ssources in schema v8.0
-        #result['ss_object'] = combined_data.get('ss_object', pd.DataFrame())
         result['dia_object'] = combined_data.get('dia_object', pd.DataFrame())
-
+        result['ss_object'] = combined_data.get('ss_object', pd.DataFrame())
+        
         logger = logging.getLogger(f"alerce.{self.__class__.__name__}")
 
         logger.info(f"Obtained {len(result['sources'][result['sources']['new']])} new dia sources")
         logger.info(f"Obtained {len(result['previous_sources'][result['previous_sources']['new']])} new previous dia sources")
         logger.info(f"Obtained {len(result['forced_sources'][result['forced_sources']['new']])} new forced dia sources")
+        logger.info(f"Obtained {len(result['ss_detection'][result['ss_detection']['new']])} new ss dia sources")
 
 
         return result
