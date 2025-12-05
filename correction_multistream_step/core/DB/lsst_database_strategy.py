@@ -27,10 +27,11 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
         """Load schemas for LSST survey"""
         if self._schemas is None:
             from core.schemas.LSST.LSST_schemas import (
-                #dia_non_detection_lsst_db, # Ommited in schema v10.0
                 dia_forced_sources_lsst_db, 
                 dia_source_lsst_db,
                 ss_source_lsst_db
+                #dia_non_detection_lsst_db, # Ommited in schema v10.0
+
             )
             self._schemas = {
                 'detections': dia_source_lsst_db,
@@ -54,7 +55,7 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
         #return self._get_schemas()['non_detections']
         return {}  # Non-detection schema omitted in LSST v10.0 and not implemented in the schema
     
-    def get_ss_detections_schema(self) -> Dict[str, Any]:
+    def get_ss_detection_schema(self) -> Dict[str, Any]:
         """Return the schema for LSST ss source schema."""
         return self._get_schemas()['ss_detections']
     

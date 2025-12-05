@@ -9,7 +9,6 @@
     { "name": "previous_sources", "type": { "type": "array", "items": "source" }},
     { "name": "forced_sources", "type": { "type": "array", "items": "forced_source" }},
     { "name": "dia_object", "type": ["null", { "type": "array", "items": "dia_object"}]},
-    { "name": "ss_sources", "type": { "type": "array", "items": "ss_source" }},
-    { "name": "dia_object", "type": ["null", { "type": "array", "items": "ss_object"}]}
-  ]
+    { "name": "ss_sources", "type": { "type": "array", "items": "ss_source" }}
+    ]
 }

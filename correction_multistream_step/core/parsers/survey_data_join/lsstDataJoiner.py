@@ -72,6 +72,8 @@ class LSSTDataJoiner(SurveyDataJoiner):
     
         result['dia_object'] = dia_objects
 
+        """
+        # Ommited for now, as we are not receiving ss objects in schema v.10 yet
         ss_objects = pd.concat([
             msg_data.get('ss_objects_df', pd.DataFrame()),
             historical_data.get('db_sql_ss_objects_df', pd.DataFrame())  
@@ -79,7 +81,7 @@ class LSSTDataJoiner(SurveyDataJoiner):
 
         result['ss_object'] = ss_objects.drop_duplicates()
 
-        """
+        
         # Ommited for now, as we are not using non detections in schema v.10
         result['non_detections'] = pd.concat([
             msg_data.get('non_detections_df', pd.DataFrame()),
@@ -128,7 +130,7 @@ class LSSTDataJoiner(SurveyDataJoiner):
         # it is not necessary to drop duplicates  # TODO CHECK THIS LOGIC => do we want to query db objects in the future then combine them!
 
         result['dia_object'] = combined_data.get('dia_object', pd.DataFrame())
-        result['ss_object'] = combined_data.get('ss_object', pd.DataFrame())
+        #result['ss_object'] = combined_data.get('ss_object', pd.DataFrame())
         
         logger = logging.getLogger(f"alerce.{self.__class__.__name__}")
 
