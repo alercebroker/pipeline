@@ -6,7 +6,7 @@ from db_plugins.db.sql.models import (
     LsstDetection,
     LsstDiaObject,
     LsstForcedPhotometry,
-    LsstMpcorb,
+    LsstMpcOrbits,
     LsstSsDetection,
     Object,
 )
@@ -55,7 +55,7 @@ def insert_dia_objects(
         session.commit()
 
 
-def insert_mpcorb(
+def insert_mpc_orbit(
     driver: PsqlDatabase, mpcorbs: pd.DataFrame, chunk_size: int | None = None
 ):
     if len(mpcorbs) == 0:
@@ -70,7 +70,7 @@ def insert_mpcorb(
     with driver.session() as session:
         for i in range(0, len(mpcorbs), chunk_size):
             mpcorbs_sql_stmt = db_insert_on_conflict_do_update_builder(
-                LsstMpcorb, mpcorbs_dict[i : i + chunk_size], pk=["ssObjectId"]
+                LsstMpcOrbits, mpcorbs_dict[i : i + chunk_size], pk=["ssObjectId"]
             )
             session.execute(mpcorbs_sql_stmt)
         session.commit()
@@ -139,6 +139,7 @@ def insert_ss_sources(
         "midpointMjdTai",
         "parentDiaSourceId",
         "diaSourceId",
+        "ssObjectId",
     }
 
     ss_sources_dict = sources[list(lsst_columns)].to_dict("records")

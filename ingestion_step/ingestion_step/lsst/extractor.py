@@ -9,7 +9,7 @@ from .schemas import (
     dia_forced_source_schema,
     dia_object_schema,
     dia_source_schema,
-    mpcorb_schema,
+    mpc_orbits_schema,
     ss_source_schema,
 )
 
@@ -93,11 +93,10 @@ class LsstDiaObjectExtractor(BaseExtractor):
         }
 
 
-class LsstMpcorbExtractor(BaseExtractor):
-    field = "MPCORB"
-    schema = mpcorb_schema
+class LsstMpcOrbitExtractor(BaseExtractor):
+    field = "mpc_orbits"
+    schema = mpc_orbits_schema
     extra_columns_schema = {
-        "diaSourceId": pd.Int64Dtype(),
         "midpointMjdTai": pd.Float64Dtype(),
     }
 
@@ -107,6 +106,5 @@ class LsstMpcorbExtractor(BaseExtractor):
     ) -> dict[str, list[Any]]:
         source = message["diaSource"]
         return {
-            "diaSourceId": [message["diaSourceId"]] * len(measurements),
             "midpointMjdTai": [source["midpointMjdTai"]] * len(measurements),
         }

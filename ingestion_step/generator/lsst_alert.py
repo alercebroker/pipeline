@@ -39,7 +39,6 @@ class ObjectStats:
     sid: int
     tid: int
     n_det: int
-    n_non_det: int
     n_fphot: int
     ras: list[float]
     decs: list[float]
@@ -54,7 +53,6 @@ class ObjectStats:
         self.sid = sid
         self.tid = 0
         self.n_det = 0
-        self.n_non_det = 0
         self.n_fphot = 0
         self.ras = []
         self.decs = []
@@ -72,7 +70,6 @@ class ObjectStats:
             "sid": self.sid,
             "tid": self.tid,
             "n_det": self.n_det,
-            "n_non_det": self.n_non_det,
             "n_forced": self.n_fphot,
             "meanra": np.average(self.ras, weights=sigmas_ra),
             "meandec": np.average(self.decs, weights=sigmas_dec),
@@ -123,11 +120,9 @@ class LsstAlertGenerator:
     new_obj_rate: float
     new_prv_source_rate: float
     new_fp_rate: float
-    new_non_det_rate: float
 
     lightcurves: dict[int, list[dict[str, Any]]]  # oid -> list[sources]
     fps: dict[int, list[dict[str, Any]]]  # oid -> list[forced_sources]
-    non_dets: dict[int, list[dict[str, Any]]]  # oid -> list[non_dets]
 
     prv_object_types: dict[ObjectTypes, list[int]]  # dia|ss -> list[dia|ss]
     prv_objects: dict[int, dict[str, Any]]  # oid -> object
@@ -140,16 +135,13 @@ class LsstAlertGenerator:
         new_obj_rate: float = 0.1,
         new_prv_source_rate: float = 0.1,
         new_fp_rate: float = 0.1,
-        new_non_det_rate: float = 0.5,
     ):
         self.rng = rng if rng is not None else Random()
         self.new_obj_rate = new_obj_rate
         self.new_prv_source_rate = new_prv_source_rate
         self.new_fp_rate = new_fp_rate
-        self.new_non_det_rate = new_non_det_rate
         self.lightcurves = {}
         self.fps = {}
-        self.non_dets = {}
         self.prv_object_types = {"dia": [], "ss": []}
         self.prv_objects = {}
         self.objstats = {}
@@ -261,7 +253,8 @@ class LsstAlertGenerator:
             )
             if obj_info.otype == "ss"
             else None,
-            "MPCORB": obj_info.obj if obj_info.otype == "ss" else None,
+            # "ssObject": obj_info.obj if obj_info.otype == "ss" else None,
+            "mpc_orbits": self._random_mpc_orbit() if obj_info.otype == "ss" else None,
             "cutoutDifference": None,
             "cutoutScience": None,
             "cutoutTemplate": None,
@@ -289,11 +282,10 @@ class LsstAlertGenerator:
         if otype == "dia":
             obj = self._random_dia_object(oid)
         elif otype == "ss":
-            obj = self._random_MPCORB(oid)
+            obj = self._random_ss_object(oid)
 
         self.lightcurves[oid] = []
         self.fps[oid] = []
-        self.non_dets[oid] = []
         self.prv_object_types[otype].append(oid)
         self.prv_objects[oid] = obj
         self.objstats[oid] = ObjectStats(oid=oid, sid=1 if otype == "dia" else 2)
@@ -436,30 +428,45 @@ class LsstAlertGenerator:
         self, obj_info: ObjectInfo, dia_source_id: int
     ) -> dict[str, Any]:
         return {
-            "ssObjectId": obj_info.oid,
             "diaSourceId": dia_source_id,
-            "eclipticLambda": self._noneable(self.rng.uniform(0, 360)),
-            "eclipticBeta": self._noneable(self.rng.uniform(-90, 90)),
-            "galacticL": self._noneable(self.rng.uniform(0, 360)),
-            "galacticB": self._noneable(self.rng.uniform(-90, 90)),
+            "ssObjectId": obj_info.oid,
+            "designation": self._noneable(f"DES{self.rng.randint(10000, 99999)}"),
+            "eclLambda": self.rng.uniform(0, 360),
+            "eclBeta": self.rng.uniform(-90, 90),
+            "galLon": self.rng.uniform(0, 360),
+            "galLat": self.rng.uniform(-90, 90),
+            "elongation": self._noneable(self.rng.uniform(0, 180)),
             "phaseAngle": self._noneable(self.rng.uniform(0, 180)),
-            "heliocentricDist": self._noneable(self.rng.uniform(0, 50)),
-            "topocentricDist": self._noneable(self.rng.uniform(0, 50)),
-            "predictedVMagnitude": self._noneable(self.rng.uniform(10, 30)),
-            "residualRa": self._noneable(self.rng.uniform(-0.1, 0.1)),
-            "residualDec": self._noneable(self.rng.uniform(-0.1, 0.1)),
-            "heliocentricX": self._noneable(self.rng.uniform(-50, 50)),
-            "heliocentricY": self._noneable(self.rng.uniform(-50, 50)),
-            "heliocentricZ": self._noneable(self.rng.uniform(-50, 50)),
-            "heliocentricVX": self._noneable(self.rng.uniform(-5, 5)),
-            "heliocentricVY": self._noneable(self.rng.uniform(-5, 5)),
-            "heliocentricVZ": self._noneable(self.rng.uniform(-5, 5)),
-            "topocentricX": self._noneable(self.rng.uniform(-50, 50)),
-            "topocentricY": self._noneable(self.rng.uniform(-50, 50)),
-            "topocentricZ": self._noneable(self.rng.uniform(-50, 50)),
-            "topocentricVX": self._noneable(self.rng.uniform(-5, 5)),
-            "topocentricVY": self._noneable(self.rng.uniform(-5, 5)),
-            "topocentricVZ": self._noneable(self.rng.uniform(-5, 5)),
+            "topoRange": self._noneable(self.rng.uniform(0, 50)),
+            "topoRangeRate": self._noneable(self.rng.uniform(-10, 10)),
+            "helioRange": self._noneable(self.rng.uniform(0, 50)),
+            "helioRangeRate": self._noneable(self.rng.uniform(-10, 10)),
+            "ephRa": self._noneable(self.rng.uniform(0, 360)),
+            "ephDec": self._noneable(self.rng.uniform(-90, 90)),
+            "ephVmag": self._noneable(self.rng.uniform(10, 30)),
+            "ephRate": self._noneable(self.rng.uniform(0, 10)),
+            "ephRateRa": self._noneable(self.rng.uniform(-5, 5)),
+            "ephRateDec": self._noneable(self.rng.uniform(-5, 5)),
+            "ephOffset": self._noneable(self.rng.uniform(0, 1)),
+            "ephOffsetRa": self._noneable(self.rng.uniform(-0.1, 0.1)),
+            "ephOffsetDec": self._noneable(self.rng.uniform(-0.1, 0.1)),
+            "ephOffsetAlongTrack": self._noneable(self.rng.uniform(-0.1, 0.1)),
+            "ephOffsetCrossTrack": self._noneable(self.rng.uniform(-0.1, 0.1)),
+            "helio_x": self._noneable(self.rng.uniform(-50, 50)),
+            "helio_y": self._noneable(self.rng.uniform(-50, 50)),
+            "helio_z": self._noneable(self.rng.uniform(-50, 50)),
+            "helio_vx": self._noneable(self.rng.uniform(-5, 5)),
+            "helio_vy": self._noneable(self.rng.uniform(-5, 5)),
+            "helio_vz": self._noneable(self.rng.uniform(-5, 5)),
+            "helio_vtot": self._noneable(self.rng.uniform(0, 10)),
+            "topo_x": self._noneable(self.rng.uniform(-50, 50)),
+            "topo_y": self._noneable(self.rng.uniform(-50, 50)),
+            "topo_z": self._noneable(self.rng.uniform(-50, 50)),
+            "topo_vx": self._noneable(self.rng.uniform(-5, 5)),
+            "topo_vy": self._noneable(self.rng.uniform(-5, 5)),
+            "topo_vz": self._noneable(self.rng.uniform(-5, 5)),
+            "topo_vtot": self._noneable(self.rng.uniform(0, 10)),
+            "diaDistanceRank": self._noneable(self.rng.randint(1, 5)),
         }
 
     def _random_forced_source(self, obj_info: ObjectInfo, mjd: float) -> dict[str, Any]:
@@ -519,43 +526,95 @@ class LsstAlertGenerator:
         obj["nDiaSources"] = self.rng.randint(1, 1000)
         return obj
 
-    def _random_MPCORB(self, object_id: int) -> dict[str, Any]:
+    def _random_mpc_orbit(self) -> dict[str, Any]:
         return {
-            "mpcDesignation": self._noneable(f"MPC{self.rng.randint(10000, 99999)}"),
-            "ssObjectId": object_id,
-            "mpcH": self._noneable(self.rng.uniform(10, 30)),
-            "epoch": self._noneable(self.rng.uniform(50000, 70000)),
-            "M": self._noneable(self.rng.uniform(0, 360)),
-            "peri": self._noneable(self.rng.uniform(0, 360)),
-            "node": self._noneable(self.rng.uniform(0, 360)),
-            "incl": self._noneable(self.rng.uniform(0, 180)),
-            "e": self._noneable(self.rng.uniform(0, 1)),
+            "id": self.rng.randint(0, 9999999),
+            "designation": f"DES{self.rng.randint(10000, 99999)}",
+            "packed_primary_provisional_designation": f"K{self.rng.randint(10, 99)}A{self.rng.randint(10, 99)}B",
+            "unpacked_primary_provisional_designation": f"20{self.rng.randint(10, 99)} AB",
+            "mpc_orb_jsonb": self._noneable("{}"),
+            "created_at": None,
+            "updated_at": None,
+            "orbit_type_int": self._noneable(self.rng.randint(0, 10)),
+            "u_param": self._noneable(self.rng.randint(0, 9)),
+            "nopp": self._noneable(self.rng.randint(0, 10)),
+            "arc_length_total": self._noneable(self.rng.uniform(0, 10000)),
+            "arc_length_sel": self._noneable(self.rng.uniform(0, 10000)),
+            "nobs_total": self._noneable(self.rng.randint(0, 10000)),
+            "nobs_total_sel": self._noneable(self.rng.randint(0, 10000)),
             "a": self._noneable(self.rng.uniform(0.5, 50)),
             "q": self._noneable(self.rng.uniform(0.5, 50)),
-            "t_p": self._noneable(self.rng.uniform(50000, 70000)),
+            "e": self._noneable(self.rng.uniform(0, 1)),
+            "i": self._noneable(self.rng.uniform(0, 180)),
+            "node": self._noneable(self.rng.uniform(0, 360)),
+            "argperi": self._noneable(self.rng.uniform(0, 360)),
+            "peri_time": self._noneable(self.rng.uniform(0, 10000)),
+            "yarkovsky": self._noneable(self.rng.uniform(-1, 1)),
+            "srp": self._noneable(self.rng.uniform(-1, 1)),
+            "a1": self._noneable(self.rng.uniform(-1, 1)),
+            "a2": self._noneable(self.rng.uniform(-1, 1)),
+            "a3": self._noneable(self.rng.uniform(-1, 1)),
+            "dt": self._noneable(self.rng.uniform(-1, 1)),
+            "mean_anomaly": self._noneable(self.rng.uniform(0, 360)),
+            "period": self._noneable(self.rng.uniform(0, 10000)),
+            "mean_motion": self._noneable(self.rng.uniform(0, 1)),
+            "a_unc": self._noneable(self.rng.uniform(0, 1)),
+            "q_unc": self._noneable(self.rng.uniform(0, 1)),
+            "e_unc": self._noneable(self.rng.uniform(0, 1)),
+            "i_unc": self._noneable(self.rng.uniform(0, 1)),
+            "node_unc": self._noneable(self.rng.uniform(0, 1)),
+            "argperi_unc": self._noneable(self.rng.uniform(0, 1)),
+            "peri_time_unc": self._noneable(self.rng.uniform(0, 1)),
+            "yarkovsky_unc": self._noneable(self.rng.uniform(0, 1)),
+            "srp_unc": self._noneable(self.rng.uniform(0, 1)),
+            "a1_unc": self._noneable(self.rng.uniform(0, 1)),
+            "a2_unc": self._noneable(self.rng.uniform(0, 1)),
+            "a3_unc": self._noneable(self.rng.uniform(0, 1)),
+            "dt_unc": self._noneable(self.rng.uniform(0, 1)),
+            "mean_anomaly_unc": self._noneable(self.rng.uniform(0, 1)),
+            "period_unc": self._noneable(self.rng.uniform(0, 1)),
+            "mean_motion_unc": self._noneable(self.rng.uniform(0, 1)),
+            "epoch_mjd": self._noneable(self.rng.uniform(50000, 70000)),
+            "h": self._noneable(self.rng.uniform(10, 30)),
+            "g": self._noneable(self.rng.uniform(-0.5, 0.8)),
+            "not_normalized_rms": self._noneable(self.rng.uniform(0, 10)),
+            "normalized_rms": self._noneable(self.rng.uniform(0, 10)),
+            "earth_moid": self._noneable(self.rng.uniform(0, 10)),
+            "fitting_datetime": None,
         }
 
-    # def _random_ss_object(self, object_id: int) -> dict[str, Any]:
-    #     obj = {
-    #         "ssObjectId": object_id,
-    #         "discoverySubmissionDate": self._noneable(self.rng.uniform(50000, 70000)),
-    #         "firstObservationDate": self._noneable(self.rng.uniform(50000, 70000)),
-    #         "arc": self._noneable(self.rng.uniform(0, 10000)),
-    #         "numObs": self._noneable(self.rng.randint(0, 1000)),
-    #         "MOID": self._noneable(self.rng.uniform(0, 10)),
-    #         "MOIDTrueAnomaly": self._noneable(self.rng.uniform(0, 360)),
-    #         "MOIDEclipticLongitude": self._noneable(self.rng.uniform(0, 360)),
-    #         "MOIDDeltaV": self._noneable(self.rng.uniform(0, 100)),
-    #         "medianExtendedness": self._noneable(self.rng.uniform(0, 1)),
-    #     }
-    #     for band in self.bands:
-    #         obj[f"{band}_H"] = self._noneable(self.rng.uniform(10, 30))
-    #         obj[f"{band}_G12"] = self._noneable(self.rng.uniform(-0.5, 0.8))
-    #         obj[f"{band}_HErr"] = self._noneable(self.rng.uniform(0, 1))
-    #         obj[f"{band}_G12Err"] = self._noneable(self.rng.uniform(0, 0.5))
-    #         obj[f"{band}_H_{band}_G12_Cov"] = self._noneable(
-    #             self.rng.uniform(-0.1, 0.1)
-    #         )
-    #         obj[f"{band}_Chi2"] = self._noneable(self.rng.uniform(0, 1000))
-    #         obj[f"{band}_Ndata"] = self._noneable(self.rng.randint(0, 1000))
-    #     return obj
+    def _random_ss_object(self, object_id: int) -> dict[str, Any]:
+        obj = {
+            "ssObjectId": object_id,
+            "designation": self._noneable(f"DES{self.rng.randint(10000, 99999)}"),
+            "nObs": self.rng.randint(0, 1000),
+            "arc": self.rng.uniform(0, 10000),
+            "firstObservationMjdTai": self._noneable(self.rng.uniform(50000, 70000)),
+            "MOIDEarth": self._noneable(self.rng.uniform(0, 10)),
+            "MOIDEarthDeltaV": self._noneable(self.rng.uniform(0, 100)),
+            "MOIDEarthEclipticLongitude": self._noneable(self.rng.uniform(0, 360)),
+            "MOIDEarthTrueAnomaly": self._noneable(self.rng.uniform(0, 360)),
+            "MOIDEarthTrueAnomalyObject": self._noneable(self.rng.uniform(0, 360)),
+            "tisserand_J": self._noneable(self.rng.uniform(2, 4)),
+            "extendednessMax": self._noneable(self.rng.uniform(0, 1)),
+            "extendednessMedian": self._noneable(self.rng.uniform(0, 1)),
+            "extendednessMin": self._noneable(self.rng.uniform(0, 1)),
+        }
+        bands = self.bands
+        for band in bands:
+            obj[f"{band}_nObs"] = self._noneable(self.rng.randint(0, 1000))
+            obj[f"{band}_H"] = self._noneable(self.rng.uniform(10, 30))
+            obj[f"{band}_HErr"] = self._noneable(self.rng.uniform(0, 1))
+            obj[f"{band}_G12"] = self._noneable(self.rng.uniform(-0.5, 0.8))
+            obj[f"{band}_G12Err"] = self._noneable(self.rng.uniform(0, 0.5))
+            obj[f"{band}_H_{band}_G12_Cov"] = self._noneable(
+                self.rng.uniform(-0.1, 0.1)
+            )
+            obj[f"{band}_nObsUsed"] = self._noneable(self.rng.randint(0, 1000))
+            obj[f"{band}_Chi2"] = self._noneable(self.rng.uniform(0, 1000))
+            obj[f"{band}_phaseAngleMin"] = self._noneable(self.rng.uniform(0, 180))
+            obj[f"{band}_phaseAngleMax"] = self._noneable(self.rng.uniform(0, 180))
+            obj[f"{band}_slope_fit_failed"] = self._noneable(
+                self.rng.choice([True, False])
+            )
+        return obj

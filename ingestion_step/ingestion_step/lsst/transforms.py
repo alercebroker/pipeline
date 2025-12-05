@@ -4,7 +4,6 @@ from ingestion_step.core.utils import (
     Transform,
     add_constant_column,
     copy_column,
-    rename_column,
 )
 
 DIA_SID = 1
@@ -83,8 +82,8 @@ def get_forced_source_transforms() -> list[Transform]:
 
 def get_ss_source_transforms() -> list[Transform]:
     return [
-        copy_column("parentDiaSourceId", "measurement_id"),
-        copy_column("parentDiaSourceId", "diaSourceId"),
+        copy_column("ssObjectId", "oid"),
+        copy_column("diaSourceId", "measurement_id"),
         deduplicate(["measurement_id"], sort="midpointMjdTai"),
     ]
 
@@ -103,7 +102,7 @@ def get_dia_object_transforms() -> list[Transform]:
     ]
 
 
-def get_mpcorb_transforms() -> list[Transform]:
+def get_mpc_orbits_transforms() -> list[Transform]:
     return [
-        deduplicate(["ssObjectId"], sort="midpointMjdTai"),
+        deduplicate(["designation"], sort="midpointMjdTai"),
     ]

@@ -23,7 +23,6 @@ class IngestionStep(GenericStep):
         self.insert_batch_size = config.get("INSERT_BATCH_SIZE")
         self.producer.set_key_field("oid")
 
-
     def _add_metrics(self, alerts: pd.DataFrame):
         self.metrics: dict[str, Any] = {}
         self.metrics["ra"] = alerts["ra"].tolist()

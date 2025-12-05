@@ -155,5 +155,6 @@ terraform.tfvars
 **/flake.lock
 **/.envrc
 **/.direnv/
+**/nix/
 
 **/config.yaml

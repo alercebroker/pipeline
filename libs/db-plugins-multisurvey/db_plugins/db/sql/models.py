@@ -8,9 +8,10 @@ from sqlalchemy import (
     Integer,
     PrimaryKeyConstraint,
     SmallInteger,
+    String,
     func,
 )
-from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, REAL
+from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, JSONB, REAL
 from sqlalchemy.orm import DeclarativeBase
 
 
@@ -170,7 +171,7 @@ class LsstSsObject(Base):
 
     oid = Column(BigInteger, primary_key=True, nullable=False)
 
-    designation = Column(String, nullable=True) #!!!!!!!
+    designation = Column(String, nullable=True)  #!!!!!!!
     nObs = Column(Integer, nullable=False)
     arc = Column(REAL, nullable=False)
 
@@ -187,7 +188,6 @@ class LsstSsObject(Base):
     extendednessMax = Column(REAL, nullable=True)
     extendednessMedian = Column(REAL, nullable=True)
     extendednessMin = Column(REAL, nullable=True)
-
 
     u_nObs = Column(Integer, nullable=True)
     u_H = Column(REAL, nullable=True)
@@ -263,21 +263,20 @@ class LsstSsObject(Base):
 
     created_date = Column(Date, server_default=func.now())
 
-    __table_args__ = (
-        PrimaryKeyConstraint("oid", name="pk_lsstssobject_oid"),
-    )
+    __table_args__ = (PrimaryKeyConstraint("oid", name="pk_lsstssobject_oid"),)
 
-class MpcOrbits(Base):
+
+class LsstMpcOrbits(Base):
     __tablename__ = "mpc_orbits"
 
     # Primary key
     id = Column(Integer, primary_key=True)
 
-    designation = Column(String, nullable=False) #!!!!!!!
+    designation = Column(String, nullable=False)  #!!!!!!!
     packed_primary_provisional_designation = Column(String, nullable=False)  #!!!!!!!
-    unpacked_primary_provisional_designation = Column(String, nullable=False) #!!!!!!!
+    unpacked_primary_provisional_designation = Column(String, nullable=False)  #!!!!!!!
 
-    mpc_orb_jsonb = Column(JSONB, nullable=True) #!!!!!!!
+    mpc_orb_jsonb = Column(JSONB, nullable=True)  #!!!!!!!
 
     created_at = Column(Date, nullable=True)
     updated_at = Column(Date, nullable=True)
@@ -340,9 +339,7 @@ class MpcOrbits(Base):
 
     fitting_datetime = Column(Date, nullable=True)
 
-    __table_args__ = (
-        PrimaryKeyConstraint("id", name="pk_lsstmpcorbits_id"),
-    )
+    __table_args__ = (PrimaryKeyConstraint("id", name="pk_lsstmpcorbits_id"),)
 
 
 class Detection(Base):
@@ -521,12 +518,13 @@ class LsstDetection(Base):
     )
 
 
-class LsstSsSource(Base):
+class LsstSsDetection(Base):
     __tablename__ = "lsst_ss_detection"
 
-    diaSourceId = Column(BigInteger, nullable=False)
-    ssObjectId = Column(BigInteger, nullable=False)
-    designation = Column(String) #!!!!!!!
+    measurement_id = Column(BigInteger, nullable=False)
+    oid = Column(BigInteger, nullable=False)
+
+    designation = Column(String)  #!!!!!!!
     eclLambda = Column(DOUBLE_PRECISION, nullable=False)
     eclBeta = Column(DOUBLE_PRECISION, nullable=False)
     galLon = Column(DOUBLE_PRECISION, nullable=False)
@@ -965,7 +963,7 @@ class FeatureNameLut(Base):
 class FeatureVersionLut(Base):
     __tablename__ = "feature_version_lut"
     version_id = Column(SmallInteger, primary_key=True, autoincrement=True)
-    version_name = Column(VARCHAR) 
+    version_name = Column(VARCHAR)
 
 
 class SidLut(Base):
