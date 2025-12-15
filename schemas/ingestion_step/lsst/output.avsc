@@ -23,6 +23,13 @@
       }
     },
     {
+      "name": "ss_source",
+      "type": [
+        "null",
+        "ssSource"
+      ]
+    },
+    {
       "name": "forced_sources",
       "type": {
         "type": "array",
