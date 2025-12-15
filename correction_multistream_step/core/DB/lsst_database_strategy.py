@@ -254,7 +254,7 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
                 cast(LsstSsDetection.ephOffset, DOUBLE_PRECISION).label('ephOffset'),
                 LsstSsDetection.ephOffsetRa,
                 LsstSsDetection.ephOffsetDec,
-                cast(LsstSsDetection.ephOffsetMag, DOUBLE_PRECISION).label('ephOffsetMag'), 
+                cast(LsstSsDetection.ephOffsetAlongTrack, DOUBLE_PRECISION).label('ephOffsetAlongTrack'), 
                 cast(LsstSsDetection.ephOffsetCrossTrack, DOUBLE_PRECISION).label('ephOffsetCrossTrack'), 
                 cast(LsstSsDetection.helio_x, DOUBLE_PRECISION).label('helio_x'),
                 cast(LsstSsDetection.helio_y, DOUBLE_PRECISION).label('helio_y'),
@@ -270,7 +270,7 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
                 cast(LsstSsDetection.topo_vy, DOUBLE_PRECISION).label('topo_vy'),
                 cast(LsstSsDetection.topo_vz, DOUBLE_PRECISION).label('topo_vz'),
                 cast(LsstSsDetection.topo_vtot, DOUBLE_PRECISION).label('topo_vtot'),
-                LsstDetection.diaDistanceRank, 
+                LsstSsDetection.diaDistanceRank, 
                
             ).where(LsstSsDetection.oid.in_(oids)  & LsstSsDetection.sid.in_(sids))
             lsst_ss_detections = session.execute(lsst_stmt).all()
