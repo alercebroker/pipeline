@@ -59,11 +59,13 @@ class LSSTDataJoiner(SurveyDataJoiner):
         result['previous_sources'] = result['previous_sources'][
             ~result['previous_sources'].apply(lambda row: (row['measurement_id'], row['oid']) in unique_sources_set, axis=1)
         ]
+        
 
         result['ss_sources'] = pd.concat([
             msg_data.get('ss_sources_df', pd.DataFrame()),
             historical_data.get('db_sql_ss_detections_df', pd.DataFrame())
         ], ignore_index=True)
+        
 
         dia_objects = pd.concat([
             msg_data.get('dia_objects_df', pd.DataFrame()),
@@ -100,7 +102,7 @@ class LSSTDataJoiner(SurveyDataJoiner):
         
         # For sources previous sources and forced photometries order so new ones are on top, and 
         # drop duplicates based on measurement_id and oid
-        for key in ['sources', 'previous_sources', 'forced_sources', 'ss_detection']:
+        for key in ['sources', 'previous_sources', 'forced_sources', 'ss_sources']:
             df = combined_data.get(key, pd.DataFrame())
             if not df.empty:
                 # Sort by 'new' column (new=True will be on top)
@@ -137,7 +139,7 @@ class LSSTDataJoiner(SurveyDataJoiner):
         logger.info(f"Obtained {len(result['sources'][result['sources']['new']])} new dia sources")
         logger.info(f"Obtained {len(result['previous_sources'][result['previous_sources']['new']])} new previous dia sources")
         logger.info(f"Obtained {len(result['forced_sources'][result['forced_sources']['new']])} new forced dia sources")
-        logger.info(f"Obtained {len(result['ss_detection'][result['ss_detection']['new']])} new ss dia sources")
+        logger.info(f"Obtained {len(result['ss_sources'][result['ss_sources']['new']])} new ss dia sources")
 
 
         return result

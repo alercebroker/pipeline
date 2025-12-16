@@ -67,7 +67,7 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
             return []
             
         oids = [int(oid) for oid in oids]
-        sids = 1 # DiaSources in LSST have sid=1, while ssSources have sid=2, so we filter by sid=1 here.
+        sids = [1] # DiaSources in LSST have sid=1, while ssSources have sid=2, so we filter by sid=1 here.
         
         with self.db_connection.session() as session:
             # Query LSST-specific detection data with casting
@@ -168,7 +168,7 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
                 LsstDetection.pixelFlags_injected_template,
                 LsstDetection.pixelFlags_injected_templateCenter,
                 LsstDetection.glint_trail
-            ).where(LsstDetection.oid.in_(oids)  & LsstDetection.sid.in_(sids))
+            ).where(LsstDetection.oid.in_(oids))
             lsst_detections = session.execute(lsst_stmt).all()
             
             # Query general detection data
@@ -223,7 +223,7 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
             return []
             
         oids = [int(oid) for oid in oids]
-        sids = 2 # SSSources in LSST have sid=2, while diaSources have sid=1, so we filter by sid=2 here.
+        sids = [2] # SSSources in LSST have sid=2, while diaSources have sid=1, so we filter by sid=2 here.
         
         with self.db_connection.session() as session:
             # Query LSST-specific detection data with casting
@@ -232,9 +232,7 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
                 LsstSsDetection.oid,
                 LsstSsDetection.oid.label('ssObjectId'),
                 LsstSsDetection.measurement_id,
-                LsstSsDetection.sid,
                 LsstSsDetection.designation,
-                LsstSsDetection.ssObjectId,
                 LsstSsDetection.eclLambda,
                 LsstSsDetection.eclBeta,
                 LsstSsDetection.galLon,
@@ -272,7 +270,7 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
                 cast(LsstSsDetection.topo_vtot, DOUBLE_PRECISION).label('topo_vtot'),
                 LsstSsDetection.diaDistanceRank, 
                
-            ).where(LsstSsDetection.oid.in_(oids)  & LsstSsDetection.sid.in_(sids))
+            ).where(LsstSsDetection.oid.in_(oids) )
             lsst_ss_detections = session.execute(lsst_stmt).all()
             
             # Query general detection data

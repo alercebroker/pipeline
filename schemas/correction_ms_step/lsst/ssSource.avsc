@@ -1,7 +1,6 @@
 {
   "type": "record",
-  "namespace": "lsst.v10_0",
-  "name": "ss_source",
+  "name": "ssSource",
   "fields": [
     { "name": "new", 
       "type": "boolean"
@@ -11,34 +10,7 @@
       "type": "long"
     },
     {
-      "name": "sid",
-      "type": "int"
-    },
-    {
       "name": "measurement_id",
-      "type": "long"
-    },
-    {
-      "name": "mjd",
-      "type": "double"
-    },
-    {
-      "default": null,
-      "doc": "Filter band this source was observed with.",
-      "name": "band",
-      "type": [
-        "null",
-        "int"
-      ]
-    },
-    {
-      "doc": "Unique identifier of the observation (matching DiaSource.diaSourceId).",
-      "name": "diaSourceId",
-      "type": "long"
-    },
-    {
-      "doc": "Unique LSST identifier of the Solar System object.",
-      "name": "ssObjectId",
       "type": "long"
     },
     {

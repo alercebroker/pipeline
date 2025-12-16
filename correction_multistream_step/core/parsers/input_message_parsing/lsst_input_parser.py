@@ -74,10 +74,10 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
             raw_data['dia_objects'], 
             schemas['dia_objects']
         )
-
+        
         ss_sources_df = self._apply_schema_or_empty(
             raw_data['ss_sources'], 
-            schemas['ss_sources']
+            schemas['ss_sources_schema']
         )
 
         """
@@ -143,7 +143,8 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
         #all_non_detections = []   # Ommiting in schema v10.0       
         msg_data = []              
         
-        for msg in messages:    
+        for msg in messages:  
+
             # Extract basic message identifiers
             oid = msg["oid"]                    
             measurement_id = msg["measurement_id"] 
@@ -154,15 +155,18 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
                 parsed_prv_source = {"new": True, **prev_source}
                 all_previous_sources.append(parsed_prv_source)
 
+
             # Parse forced sources
             for f_source in msg["forced_sources"]:
                 parsed_forced_source = {"new": True, **f_source}
                 all_forced_sources.append(parsed_forced_source)
             
+
             # Parse ss sources
-            for ss_source in msg["ss_sources"]:
-                parsed_ss_source = {"new": True, **ss_source}
-                all_ss_sources.append(parsed_ss_source)
+            if msg["ss_source"] is not None:
+                for ss_source in msg["ss_source"]:
+                    parsed_ss_source = {"new": True, **ss_source}
+                    all_ss_sources.append(parsed_ss_source)
 
             # Parse dia object
             dia_object = msg["dia_object"]

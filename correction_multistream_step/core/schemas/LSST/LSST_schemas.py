@@ -398,6 +398,8 @@ ss_source_schema: dict[str, DType] = {
     "topo_vz": pd.Float32Dtype(),
     "topo_vtot": pd.Float32Dtype(),
     "diaDistanceRank": pd.Int32Dtype(),
+    "new": pd.BooleanDtype(),
+
 }
 
 ss_source_lsst_db: dict[str, DType] = {
@@ -443,6 +445,7 @@ ss_source_lsst_db: dict[str, DType] = {
     "topo_vz": pd.Float32Dtype(),
     "topo_vtot": pd.Float32Dtype(),
     "diaDistanceRank": pd.Int32Dtype(),
+    "new": pd.BooleanDtype(),
 }
 
 ss_object_schema: dict[str, DType] = {
