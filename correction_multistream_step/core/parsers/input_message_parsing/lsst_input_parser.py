@@ -164,9 +164,8 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
 
             # Parse ss sources
             if msg["ss_source"] is not None:
-                for ss_source in msg["ss_source"]:
-                    parsed_ss_source = {"new": True, **ss_source}
-                    all_ss_sources.append(parsed_ss_source)
+                parsed_ss_source = {"new": True, **msg["ss_source"]}
+                all_ss_sources.append(parsed_ss_source)
 
             # Parse dia object
             dia_object = msg["dia_object"]

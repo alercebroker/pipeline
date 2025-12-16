@@ -359,8 +359,6 @@ dia_object_schema: dict[str, DType] = {
 }
 
 ss_source_schema: dict[str, DType] = {
-    "diaSourceId": pd.Int64Dtype(),
-    "ssObjectId": pd.Int64Dtype(),
     "designation": pd.StringDtype(),
     "eclLambda": pd.Float64Dtype(),
     "eclBeta": pd.Float64Dtype(),

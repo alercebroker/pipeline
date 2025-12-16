@@ -99,10 +99,9 @@ class LSSTDataJoiner(SurveyDataJoiner):
     def post_process_data(self, combined_data: Dict[str, pd.DataFrame]) -> Dict[str, pd.DataFrame]:
         """Post-process LSST data: sort and deduplicate."""
         result = {}
-        
         # For sources previous sources and forced photometries order so new ones are on top, and 
         # drop duplicates based on measurement_id and oid
-        for key in ['sources', 'previous_sources', 'forced_sources', 'ss_sources']:
+        for key in ['sources', 'previous_sources', 'forced_sources']:
             df = combined_data.get(key, pd.DataFrame())
             if not df.empty:
                 # Sort by 'new' column (new=True will be on top)
@@ -110,7 +109,15 @@ class LSSTDataJoiner(SurveyDataJoiner):
                 # Drop duplicates based on measurement_id and oid, keeping first (new=True)
                 df = df.drop_duplicates(["measurement_id", "oid"], keep="first")
             result[key] = df
-        
+        for key in ['ss_sources']:
+            df = combined_data.get(key, pd.DataFrame())
+            if not df.empty:
+                # Sort by 'new' column (new=True will be on top)
+                df = df.sort_values(["new"], ascending=[False])
+                # Drop duplicates based on measurement_id and oid, keeping first (new=True)
+                df = df.drop_duplicates(["measurement_id", "oid"], keep="first")
+            result[key] = df
+
         """
         # Ommited for now, as we are not using non detections in schema v10.0
         # For non_detections, drop duplicates based on oid, band, mjd, and if empty, add an empty DataFrame

@@ -55,6 +55,20 @@ files = [
 ]
 
 [[package]]
+name = "avro-python3"
+version = "1.10.2"
+description = "Avro is a serialization and RPC framework."
+optional = false
+python-versions = ">=3.5"
+files = [
+    {file = "avro-python3-1.10.2.tar.gz", hash = "sha256:3b63f24e6b04368c3e4a6f923f484be0230d821aad65ac36108edbff29e9aaab"},
+]
+
+[package.extras]
+snappy = ["python-snappy"]
+zstandard = ["zstandard"]
+
+[[package]]
 name = "black"
 version = "22.12.0"
 description = "The uncompromising code formatter."
@@ -1721,4 +1735,4 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.12"
-content-hash = "6a1c633f1fe4550952a2bc0a11397fb628fcf35b3dc9928040724c3116a9c339"
+content-hash = "4c6927af5ac818c6944d73c3d0f29219a86e2ad92ab5dcdfbbfc498f731e2bc3"
