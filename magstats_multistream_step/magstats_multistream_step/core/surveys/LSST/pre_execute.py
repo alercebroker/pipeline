@@ -32,7 +32,7 @@ def extract_lsst_data(msg: Dict) -> Tuple[List[Dict], List[Dict], List[Dict], Li
     sources.extend(prev_sources)
     
     # Process solar system detections (new)
-    ss_detections = msg.get("ss_detections", [])
+    ss_detections = msg.get("ss_sources", [])
     for ss_det in ss_detections:
         add_default_errors(ss_det)
     
