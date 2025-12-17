@@ -146,7 +146,7 @@ class LSSTDataJoiner(SurveyDataJoiner):
         logger.info(f"Obtained {len(result['sources'][result['sources']['new']])} new dia sources")
         logger.info(f"Obtained {len(result['previous_sources'][result['previous_sources']['new']])} new previous dia sources")
         logger.info(f"Obtained {len(result['forced_sources'][result['forced_sources']['new']])} new forced dia sources")
-        logger.info(f"Obtained {len(result['ss_sources'][result['ss_sources']['new']])} new ss dia sources")
+        logger.info(f"Obtained {len(result['ss_sources'][result['ss_sources']['new']])} new ss sources")
 
 
         return result

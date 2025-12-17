@@ -104,8 +104,8 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
                     'Current Sources': len(sources_df),
                     'Previous Sources': len(previous_sources_df),
                     'Forced Sources': len(forced_sources_df),
-                    'DIA Objects': len(dia_objects_df)},
-                    'SS Sources': len(ss_sources_df)
+                    'DIA Objects': len(dia_objects_df),
+                    'SS Sources': len(ss_sources_df)}
                     #'SS Objects': len(ss_objects_df)
                     #'Non-Detections': len(non_detections_df), # Omitting in schema v10.0
 

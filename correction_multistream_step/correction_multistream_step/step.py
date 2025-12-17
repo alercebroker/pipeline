@@ -78,6 +78,11 @@ class CorrectionMultistreamStep(GenericStep):
                 key=str(oid).encode("utf-8"),               
                 value=json.dumps(payload, cls=NumpyEncoder).encode("utf-8"), 
             )
+            self.scribe_producer.producer.poll(0)
+
+    def post_produce(self):
+        self.producer.poll(0)
+        return
 
     def tear_down(self):
         if isinstance(self.consumer, KafkaConsumer):

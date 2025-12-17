@@ -154,3 +154,4 @@ class MagstatsStep_Multistream(GenericStep):
                 key=str(oid).encode("utf-8"),               
                 value=json.dumps(scribe_data).encode("utf-8"),  
             )
+            self.scribe_producer.producer.poll(0)
