@@ -6,9 +6,6 @@ class BaseParser:
     Base class for schema parsers. It only works with dictionaries.
     """
 
-    def __init__(self, source_data: dict):
-        self.source_data = source_data
-
     def get_parse_map(self):
         """
         Returns a mapping of fields to be parsed.
@@ -16,7 +13,8 @@ class BaseParser:
         """
         raise NotImplementedError("Subclasses should implement this method")
     
-    def parse(self, data):
+    def parse(self, source_data: dict) -> dict:
+        data = self.get_parse_map(source_data)
         result_dict = {}
         
         for key, value in data.items():
@@ -24,6 +22,8 @@ class BaseParser:
                 result_dict[key] = value()
             else:
                 result_dict[key] = value
+        
+        return result_dict
     
     def copy_field(self, source_data, field_name, rename_fields: dict[str, str] | None = None):
         """
@@ -31,11 +31,14 @@ class BaseParser:
         """
         def _copy_field():
             source_field = source_data.get(field_name)
+            result_dict = {}
 
             if rename_fields:
                 for key in source_field.keys():
                     if key in rename_fields:
-                        source_field[rename_fields[key]] = source_field.pop(key)
+                        result_dict[rename_fields[key]] = source_field[key]
+            
+            return result_dict
         
         return _copy_field
 

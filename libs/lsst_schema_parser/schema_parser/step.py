@@ -1,4 +1,5 @@
 from typing import Any
+from apf.core import get_class
 from apf.core.step import GenericStep
 
 
@@ -12,15 +13,18 @@ class SchemaParser(GenericStep):
     ):
         super().__init__(config=config, **kwargs)
 
+        # Get the instance of the parser class
+        parser_class = self.config.get("parser_class")
+        self.parser = get_class(parser_class)()
+
     def execute(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, messages: list[Message]
     ) -> ParsedData:
-        pass
+        
+        parsed_messages = []
+        for message in messages:
+            parsed_message = self.parser.parse(message.data)
+            parsed_messages.append(parsed_message)
+        
+        return parsed_messages  
 
-    def pre_produce(  # pyright: ignore[reportIncompatibleMethodOverride]
-        self, result: ParsedData
-    ):
-        self.set_producer_key_field(self.Strategy.get_key())
-        messages = self.Strategy.serialize(result)
-
-        return messages
