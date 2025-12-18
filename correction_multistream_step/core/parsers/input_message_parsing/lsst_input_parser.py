@@ -79,6 +79,14 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
             raw_data['ss_sources'], 
             schemas['ss_sources_schema']
         )
+        
+        # When there are ss_sources, join with sources on measurement_id to get full info
+        if not ss_sources_df.empty:    
+            print(len(ss_sources_df), len(sources_df))
+            ss_sources_df = ss_sources_df.merge(
+                sources_df.drop(columns=["new"], errors="ignore"),
+                on=["measurement_id", "oid"],
+                how="left")
 
         """
         # Omitting non-detections and ssobject for now in schema v10.0
