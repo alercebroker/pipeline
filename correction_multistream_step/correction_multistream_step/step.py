@@ -81,8 +81,9 @@ class CorrectionMultistreamStep(GenericStep):
             self.scribe_producer.producer.poll(0)
 
     def post_produce(self):
-        self.producer.poll(0)
-        return
+        self.producer.producer.poll(0)
+        return 
+
 
     def tear_down(self):
         if isinstance(self.consumer, KafkaConsumer):
