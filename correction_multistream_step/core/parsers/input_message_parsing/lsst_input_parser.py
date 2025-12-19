@@ -59,7 +59,12 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
             raw_data['sources'], 
             schemas['sources_schema']
         )
-        
+
+        oid_to_sids = (sources_df.groupby('oid')['sid']
+               .unique()  # Get unique sids only (in the batch we might have multiple entries per oid with same sid. we only want to know which sids are present)
+               .apply(lambda x: x.tolist())  
+               .to_dict())
+
         previous_sources_df = self._apply_schema_or_empty(
             raw_data['previous_sources'], 
             schemas['previous_sources_schema']
@@ -82,7 +87,6 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
         
         # When there are ss_sources, join with sources on measurement_id to get full info
         if not ss_sources_df.empty:    
-            print(len(ss_sources_df), len(sources_df))
             ss_sources_df = ss_sources_df.merge(
                 sources_df.drop(columns=["new"], errors="ignore"),
                 on=["measurement_id", "oid"],
@@ -102,8 +106,7 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
         )
         """
         
-        # Get unique OIDs and measurement IDs for database queries
-        oids = set(msg_df["oid"].unique())
+        oids = set(msg_df["oid"])
         measurement_ids = (msg_df.groupby("oid")["measurement_id"]
                           .apply(lambda x: [str(id) for id in x]).to_dict())
         
@@ -137,7 +140,7 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
             'measurement_ids': measurement_ids
             }
 
-        return parsed_input
+        return parsed_input, oid_to_sids
     
     def _parse_raw_messages(self, messages: List[dict]) -> Dict[str, any]:
         """Extract raw data from messages without schema application."""
