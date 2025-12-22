@@ -31,14 +31,17 @@ class BaseParser:
         """
         def _copy_field():
             source_field = source_data.get(field_name)
-            result_dict = {}
+            result = None
 
             if rename_fields:
+                result = {}
                 for key in source_field.keys():
                     if key in rename_fields:
-                        result_dict[rename_fields[key]] = source_field[key]
+                        result[rename_fields[key]] = source_field[key]
+            else:
+                result = source_field            
             
-            return result_dict
+            return result
         
         return _copy_field
 
