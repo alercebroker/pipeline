@@ -40,6 +40,7 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
                 - 'ss_sources_df': DataFrame with solar system sources
                 - 'ss_objects_df': DataFrame with solar system objects
                 - 'dia_objects_df': DataFrame with DIA objects
+                - 'mpc_orbits_df': DataFrame with MPC orbits
                 - 'oids': Set of unique object IDs
                 - 'measurement_ids': Dict mapping oids to measurement_id lists
         """
@@ -91,6 +92,12 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
                 sources_df.drop(columns=["new"], errors="ignore"),
                 on=["measurement_id", "oid"],
                 how="left")
+            
+        # When there's mpc orbits, make a separate df for them
+        mpc_orbits_df = self._apply_schema_or_empty(
+            raw_data['mpc_orbits'], 
+            schemas['mpc_orbits_schema']
+        )
 
         """
         # Omitting non-detections and ssobject for now in schema v10.0
@@ -116,7 +123,8 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
                     'Previous Sources': len(previous_sources_df),
                     'Forced Sources': len(forced_sources_df),
                     'DIA Objects': len(dia_objects_df),
-                    'SS Sources': len(ss_sources_df)}
+                    'SS Sources': len(ss_sources_df),
+                    'MPC Orbits': len(mpc_orbits_df)}
                     #'SS Objects': len(ss_objects_df)
                     #'Non-Detections': len(non_detections_df), # Omitting in schema v10.0
 
@@ -133,6 +141,7 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
                 'forced_sources_df': forced_sources_df, 
                 'dia_objects_df': dia_objects_df,
                 'ss_sources_df': ss_sources_df,
+                'mpc_orbits_df': mpc_orbits_df,
                 #'ss_objects_df': ss_objects_df,
                 #'non_detections_df': non_detections_df, # Omitting in schema v10.0
             },
@@ -150,6 +159,7 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
         all_forced_sources = []    
         all_dia_objects = []     
         all_ss_sources = []
+        all_mpc_orbits = []
         #all_ss_objects = []       # Ommiting in schema v10.0
         #all_non_detections = []   # Ommiting in schema v10.0       
         msg_data = []              
@@ -179,9 +189,14 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
                 all_ss_sources.append(parsed_ss_source)
 
             # Parse dia object
-            dia_object = msg["dia_object"]
+            dia_object = msg.get("dia_object")
             if dia_object is not None:
                 all_dia_objects.append({**dia_object})
+
+            # Parse mpc_orbits
+            mpc_orbits = msg.get("mpc_orbits")
+            if mpc_orbits is not None:
+                all_dia_objects.append({**mpc_orbits})
             
             """
             # Ommiting in schema v10.0
@@ -208,7 +223,8 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
             'previous_sources': all_previous_sources,
             'forced_sources': all_forced_sources,
             'ss_sources': all_ss_sources,
-            'dia_objects': all_dia_objects
+            'dia_objects': all_dia_objects,
+            'mpc_orbits': all_mpc_orbits
             #'ss_objects': all_ss_objects,          # Ommiting in schema v10.0  
             #'non_detections': all_non_detections,  # Ommiting in schema v10.0
         }
@@ -226,7 +242,8 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
             dia_forced_source_schema,         
             dia_source_schema,
             ss_source_schema,                  
-            dia_object_schema          
+            dia_object_schema,
+            mpc_orbits_schema,       
             #ss_object_schema,                 # Omitting in schema v10.0
             #dia_non_detection_limit_schema,   # Omitting non-detections in schema v10.0
       
@@ -237,7 +254,8 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
             'previous_sources_schema': dia_source_schema,
             'forced_sources_schema': dia_forced_source_schema,
             'ss_sources_schema': ss_source_schema,
-            'dia_objects': dia_object_schema   
+            'dia_objects': dia_object_schema,
+            'mpc_orbits_schema': mpc_orbits_schema
             #'ss_objects_schema': ss_object_schema,             # Omitting in schema v10.0 
             #'non_detections_schema': dia_non_detection_limit_schema,   # Omitting in schema v10.0
             

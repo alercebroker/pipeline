@@ -45,5 +45,12 @@
         "null", { "type": "array", "items": "diaObject"}
       ]
     }
+    {
+      "name": "mpc_orbits",
+      "type": {
+        "type": "array",
+        "items": "mpcOrbits"
+      }
+    }
   ]
 }
