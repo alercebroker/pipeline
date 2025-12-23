@@ -144,6 +144,7 @@ class PeriodExtractor(FeatureExtractor):
                 largest_period=self.largest_period,
                 shift=self.shift,
             )
+            #print("="*500)
             self.periodogram_computer.optimal_finetune_best_frequencies(
                 times_finer=10.0, n_local_optima=10
             )
@@ -213,6 +214,10 @@ class PeriodExtractor(FeatureExtractor):
 
         features.append(("Multiband_period", period_candidate, all_bands))
         features.append(("PPE", significance, all_bands))
+        
+        # TEMPORAL: agregar grid_size como feature
+        grid_size = getattr(self.periodogram_computer, 'grid_size', np.nan)
+        features.append(("grid_size", grid_size, all_bands))
 
         for band in self.bands:
             period_band, delta_period_band = band_periods[band]

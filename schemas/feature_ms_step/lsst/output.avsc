@@ -1,0 +1,12 @@
+{
+  "type": "record",
+  "name": "correction_lsst",
+  "doc": "Correction ms step schema output for the LSST survey",
+  "fields": [
+    { "name": "oid", "type": "long" },
+    { "name": "measurement_id", "type": {"type": "array", "items": "long"}},
+    { "name": "detections", "type": { "type": "array", "items": "source" }},
+    {"name": "features", "type": {"type":"array", items: "features_record_lsst"}}
+
+  ]
+}
