@@ -3,7 +3,7 @@ from apf.core import get_class
 from apf.core.step import GenericStep
 
 
-class SchemaParser(GenericStep):
+class SchemaParserStep(GenericStep):
     ingestion_timestamp: int | None
 
     def __init__(
@@ -18,12 +18,11 @@ class SchemaParser(GenericStep):
         self.parser = get_class(parser_class)()
 
     def execute(  # pyright: ignore[reportIncompatibleMethodOverride]
-        self, messages: list[Message]
-    ) -> ParsedData:
+        self, messages):
         
         parsed_messages = []
         for message in messages:
-            parsed_message = self.parser.parse(message.data)
+            parsed_message = self.parser.parse(message)
             parsed_messages.append(parsed_message)
         
         return parsed_messages  
