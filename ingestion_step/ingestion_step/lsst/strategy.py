@@ -1,3 +1,5 @@
+from typing import Any
+
 import pandas as pd
 from db_plugins.db.sql._connection import PsqlDatabase
 
@@ -94,57 +96,47 @@ class LsstStrategy(StrategyInterface[LsstData]):
         dia_object_df = parsed_data["dia_object"]
         previous_sources_df = parsed_data["previous_sources"]
         forced_sources_df = parsed_data["forced_sources"]
-        dia_sources_records = dia_sources_df.to_dict("records")
-        dia_sources_by_msg = {
-            record["message_id"]: record for record in dia_sources_records
-        }
-        dia_object_lookup = {}
-        if not dia_object_df.empty:
-            dia_object_records = dia_object_df.to_dict("records")
-            dia_object_lookup = {
-                record["message_id"]: {
-                    k: v for k, v in record.items() if k != "message_id"
-                }
-                for record in dia_object_records
+        mpc_orbits_df = parsed_data["mpc_orbits"]
+
+        dia_sources_by_msg = dia_sources_df.set_index("message_id").to_dict("index")
+        dia_object_lookup = dia_object_df.set_index("message_id").to_dict("index")
+        ss_sources_lookup = ss_sources_df.set_index("message_id").to_dict("index")
+        mpc_orbits_lookup = mpc_orbits_df.set_index("message_id").to_dict("index")
+
+        def to_records(df: pd.DataFrame) -> list[dict[Any, Any]]:
+            return df.to_dict("records")
+
+        prv_sources_groups = (
+            previous_sources_df.groupby("message_id")
+            .apply(
+                to_records,
+                include_groups=False,  # pyright: ignore[reportCallIssue]
+            )
+            .to_dict()
+        )
+
+        forced_sources_groups = (
+            forced_sources_df.groupby("message_id")
+            .apply(
+                to_records,
+                include_groups=False,  # pyright: ignore[reportCallIssue]
+            )
+            .to_dict()
+        )
+
+        messages = [{}] * len(dia_sources_by_msg)
+        for i, (message_id, source) in enumerate(dia_sources_by_msg.items()):
+            messages[i] = {
+                "oid": source["oid"],
+                "measurement_id": source["measurement_id"],
+                "source": source,
+                "previous_sources": prv_sources_groups.get(message_id, []),
+                "forced_sources": forced_sources_groups.get(message_id, []),
+                "dia_object": dia_object_lookup.get(message_id),
+                # "ss_object":,
+                "ss_source": ss_sources_lookup.get(message_id),
+                "mpc_orbit": mpc_orbits_lookup.get(message_id),
             }
-        ss_sources_lookup = {}
-        if not ss_sources_df.empty:
-            ss_sources_records = ss_sources_df.to_dict("records")
-            ss_sources_lookup = {
-                record["message_id"]: {
-                    k: v for k, v in record.items() if k != "message_id"
-                }
-                for record in ss_sources_records
-            }
-        prv_sources_groups = {}
-        if not previous_sources_df.empty:
-            prv_sources_groups = (
-                previous_sources_df.groupby("message_id")
-                .apply(lambda x: x.to_dict("records"), include_groups=False)
-                .to_dict()
-            )
-        forced_sources_groups = {}
-        if not forced_sources_df.empty:
-            forced_sources_groups = (
-                forced_sources_df.groupby("message_id")
-                .apply(lambda x: x.to_dict("records"), include_groups=False)
-                .to_dict()
-            )
-        messages = []
-        for message_id, source in dia_sources_by_msg.items():
-            source_clean = {k: v for k, v in source.items() if k != "message_id"}
-            messages.append(
-                {
-                    "oid": source["oid"],
-                    "measurement_id": source["measurement_id"],
-                    "source": source_clean,
-                    "previous_sources": prv_sources_groups.get(message_id, []),
-                    "forced_sources": forced_sources_groups.get(message_id, []),
-                    "dia_object": dia_object_lookup.get(message_id),
-                    # "ss_object":,
-                    "ss_source": ss_sources_lookup.get(message_id),
-                }
-            )
         return messages
 
     @classmethod

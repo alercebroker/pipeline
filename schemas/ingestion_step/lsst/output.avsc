@@ -42,6 +42,13 @@
         "null",
         "diaObject"
       ]
+    },
+    {
+      "name": "mpc_orbit",
+      "type": [
+        "null",
+        "mpc_orbits"
+      ]
     }
   ]
 }

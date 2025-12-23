@@ -14,32 +14,32 @@ band_map = {"u": 0, "g": 1, "r": 2, "i": 3, "z": 4, "y": 5}
 
 
 def add_oid(df: pd.DataFrame):
-    added_column = False
+    added_tmp_column = False
     if "ssObjectId" not in df.columns:
         df["ssObjectId"] = pd.NA
-        added_column = True
+        added_tmp_column = True
 
     df["oid"] = df["ssObjectId"]
     mask = df["diaObjectId"].notnull() & (df["diaObjectId"] != 0)
     df.loc[mask, "oid"] = df["diaObjectId"]
 
-    if added_column:
+    if added_tmp_column:
         df.drop(columns=["ssObjectId"], inplace=True)
 
 
 def add_sid_to_source(df: pd.DataFrame):
-    added_column = False
+    added_tmp_column = False
     if "ssObjectId" not in df.columns:
         df["ssObjectId"] = pd.NA
 
-        added_column = True
+        added_tmp_column = True
 
     df["sid"] = SS_SID
     if "diaObjectId" in df.columns:
         mask = df["diaObjectId"].notnull() & (df["diaObjectId"] != 0)
         df.loc[mask, "sid"] = DIA_SID
 
-    if added_column:
+    if added_tmp_column:
         df.drop(columns=["ssObjectId"], inplace=True)
 
 
@@ -84,7 +84,7 @@ def get_ss_source_transforms() -> list[Transform]:
     return [
         copy_column("ssObjectId", "oid"),
         copy_column("diaSourceId", "measurement_id"),
-        deduplicate(["measurement_id"], sort="midpointMjdTai"),
+        deduplicate(["measurement_id"]),
     ]
 
 
