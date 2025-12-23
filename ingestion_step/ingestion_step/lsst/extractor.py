@@ -33,7 +33,9 @@ class LsstDiaSourceExtractor(BaseExtractor):
         message: Message,
         measurements: list[dict[str, Any]],
     ) -> dict[str, list[Any]]:
-        return {"has_stamp": [cls._has_stamp(message)]}
+        return {
+            "has_stamp": [cls._has_stamp(message)],
+        }
 
 
 class LsstSsSourceExtractor(BaseExtractor):
@@ -66,7 +68,9 @@ class LsstPrvSourceExtractor(BaseExtractor):
         message: Message,
         measurements: list[dict[str, Any]],
     ) -> dict[str, list[Any]]:
-        return {"has_stamp": [False] * len(measurements)}
+        return {
+            "has_stamp": [False] * len(measurements),
+        }
 
 
 class LsstForcedSourceExtractor(BaseExtractor):
@@ -98,6 +102,7 @@ class LsstMpcOrbitExtractor(BaseExtractor):
     schema = mpc_orbits_schema
     extra_columns_schema = {
         "midpointMjdTai": pd.Float64Dtype(),
+        "ssObjectId": pd.Int64Dtype(),
     }
 
     @classmethod
@@ -107,4 +112,5 @@ class LsstMpcOrbitExtractor(BaseExtractor):
         source = message["diaSource"]
         return {
             "midpointMjdTai": [source["midpointMjdTai"]] * len(measurements),
+            "ssObjectId": [source["ssObjectId"]] * len(measurements),
         }

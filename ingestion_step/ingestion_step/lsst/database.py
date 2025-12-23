@@ -63,7 +63,7 @@ def insert_mpc_orbit(
     if chunk_size is None:
         chunk_size = len(mpcorbs)
 
-    lsst_columns = set(mpcorbs.columns) - {"message_id", "midpointMjdTai"}
+    lsst_columns = set(mpcorbs.columns) - {"message_id", "midpointMjdTai", "mjd", "id"}
 
     mpcorbs_dict = mpcorbs[list(lsst_columns)].to_dict("records")
 

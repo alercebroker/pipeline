@@ -270,7 +270,7 @@ class LsstMpcOrbits(Base):
     __tablename__ = "mpc_orbits"
 
     # Primary key
-    id = Column(Integer, primary_key=True)
+    ssObjectId = Column(BigInteger, primary_key=True)
 
     designation = Column(String, nullable=False)  #!!!!!!!
     packed_primary_provisional_designation = Column(String, nullable=False)  #!!!!!!!
@@ -339,7 +339,9 @@ class LsstMpcOrbits(Base):
 
     fitting_datetime = Column(Date, nullable=True)
 
-    __table_args__ = (PrimaryKeyConstraint("id", name="pk_lsstmpcorbits_id"),)
+    __table_args__ = (
+        PrimaryKeyConstraint("ssObjectId", name="pk_lsstmpcorbits_ss_object_id"),
+    )
 
 
 class Detection(Base):
