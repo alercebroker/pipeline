@@ -43,7 +43,7 @@ class MagstatsStep_Multistream(GenericStep):
         all_objstats = {}
         
         # Process SS detections first (LSST only)
-        if self.survey.lower() == "lsst" and survey_data.ss_detections:
+        if self.survey.lower() == "lsst" and len(survey_data.ss_detections)>0:
             ss_magstats = self._calculate_magstats(
                 survey_data.ss_detections, survey_data.non_detections
             )
