@@ -2,11 +2,6 @@ import pickle
 from dataclasses import dataclass
 from typing import List, Optional, Dict
 from abc import ABC, abstractmethod
-import time
-import json
-import hashlib
-import os
-from datetime import datetime
 
 import numpy as np
 import pandas as pd
@@ -85,57 +80,9 @@ class FeatureExtractorComposite(FeatureExtractor, ABC):
         pass
 
     def compute_features_single_object(self, astro_object: AstroObject):
-        # Create directory if it doesn't exist
-        output_dir = "extractor_timings"
-        os.makedirs(output_dir, exist_ok=True)
-        
-        # Get OID from metadata or detections
-        if hasattr(astro_object.metadata, 'oid'):
-            oid = astro_object.metadata.oid
-        elif 'oid' in astro_object.metadata.columns:
-            oid = astro_object.metadata['oid'].iloc[0] if len(astro_object.metadata) > 0 else "unknown"
-        elif 'oid' in astro_object.detections.columns:
-            oid = astro_object.detections['oid'].iloc[0] if len(astro_object.detections) > 0 else "unknown"
-        else:
-            oid = "unknown"
-        
-        # Get class name from astro_object
-        class_name = getattr(astro_object, 'class_name', 'unknown')
-        len_detections = getattr(astro_object, 'len_detections', 0)
-        
-        # Prepare timing data structure
-        timing_data = {
-            'oid': str(oid),
-            'class_name': str(class_name),
-            'timestamp': datetime.now().isoformat(),
-            'detections': len_detections,
-            'extractors': []
-        }
-        
-        # Execute each extractor and time it
         for extractor in self.extractors:
-            extractor_name = extractor.__class__.__name__
-            start_time = time.time()
-            
             extractor.compute_features_single_object(astro_object)
-            
-            end_time = time.time()
-            elapsed_time = end_time - start_time
-            
-            timing_data['extractors'].append({
-                'name': extractor_name,
-                'elapsed_seconds': elapsed_time
-            })
-        
-        # Generate filename with timestamp and hash
-        timestamp_str = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
-        hash_str = hashlib.md5(f"{oid}_{timestamp_str}".encode()).hexdigest()[:8]
-        filename = f"{timestamp_str}_{hash_str}.json"
-        filepath = os.path.join(output_dir, filename)
-        
-        # Save timing data to JSON
-        with open(filepath, 'w') as f:
-            json.dump(timing_data, f, indent=2)
+
 
 class LightcurvePreprocessor(ABC):
     @abstractmethod

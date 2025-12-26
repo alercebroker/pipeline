@@ -67,10 +67,7 @@ class BasePeriodogram(abc.ABC):
         largest_frequency = 1.0/smallest_period
         f_range = largest_frequency - smallest_frequency
         grid_size = int(np.ceil(f_range * lc_time_length / (2.0 * shift)))
-        # TEMPORAL: guardar grid_size para exportar como feature
-        self.grid_size = grid_size
-        grid_size = max(grid_size, 1) #1000
-        
+        grid_size = max(grid_size, 1_000)
         self.freq_step_coarse = f_range / (grid_size - 1)
 
         frequency_grid = np.linspace(

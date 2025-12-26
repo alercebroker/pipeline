@@ -37,10 +37,8 @@ RUN poetry run python -m pip install -r ../P4J/requirements.txt
 RUN poetry install --without=test --no-root
 COPY feature_step/scripts /app/scripts
 COPY feature_step/settings.py /app/settings.py
-#COPY feature_step/simulated_jsons /app/simulated_jsons
 COPY feature_step/features /app/features
 #COPY feature_step/config2.yaml /app/config2.yaml
-COPY feature_step/config4.yaml /app/config2.yaml
 
 FROM python:3.10-slim
 COPY --from=builder /app /app

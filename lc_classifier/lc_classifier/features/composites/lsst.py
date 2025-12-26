@@ -29,43 +29,43 @@ class LSSTFeatureExtractor(FeatureExtractorComposite):
         #bands = range(6)  # LSST bands as integers 0-5
 
         feature_extractors = [
-            #ColorFeatureExtractor(bands, just_flux=False), #resta siempre es u-g,g-r,r-i ... , que pares usar?
-            #TimespanExtractor(), #calcula
-            #CoordinateExtractor(), #calcula
-            #TDETailExtractor(bands), #calcula
+            ColorFeatureExtractor(bands, just_flux=False), #resta siempre es u-g,g-r,r-i ... , que pares usar?
+            TimespanExtractor(), #calcula
+            CoordinateExtractor(), #calcula
+            TDETailExtractor(bands), #calcula
             PeriodExtractor(
                 bands,
                 unit="magnitude",
-                smallest_period=0.045, #0.045 
-                largest_period=100.0, #1000
+                smallest_period=0.045,
+                largest_period=100.0,
                 trim_lightcurve_to_n_days=1000.0,
                 min_length=15,
                 use_forced_photo=True,
                 return_power_rates=True,
-                shift=0.2,
+                shift=0.1,
             ),
-            #MHPSExtractor(bands, unit="diff_flux"), #calcula
-            #MHPSExtractor(bands, unit="diff_flux", t1=365.0, t2=30.0), #calcula
-            #GPDRWExtractor(bands, unit="diff_flux"), #calcula
+            MHPSExtractor(bands, unit="diff_flux"), #calcula
+            MHPSExtractor(bands, unit="diff_flux", t1=365.0, t2=30.0), #calcula
+            GPDRWExtractor(bands, unit="diff_flux"), #calcula
 
-            #FoldedKimExtractor(bands, unit="magnitude"), #calcula
-            #HarmonicsExtractor(bands, unit="magnitude", use_forced_photo=True),
-            #TurboFatsExtractor(bands, unit="magnitude"),  #calcula
-            #SPMExtractor( #calcula , # args = unidad de flujo njy o microjy 
-            #    bands,
-            #    unit="diff_flux",
-            #    redshift=None,
-            #    extinction_color_excess=None,
-            #    forced_phot_prelude=30.0,
-            #),
-            #FleetExtractor(bands), #calcula
-            #ColorVariationExtractor(window_len=10, band_1="u", band_2="g"), # que pares usar?
-            #ColorVariationExtractor(window_len=10, band_1="g", band_2="r"), 
-            #ColorVariationExtractor(window_len=10, band_1="r", band_2="i"), 
-            #ColorVariationExtractor(window_len=10, band_1="i", band_2="z"), 
-            #ColorVariationExtractor(window_len=10, band_1="z", band_2="y"), 
+            FoldedKimExtractor(bands, unit="magnitude"), #calcula
+            HarmonicsExtractor(bands, unit="magnitude", use_forced_photo=True),
+            TurboFatsExtractor(bands, unit="magnitude"),  #calcula
+            SPMExtractor( #calcula , # args = unidad de flujo njy o microjy 
+                bands,
+                unit="diff_flux",
+                redshift=None,
+                extinction_color_excess=None,
+                forced_phot_prelude=30.0,
+            ),
+            FleetExtractor(bands), #calcula
+            ColorVariationExtractor(window_len=10, band_1="u", band_2="g"), # que pares usar?
+            ColorVariationExtractor(window_len=10, band_1="g", band_2="r"), 
+            ColorVariationExtractor(window_len=10, band_1="r", band_2="i"), 
+            ColorVariationExtractor(window_len=10, band_1="i", band_2="z"), 
+            ColorVariationExtractor(window_len=10, band_1="z", band_2="y"), 
 
-            #SNExtractor(bands, unit="diff_flux", use_forced_photo=True), #esto es photometria forzada
-            #MicroLensExtractor(bands), #calcula, cambie treshold en e_brightness
+            SNExtractor(bands, unit="diff_flux", use_forced_photo=True), #esto es photometria forzada
+            MicroLensExtractor(bands), #calcula, cambie treshold en e_brightness
         ]
         return feature_extractors
