@@ -339,6 +339,9 @@ class LsstMpcOrbits(Base):
 
     fitting_datetime = Column(Date, nullable=True)
 
+    created_date = Column(Date, server_default=func.now())
+    updated_date = Column(Date, onupdate=func.now())
+
     __table_args__ = (
         PrimaryKeyConstraint("ssObjectId", name="pk_lsstmpcorbits_ss_object_id"),
     )

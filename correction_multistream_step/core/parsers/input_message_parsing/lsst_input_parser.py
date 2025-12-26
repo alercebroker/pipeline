@@ -95,7 +95,7 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
             
         # When there's mpc orbits, make a separate df for them
         mpc_orbits_df = self._apply_schema_or_empty(
-            raw_data['mpc_orbits'], 
+            raw_data['mpc_orbit'], 
             schemas['mpc_orbits_schema']
         )
 
@@ -194,10 +194,13 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
                 all_dia_objects.append({**dia_object})
 
             # Parse mpc_orbits
-            mpc_orbits = msg.get("mpc_orbits")
+            mpc_orbits = msg.get("mpc_orbit")
             if mpc_orbits is not None:
-                all_dia_objects.append({**mpc_orbits})
-            
+                all_mpc_orbits.append({
+                    "oid": oid,
+                    **mpc_orbits
+                })
+                
             """
             # Ommiting in schema v10.0
             # Parse ss objects
@@ -224,7 +227,7 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
             'forced_sources': all_forced_sources,
             'ss_sources': all_ss_sources,
             'dia_objects': all_dia_objects,
-            'mpc_orbits': all_mpc_orbits
+            'mpc_orbit': all_mpc_orbits
             #'ss_objects': all_ss_objects,          # Ommiting in schema v10.0  
             #'non_detections': all_non_detections,  # Ommiting in schema v10.0
         }

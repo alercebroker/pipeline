@@ -632,13 +632,15 @@ ss_object_schema: dict[str, DType] = {
 }
 
 mpc_orbits_schema: dict[str, DType] = {
-    "id": pd.Int32Dtype(),
+    "ssObjectId": pd.Int64Dtype(),
+    "oid": pd.Int64Dtype(),
     "designation": pd.StringDtype(),
     "packed_primary_provisional_designation": pd.StringDtype(),
     "unpacked_primary_provisional_designation": pd.StringDtype(),
+    "mjd": pd.Float64Dtype(),
     "mpc_orb_jsonb": pd.StringDtype(),
-    "created_at": pd.Int64Dtype(),      # timestamp-micros
-    "updated_at": pd.Int64Dtype(),      # timestamp-micros
+    "created_at": pd.Float64Dtype(),      # timestamp-micros
+    "updated_at": pd.Float64Dtype(),      # timestamp-micros
     "orbit_type_int": pd.Int32Dtype(),
     "u_param": pd.Int32Dtype(),
     "nopp": pd.Int32Dtype(),

@@ -3,9 +3,12 @@
   "name": "mpcOrbits",
   "fields": [
     {
-      "doc": "Internal ID (generally not seen/used by the user)",
-      "name": "id",
-      "type": "int"
+      "name": "ssObjectId",
+      "type": "long"
+    },
+    {
+      "name": "mjd",
+      "type": "double"
     },
     {
       "doc": "The primary provisional designation in unpacked form (e.g. 2008 AB).",

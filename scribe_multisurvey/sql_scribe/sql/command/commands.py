@@ -517,7 +517,7 @@ class LSSTCorrectionCommand(Command):
 
     def _format_data(self, data):
         all_mpc_orbits = []
-        for correction in data["payload"]["mpc_orbits"]:
+        for correction in data["mpc_orbits"]:
             parsed_orbit = parse_mpc_orbits(correction)
             all_mpc_orbits.append(parsed_orbit)
         
@@ -531,26 +531,35 @@ class LSSTCorrectionCommand(Command):
         # Deduplicate based on id, keeping the most recent update or created date if two orbits share id in batch
         dedup = {}
         for row in data:
-            orbit_id = row["id"]
+            orbit_ssObjectId = row["ssObjectId"]
             
-            current_timestamp = row["updated_at"] if row["updated_at"] is not None else row["created_at"]
-            if orbit_id not in dedup:
-                dedup[orbit_id] = row
+            # Use updated_at, fallback to created_at, then fallback to mjd
+            current_timestamp = row.get("updated_at") or row.get("created_at") or row.get("mjd")
+            if orbit_ssObjectId not in dedup:
+                dedup[orbit_ssObjectId] = row
             else:
-                existing_timestamp = dedup[orbit_id]["updated_at"] if dedup[orbit_id]["updated_at"] is not None else dedup[orbit_id]["created_at"]
+                existing_timestamp = (
+                    dedup[orbit_ssObjectId].get("updated_at") 
+                    or dedup[orbit_ssObjectId].get("created_at") 
+                    or dedup[orbit_ssObjectId].get("mjd")
+                )
                 if current_timestamp > existing_timestamp:
-                    dedup[orbit_id] = row
+                    dedup[orbit_ssObjectId] = row
         
-        deduplicated_data = list(dedup.values())
         
+        deduplicated_data = []
+        for row in dedup.values():
+            row_with_prefix = row.copy()
+            row_with_prefix['_ssObjectId'] = row['ssObjectId']
+            deduplicated_data.append(row_with_prefix)
         orbits_update_list = deduplicated_data
-        
         if len(orbits_update_list) > 0:
             orbit_stmt = update(LsstMpcOrbits)
             orbit_result = session.connection().execute(
                 orbit_stmt
-                .where(LsstMpcOrbits.id == bindparam('_id'))
+                .where(LsstMpcOrbits.ssObjectId == bindparam('_ssObjectId'))
                 .values({
+                    "ssObjectId": bindparam("ssObjectId"),
                     "designation": bindparam("designation"),
                     "packed_primary_provisional_designation": bindparam("packed_primary_provisional_designation"),
                     "unpacked_primary_provisional_designation": bindparam("unpacked_primary_provisional_designation"),

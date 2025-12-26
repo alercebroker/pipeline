@@ -71,7 +71,6 @@ class LSSTDataJoiner(SurveyDataJoiner):
             msg_data.get('dia_objects_df', pd.DataFrame()),
             historical_data.get('db_sql_dia_objects_df', pd.DataFrame())  
         ], ignore_index=True)
-    
         result['mpc_orbits'] = pd.concat([ # not doing anything with the historical data for mpc orbits so far so the historical data is empty
             msg_data.get('mpc_orbits_df', pd.DataFrame()),
             historical_data.get('db_sql_mpc_orbits_df', pd.DataFrame())
@@ -122,14 +121,18 @@ class LSSTDataJoiner(SurveyDataJoiner):
             result[key] = df
         # It is possible to drop duplicates for mpc orbits based on id, and updated/created time (choosing highest date from the two
         # and then order and dedup based on that value, but its also possible and probable that the mpc orbits will still be duplicated in scribe so this would 
-        # be unnecesary to do here)
+        # be unnecesary to do here) The firt tests dont have either of the dates so we inherite the mjd of the parent for that case
         for key in ['mpc_orbits']:
             df = combined_data.get(key, pd.DataFrame())
-            df["_sort_timespan_column"] = df[["updated_at", "created_at"]].max(axis=1)
             if not df.empty:
-                df = df.sort_values("_sort_timespan_column", ascending=False)
-                df = df.drop_duplicates(["id"], keep="first")
-                df = df.drop(columns="_sort_timespan_column")
+                df["_sort_mjd"] = (
+                        df["updated_at"]
+                        .combine_first(df["created_at"])
+                        .combine_first(df["mjd"])
+                    )
+                df = df.sort_values("_sort_mjd", ascending=False)
+                df = df.drop_duplicates(["ssObjectId"], keep="first")
+                df = df.drop(columns="_sort_mjd")
             result[key] = df
 
         """
@@ -153,7 +156,6 @@ class LSSTDataJoiner(SurveyDataJoiner):
         # it is not necessary to drop duplicates  # TODO CHECK THIS LOGIC => do we want to query db objects in the future then combine them!
 
         result['dia_object'] = combined_data.get('dia_object', pd.DataFrame())
-        result['mpc_orbits'] = combined_data.get('mpc_orbits', pd.DataFrame())
         #result['ss_object'] = combined_data.get('ss_object', pd.DataFrame())
         
         logger = logging.getLogger(f"alerce.{self.__class__.__name__}")
@@ -162,7 +164,6 @@ class LSSTDataJoiner(SurveyDataJoiner):
         logger.info(f"Obtained {len(result['previous_sources'][result['previous_sources']['new']])} new previous dia sources")
         logger.info(f"Obtained {len(result['forced_sources'][result['forced_sources']['new']])} new forced dia sources")
         logger.info(f"Obtained {len(result['ss_sources'][result['ss_sources']['new']])} new ss sources")
-        
 
 
         return result
