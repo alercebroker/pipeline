@@ -56,6 +56,7 @@ class FeatureStep(GenericStep):
         scribe_class = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
         self.scribe_producer = scribe_class(self.config["SCRIBE_PRODUCER_CONFIG"])
 
+        self.scribe_topic_name = self.config["SCRIBE_PRODUCER_CONFIG"].get("TOPIC")
         self.db_sql = db_sql
         self.logger = logging.getLogger("alerce.FeatureStep")
         self.survey = self.config.get("SURVEY")
