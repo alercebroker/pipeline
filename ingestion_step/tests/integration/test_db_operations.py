@@ -7,10 +7,10 @@ from db_plugins.db.sql.models import (
     DeclarativeBase,
     Detection,
     ForcedPhotometry,
-    NonDetection,
     Object,
     ZtfDetection,
     ZtfForcedPhotometry,
+    ZtfNonDetection,
     ZtfObject,
 )
 from sqlalchemy import insert, select
@@ -35,6 +35,18 @@ psql_config = {
 
 @pytest.mark.usefixtures("psql_service")
 class BaseDbTests(unittest.TestCase):
+    def assertDictAlmostEqual(
+        self,
+        dict1: dict[str, Any],
+        dict2: dict[str, Any],
+        rel_tol: float = 1e-6,
+        abs_tol: float = 0.0,
+    ):
+        assert dict1.keys() == dict2.keys()
+        for key in dict1:
+            v1, v2 = dict1[key], dict2[key]
+            assert pytest.approx(v1, rel=rel_tol, abs=abs_tol) == v2
+
     def setUp(self):
         # crear db
         self.psql_db = PsqlDatabase(psql_config)
@@ -44,20 +56,16 @@ class BaseDbTests(unittest.TestCase):
 
         with self.psql_db.session() as session:
             session.execute(insert(Object).values(msgs.existing_object_dict))
-            session.execute(
-                insert(Detection).values(msgs.existing_detections_dict)
-            )
+            session.execute(insert(Detection).values(msgs.existing_detections_dict))
             session.execute(
                 insert(ZtfDetection).values(msgs.existing_ztf_detections_dict)
             )
-            session.execute(
-                insert(ForcedPhotometry).values(msgs.existing_fp_dict)
-            )
+            session.execute(insert(ForcedPhotometry).values(msgs.existing_fp_dict))
             session.execute(
                 insert(ZtfForcedPhotometry).values(msgs.existing_ztf_fp_dict)
             )
             session.execute(
-                insert(NonDetection).values(msgs.existing_non_detections_dict)
+                insert(ZtfNonDetection).values(msgs.existing_non_detections_dict)
             )
             session.commit()
 
@@ -95,11 +103,12 @@ class BaseDbTests(unittest.TestCase):
         result_ztf = self.query_data(ZtfObject)
 
         for res, exp in self.ziped_lists(result, msgs.objects_expected, "oid"):
+            del res["created_date"]
+            del res["updated_date"]
             self.assertDictEqual(res, exp)
 
-        for res, exp in self.ziped_lists(
-            result_ztf, msgs.ztf_objects_expected, "oid"
-        ):
+        for res, exp in self.ziped_lists(result_ztf, msgs.ztf_objects_expected, "oid"):
+            del res["created_date"]
             self.assertDictEqual(res, exp)
 
     def test_detection(self):
@@ -111,6 +120,7 @@ class BaseDbTests(unittest.TestCase):
         for res, exp in self.ziped_lists(
             result_detections, msgs.detections_expected, "measurement_id"
         ):
+            del res["created_date"]
             self.assertDictEqual(res, exp)
 
         for res, exp in self.ziped_lists(
@@ -118,6 +128,7 @@ class BaseDbTests(unittest.TestCase):
             msgs.ztf_detections_expected,
             "measurement_id",
         ):
+            del res["created_date"]
             self.assertDictEqual(res, exp)
 
     def test_forced_photometry(self):
@@ -126,28 +137,24 @@ class BaseDbTests(unittest.TestCase):
         result_fp = self.query_data(ForcedPhotometry)
         result_ztf_fp = self.query_data(ZtfForcedPhotometry)
 
-        for res, exp in self.ziped_lists(
-            result_fp, msgs.fp_expected, "measurement_id"
-        ):
+        for res, exp in self.ziped_lists(result_fp, msgs.fp_expected, "measurement_id"):
+            del res["created_date"]
             self.assertDictEqual(res, exp)
 
         for res, exp in self.ziped_lists(
             result_ztf_fp, msgs.ztf_fp_expected, "measurement_id"
         ):
-            # print(f"HERE ---- \n {res} \n {exp} \n")
-
+            del res["created_date"]
             for key in res.keys():
-                if res[key] != exp[key]:
-                    pass
-                    # print(f"LLAVE MALA {key} {res[key]} != {exp[key]}f")
-            self.assertDictEqual(res, exp)
+                if pytest.approx(res[key], rel=1e-6, abs=0.0) != exp[key]:
+                    print(f"LLAVE MALA {key} {res[key]=} != {exp[key]=}f")
+            self.assertDictAlmostEqual(res, exp)
 
     def test_non_detections(self):
         insert_non_detections(self.psql_db, msgs.new_non_detections_df)
 
-        result = self.query_data(NonDetection)
+        result = self.query_data(ZtfNonDetection)
 
-        for res, exp in self.ziped_lists(
-            result, msgs.non_detections_expected, "mjd"
-        ):
+        for res, exp in self.ziped_lists(result, msgs.non_detections_expected, "mjd"):
+            del res["created_date"]
             self.assertDictEqual(res, exp)

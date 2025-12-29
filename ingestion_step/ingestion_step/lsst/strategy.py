@@ -1,122 +1,142 @@
+from typing import Any
+
 import pandas as pd
 from db_plugins.db.sql._connection import PsqlDatabase
 
 from ingestion_step.core.strategy import ParsedData, StrategyInterface
 from ingestion_step.core.types import Message
-from ingestion_step.core.utils import apply_transforms, groupby_messageid
+from ingestion_step.core.utils import apply_transforms
 from ingestion_step.lsst.database import (
     insert_dia_objects,
     insert_forced_sources,
-    insert_non_detections,
+    insert_mpc_orbit,
     insert_sources,
-    insert_ss_objects,
+    insert_ss_sources,
 )
 from ingestion_step.lsst.extractor import (
     LsstDiaObjectExtractor,
+    LsstDiaSourceExtractor,
     LsstForcedSourceExtractor,
-    LsstNonDetectionsExtractor,
+    LsstMpcOrbitExtractor,
     LsstPrvSourceExtractor,
-    LsstSourceExtractor,
-    LsstSsObjectExtractor,
+    LsstSsSourceExtractor,
 )
 from ingestion_step.lsst.transforms import (
     get_dia_object_transforms,
     get_forced_source_transforms,
-    get_non_detection_transforms,
+    get_mpc_orbits_transforms,
     get_source_transforms,
-    get_ss_object_transforms,
+    get_ss_source_transforms,
 )
 
 
 class LsstData(ParsedData):
-    sources: pd.DataFrame
+    dia_sources: pd.DataFrame
+    ss_sources: pd.DataFrame
     previous_sources: pd.DataFrame
     forced_sources: pd.DataFrame
-    non_detections: pd.DataFrame
     dia_object: pd.DataFrame
-    ss_object: pd.DataFrame
+    mpc_orbits: pd.DataFrame
 
 
 class LsstStrategy(StrategyInterface[LsstData]):
     @classmethod
     def parse(cls, messages: list[Message]) -> LsstData:
-        sources = LsstSourceExtractor.extract(messages)
+        dia_sources = LsstDiaSourceExtractor.extract(messages)
+        ss_sources = LsstSsSourceExtractor.extract(messages)
         previous_sources = LsstPrvSourceExtractor.extract(messages)
         forced_sources = LsstForcedSourceExtractor.extract(messages)
-        non_detections = LsstNonDetectionsExtractor.extract(messages)
         dia_object = LsstDiaObjectExtractor.extract(messages)
-        ss_object = LsstSsObjectExtractor.extract(messages)
+        mpc_orbits = LsstMpcOrbitExtractor.extract(messages)
 
         source_transforms = get_source_transforms()
+        ss_source_transforms = get_ss_source_transforms()
         forced_source_transforms = get_forced_source_transforms()
-        non_detection_transforms = get_non_detection_transforms()
         dia_object_transforms = get_dia_object_transforms()
-        ss_object_transforms = get_ss_object_transforms()
+        mpc_orbits_transforms = get_mpc_orbits_transforms()
 
-        apply_transforms(sources, source_transforms)
+        apply_transforms(dia_sources, source_transforms)
+        apply_transforms(ss_sources, ss_source_transforms)
         apply_transforms(previous_sources, source_transforms)
         apply_transforms(forced_sources, forced_source_transforms)
-        apply_transforms(non_detections, non_detection_transforms)
         apply_transforms(dia_object, dia_object_transforms)
-        apply_transforms(ss_object, ss_object_transforms)
+        apply_transforms(mpc_orbits, mpc_orbits_transforms)
+
         return LsstData(
-            sources=sources,
+            dia_sources=dia_sources,
+            ss_sources=ss_sources,
             previous_sources=previous_sources,
             forced_sources=forced_sources,
-            non_detections=non_detections,
             dia_object=dia_object,
-            ss_object=ss_object,
+            mpc_orbits=mpc_orbits,
         )
 
     @classmethod
-    def insert_into_db(cls, driver: PsqlDatabase, parsed_data: LsstData):
-        insert_dia_objects(driver, parsed_data["dia_object"])
-        insert_ss_objects(driver, parsed_data["ss_object"])
-
-        insert_sources(driver, parsed_data["sources"])
-        insert_sources(driver, parsed_data["previous_sources"])
-        insert_forced_sources(driver, parsed_data["forced_sources"])
-        insert_non_detections(driver, parsed_data["non_detections"])
+    def insert_into_db(
+        cls, driver: PsqlDatabase, parsed_data: LsstData, chunk_size: int | None = None
+    ):
+        insert_dia_objects(driver, parsed_data["dia_object"], chunk_size=chunk_size)
+        insert_mpc_orbit(driver, parsed_data["mpc_orbits"], chunk_size=chunk_size)
+        insert_sources(
+            driver,
+            parsed_data["dia_sources"],
+            on_conflict_do_update=True,
+            chunk_size=chunk_size,
+        )
+        insert_sources(driver, parsed_data["previous_sources"], chunk_size=chunk_size)
+        insert_ss_sources(driver, parsed_data["ss_sources"], chunk_size=chunk_size)
+        insert_forced_sources(
+            driver, parsed_data["forced_sources"], chunk_size=chunk_size
+        )
 
     @classmethod
     def serialize(cls, parsed_data: LsstData) -> list[Message]:
-        msg_dia_objects = groupby_messageid(parsed_data["dia_object"])
-        msg_ss_objects = groupby_messageid(parsed_data["ss_object"])
-        msg_sources = groupby_messageid(parsed_data["sources"])
-        msg_prv_sources = groupby_messageid(parsed_data["previous_sources"])
-        msg_forced_sources = groupby_messageid(parsed_data["forced_sources"])
-        msg_non_detections = groupby_messageid(parsed_data["non_detections"])
+        dia_sources_df = parsed_data["dia_sources"]
+        ss_sources_df = parsed_data["ss_sources"]
+        dia_object_df = parsed_data["dia_object"]
+        previous_sources_df = parsed_data["previous_sources"]
+        forced_sources_df = parsed_data["forced_sources"]
+        mpc_orbits_df = parsed_data["mpc_orbits"]
 
-        messages: list[Message] = []
-        for message_id, source in msg_sources.items():
-            assert len(source) == 1
-            source = source[0]
+        dia_sources_by_msg = dia_sources_df.set_index("message_id").to_dict("index")
+        dia_object_lookup = dia_object_df.set_index("message_id").to_dict("index")
+        ss_sources_lookup = ss_sources_df.set_index("message_id").to_dict("index")
+        mpc_orbits_lookup = mpc_orbits_df.set_index("message_id").to_dict("index")
 
-            dia_object = msg_dia_objects.get(message_id, [None])
-            assert len(dia_object) == 1
-            dia_object = dia_object[0]
+        def to_records(df: pd.DataFrame) -> list[dict[Any, Any]]:
+            return df.to_dict("records")
 
-            ss_object = msg_ss_objects.get(message_id, [None])
-            assert len(ss_object) == 1
-            ss_object = ss_object[0]
-
-            prv_sources = msg_prv_sources.get(message_id, [])
-            forced_sources = msg_forced_sources.get(message_id, [])
-            non_detections = msg_non_detections.get(message_id, [])
-
-            messages.append(
-                {
-                    "oid": source["oid"],
-                    "measurement_id": source["measurement_id"],
-                    "source": source,
-                    "previous_sources": prv_sources,
-                    "forced_sources": forced_sources,
-                    "non_detections": non_detections,
-                    "dia_object": dia_object,
-                    "ss_object": ss_object,
-                }
+        prv_sources_groups = (
+            previous_sources_df.groupby("message_id")
+            .apply(
+                to_records,
+                include_groups=False,  # pyright: ignore[reportCallIssue]
             )
+            .to_dict()
+        )
 
+        forced_sources_groups = (
+            forced_sources_df.groupby("message_id")
+            .apply(
+                to_records,
+                include_groups=False,  # pyright: ignore[reportCallIssue]
+            )
+            .to_dict()
+        )
+
+        messages = [{}] * len(dia_sources_by_msg)
+        for i, (message_id, source) in enumerate(dia_sources_by_msg.items()):
+            messages[i] = {
+                "oid": source["oid"],
+                "measurement_id": source["measurement_id"],
+                "source": source,
+                "previous_sources": prv_sources_groups.get(message_id, []),
+                "forced_sources": forced_sources_groups.get(message_id, []),
+                "dia_object": dia_object_lookup.get(message_id),
+                # "ss_object":,
+                "ss_source": ss_sources_lookup.get(message_id),
+                "mpc_orbit": mpc_orbits_lookup.get(message_id),
+            }
         return messages
 
     @classmethod

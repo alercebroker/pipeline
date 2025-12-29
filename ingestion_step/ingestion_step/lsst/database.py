@@ -6,8 +6,8 @@ from db_plugins.db.sql.models import (
     LsstDetection,
     LsstDiaObject,
     LsstForcedPhotometry,
-    LsstNonDetection,
-    LsstSsObject,
+    LsstMpcOrbits,
+    LsstSsDetection,
     Object,
 )
 
@@ -15,125 +15,175 @@ from ingestion_step.core.database import (
     DETECTION_COLUMNS,
     FORCED_DETECTION_COLUMNS,
     OBJECT_COLUMNS,
-    db_statement_builder,
+    db_insert_on_conflict_do_nothing_builder,
+    db_insert_on_conflict_do_update_builder,
 )
 
 
-def insert_dia_objects(driver: PsqlDatabase, dia_objects: pd.DataFrame):
+def insert_dia_objects(
+    driver: PsqlDatabase, dia_objects: pd.DataFrame, chunk_size: int | None = None
+):
     if len(dia_objects) == 0:
         return
+    if chunk_size is None:
+        chunk_size = len(dia_objects)
+
+    lsst_columns = (
+        set(dia_objects)
+        - set(OBJECT_COLUMNS)
+        - {"mjd", "diaObjectId", "midpointMjdTai", "message_id"}
+    )
+    lsst_columns = lsst_columns.union({"oid"})
 
     objects_dict = dia_objects[OBJECT_COLUMNS].to_dict("records")
-    objects_dia_lsst_dict = dia_objects[["oid"]].to_dict("records")
-
-    objects_sql_stmt = db_statement_builder(Object, objects_dict)
-    objects_dia_lsst_sql_stmt = db_statement_builder(
-        LsstDiaObject, objects_dia_lsst_dict
-    )
+    objects_dia_lsst_dict = dia_objects[list(lsst_columns)].to_dict("records")
 
     with driver.session() as session:
-        session.execute(objects_sql_stmt)
-        session.execute(objects_dia_lsst_sql_stmt)
+        for i in range(0, len(dia_objects), chunk_size):
+            objects_sql_stmt = db_insert_on_conflict_do_nothing_builder(
+                Object,
+                objects_dict[i : i + chunk_size],
+            )
+            objects_dia_lsst_sql_stmt = db_insert_on_conflict_do_nothing_builder(
+                LsstDiaObject,
+                objects_dia_lsst_dict[i : i + chunk_size],
+            )
+
+            session.execute(objects_sql_stmt)
+            session.execute(objects_dia_lsst_sql_stmt)
+
         session.commit()
 
 
-def insert_ss_objects(driver: PsqlDatabase, ss_objects: pd.DataFrame):
-    if len(ss_objects) == 0:
+def insert_mpc_orbit(
+    driver: PsqlDatabase, mpcorbs: pd.DataFrame, chunk_size: int | None = None
+):
+    if len(mpcorbs) == 0:
         return
-    objects_dict = ss_objects[OBJECT_COLUMNS].to_dict("records")
-    objects_ss_lsst_dict = ss_objects[["oid"]].to_dict("records")
+    if chunk_size is None:
+        chunk_size = len(mpcorbs)
 
-    objects_sql_stmt = db_statement_builder(Object, objects_dict)
-    objects_ss_lsst_sql_stmt = db_statement_builder(
-        LsstSsObject, objects_ss_lsst_dict
-    )
+    lsst_columns = set(mpcorbs.columns) - {"message_id", "midpointMjdTai", "mjd", "id"}
+
+    mpcorbs_dict = mpcorbs[list(lsst_columns)].to_dict("records")
 
     with driver.session() as session:
-        session.execute(objects_sql_stmt)
-        session.execute(objects_ss_lsst_sql_stmt)
+        for i in range(0, len(mpcorbs), chunk_size):
+            mpcorbs_sql_stmt = db_insert_on_conflict_do_update_builder(
+                LsstMpcOrbits, mpcorbs_dict[i : i + chunk_size], pk=["ssObjectId"]
+            )
+            session.execute(mpcorbs_sql_stmt)
         session.commit()
 
 
-def insert_sources(driver: PsqlDatabase, sources: pd.DataFrame):
+def insert_sources(
+    driver: PsqlDatabase,
+    sources: pd.DataFrame,
+    chunk_size: int | None = None,
+    on_conflict_do_update: bool = False,
+):
     if len(sources) == 0:
         return
-    detections_dict = sources[DETECTION_COLUMNS].to_dict("records")
-    detections_lsst_dict = sources[
-        [
-            "oid",
-            "sid",
-            "measurement_id",
-            "parentDiaSourceId",
-            "psfFlux",
-            "psfFluxErr",
-            "psfFlux_flag",
-            "psfFlux_flag_edge",
-            "psfFlux_flag_noGoodPixels",
-            "raErr",
-            "decErr",
-        ]
-    ].to_dict("records")
+    if chunk_size is None:
+        chunk_size = len(sources)
 
-    detections_sql_stmt = db_statement_builder(Detection, detections_dict)
-    detections_lsst_sql_stmt = db_statement_builder(
-        LsstDetection, detections_lsst_dict
+    lsst_columns = (
+        set(sources.columns)
+        - set(DETECTION_COLUMNS)
+        - {"message_id", "midpointMjdTai", "diaSourceId"}
     )
+    lsst_columns = lsst_columns.union({"oid", "sid", "measurement_id"})
+
+    detections_dict = sources[DETECTION_COLUMNS].to_dict("records")
+    detections_lsst_dict = sources[list(lsst_columns)].to_dict("records")
 
     with driver.session() as session:
-        session.execute(detections_sql_stmt)
-        session.execute(detections_lsst_sql_stmt)
+        for i in range(0, len(sources), chunk_size):
+            if on_conflict_do_update:
+                detections_sql_stmt = db_insert_on_conflict_do_update_builder(
+                    Detection,
+                    detections_dict[i : i + chunk_size],
+                    pk=["oid", "measurement_id", "sid"],
+                )
+
+                detections_lsst_sql_stmt = db_insert_on_conflict_do_update_builder(
+                    LsstDetection,
+                    detections_lsst_dict[i : i + chunk_size],
+                    pk=["oid", "measurement_id"],
+                )
+            else:
+                detections_sql_stmt = db_insert_on_conflict_do_nothing_builder(
+                    Detection,
+                    detections_dict[i : i + chunk_size],
+                )
+                detections_lsst_sql_stmt = db_insert_on_conflict_do_nothing_builder(
+                    LsstDetection,
+                    detections_lsst_dict[i : i + chunk_size],
+                )
+
+            session.execute(detections_sql_stmt)
+            session.execute(detections_lsst_sql_stmt)
         session.commit()
 
 
-def insert_forced_sources(driver: PsqlDatabase, forced_sources: pd.DataFrame):
+def insert_ss_sources(
+    driver: PsqlDatabase, sources: pd.DataFrame, chunk_size: int | None = None
+):
+    if len(sources) == 0:
+        return
+    if chunk_size is None:
+        chunk_size = len(sources)
+
+    lsst_columns = set(sources.columns) - {
+        "message_id",
+        "midpointMjdTai",
+        "parentDiaSourceId",
+        "diaSourceId",
+        "ssObjectId",
+    }
+
+    ss_sources_dict = sources[list(lsst_columns)].to_dict("records")
+
+    with driver.session() as session:
+        for i in range(0, len(sources), chunk_size):
+            ss_source_sql_stmt = db_insert_on_conflict_do_nothing_builder(
+                LsstSsDetection,
+                ss_sources_dict[i : i + chunk_size],
+            )
+
+            session.execute(ss_source_sql_stmt)
+        session.commit()
+
+
+def insert_forced_sources(
+    driver: PsqlDatabase, forced_sources: pd.DataFrame, chunk_size: int | None = None
+):
     if len(forced_sources) == 0:
         return
-    forced_detections_dict = forced_sources[FORCED_DETECTION_COLUMNS].to_dict(
-        "records"
-    )
-    forced_detections_lsst_dict = forced_sources[
-        [
-            "oid",
-            "sid",
-            "measurement_id",
-            "visit",
-            "detector",
-            "psfFlux",
-            "psfFluxErr",
-        ]
-    ].to_dict("records")
+    if chunk_size is None:
+        chunk_size = len(forced_sources)
 
-    forced_detections_sql_stmt = db_statement_builder(
-        ForcedPhotometry, forced_detections_dict
+    lsst_columns = (
+        set(forced_sources.columns)
+        - set(FORCED_DETECTION_COLUMNS)
+        - {"message_id", "diaForcedSourceId", "midpointMjdTai", "diaObjectId"}
     )
-    forced_detections_lsst_sql_stmt = db_statement_builder(
-        LsstForcedPhotometry, forced_detections_lsst_dict
-    )
+    lsst_columns = lsst_columns.union({"oid", "sid", "measurement_id"})
+
+    forced_detections_dict = forced_sources[FORCED_DETECTION_COLUMNS].to_dict("records")
+    forced_detections_lsst_dict = forced_sources[list(lsst_columns)].to_dict("records")
 
     with driver.session() as session:
-        session.execute(forced_detections_sql_stmt)
-        session.execute(forced_detections_lsst_sql_stmt)
-        session.commit()
+        for i in range(0, len(forced_sources), chunk_size):
+            forced_detections_sql_stmt = db_insert_on_conflict_do_nothing_builder(
+                ForcedPhotometry,
+                forced_detections_dict[i : i + chunk_size],
+            )
+            forced_detections_lsst_sql_stmt = db_insert_on_conflict_do_nothing_builder(
+                LsstForcedPhotometry,
+                forced_detections_lsst_dict[i : i + chunk_size],
+            )
 
-
-def insert_non_detections(driver: PsqlDatabase, non_detections: pd.DataFrame):
-    if len(non_detections) == 0:
-        return
-    non_detections_lsst_dict = non_detections[
-        [
-            "oid",
-            "sid",
-            "ccdVisitId",
-            "band",
-            "mjd",
-            "diaNoise",
-        ]
-    ].to_dict("records")
-
-    non_detections_sql_stmt = db_statement_builder(
-        LsstNonDetection, non_detections_lsst_dict
-    )
-
-    with driver.session() as session:
-        session.execute(non_detections_sql_stmt)
+            session.execute(forced_detections_sql_stmt)
+            session.execute(forced_detections_lsst_sql_stmt)
         session.commit()

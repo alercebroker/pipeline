@@ -15,7 +15,6 @@ existing_object_dict = {
     "n_det": 1,
     "n_forced": 1,
     "n_non_det": 1,
-    "corrected": False,
 }
 
 existing_ztf_objects_expected = {
@@ -25,6 +24,7 @@ existing_ztf_objects_expected = {
     "g_r_max_corr": None,
     "g_r_mean": None,
     "g_r_mean_corr": None,
+    "corrected": False,
 }
 
 new_objects_dict = [
@@ -69,8 +69,6 @@ objects_expected = [
         "n_det": 1,
         "n_forced": 1,
         "n_non_det": 1,
-        "corrected": False,
-        "stellar": None,
     },
     {
         "oid": 390733221096,
@@ -86,8 +84,6 @@ objects_expected = [
         "n_det": 1,
         "n_forced": 1,
         "n_non_det": 1,
-        "corrected": False,
-        "stellar": None,
     },
     {
         "oid": 755834527363,
@@ -103,8 +99,6 @@ objects_expected = [
         "n_det": 1,
         "n_forced": 1,
         "n_non_det": 1,
-        "corrected": False,
-        "stellar": None,
     },
 ]
 
@@ -115,6 +109,8 @@ ztf_objects_expected = [
         "g_r_max_corr": None,
         "g_r_mean": None,
         "g_r_mean_corr": None,
+        "corrected": False,
+        "stellar": None,
     },
     {
         "oid": 390733221096,
@@ -122,6 +118,8 @@ ztf_objects_expected = [
         "g_r_max_corr": None,
         "g_r_mean": None,
         "g_r_mean_corr": None,
+        "corrected": False,
+        "stellar": None,
     },
     {
         "oid": 755834527363,
@@ -129,6 +127,8 @@ ztf_objects_expected = [
         "g_r_max_corr": None,
         "g_r_mean": None,
         "g_r_mean_corr": None,
+        "corrected": False,
+        "stellar": None,
     },
 ]
 

@@ -13,41 +13,41 @@
     },
     {
       "name": "source",
-      "type": "source"
+      "type": "diaSource"
     },
     {
       "name": "previous_sources",
       "type": {
         "type": "array",
-        "items": "source"
+        "items": "diaSource"
       }
+    },
+    {
+      "name": "ss_source",
+      "type": [
+        "null",
+        "ssSource"
+      ]
     },
     {
       "name": "forced_sources",
       "type": {
         "type": "array",
-        "items": "forced_source"
-      }
-    },
-    {
-      "name": "non_detections",
-      "type": {
-        "type": "array",
-        "items": "non_detection"
+        "items": "diaForcedSource"
       }
     },
     {
       "name": "dia_object",
       "type": [
         "null",
-        "dia_object"
+        "diaObject"
       ]
     },
     {
-      "name": "ss_object",
+      "name": "mpc_orbit",
       "type": [
         "null",
-        "ss_object"
+        "mpc_orbits"
       ]
     }
   ]
