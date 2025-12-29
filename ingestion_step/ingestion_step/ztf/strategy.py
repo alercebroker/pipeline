@@ -59,12 +59,13 @@ class ZtfStrategy(StrategyInterface[ZtfData]):
         )
 
     @classmethod
-    def insert_into_db(cls, driver: PsqlDatabase, parsed_data: ZtfData):
-        insert_objects(driver, parsed_data["objects"])
-        insert_detections(driver, parsed_data["detections"])
-        insert_detections(driver, parsed_data["prv_detections"])
-        insert_non_detections(driver, parsed_data["non_detections"])
-        insert_forced_photometry(driver, parsed_data["forced_photometries"])
+    def insert_into_db(cls, driver: PsqlDatabase, parsed_data: ZtfData, chunk_size: int | None = None
+    ):
+        insert_objects(driver, parsed_data["objects"], chunk_size=chunk_size)
+        insert_detections(driver, parsed_data["detections"], chunk_size=chunk_size)
+        insert_detections(driver, parsed_data["prv_detections"], chunk_size=chunk_size)
+        insert_non_detections(driver, parsed_data["non_detections"], chunk_size=chunk_size)
+        insert_forced_photometry(driver, parsed_data["forced_photometries"], chunk_size=chunk_size)
 
     @classmethod
     def serialize(cls, parsed_data: ZtfData) -> list[Message]:

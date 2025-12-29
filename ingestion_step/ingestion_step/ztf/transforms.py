@@ -223,17 +223,17 @@ PRV_CANDIDATES_TRANSFORMS = [
 ]
 
 FP_TRANSFORMS = [
-    filter_by_forcediffimflux,
+    add_constant_column("tid", 0, pd.Int32Dtype()),
+    add_constant_column("sid", 0, pd.Int32Dtype()),
+    add_constant_column("e_ra", 0.0, pd.Float64Dtype()),
+    add_constant_column("e_dec", 0.0, pd.Float64Dtype()),
     objectId_to_oid,
     copy_column("pid", "candid"),
     copy_column("candid", "measurement_id"),
-    add_constant_column("tid", 0, pd.Int32Dtype()),
-    add_constant_column("sid", 0, pd.Int32Dtype()),
     jd_to_mjd,
     forcediffimflux_to_mag,
     forcediffimflux_to_e_mag,
     copy_column("fid", "band"),
-    add_constant_column("e_ra", 0.0, pd.Float64Dtype()),
-    add_constant_column("e_dec", 0.0, pd.Float64Dtype()),
     calculate_isdiffpos,
+    filter_by_forcediffimflux,
 ]
