@@ -5,7 +5,9 @@ from fastavro.validation import validate_many
 from ingestion_step.ztf import serializer
 from ingestion_step.ztf.strategy import ZtfData, ZtfStrategy
 
-output_schema = load_schema("../schemas/ingestion_step/ztf/output.avsc")
+output_schema = load_schema(
+    "../schemas/ingestion_step/ztf/test_no_extra_fields/output.avsc"
+)
 
 
 def test_serialize(ztf_parsed_data: ZtfData):
@@ -34,10 +36,13 @@ def test_serialize(ztf_parsed_data: ZtfData):
 
 def test_serialize_detections(ztf_parsed_data: ZtfData):
     detections = serializer.serialize_detections(ztf_parsed_data["detections"])
-    prv_detections = serializer.serialize_detections(ztf_parsed_data["prv_detections"])
-    forced = serializer.serialize_detections(ztf_parsed_data["forced_photometries"])
+    prv_detections = serializer.serialize_prv_candidates(
+        ztf_parsed_data["prv_detections"]
+    )
+    forced = serializer.serialize_forced_photometries(
+        ztf_parsed_data["forced_photometries"]
+    )
 
-    assert "extra_fields" in detections
     assert len(detections) == len(ztf_parsed_data["detections"])
     assert len(prv_detections) == len(ztf_parsed_data["prv_detections"])
     assert len(forced) == len(ztf_parsed_data["forced_photometries"])
