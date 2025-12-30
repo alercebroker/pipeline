@@ -10,6 +10,8 @@
     { "name": "sources", "type": { "type": "array", "items": "source" }},
     { "name": "previous_sources", "type": { "type": "array", "items": "source" }},
     { "name": "forced_sources", "type": { "type": "array", "items": "forced_source" }},
-    { "name": "dia_object", "type": ["null", { "type": "array", "items": "dia_object"}]}
+    { "name": "ss_sources","type": {"type": "array","items": "ssSource"}},
+    { "name": "dia_object", "type": ["null", { "type": "array", "items": "dia_object"}]},
+    { "name": "mpc_orbits", "type": {"type": "array","items": "mpcOrbits" }}
   ]
 }

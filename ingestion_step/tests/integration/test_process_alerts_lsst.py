@@ -1,8 +1,5 @@
-import fastavro
 import pytest
 from db_plugins.db.sql._connection import PsqlDatabase
-from fastavro.schema import load_schema
-from fastavro.types import Schema
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -17,12 +14,7 @@ def test_process_alerts(lsst_alerts: list[Message], psql_db: PsqlDatabase):
 
 
 @pytest.mark.usefixtures("psql_db")
-def test_process_out_of_order(psql_db: PsqlDatabase):
-    schema: Schema = load_schema("../schemas/surveys/lsst_v9.0/lsst.v9_0.alert.avsc")
-    with open("./tests/integration/data/lsst_generated_50.avro", "rb") as f:
-        reader = fastavro.reader(f, schema)
-        lsst_alerts: list[Message] = [msg for msg in reader]  # pyright: ignore
-
+def test_process_out_of_order(psql_db: PsqlDatabase, lsst_alerts: list[Message]):
     lsst_alerts.sort(key=lambda msg: msg["diaSource"]["midpointMjdTai"], reverse=True)
 
     psql_db.drop_db()

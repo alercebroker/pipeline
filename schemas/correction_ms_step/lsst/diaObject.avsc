@@ -1,6 +1,6 @@
 {
   "type": "record",
-  "name": "dia_object",
+  "name": "diaObject",
   "fields": [
     {
       "name": "oid",

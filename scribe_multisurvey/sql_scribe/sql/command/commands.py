@@ -20,6 +20,8 @@ from db_plugins.db.sql.models import (
     ZtfReference,
     MagStat,
     LsstDiaObject,
+    Feature,
+    LsstMpcOrbits
 )
 from sqlalchemy import update, bindparam
 from sqlalchemy.dialects.postgresql import insert
@@ -38,6 +40,7 @@ from .parser import (
     parse_obj_stats,
     parse_magstats,
     parse_dia_object,
+    parse_mpc_orbits
 )
 
 
@@ -464,6 +467,153 @@ class LSSTUpdateDiaObjectCommand(Command):
                 }),
                 objects_update_list
             )
+
+
+class LSSTFeatureCommand(Command):
+    type = "LSSTFeatureCommand"
+
+    def _format_data(self, data):
+        
+        oid = data["oid"]
+        sid = data["sid"]
+        feature_version = data["features_version"].split('.')[0] if isinstance(data["features_version"], str) else data["features_version"]
+        
+        deduplication_dict = {}
+
+        for feature in data["features"]:
+            key = (oid, sid, feature["feature_id"], feature["band"])
+            deduplication_dict[key] = {
+                "oid": oid,
+                "sid": sid,
+                "feature_id": feature["feature_id"],
+                "band": feature["band"],
+                "version": feature_version,
+                "value": feature["value"],
+            }
+        
+        return list(deduplication_dict.values())
+
+    @staticmethod
+    def db_operation(session: Session, data: List):
+        
+        if len(data) > 0:
+            dedup = {}
+            for row in data:
+                key = (row["oid"], row["sid"], row["feature_id"], row["band"])
+                dedup[key] = row 
+
+            
+            deduplicated_data = list(dedup.values())
+
+            features_stmt = insert(Feature).on_conflict_do_update(
+                constraint="pk_feature_oid_featureid_band",
+                set_=insert(Feature).excluded, 
+            )
+
+            session.connection().execute(features_stmt, deduplicated_data)
+
+class LSSTCorrectionCommand(Command):
+    type = "LSSTCorrectionCommand"
+
+    def _format_data(self, data):
+        all_mpc_orbits = []
+        for correction in data["mpc_orbits"]:
+            parsed_orbit = parse_mpc_orbits(correction)
+            all_mpc_orbits.append(parsed_orbit)
+        
+        return all_mpc_orbits
+
+    @staticmethod
+    def db_operation(session: Session, data: List):
+        if len(data) == 0:
+            return
+        
+        # Deduplicate based on id, keeping the most recent update or created date if two orbits share id in batch
+        dedup = {}
+        for row in data:
+            orbit_ssObjectId = row["ssObjectId"]
+            
+            # Use updated_at, fallback to created_at, then fallback to mjd
+            current_timestamp = row.get("updated_at") or row.get("created_at") or row.get("mjd")
+            if orbit_ssObjectId not in dedup:
+                dedup[orbit_ssObjectId] = row
+            else:
+                existing_timestamp = (
+                    dedup[orbit_ssObjectId].get("updated_at") 
+                    or dedup[orbit_ssObjectId].get("created_at") 
+                    or dedup[orbit_ssObjectId].get("mjd")
+                )
+                if current_timestamp > existing_timestamp:
+                    dedup[orbit_ssObjectId] = row
+        
+        
+        deduplicated_data = []
+        for row in dedup.values():
+            row_with_prefix = row.copy()
+            row_with_prefix['_ssObjectId'] = row['ssObjectId']
+            deduplicated_data.append(row_with_prefix)
+        orbits_update_list = deduplicated_data
+        if len(orbits_update_list) > 0:
+            orbit_stmt = update(LsstMpcOrbits)
+            orbit_result = session.connection().execute(
+                orbit_stmt
+                .where(LsstMpcOrbits.ssObjectId == bindparam('_ssObjectId'))
+                .values({
+                    "ssObjectId": bindparam("ssObjectId"),
+                    "designation": bindparam("designation"),
+                    "packed_primary_provisional_designation": bindparam("packed_primary_provisional_designation"),
+                    "unpacked_primary_provisional_designation": bindparam("unpacked_primary_provisional_designation"),
+                    "mpc_orb_jsonb": bindparam("mpc_orb_jsonb"),
+                    "updated_at": bindparam("updated_at"),
+                    "orbit_type_int": bindparam("orbit_type_int"),
+                    "u_param": bindparam("u_param"),
+                    "nopp": bindparam("nopp"),
+                    "arc_length_total": bindparam("arc_length_total"),
+                    "arc_length_sel": bindparam("arc_length_sel"),
+                    "nobs_total": bindparam("nobs_total"),
+                    "nobs_total_sel": bindparam("nobs_total_sel"),
+                    "a": bindparam("a"),
+                    "q": bindparam("q"),
+                    "e": bindparam("e"),
+                    "i": bindparam("i"),
+                    "node": bindparam("node"),
+                    "peri_time": bindparam("peri_time"),
+                    "yarkovsky": bindparam("yarkovsky"),
+                    "srp": bindparam("srp"),
+                    "a1": bindparam("a1"),
+                    "a2": bindparam("a2"),
+                    "a3": bindparam("a3"),
+                    "dt": bindparam("dt"),
+                    "mean_anomaly": bindparam("mean_anomaly"),
+                    "period": bindparam("period"),
+                    "mean_motion": bindparam("mean_motion"),
+                    "a_unc": bindparam("a_unc"),
+                    "q_unc": bindparam("q_unc"),
+                    "e_unc": bindparam("e_unc"),
+                    "i_unc": bindparam("i_unc"),
+                    "node_unc": bindparam("node_unc"),
+                    "argperi_unc": bindparam("argperi_unc"),
+                    "peri_time_unc": bindparam("peri_time_unc"),
+                    "yarkovsky_unc": bindparam("yarkovsky_unc"),
+                    "srp_unc": bindparam("srp_unc"),
+                    "a1_unc": bindparam("a1_unc"),
+                    "a2_unc": bindparam("a2_unc"),
+                    "a3_unc": bindparam("a3_unc"),
+                    "dt_unc": bindparam("dt_unc"),
+                    "mean_anomaly_unc": bindparam("mean_anomaly_unc"),
+                    "period_unc": bindparam("period_unc"),
+                    "mean_motion_unc": bindparam("mean_motion_unc"),
+                    "epoch_mjd": bindparam("epoch_mjd"),
+                    "h": bindparam("h"),
+                    "g": bindparam("g"),
+                    "not_normalized_rms": bindparam("not_normalized_rms"),
+                    "normalized_rms": bindparam("normalized_rms"),
+                    "earth_moid": bindparam("earth_moid"),
+                    "fitting_datetime": bindparam("fitting_datetime")
+                }),
+                orbits_update_list
+            )
+
 
 
 ### ###### ###

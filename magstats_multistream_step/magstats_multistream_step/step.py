@@ -33,27 +33,63 @@ class MagstatsStep_Multistream(GenericStep):
             message.pop("timestamp", None)
             return message
 
-        messages_original = list(map(remove_timestamp, copy.deepcopy(messages))) # Keep a copy of the original messages without timestamp
-        detections, forced, non_detections = self.data_selector.extract_data(messages)
-        message = {"detections": detections, "forced_detections": forced, "non_detections": non_detections}
-
-        magstats = self._calculate_magstats(
-            message["detections"], message["non_detections"]
-        )
-        objstats = self._calculate_objstats(
-            message["detections"], message["non_detections"], message["forced_detections"]
-        )
-        for oid in objstats:
-            self.parse_magstats_result(magstats, oid, objstats)
-        messages_updated = refresh_mean_coordinates(messages_original, objstats)
+        messages_original = list(map(remove_timestamp, copy.deepcopy(messages)))
+        
+        # Extract data separating into dets, forced, non-dets, ss_dets (the last is filled only for LSST)
+        survey_data = self.data_selector.extract_data(messages)
+        
+        # Initialize list and dict to collect all magstats and objstats from different detection types (for sid 1 and sid 2)
+        all_magstats = []
+        all_objstats = {}
+        
+        # Process SS detections first (LSST only)
+        if self.survey.lower() == "lsst" and len(survey_data.ss_detections)>0:
+            ss_magstats = self._calculate_magstats(
+                survey_data.ss_detections, survey_data.non_detections
+            )
+            ss_objstats = self._calculate_objstats(
+                survey_data.ss_detections, 
+                survey_data.non_detections, 
+                survey_data.forced_photometries
+            )
+            all_magstats.append(ss_magstats)
+            all_objstats.update(ss_objstats)
+        
+        # Process regular detections common to all surveys
+        if survey_data.detections:
+            reg_magstats = self._calculate_magstats(
+                survey_data.detections, survey_data.non_detections
+            )
+            reg_objstats = self._calculate_objstats(
+                survey_data.detections, 
+                survey_data.non_detections, 
+                survey_data.forced_photometries
+            )
+            all_magstats.append(reg_magstats)
+            all_objstats.update(reg_objstats)
+        
+        # Concatenate magstats (ss_detections first, then regular detections so later ss detections count of ndets/fphots could be rewritten)
+        if len(all_magstats) > 1:
+            magstats = pd.concat(all_magstats, axis=0)
+        elif len(all_magstats) == 1:
+            magstats = all_magstats[0]
+        
+        # Parse magstats results into objstats
+        for oid in all_objstats:
+            if not magstats.empty and oid in magstats.index:
+                self.parse_magstats_result(magstats, oid, all_objstats)
+        
+        # Update the messages with refreshed mean coordinates #!TODO: CHECK IF THIS IS OK
+        messages_updated = refresh_mean_coordinates(messages_original, all_objstats)
         update_object_list = []
         if self.survey.lower() == "lsst":
-            update_object_list = update_object(messages_updated, objstats)
-        result = [messages_updated, objstats, update_object_list] # Send the updated messages, objstats and the objects to be updated in scribe together to produce the results correctly
+            update_object_list = update_object(messages_updated, all_objstats)
+        
+        result = [messages_updated, all_objstats, update_object_list]
         return result
 
     
-    def _calculate_objstats(self, detections, non_detections, forced_detections) -> pd.DataFrame:
+    def _calculate_objstats(self, detections, non_detections, forced_detections) -> dict:
         """Calculate survey-specific objectstatistics"""
         obj_stats_class = get_object_statistics_class(self.survey)
         obj_calculator = obj_stats_class(detections, non_detections, forced_detections, self.survey)
@@ -118,3 +154,4 @@ class MagstatsStep_Multistream(GenericStep):
                 key=str(oid).encode("utf-8"),               
                 value=json.dumps(scribe_data).encode("utf-8"),  
             )
+            self.scribe_producer.producer.poll(0)

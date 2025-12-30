@@ -16,6 +16,7 @@ sqlalchemy = {extras = ["asyncio"], version = "^2.0.19"}
 psycopg2-binary = "^2.9.6"
 db-plugins = {path = "../libs/db-plugins-multisurvey", develop = true}
 survey-parser-plugins = {path = "../libs/survey_parser_plugins", develop = true}
+avro-python3 = "^1.10.2"
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.12.0"
