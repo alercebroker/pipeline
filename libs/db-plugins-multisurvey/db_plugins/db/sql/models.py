@@ -532,7 +532,7 @@ class LsstSsDetection(Base):
     __tablename__ = "lsst_ss_detection"
 
     measurement_id = Column(BigInteger, nullable=False)
-    oid = Column(BigInteger, nullable=False)
+    ssObjectId = Column(BigInteger, nullable=False)
 
     designation = Column(String)  #!!!!!!!
     eclLambda = Column(DOUBLE_PRECISION, nullable=False)
@@ -577,9 +577,9 @@ class LsstSsDetection(Base):
     #! CHECK
     __table_args__ = (
         PrimaryKeyConstraint(
-            "oid", "measurement_id", name="pk_lsstssdetection_oid_measurementid"
+            "ssObjectId", "measurement_id", name="pk_lsstssdetection_ssobjectid_measurementid"
         ),
-        Index("ix_lsstssdetection_ssobjectid", "oid", postgresql_using="hash"),
+        Index("ix_lsstssdetection_ssobjectid", "ssObjectId", postgresql_using="hash"),
     )
 
 

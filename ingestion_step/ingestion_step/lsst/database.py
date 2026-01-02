@@ -139,7 +139,6 @@ def insert_ss_sources(
         "midpointMjdTai",
         "parentDiaSourceId",
         "diaSourceId",
-        "ssObjectId",
     }
 
     ss_sources_dict = sources[list(lsst_columns)].to_dict("records")

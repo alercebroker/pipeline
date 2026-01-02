@@ -155,3 +155,5 @@ terraform.tfvars
 **/flake.lock
 **/.envrc
 **/.direnv/
+
+**/create_db.py

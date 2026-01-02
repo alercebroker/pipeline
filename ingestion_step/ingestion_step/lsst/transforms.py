@@ -91,7 +91,6 @@ def get_forced_source_transforms() -> list[Transform]:
 
 def get_ss_source_transforms() -> list[Transform]:
     return [
-        copy_column("ssObjectId", "oid"),
         copy_column("diaSourceId", "measurement_id"),
         deduplicate(["measurement_id"]),
     ]

@@ -5,9 +5,7 @@ from fastavro.validation import validate_many
 from ingestion_step.ztf import serializer
 from ingestion_step.ztf.strategy import ZtfData, ZtfStrategy
 
-output_schema = load_schema(
-    "../schemas/ingestion_step/ztf/test_no_extra_fields/output.avsc"
-)
+output_schema = load_schema("../schemas/ingestion_step/ztf/output.avsc")
 
 
 def test_serialize(ztf_parsed_data: ZtfData):

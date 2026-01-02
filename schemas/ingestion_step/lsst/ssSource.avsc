@@ -3,7 +3,7 @@
   "name": "ssSource",
   "fields": [
     {
-      "name": "oid",
+      "name": "ssObjectId",
       "type": "long"
     },
     {
