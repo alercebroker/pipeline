@@ -12,7 +12,7 @@ DIA_SID = 1
 SS_SID = 2
 TID = 1
 
-band_map = {"u": 0, "g": 1, "r": 2, "i": 3, "z": 4, "y": 5}
+band_map = {"u": 6, "g": 1, "r": 2, "i": 3, "z": 4, "y": 5}
 
 
 def add_oid(df: pd.DataFrame):

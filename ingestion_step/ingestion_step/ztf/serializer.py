@@ -217,7 +217,6 @@ def serialize_forced_photometries(forced_phots: pd.DataFrame):
         "mag",
         "e_mag",
         "isdiffpos",
-        "has_stamp",
         "forced",
         "parent_candid",
         "field",

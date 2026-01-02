@@ -1,0 +1,56 @@
+{
+  "type": "record",
+  "name": "ingestion_lsst",
+  "doc": "Ingestion step schema for the LSST survey",
+  "fields": [
+    {
+      "name": "oid",
+      "type": "long"
+    },
+    { "name": "measurement_id", 
+      "type": {
+        "type": "array", 
+        "items": "long"}},
+    {
+      "name": "sources",
+      "type": {
+        "type": "array",
+        "items": "diaSource"
+      }
+    },
+    {
+      "name": "previous_sources",
+      "type": {
+        "type": "array",
+        "items": "diaSource"
+      }
+    },
+    {
+      "name": "ss_sources",
+      "type": {
+        "type": "array",
+        "items": "ssSource"
+      }
+    },
+    {
+      "name": "forced_sources",
+      "type": {
+        "type": "array",
+        "items": "diaForcedSource"
+      }
+    },
+    { 
+      "name": "dia_object", 
+      "type": [
+        "null", { "type": "array", "items": "diaObject"}
+      ]
+    },
+    {
+      "name": "mpc_orbits",
+      "type": {
+        "type": "array",
+        "items": "mpcOrbits"
+      }
+    }
+  ]
+}

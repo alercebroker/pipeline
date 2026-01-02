@@ -82,7 +82,6 @@ class ZtfFpHistsExtractor(BaseExtractor):
     extra_columns_schema = {
         "objectId": pd.StringDtype(),
         "parent_candid": pd.Int64Dtype(),
-        "has_stamp": pd.BooleanDtype(),
         "forced": pd.BooleanDtype(),
         "ra": pd.Float64Dtype(),
         "dec": pd.Float64Dtype(),
@@ -97,7 +96,6 @@ class ZtfFpHistsExtractor(BaseExtractor):
         return {
             "objectId": [message["objectId"]] * len(measurements),
             "parent_candid": [message["candid"]] * len(measurements),
-            "has_stamp": [False] * len(measurements),
             "forced": [True] * len(measurements),
             "ra": [message["candidate"]["ra"]] * len(measurements),
             "dec": [message["candidate"]["dec"]] * len(measurements),

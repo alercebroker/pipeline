@@ -13,12 +13,16 @@ from db_plugins.db.sql.models import (
     ZtfDetection,
     ForcedPhotometry,
     ZtfForcedPhotometry,
+    ZtfObject,
     ZtfSS,
     ZtfPS1,
     ZtfGaia,
     ZtfDataquality,
     ZtfReference,
     MagStat,
+    LsstDiaObject,
+    Feature,
+    LsstMpcOrbits,
 )
 from sqlalchemy import update, bindparam
 from sqlalchemy.dialects.postgresql import insert
@@ -36,6 +40,11 @@ from .parser import (
     parse_ztf_refernece,
     parse_obj_stats,
     parse_magstats,
+    parse_dia_object,
+    parse_mpc_orbits,
+    parse_ztf_object,
+    parse_ztf_magstats,
+    parse_ztf_objstats
 )
 
 
@@ -106,6 +115,21 @@ class ZTFCorrectionCommand(Command):
                 forced_photometries.append(parse_fp(forced, oid))
                 ztf_forced_photometries.append(parse_ztf_fp(forced, oid))
 
+        # Deduplicate forced_photometries - keep the one with highest mjd
+        fp_dict = {}
+        for fp in forced_photometries:
+            key = (fp['oid'], fp['measurement_id'], fp['sid'])
+            if key not in fp_dict or fp['mjd'] > fp_dict[key]['mjd']:
+                fp_dict[key] = fp
+        forced_photometries = list(fp_dict.values())
+    
+        # Deduplicate ztf_forced_photometries - keep the one with highest mjd
+        ztf_fp_dict = {}
+        for ztf_fp in ztf_forced_photometries:
+            key = (ztf_fp['oid'], ztf_fp['measurement_id'])
+            if key not in ztf_fp_dict or ztf_fp['mjd'] > ztf_fp_dict[key]['mjd']:
+                ztf_fp_dict[key] = ztf_fp
+        ztf_forced_photometries = list(ztf_fp_dict.values())
 
 
         parsed_ps1 = parse_ztf_ps1(candidate, oid)
@@ -113,6 +137,7 @@ class ZTFCorrectionCommand(Command):
         parsed_gaia = parse_ztf_gaia(candidate, oid)
         parsed_dq = parse_ztf_dq(candidate, oid)
         parsed_reference = parse_ztf_refernece(candidate, oid)
+        parsed_ztf_obj = parse_ztf_object(candidate, oid)
 
         return {
             "detections": detections,
@@ -124,11 +149,11 @@ class ZTFCorrectionCommand(Command):
             "gaia": parsed_gaia,
             "dq": parsed_dq,
             "reference": parsed_reference,
+            "ztf_object": parsed_ztf_obj
         }
 
     @staticmethod
     def db_operation(session: Session, data: List):
-        # forget deduplication!!!! :D
         detections = []
         ztf_detections = []
         forced_photometries = []
@@ -138,6 +163,7 @@ class ZTFCorrectionCommand(Command):
         gaia = []
         dq = []
         reference = []
+        ztf_obj_update = []
 
         for single_data in data:
             detections.extend(single_data["detections"])
@@ -148,8 +174,41 @@ class ZTFCorrectionCommand(Command):
             ss.append(single_data["ss"])
             gaia.append(single_data["gaia"])
             dq.append(single_data["dq"])
-            reference.append(single_data["reference"])            
+            reference.append(single_data["reference"])
+            ztf_obj_update.append(single_data["ztf_object"])            
         
+        # Deduplicate forced photometries with their paired ztf entries
+        fp_dedup_dict = {}
+        for i, fp in enumerate(forced_photometries):
+            key = (fp['oid'], fp['measurement_id'], fp['sid'])
+            ztf_fp = ztf_forced_photometries[i]
+        
+            if key not in fp_dedup_dict or fp['mjd'] > fp_dedup_dict[key]['fp']['mjd']:
+                fp_dedup_dict[key] = {
+                    'fp': fp,
+                    'ztf_fp': ztf_fp
+                }
+    
+        # Extract deduplicated lists
+        forced_photometries = [item['fp'] for item in fp_dedup_dict.values()]
+        ztf_forced_photometries = [item['ztf_fp'] for item in fp_dedup_dict.values()]
+    
+        det_dedup_dict = {}
+        for i, det in enumerate(detections):
+            key = (det['oid'], det['measurement_id'], det['sid'])
+            ztf_det = ztf_detections[i]
+        
+            if key not in det_dedup_dict or det['mjd'] > det_dedup_dict[key]['det']['mjd']:
+                det_dedup_dict[key] = {
+                    'det': det,
+                    'ztf_det': ztf_det
+                }
+    
+        # Extract deduplicated lists
+        detections = [item['det'] for item in det_dedup_dict.values()]
+        ztf_detections = [item['ztf_det'] for item in det_dedup_dict.values()]
+    
+
         # insert detections
         if len(detections) > 0:
             detections_stmt = insert(Detection)
@@ -192,6 +251,43 @@ class ZTFCorrectionCommand(Command):
                 ztf_forced_photometries
             )
 
+        # update ztf_object columns 
+        ztfobj_dict = {}
+        for obj in ztf_obj_update:
+            key = (obj['oid'])
+            if key not in ztfobj_dict or obj.get('_mjd', 0) > ztfobj_dict[key].get('_mjd', 0):
+                ztfobj_dict[key] = obj
+        ztfobj_list = list(ztfobj_dict.values())
+
+        # remove _mjd before insertion
+        for obj in ztfobj_list:
+            obj.pop('_mjd', None)
+
+            ztf_object_stmt = update(ZtfObject)
+            ztf_object_result = session.connection().execute(
+                ztf_object_stmt
+                .where(ZtfObject.oid == bindparam('_oid'))
+                .values({
+                    "ndethist": bindparam("ndethist"),
+                    "ncovhist": bindparam("ncovhist"),
+                    "mjdstarthist": bindparam("mjdstarthist"),
+                    "mjdendhist": bindparam("mjdendhist"),
+                }),
+                ztfobj_list
+            )
+
+        # Deduplicate ps1 using inherited _mjd
+        ps1_dict = {}
+        for p in ps1:
+            key = (p['oid'], p.get('measurement_id'))
+            if key not in ps1_dict or p.get('_mjd', 0) > ps1_dict[key].get('_mjd', 0):
+                ps1_dict[key] = p
+        ps1 = list(ps1_dict.values())
+
+        # remove _mjd before insertion
+        for p in ps1:
+            p.pop('_mjd', None)
+
         # insert ps1_ztf
         if len(ps1) > 0:
             ps_stmt = insert(ZtfPS1)
@@ -202,6 +298,18 @@ class ZTFCorrectionCommand(Command):
                 ),
                 ps1
             )
+    
+        # Deduplicate ss using inherited _mjd
+        ss_dict = {}
+        for s in ss:
+            key = (s['oid'], s.get('measurement_id'))
+            if key not in ss_dict or s.get('_mjd', 0) > ss_dict[key].get('_mjd', 0):
+                ss_dict[key] = s
+        ss = list(ss_dict.values())    
+
+        # remove _mjd before insertion
+        for s in ss:
+            s.pop('_mjd', None)
 
         # insert ss_ztf
         if len(ss) > 0:
@@ -213,6 +321,18 @@ class ZTFCorrectionCommand(Command):
                 ),
                 ss
             )
+        
+        # deduplicate gaia using inherited mjd
+        gaia_dict = {}
+        for g in gaia:
+            key = g['oid']
+            if key not in gaia_dict or g.get('_mjd', 0) > gaia_dict[key].get('_mjd', 0):
+                gaia_dict[key] = g
+        gaia = list(gaia_dict.values())
+
+        # remove _mjd before insertion
+        for g in gaia:
+            g.pop('_mjd', None)
 
         # insert gaia_ztf
         if len(gaia) > 0:
@@ -224,8 +344,19 @@ class ZTFCorrectionCommand(Command):
                 ),
                 gaia
             )
+        # Deduplicate dq using inherited _mjd
+        dq_dict = {}
+        for d in dq:
+            key = (d['oid'], d.get('measurement_id'))
+            if key not in dq_dict or d.get('_mjd', 0) > dq_dict[key].get('_mjd', 0):
+                dq_dict[key] = d
+        dq = list(dq_dict.values())
 
-        # insert dataquaility_ztf
+        # remove _mjd before insertion
+        for d in dq:
+            d.pop('_mjd', None)
+            
+        # insert data quality_ztf
         if len(dq) > 0:
             dq_stmt = insert(ZtfDataquality)
             dq_result = session.connection().execute(
@@ -235,6 +366,18 @@ class ZTFCorrectionCommand(Command):
                 ),
                 dq
             )
+
+        # deduplicate reference using inherited mjd
+        ref_dict = {}
+        for r in reference:
+            key = (r['oid'], r.get('rfid'))
+            if key not in ref_dict or r.get('_mjd', 0) > ref_dict[key].get('_mjd', 0):
+                ref_dict[key] = r
+        reference = list(ref_dict.values())
+ 
+        # remove _mjd before insertion
+        for r in reference:
+            r.pop('_mjd', None)
 
         # insert reference_ztf
         if len(reference) > 0:
@@ -255,9 +398,9 @@ class ZTFMagstatCommand(Command):
         
         oid = data["oid"]
         sid = data["sid"]
-        object_stats = parse_obj_stats(data, oid)
+        object_stats = parse_ztf_objstats(data, oid, sid)
         magstats_list = [
-            parse_magstats(ms, oid, sid)
+            parse_ztf_magstats(ms, oid, sid)
             for ms in data["magstats"]
         ]
 
@@ -269,13 +412,26 @@ class ZTFMagstatCommand(Command):
     @staticmethod
     def db_operation(session: Session, data: List):
         objectstat_list = []
-        magstat_list = []
+        dedup_magstats = {} # We must deduplicate magstats and since none of its keys is good we will use  objstats stuff
 
         for single_data in data:
-            objectstat_list.append(single_data["object_stats"])
-            magstat_list.extend(single_data["magstats"])      
-        
-        
+            obj = single_data["object_stats"]
+            objectstat_list.append(obj)
+
+            lastmjd = obj["lastmjd"]
+
+            for ms in single_data["magstats"]:
+                key = (ms["oid"], ms["sid"], ms["band"])
+
+                if key not in dedup_magstats:
+                    dedup_magstats[key] = (lastmjd, ms)
+                else:
+                    prev_lastmjd, _ = dedup_magstats[key]
+                    if lastmjd > prev_lastmjd:
+                        dedup_magstats[key] = (lastmjd, ms)
+
+        magstat_list = [ms for _, ms in dedup_magstats.values()]
+
         # update object
         if len(objectstat_list) > 0:
             object_stmt = update(Object)
@@ -293,8 +449,20 @@ class ZTFMagstatCommand(Command):
                     "n_det": bindparam("n_det"),
                     "n_forced": bindparam("n_forced"),
                     "n_non_det": bindparam("n_non_det"),
+                }),
+                objectstat_list
+            )
+            
+            # update ztf_object columns stellar and corrected
+            ztf_object_stmt = update(ZtfObject)
+            ztf_object_result = session.connection().execute(
+                ztf_object_stmt
+                .where(ZtfObject.oid == bindparam('_oid'))
+                .values({
                     "corrected": bindparam("corrected"),
                     "stellar": bindparam("stellar"),
+                    "reference_change": bindparam("reference_change"),
+                    "diffpos": bindparam("diffpos"),
                 }),
                 objectstat_list
             )
@@ -308,17 +476,18 @@ class ZTFMagstatCommand(Command):
                     set_=magstats_stmt.excluded
                 ),
                 magstat_list
-            )
+            )  
+
+
 
 
 class LSSTMagstatCommand(Command):
     type = "LSSTMagstatCommand"
 
     def _format_data(self, data):
-        
         oid = data["oid"]
-
-        object_stats = parse_obj_stats(data, oid)
+        sid = data["sid"]
+        object_stats = parse_obj_stats(data, oid, sid)
         magstats_list = []
 
         return {
@@ -352,24 +521,270 @@ class LSSTMagstatCommand(Command):
                     "n_det": bindparam("n_det"),
                     "n_forced": bindparam("n_forced"),
                     "n_non_det": bindparam("n_non_det"),
-                    "corrected": bindparam("corrected"),
-                    "stellar": bindparam("stellar"),
                 }),
                 objectstat_list
             )
+
+
+class LSSTUpdateDiaObjectCommand(Command):
+    type = "LSSTUpdateDiaObjectCommand"
+
+    def _format_data(self, data):
         
-        # insert magstats => TODO in the future 
-        """
-        if len(magstat_list) > 0:
-            magstats_stmt = insert(MagStat)
-            magstats_result = session.connection().execute(
-                magstats_stmt.on_conflict_do_update(
-                    constraint="pk_magstat_oid_band",
-                    set_=magstats_stmt.excluded
-                ),
-                magstat_list
+        oid = data["oid"]
+
+        dia_object = parse_dia_object(data, oid)
+        
+
+        return {
+            "dia_object": dia_object,
+        }
+
+    @staticmethod
+    def db_operation(session: Session, data: List):
+        objects_update_list = []
+
+        for single_data in data:
+            objects_update_list.append(single_data["dia_object"])
+        
+        # update dia object
+        if len(objects_update_list) > 0:
+            object_stmt = update(LsstDiaObject)
+            object_result = session.connection().execute(
+                object_stmt
+                .where(LsstDiaObject.oid == bindparam('_oid'))
+                .values({
+                    "validityStartMjdTai": bindparam("validityStartMjdTai"),
+                    "ra": bindparam("ra"),
+                    "raErr": bindparam("raErr"),
+                    "dec": bindparam("dec"),
+                    "decErr": bindparam("decErr"),
+                    "ra_dec_Cov": bindparam("ra_dec_Cov"),
+                    "u_psfFluxMean": bindparam("u_psfFluxMean"),
+                    "u_psfFluxMeanErr": bindparam("u_psfFluxMeanErr"),
+                    "u_psfFluxSigma": bindparam("u_psfFluxSigma"),
+                    "u_psfFluxNdata": bindparam("u_psfFluxNdata"),
+                    "u_fpFluxMean": bindparam("u_fpFluxMean"),
+                    "u_fpFluxMeanErr": bindparam("u_fpFluxMeanErr"),
+                    "g_psfFluxMean": bindparam("g_psfFluxMean"),
+                    "g_psfFluxMeanErr": bindparam("g_psfFluxMeanErr"),
+                    "g_psfFluxSigma": bindparam("g_psfFluxSigma"),
+                    "g_psfFluxNdata": bindparam("g_psfFluxNdata"),
+                    "g_fpFluxMean": bindparam("g_fpFluxMean"),
+                    "g_fpFluxMeanErr": bindparam("g_fpFluxMeanErr"),
+                    "r_psfFluxMean": bindparam("r_psfFluxMean"),
+                    "r_psfFluxMeanErr": bindparam("r_psfFluxMeanErr"),
+                    "r_psfFluxSigma": bindparam("r_psfFluxSigma"),
+                    "r_psfFluxNdata": bindparam("r_psfFluxNdata"),
+                    "r_fpFluxMean": bindparam("r_fpFluxMean"),
+                    "r_fpFluxMeanErr": bindparam("r_fpFluxMeanErr"),
+                    "i_psfFluxMean": bindparam("i_psfFluxMean"),
+                    "i_psfFluxMeanErr": bindparam("i_psfFluxMeanErr"),
+                    "i_psfFluxSigma": bindparam("i_psfFluxSigma"),
+                    "i_psfFluxNdata": bindparam("i_psfFluxNdata"),
+                    "i_fpFluxMean": bindparam("i_fpFluxMean"),
+                    "i_fpFluxMeanErr": bindparam("i_fpFluxMeanErr"),
+                    "z_psfFluxMean": bindparam("z_psfFluxMean"),
+                    "z_psfFluxMeanErr": bindparam("z_psfFluxMeanErr"),
+                    "z_psfFluxSigma": bindparam("z_psfFluxSigma"),
+                    "z_psfFluxNdata": bindparam("z_psfFluxNdata"),
+                    "z_fpFluxMean": bindparam("z_fpFluxMean"),
+                    "z_fpFluxMeanErr": bindparam("z_fpFluxMeanErr"),
+                    "y_psfFluxMean": bindparam("y_psfFluxMean"),
+                    "y_psfFluxMeanErr": bindparam("y_psfFluxMeanErr"),
+                    "y_psfFluxSigma": bindparam("y_psfFluxSigma"),
+                    "y_psfFluxNdata": bindparam("y_psfFluxNdata"),
+                    "y_fpFluxMean": bindparam("y_fpFluxMean"),
+                    "y_fpFluxMeanErr": bindparam("y_fpFluxMeanErr"),
+                    "u_scienceFluxMean": bindparam("u_scienceFluxMean"),
+                    "u_scienceFluxMeanErr": bindparam("u_scienceFluxMeanErr"),
+                    "g_scienceFluxMean": bindparam("g_scienceFluxMean"),
+                    "g_scienceFluxMeanErr": bindparam("g_scienceFluxMeanErr"),
+                    "r_scienceFluxMean": bindparam("r_scienceFluxMean"),
+                    "r_scienceFluxMeanErr": bindparam("r_scienceFluxMeanErr"),
+                    "i_scienceFluxMean": bindparam("i_scienceFluxMean"),
+                    "i_scienceFluxMeanErr": bindparam("i_scienceFluxMeanErr"),
+                    "z_scienceFluxMean": bindparam("z_scienceFluxMean"),
+                    "z_scienceFluxMeanErr": bindparam("z_scienceFluxMeanErr"),
+                    "y_scienceFluxMean": bindparam("y_scienceFluxMean"),
+                    "y_scienceFluxMeanErr": bindparam("y_scienceFluxMeanErr"),
+                    "u_psfFluxMin": bindparam("u_psfFluxMin"),
+                    "u_psfFluxMax": bindparam("u_psfFluxMax"),
+                    "u_psfFluxMaxSlope": bindparam("u_psfFluxMaxSlope"),
+                    "u_psfFluxErrMean": bindparam("u_psfFluxErrMean"),
+                    "g_psfFluxMin": bindparam("g_psfFluxMin"),
+                    "g_psfFluxMax": bindparam("g_psfFluxMax"),
+                    "g_psfFluxMaxSlope": bindparam("g_psfFluxMaxSlope"),
+                    "g_psfFluxErrMean": bindparam("g_psfFluxErrMean"),
+                    "r_psfFluxMin": bindparam("r_psfFluxMin"),
+                    "r_psfFluxMax": bindparam("r_psfFluxMax"),
+                    "r_psfFluxMaxSlope": bindparam("r_psfFluxMaxSlope"),
+                    "r_psfFluxErrMean": bindparam("r_psfFluxErrMean"),
+                    "i_psfFluxMin": bindparam("i_psfFluxMin"),
+                    "i_psfFluxMax": bindparam("i_psfFluxMax"),
+                    "i_psfFluxMaxSlope": bindparam("i_psfFluxMaxSlope"),
+                    "i_psfFluxErrMean": bindparam("i_psfFluxErrMean"),
+                    "z_psfFluxMin": bindparam("z_psfFluxMin"),
+                    "z_psfFluxMax": bindparam("z_psfFluxMax"),
+                    "z_psfFluxMaxSlope": bindparam("z_psfFluxMaxSlope"),
+                    "z_psfFluxErrMean": bindparam("z_psfFluxErrMean"),
+                    "y_psfFluxMin": bindparam("y_psfFluxMin"),
+                    "y_psfFluxMax": bindparam("y_psfFluxMax"),
+                    "y_psfFluxMaxSlope": bindparam("y_psfFluxMaxSlope"),
+                    "y_psfFluxErrMean": bindparam("y_psfFluxErrMean"),
+                    "firstDiaSourceMjdTai": bindparam("firstDiaSourceMjdTai"),
+                    "lastDiaSourceMjdTai": bindparam("lastDiaSourceMjdTai"),
+                    "nDiaSources": bindparam("nDiaSources"),
+                }),
+                objects_update_list
             )
-        """
+
+
+class LSSTFeatureCommand(Command):
+    type = "LSSTFeatureCommand"
+
+    def _format_data(self, data):
+        
+        oid = data["oid"]
+        sid = data["sid"]
+        feature_version = data["features_version"].split('.')[0] if isinstance(data["features_version"], str) else data["features_version"]
+        
+        deduplication_dict = {}
+
+        for feature in data["features"]:
+            key = (oid, sid, feature["feature_id"], feature["band"])
+            deduplication_dict[key] = {
+                "oid": oid,
+                "sid": sid,
+                "feature_id": feature["feature_id"],
+                "band": feature["band"],
+                "version": feature_version,
+                "value": feature["value"],
+            }
+        
+        return list(deduplication_dict.values())
+
+    @staticmethod
+    def db_operation(session: Session, data: List):
+        
+        if len(data) > 0:
+            dedup = {}
+            for row in data:
+                key = (row["oid"], row["sid"], row["feature_id"], row["band"])
+                dedup[key] = row 
+
+            
+            deduplicated_data = list(dedup.values())
+
+            features_stmt = insert(Feature).on_conflict_do_update(
+                constraint="pk_feature_oid_featureid_band",
+                set_=insert(Feature).excluded, 
+            )
+
+            session.connection().execute(features_stmt, deduplicated_data)
+
+class LSSTCorrectionCommand(Command):
+    type = "LSSTCorrectionCommand"
+
+    def _format_data(self, data):
+        all_mpc_orbits = []
+        for correction in data["mpc_orbits"]:
+            parsed_orbit = parse_mpc_orbits(correction)
+            all_mpc_orbits.append(parsed_orbit)
+        
+        return all_mpc_orbits
+
+    @staticmethod
+    def db_operation(session: Session, data: List):
+        if len(data) == 0:
+            return
+        
+        # Deduplicate based on id, keeping the most recent update or created date if two orbits share id in batch
+        dedup = {}
+        for row in data:
+            orbit_ssObjectId = row["ssObjectId"]
+            
+            # Use updated_at, fallback to created_at, then fallback to mjd
+            current_timestamp = row.get("updated_at") or row.get("created_at") or row.get("mjd")
+            if orbit_ssObjectId not in dedup:
+                dedup[orbit_ssObjectId] = row
+            else:
+                existing_timestamp = (
+                    dedup[orbit_ssObjectId].get("updated_at") 
+                    or dedup[orbit_ssObjectId].get("created_at") 
+                    or dedup[orbit_ssObjectId].get("mjd")
+                )
+                if current_timestamp > existing_timestamp:
+                    dedup[orbit_ssObjectId] = row
+        
+        
+        deduplicated_data = []
+        for row in dedup.values():
+            row_with_prefix = row.copy()
+            row_with_prefix['_ssObjectId'] = row['ssObjectId']
+            deduplicated_data.append(row_with_prefix)
+        orbits_update_list = deduplicated_data
+        if len(orbits_update_list) > 0:
+            orbit_stmt = update(LsstMpcOrbits)
+            orbit_result = session.connection().execute(
+                orbit_stmt
+                .where(LsstMpcOrbits.ssObjectId == bindparam('_ssObjectId'))
+                .values({
+                    "ssObjectId": bindparam("ssObjectId"),
+                    "designation": bindparam("designation"),
+                    "packed_primary_provisional_designation": bindparam("packed_primary_provisional_designation"),
+                    "unpacked_primary_provisional_designation": bindparam("unpacked_primary_provisional_designation"),
+                    "mpc_orb_jsonb": bindparam("mpc_orb_jsonb"),
+                    "updated_at": bindparam("updated_at"),
+                    "orbit_type_int": bindparam("orbit_type_int"),
+                    "u_param": bindparam("u_param"),
+                    "nopp": bindparam("nopp"),
+                    "arc_length_total": bindparam("arc_length_total"),
+                    "arc_length_sel": bindparam("arc_length_sel"),
+                    "nobs_total": bindparam("nobs_total"),
+                    "nobs_total_sel": bindparam("nobs_total_sel"),
+                    "a": bindparam("a"),
+                    "q": bindparam("q"),
+                    "e": bindparam("e"),
+                    "i": bindparam("i"),
+                    "node": bindparam("node"),
+                    "peri_time": bindparam("peri_time"),
+                    "yarkovsky": bindparam("yarkovsky"),
+                    "srp": bindparam("srp"),
+                    "a1": bindparam("a1"),
+                    "a2": bindparam("a2"),
+                    "a3": bindparam("a3"),
+                    "dt": bindparam("dt"),
+                    "mean_anomaly": bindparam("mean_anomaly"),
+                    "period": bindparam("period"),
+                    "mean_motion": bindparam("mean_motion"),
+                    "a_unc": bindparam("a_unc"),
+                    "q_unc": bindparam("q_unc"),
+                    "e_unc": bindparam("e_unc"),
+                    "i_unc": bindparam("i_unc"),
+                    "node_unc": bindparam("node_unc"),
+                    "argperi_unc": bindparam("argperi_unc"),
+                    "peri_time_unc": bindparam("peri_time_unc"),
+                    "yarkovsky_unc": bindparam("yarkovsky_unc"),
+                    "srp_unc": bindparam("srp_unc"),
+                    "a1_unc": bindparam("a1_unc"),
+                    "a2_unc": bindparam("a2_unc"),
+                    "a3_unc": bindparam("a3_unc"),
+                    "dt_unc": bindparam("dt_unc"),
+                    "mean_anomaly_unc": bindparam("mean_anomaly_unc"),
+                    "period_unc": bindparam("period_unc"),
+                    "mean_motion_unc": bindparam("mean_motion_unc"),
+                    "epoch_mjd": bindparam("epoch_mjd"),
+                    "h": bindparam("h"),
+                    "g": bindparam("g"),
+                    "not_normalized_rms": bindparam("not_normalized_rms"),
+                    "normalized_rms": bindparam("normalized_rms"),
+                    "earth_moid": bindparam("earth_moid"),
+                    "fitting_datetime": bindparam("fitting_datetime")
+                }),
+                orbits_update_list
+            )
+
 
 
 ### ###### ###

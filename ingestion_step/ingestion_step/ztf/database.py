@@ -160,7 +160,6 @@ def insert_forced_photometry(
             "corrected",
             "dubious",
             "parent_candid",
-            "has_stamp",
             "field",
             "rcid",
             "rfid",

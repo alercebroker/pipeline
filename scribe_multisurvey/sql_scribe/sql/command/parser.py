@@ -1,4 +1,4 @@
-def multistream_detection_to_ztf(command: dict):
+def multisurvey_detection_to_ztf(command: dict):
     if "oid" not in command:
         raise ValueError("OID was not found")
 
@@ -94,7 +94,6 @@ def parse_ztf_fp(raw_detection: dict, oid: str) -> dict:
         "corrected": raw_detection["corrected"],
         "dubious": raw_detection["dubious"],
         "parent_candid": raw_detection["parent_candid"],
-        "has_stamp": raw_detection["has_stamp"],
         "field": raw_detection["field"],
         "rcid": raw_detection["rcid"],
         "rfid": raw_detection["rfid"],
@@ -171,6 +170,7 @@ def parse_ztf_det(raw_detection: dict, oid: str) -> dict:
 def parse_ztf_ss(candidate: dict, oid: str) -> dict:
     ss = {
         "oid": oid,
+        "_mjd": candidate["mjd"],
         "measurement_id": candidate["measurement_id"],
         "ssdistnr": candidate["ssdistnr"],
         "ssmagnr": candidate["ssmagnr"],
@@ -178,9 +178,22 @@ def parse_ztf_ss(candidate: dict, oid: str) -> dict:
     }
     return ss
 
+def parse_ztf_object(candidate: dict, oid: str) -> dict:
+    ztfobj = {
+        "oid": oid,
+       "_oid": oid,
+        "_mjd": candidate["mjd"],
+        "ndethist": candidate["ndethist"],
+        "ncovhist": candidate["ncovhist"],
+        "mjdstarthist": candidate["jdstarthist"] - 2400000.5,
+        "mjdendhist": candidate["jdendhist"] - 2400000.5
+    }
+    return ztfobj
+
 def parse_ztf_ps1(candidate: dict, oid: str) -> dict:
     ps1 = {
         "oid": oid,
+        "_mjd": candidate["mjd"],
         "measurement_id": candidate["measurement_id"],
         "objectidps1": (
             int(candidate["objectidps1"])
@@ -222,6 +235,7 @@ def parse_ztf_ps1(candidate: dict, oid: str) -> dict:
 def parse_ztf_gaia(candidate: dict, oid: str) -> dict:
     gaia = {
         "oid": oid,
+        "_mjd": candidate["mjd"],
         "measurement_id": candidate["measurement_id"],
         "neargaia": candidate["neargaia"],
         "neargaiabright": candidate["neargaiabright"],
@@ -233,6 +247,7 @@ def parse_ztf_gaia(candidate: dict, oid: str) -> dict:
 def parse_ztf_dq(candidate: dict, oid: str) -> dict:
     dq = {
         "oid": oid,
+        "_mjd": candidate["mjd"],
         "measurement_id": candidate["measurement_id"],
         "xpos": candidate["xpos"],
         "ypos": candidate["ypos"],
@@ -270,6 +285,7 @@ def parse_ztf_refernece(candidate: dict, oid: str) -> dict:
     reference = {
         "oid": oid,
         "rfid": candidate["rfid"],
+        "_mjd": candidate["mjd"],
         "measurement_id": candidate["measurement_id"],
         "band": candidate["band"],
         "rcid": candidate["rcid"],
@@ -286,10 +302,11 @@ def parse_ztf_refernece(candidate: dict, oid: str) -> dict:
     }
     return reference
 
-def parse_obj_stats(raw_magstats, oid: str) -> dict:
+def parse_obj_stats(raw_magstats, oid: str, sid: int) -> dict:
     obj = {
         "_oid": oid,
         "oid": oid,
+        "sid": sid,
         "meanra": raw_magstats["meanra"],
         "meandec": raw_magstats["meandec"],
         "sigmara": raw_magstats["sigmara"],
@@ -302,9 +319,154 @@ def parse_obj_stats(raw_magstats, oid: str) -> dict:
         "n_non_det": raw_magstats["n_ndet"] if raw_magstats["n_ndet"] else 0,
         "corrected": raw_magstats["corrected"],
         "stellar": raw_magstats["stellar"],
-        "diffpos": raw_magstats.get("diffpos", None),
-        "reference_change": raw_magstats.get("reference_change", None),
     }
+
+    return obj
+
+def parse_ztf_objstats(raw_magstats, oid: str, sid: int) -> dict:
+    obj = {
+         "_oid": oid,
+        "oid": oid,
+        "sid": sid,
+        "meanra": raw_magstats["meanra"],
+        "meandec": raw_magstats["meandec"],
+        "sigmara": raw_magstats["sigmara"],
+        "sigmadec": raw_magstats["sigmadec"],
+        "firstmjd": raw_magstats["firstmjd"],
+        "lastmjd": raw_magstats["lastmjd"],
+        "deltamjd": raw_magstats["deltajd"],
+        "n_det": raw_magstats["n_det"],
+        "n_forced": raw_magstats["n_fphot"] if raw_magstats["n_fphot"] else 0,
+        "n_non_det": raw_magstats["n_ndet"] if raw_magstats["n_ndet"] else 0,
+        "corrected": raw_magstats["corrected"],
+        "stellar": raw_magstats["stellar"],
+        "reference_change": raw_magstats["reference_change"],
+        "diffpos": raw_magstats["diffpos"]
+    }
+    return obj
+
+def parse_ztf_magstats(sub_magstats: dict, oid: str, sid: int):
+    ztf_magstats = {
+        "oid": oid,
+        "sid": sid,
+        "band": sub_magstats["band"], 
+        "stellar": sub_magstats["stellar"], 
+        "corrected": sub_magstats["corrected"], 
+        "ndubious": sub_magstats["ndubious"], 
+        "dmdt_first": sub_magstats["dmdt_first"], 
+        "dm_first": sub_magstats["dm_first"], 
+        "sigmadm_first": sub_magstats["sigmadm_first"], 
+        "dt_first": sub_magstats["dt_first"], 
+        "magmean": sub_magstats["magmean"], 
+        "magmedian": sub_magstats["magmedian"], 
+        "magmax": sub_magstats["magmax"], 
+        "magmin": sub_magstats["magmin"], 
+        "magsigma": sub_magstats["magsigma"], 
+        "maglast": sub_magstats["maglast"], 
+        "magfirst": sub_magstats["magfirst"], 
+        "magmean_corr": sub_magstats["magmean_corr"], 
+        "magmedian_corr": sub_magstats["magmedian_corr"], 
+        "magmax_corr": sub_magstats["magmax_corr"], 
+        "magmin_corr": sub_magstats["magmin_corr"], 
+        "magsigma_corr": sub_magstats["magsigma_corr"], 
+        "maglast_corr": sub_magstats["maglast_corr"], 
+        "magfirst_corr": sub_magstats["magfirst_corr"], 
+        "saturation_rate": sub_magstats["saturation_rate"], 
+        "n_det": sub_magstats["ndet"],
+        "firstmjd": sub_magstats["firstmjd"],
+        "lastmjd": sub_magstats["lastmjd"]
+    }
+    return ztf_magstats
+
+
+def parse_dia_object(object, oid: str) -> dict:
+
+    obj = {
+        "_oid": oid,
+        "oid": oid,
+        "validityStartMjdTai": object["validityStartMjdTai"],
+        "ra": object["ra"],
+        "raErr": object["raErr"],
+        "dec": object["dec"],
+        "decErr": object["decErr"],
+        "ra_dec_Cov": object["ra_dec_Cov"],
+        "u_psfFluxMean": object["u_psfFluxMean"],
+        "u_psfFluxMeanErr": object["u_psfFluxMeanErr"],
+        "u_psfFluxSigma": object["u_psfFluxSigma"],
+        "u_psfFluxNdata": object["u_psfFluxNdata"],
+        "u_fpFluxMean": object["u_fpFluxMean"],
+        "u_fpFluxMeanErr": object["u_fpFluxMeanErr"],
+        "g_psfFluxMean": object["g_psfFluxMean"],
+        "g_psfFluxMeanErr": object["g_psfFluxMeanErr"],
+        "g_psfFluxSigma": object["g_psfFluxSigma"],
+        "g_psfFluxNdata": object["g_psfFluxNdata"],
+        "g_fpFluxMean": object["g_fpFluxMean"],
+        "g_fpFluxMeanErr": object["g_fpFluxMeanErr"],
+        "r_psfFluxMean": object["r_psfFluxMean"],
+        "r_psfFluxMeanErr": object["r_psfFluxMeanErr"],
+        "r_psfFluxSigma": object["r_psfFluxSigma"],
+        "r_psfFluxNdata": object["r_psfFluxNdata"],
+        "r_fpFluxMean": object["r_fpFluxMean"],
+        "r_fpFluxMeanErr": object["r_fpFluxMeanErr"],
+        "i_psfFluxMean": object["i_psfFluxMean"],
+        "i_psfFluxMeanErr": object["i_psfFluxMeanErr"],
+        "i_psfFluxSigma": object["i_psfFluxSigma"],
+        "i_psfFluxNdata": object["i_psfFluxNdata"],
+        "i_fpFluxMean": object["i_fpFluxMean"],
+        "i_fpFluxMeanErr": object["i_fpFluxMeanErr"],
+        "z_psfFluxMean": object["z_psfFluxMean"],
+        "z_psfFluxMeanErr": object["z_psfFluxMeanErr"],
+        "z_psfFluxSigma": object["z_psfFluxSigma"],
+        "z_psfFluxNdata": object["z_psfFluxNdata"],
+        "z_fpFluxMean": object["z_fpFluxMean"],
+        "z_fpFluxMeanErr": object["z_fpFluxMeanErr"],
+        "y_psfFluxMean": object["y_psfFluxMean"],
+        "y_psfFluxMeanErr": object["y_psfFluxMeanErr"],
+        "y_psfFluxSigma": object["y_psfFluxSigma"],
+        "y_psfFluxNdata": object["y_psfFluxNdata"],
+        "y_fpFluxMean": object["y_fpFluxMean"],
+        "y_fpFluxMeanErr": object["y_fpFluxMeanErr"],
+        "u_scienceFluxMean": object["u_scienceFluxMean"],
+        "u_scienceFluxMeanErr": object["u_scienceFluxMeanErr"],
+        "g_scienceFluxMean": object["g_scienceFluxMean"],
+        "g_scienceFluxMeanErr": object["g_scienceFluxMeanErr"],
+        "r_scienceFluxMean": object["r_scienceFluxMean"],
+        "r_scienceFluxMeanErr": object["r_scienceFluxMeanErr"],
+        "i_scienceFluxMean": object["i_scienceFluxMean"],
+        "i_scienceFluxMeanErr": object["i_scienceFluxMeanErr"],
+        "z_scienceFluxMean": object["z_scienceFluxMean"],
+        "z_scienceFluxMeanErr": object["z_scienceFluxMeanErr"],
+        "y_scienceFluxMean": object["y_scienceFluxMean"],
+        "y_scienceFluxMeanErr": object["y_scienceFluxMeanErr"],
+        "u_psfFluxMin": object["u_psfFluxMin"],
+        "u_psfFluxMax": object["u_psfFluxMax"],
+        "u_psfFluxMaxSlope": object["u_psfFluxMaxSlope"],
+        "u_psfFluxErrMean": object["u_psfFluxErrMean"],
+        "g_psfFluxMin": object["g_psfFluxMin"],
+        "g_psfFluxMax": object["g_psfFluxMax"],
+        "g_psfFluxMaxSlope": object["g_psfFluxMaxSlope"],
+        "g_psfFluxErrMean": object["g_psfFluxErrMean"],
+        "r_psfFluxMin": object["r_psfFluxMin"],
+        "r_psfFluxMax": object["r_psfFluxMax"],
+        "r_psfFluxMaxSlope": object["r_psfFluxMaxSlope"],
+        "r_psfFluxErrMean": object["r_psfFluxErrMean"],
+        "i_psfFluxMin": object["i_psfFluxMin"],
+        "i_psfFluxMax": object["i_psfFluxMax"],
+        "i_psfFluxMaxSlope": object["i_psfFluxMaxSlope"],
+        "i_psfFluxErrMean": object["i_psfFluxErrMean"],
+        "z_psfFluxMin": object["z_psfFluxMin"],
+        "z_psfFluxMax": object["z_psfFluxMax"],
+        "z_psfFluxMaxSlope": object["z_psfFluxMaxSlope"],
+        "z_psfFluxErrMean": object["z_psfFluxErrMean"],
+        "y_psfFluxMin": object["y_psfFluxMin"],
+        "y_psfFluxMax": object["y_psfFluxMax"],
+        "y_psfFluxMaxSlope": object["y_psfFluxMaxSlope"],
+        "y_psfFluxErrMean": object["y_psfFluxErrMean"],
+        "firstDiaSourceMjdTai": object["firstDiaSourceMjdTai"],
+        "lastDiaSourceMjdTai": object["lastDiaSourceMjdTai"],
+        "nDiaSources": object["nDiaSources"],
+    }
+
     return obj
 
 def parse_magstats(sub_magstats: dict, oid: str, sid: int) -> dict:
@@ -335,4 +497,62 @@ def parse_magstats(sub_magstats: dict, oid: str, sid: int) -> dict:
         "magfirst_corr": sub_magstats["magfirst_corr"], 
         "saturation_rate": sub_magstats["saturation_rate"], 
     }
+
     return magstats
+
+def parse_mpc_orbits(mpc_orbits: dict) -> dict:
+    parsed_mpc_orbit = {
+        "ssObjectId": mpc_orbits["ssObjectId"],
+        "designation": mpc_orbits["designation"],
+        "packed_primary_provisional_designation": mpc_orbits["packed_primary_provisional_designation"],
+        "unpacked_primary_provisional_designation": mpc_orbits["unpacked_primary_provisional_designation"],
+        "mpc_orb_jsonb": mpc_orbits["mpc_orb_jsonb"],
+        "created_at": mpc_orbits["created_at"],
+        "updated_at": mpc_orbits["updated_at"],
+        "orbit_type_int": mpc_orbits["orbit_type_int"],
+        "u_param": mpc_orbits["u_param"],
+        "nopp": mpc_orbits["nopp"],
+        "arc_length_total": mpc_orbits["arc_length_total"],
+        "arc_length_sel": mpc_orbits["arc_length_sel"],
+        "nobs_total": mpc_orbits["nobs_total"],
+        "nobs_total_sel": mpc_orbits["nobs_total_sel"],
+        "a": mpc_orbits["a"],
+        "q": mpc_orbits["q"],
+        "e": mpc_orbits["e"],
+        "i": mpc_orbits["i"],
+        "node": mpc_orbits["node"],
+        "peri_time": mpc_orbits["peri_time"],
+        "yarkovsky": mpc_orbits["yarkovsky"],
+        "srp": mpc_orbits["srp"],
+        "a1": mpc_orbits["a1"],
+        "a2": mpc_orbits["a2"],
+        "a3": mpc_orbits["a3"],
+        "dt": mpc_orbits["dt"],
+        "mean_anomaly": mpc_orbits["mean_anomaly"],
+        "period": mpc_orbits["period"],
+        "mean_motion": mpc_orbits["mean_motion"],
+        "a_unc": mpc_orbits["a_unc"],
+        "q_unc": mpc_orbits["q_unc"],
+        "e_unc": mpc_orbits["e_unc"],
+        "i_unc": mpc_orbits["i_unc"],
+        "node_unc": mpc_orbits["node_unc"],
+        "argperi_unc": mpc_orbits["argperi_unc"],
+        "peri_time_unc": mpc_orbits["peri_time_unc"],
+        "yarkovsky_unc": mpc_orbits["yarkovsky_unc"],
+        "srp_unc": mpc_orbits["srp_unc"],
+        "a1_unc": mpc_orbits["a1_unc"],
+        "a2_unc": mpc_orbits["a2_unc"],
+        "a3_unc": mpc_orbits["a3_unc"],
+        "dt_unc": mpc_orbits["dt_unc"],
+        "mean_anomaly_unc": mpc_orbits["mean_anomaly_unc"],
+        "period_unc": mpc_orbits["period_unc"],
+        "mean_motion_unc": mpc_orbits["mean_motion_unc"],
+        "epoch_mjd": mpc_orbits["epoch_mjd"],
+        "h": mpc_orbits["h"],
+        "g": mpc_orbits["g"],
+        "not_normalized_rms": mpc_orbits["not_normalized_rms"],
+        "normalized_rms": mpc_orbits["normalized_rms"],
+        "earth_moid": mpc_orbits["earth_moid"],
+        "fitting_datetime": mpc_orbits["fitting_datetime"]
+    }
+    return parsed_mpc_orbit

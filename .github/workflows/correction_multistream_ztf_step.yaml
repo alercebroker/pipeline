@@ -5,29 +5,29 @@ on:
     branches:
       - main
     paths:
-      - "correction_multistream_ztf_step/**"
-      - "!correction_multistream_ztf_step/README.md"
+      - "correction_multisurvey_ztf_step/**"
+      - "!correction_multisurvey_ztf_step/README.md"
 
 jobs:
-  correction_multistream_ztf_step_lint:
+  correction_multisurvey_ztf_step_lint:
     uses: ./.github/workflows/lint-template.yaml
     with:
-      base-folder: "correction_multistream_ztf_step"
-      sources-folder: "correction_multistream_ztf_step"
+      base-folder: "correction_multisurvey_ztf_step"
+      sources-folder: "correction_multisurvey_ztf_step"
   correction_step_integration:
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
-      base-folder: "correction_multistream_ztf_step"
-      sources-folder: "correction_multistream_ztf_step"
+      base-folder: "correction_multisurvey_ztf_step"
+      sources-folder: "correction_multisurvey_ztf_step"
       test-folder: "tests/integration"
       codecov-flags: "" # Do not upload
     secrets:
       GH_TOKEN: "${{ secrets.ADMIN_TOKEN }}"
-  build-correction-multistream-ztf-dagger:
+  build-correction-multisurvey-ztf-dagger:
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
       ref: ${{ github.ref }}
       stage: staging
-      extra-args: correction_multistream_ztf_step --dry-run
+      extra-args: correction_multisurvey_ztf_step --dry-run
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}

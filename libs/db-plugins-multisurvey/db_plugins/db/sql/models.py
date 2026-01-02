@@ -64,6 +64,12 @@ class ZtfObject(Base):
     g_r_mean_corr = Column(REAL)
     corrected = Column(Boolean, nullable=False, default=False)
     stellar = Column(Boolean, nullable=True, default=None)
+    reference_change = Column(Boolean) # bool 
+    diffpos = Column(Boolean) # bool   
+    ndethist = Column(Integer)  # int4,
+    ncovhist = Column(Integer)  # int4,
+    mjdstarthist = Column(DOUBLE_PRECISION)
+    mjdendhist = Column(DOUBLE_PRECISION)
 
     created_date = Column(Date, server_default=func.now())
 
@@ -175,7 +181,7 @@ class LsstSsObject(Base):
     nObs = Column(Integer, nullable=False)
     arc = Column(REAL, nullable=False)
 
-    firstmjd = Column(DOUBLE_PRECISION, nullable=True)
+    firstObservationMjdTai = Column(DOUBLE_PRECISION, nullable=True)
 
     MOIDEarth = Column(REAL, nullable=True)
     MOIDEarthDeltaV = Column(REAL, nullable=True)
@@ -267,7 +273,7 @@ class LsstSsObject(Base):
 
 
 class LsstMpcOrbits(Base):
-    __tablename__ = "mpc_orbits"
+    __tablename__ = "lsst_mpc_orbits"
 
     # Primary key
     ssObjectId = Column(BigInteger, primary_key=True)
@@ -279,7 +285,7 @@ class LsstMpcOrbits(Base):
     mpc_orb_jsonb = Column(JSONB, nullable=True)  #!!!!!!!
 
     created_at = Column(Date, nullable=True)
-    updated_at = Column(Date, nullable=True)
+    updated_at = Column(Date, nullable=True, onupdate=func.now())
 
     orbit_type_int = Column(Integer, nullable=True)
     u_param = Column(Integer, nullable=True)
@@ -390,14 +396,13 @@ class ZtfDetection(Base):
     magapbig = Column(REAL)  # float4,
     sigmagapbig = Column(REAL)  # float4,
     rfid = Column(BigInteger)  # int8,
-    magpsf_corr = Column(Integer)  # float4,
-    sigmapsf_corr = Column(Integer)  # float4,
-    sigmapsf_corr_ext = Column(Integer)  # float4,
+    magpsf_corr = Column(REAL)  # float4,
+    sigmapsf_corr = Column(REAL)  # float4,
+    sigmapsf_corr_ext = Column(REAL)  # float4,
     corrected = Column(Boolean)  # bool,
     dubious = Column(Boolean)  # bool,
     parent_candid = Column(BigInteger)  # int8,
     has_stamp = Column(Boolean)  # bool,
-
     created_date = Column(Date, server_default=func.now())
 
     __table_args__ = (
@@ -618,7 +623,6 @@ class ZtfForcedPhotometry(Base):
     corrected = Column(Boolean, nullable=False)  # bool NOT NULL,
     dubious = Column(Boolean, nullable=False)  # bool NOT NULL,
     parent_candid = Column(BigInteger)  # varchar,
-    has_stamp = Column(Boolean, nullable=False)  # bool NOT NULL,
     field = Column(Integer, nullable=False)  # int4,
     rcid = Column(Integer, nullable=False)  # int4,
     rfid = Column(BigInteger, nullable=False)  # int8,
@@ -745,7 +749,7 @@ class ZtfPS1(Base):
     szmag3 = Column(REAL)
     sgscore3 = Column(REAL)
     distpsnr3 = Column(REAL)
-    nmtchps = Column(SmallInteger)
+    nmtchps = Column(Integer)
 
     created_date = Column(Date, server_default=func.now())
 
@@ -792,7 +796,7 @@ class ZtfDataquality(Base):
     nneg = Column(Integer)
     nbad = Column(Integer)
     sumrat = Column(REAL)
-    scorr = Column(REAL)
+    scorr = Column(DOUBLE_PRECISION)
     dsnrms = Column(REAL)
     ssnrms = Column(REAL)
     magzpsci = Column(REAL)
@@ -857,33 +861,36 @@ class MagStat(Base):
     band = Column(SmallInteger, nullable=False)  # int2
     stellar = Column(Boolean)  # bool
     corrected = Column(Boolean)  # bool
-    ndubious = Column(BigInteger)  # int8
-    dmdt_first = Column(BigInteger)  # int8
-    dm_first = Column(BigInteger)  # int8
-    sigmadm_first = Column(BigInteger)  # int8
-    dt_first = Column(BigInteger)  # int8
-    magmean = Column(DOUBLE_PRECISION)  # float8
-    magmedian = Column(DOUBLE_PRECISION)  # float8
-    magmax = Column(DOUBLE_PRECISION)  # float8
-    magmin = Column(DOUBLE_PRECISION)  # float8
-    magsigma = Column(DOUBLE_PRECISION)  # float8
-    maglast = Column(BigInteger)  # int8
-    magfirst = Column(BigInteger)  # int8
-    magmean_corr = Column(DOUBLE_PRECISION)  # float8
-    magmedian_corr = Column(DOUBLE_PRECISION)  # float8
-    magmax_corr = Column(DOUBLE_PRECISION)  # float8
-    magmin_corr = Column(DOUBLE_PRECISION)  # float8
-    magsigma_corr = Column(DOUBLE_PRECISION)  # float8
-    maglast_corr = Column(DOUBLE_PRECISION)  # float8
-    magfirst_corr = Column(DOUBLE_PRECISION)  # float8
+    ndubious = Column(Integer)  # int4
+    dmdt_first = Column(REAL)  # float4
+    dm_first = Column(REAL)  # float4
+    sigmadm_first = Column(REAL)  # float4
+    dt_first = Column(REAL)  # float4
+    magmean = Column(REAL)  # float4
+    magmedian = Column(REAL)  # float4
+    magmax = Column(REAL)  # float4
+    magmin = Column(REAL)  # float4
+    magsigma = Column(REAL)  # float4
+    maglast = Column(REAL)  # float4
+    magfirst = Column(REAL)  # float4
+    magmean_corr = Column(REAL)  # float4
+    magmedian_corr = Column(REAL)  # float4
+    magmax_corr = Column(REAL)  # float4
+    magmin_corr = Column(REAL)  # float4
+    magsigma_corr = Column(REAL)  # float4
+    maglast_corr = Column(REAL)  # float4
+    magfirst_corr = Column(REAL)  # float4
     step_id_corr = Column(VARCHAR)  # varchar
-    saturation_rate = Column(DOUBLE_PRECISION)  # float8
+    n_det = Column(Integer)  # int4
+    firstmjd = Column(DOUBLE_PRECISION)  # float8
+    lastmjd = Column(DOUBLE_PRECISION)  # float8
+    saturation_rate = Column(REAL)  # float4
 
     updated_date = Column(Date, onupdate=func.now())
 
     __table_args__ = (
         PrimaryKeyConstraint("oid", "sid", "band", name="pk_magstat_oid_sid_band"),
-    )
+    )   
 
 
 class classifier(Base):
