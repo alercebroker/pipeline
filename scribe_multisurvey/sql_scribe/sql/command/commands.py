@@ -71,7 +71,6 @@ class Command(ABC):
     @abstractmethod
     def db_operation(session: Session, data: List):
         pass
-
 class ZTFCorrectionCommand(Command):
     type = "ZTFCorrectionCommand"
 
@@ -88,49 +87,37 @@ class ZTFCorrectionCommand(Command):
         oid = data["oid"]
         candidate_measurement_id = data["measurement_id"][0]
 
-        # detections
         candidate = {}        
         ## TODO check potential issue, multiple candidates in the same message ? => Whats the solution?
         detections = []
         ztf_detections = []
-        forced_photometries = []
-        ztf_forced_photometries = []
-        # First parse the candidate
+        
         for detection in data["detections"]:
             if detection["new"]:
-                # Candidate is  always in the data
                 if detection["measurement_id"] == candidate_measurement_id:
                     candidate = detection
                 detections.append(parse_det(detection, oid))
                 ztf_detections.append(parse_ztf_det(detection, oid))
-        # Then parse the previous detections
+        
         for detection in data["previous_detections"]:
             if detection["new"]:
                 detections.append(parse_det(detection, oid))
                 ztf_detections.append(parse_ztf_det(detection, oid))
-        # And finally parse the forced photometries
 
+        fp_dict = {}
+        ztf_fp_dict = {}
         for forced in data["forced_photometries"]:
             if forced["new"]:
-                forced_photometries.append(parse_fp(forced, oid))
-                ztf_forced_photometries.append(parse_ztf_fp(forced, oid))
-
-        # Deduplicate forced_photometries - keep the one with highest mjd
-        fp_dict = {}
-        for fp in forced_photometries:
-            key = (fp['oid'], fp['measurement_id'], fp['sid'])
-            if key not in fp_dict or fp['mjd'] > fp_dict[key]['mjd']:
-                fp_dict[key] = fp
-        forced_photometries = list(fp_dict.values())
-    
-        # Deduplicate ztf_forced_photometries - keep the one with highest mjd
-        ztf_fp_dict = {}
-        for ztf_fp in ztf_forced_photometries:
-            key = (ztf_fp['oid'], ztf_fp['measurement_id'])
-            if key not in ztf_fp_dict or ztf_fp['mjd'] > ztf_fp_dict[key]['mjd']:
-                ztf_fp_dict[key] = ztf_fp
-        ztf_forced_photometries = list(ztf_fp_dict.values())
-
+                fp = parse_fp(forced, oid)
+                ztf_fp = parse_ztf_fp(forced, oid)
+                
+                key = (fp['oid'], fp['measurement_id'], fp['sid'])
+                ztf_key = (ztf_fp['oid'], ztf_fp['measurement_id'])
+                
+                if key not in fp_dict or fp['mjd'] > fp_dict[key]['mjd']:
+                    fp_dict[key] = fp
+                if ztf_key not in ztf_fp_dict or ztf_fp['mjd'] > ztf_fp_dict[ztf_key]['mjd']:
+                    ztf_fp_dict[ztf_key] = ztf_fp
 
         parsed_ps1 = parse_ztf_ps1(candidate, oid)
         parsed_ss = parse_ztf_ss(candidate, oid)
@@ -142,8 +129,8 @@ class ZTFCorrectionCommand(Command):
         return {
             "detections": detections,
             "ztf_detections": ztf_detections,
-            "forced_photometries": forced_photometries,
-            "ztf_forced_photometries": ztf_forced_photometries,
+            "forced_photometries": list(fp_dict.values()),
+            "ztf_forced_photometries": list(ztf_fp_dict.values()),
             "ps1": parsed_ps1,
             "ss": parsed_ss,
             "gaia": parsed_gaia,
@@ -177,220 +164,153 @@ class ZTFCorrectionCommand(Command):
             reference.append(single_data["reference"])
             ztf_obj_update.append(single_data["ztf_object"])            
         
-        # Deduplicate forced photometries with their paired ztf entries
         fp_dedup_dict = {}
-        for i, fp in enumerate(forced_photometries):
+        for fp, ztf_fp in zip(forced_photometries, ztf_forced_photometries):
             key = (fp['oid'], fp['measurement_id'], fp['sid'])
-            ztf_fp = ztf_forced_photometries[i]
-        
             if key not in fp_dedup_dict or fp['mjd'] > fp_dedup_dict[key]['fp']['mjd']:
-                fp_dedup_dict[key] = {
-                    'fp': fp,
-                    'ztf_fp': ztf_fp
-                }
+                fp_dedup_dict[key] = {'fp': fp, 'ztf_fp': ztf_fp}
     
-        # Extract deduplicated lists
         forced_photometries = [item['fp'] for item in fp_dedup_dict.values()]
         ztf_forced_photometries = [item['ztf_fp'] for item in fp_dedup_dict.values()]
     
         det_dedup_dict = {}
-        for i, det in enumerate(detections):
+        for det, ztf_det in zip(detections, ztf_detections):
             key = (det['oid'], det['measurement_id'], det['sid'])
-            ztf_det = ztf_detections[i]
-        
             if key not in det_dedup_dict or det['mjd'] > det_dedup_dict[key]['det']['mjd']:
-                det_dedup_dict[key] = {
-                    'det': det,
-                    'ztf_det': ztf_det
-                }
+                det_dedup_dict[key] = {'det': det, 'ztf_det': ztf_det}
     
-        # Extract deduplicated lists
         detections = [item['det'] for item in det_dedup_dict.values()]
         ztf_detections = [item['ztf_det'] for item in det_dedup_dict.values()]
     
+        conn = session.connection()
 
-        # insert detections
-        if len(detections) > 0:
-            detections_stmt = insert(Detection)
-            detections_result = session.connection().execute(
-                detections_stmt.on_conflict_do_update(
-                    constraint="pk_detection_oid_measurementid_sid",
-                    set_=detections_stmt.excluded
-                ),
-                detections
+        if detections:
+            detections_stmt = insert(Detection).on_conflict_do_update(
+                constraint="pk_detection_oid_measurementid_sid",
+                set_=insert(Detection).excluded
             )
+            conn.execute(detections_stmt, detections)
         
-        if len(ztf_detections) > 0:
-            ztf_detections_stmt = insert(ZtfDetection)
-            ztf_detections_result = session.connection().execute(
-                ztf_detections_stmt.on_conflict_do_update(
-                    constraint="pk_ztfdetection_oid_measurementid",
-                    set_=ztf_detections_stmt.excluded
-                ),
-                ztf_detections
+        if ztf_detections:
+            ztf_detections_stmt = insert(ZtfDetection).on_conflict_do_update(
+                constraint="pk_ztfdetection_oid_measurementid",
+                set_=insert(ZtfDetection).excluded
             )
+            conn.execute(ztf_detections_stmt, ztf_detections)
 
-        # insert forced photometry
-        if len(forced_photometries) > 0:
-            fp_stmt = insert(ForcedPhotometry)
-            fp_result = session.connection().execute(
-                fp_stmt.on_conflict_do_update(
-                    constraint="pk_forcedphotometry_oid_measurementid_sid",
-                    set_=fp_stmt.excluded
-                ),
-                forced_photometries
+        if forced_photometries:
+            fp_stmt = insert(ForcedPhotometry).on_conflict_do_update(
+                constraint="pk_forcedphotometry_oid_measurementid_sid",
+                set_=insert(ForcedPhotometry).excluded
             )
+            conn.execute(fp_stmt, forced_photometries)
 
-        if len(ztf_forced_photometries) > 0:
-            ztf_fp_stmt = insert(ZtfForcedPhotometry)
-            ztf_fp_result = session.connection().execute(
-                ztf_fp_stmt.on_conflict_do_update(
-                    constraint="pk_ztfforcedphotometry_oid_measurementid",
-                    set_=ztf_fp_stmt.excluded
-                ),
-                ztf_forced_photometries
+        if ztf_forced_photometries:
+            ztf_fp_stmt = insert(ZtfForcedPhotometry).on_conflict_do_update(
+                constraint="pk_ztfforcedphotometry_oid_measurementid",
+                set_=insert(ZtfForcedPhotometry).excluded
             )
+            conn.execute(ztf_fp_stmt, ztf_forced_photometries)
 
-        # update ztf_object columns 
         ztfobj_dict = {}
         for obj in ztf_obj_update:
-            key = (obj['oid'])
-            if key not in ztfobj_dict or obj.get('_mjd', 0) > ztfobj_dict[key].get('_mjd', 0):
-                ztfobj_dict[key] = obj
-        ztfobj_list = list(ztfobj_dict.values())
+            key = obj['oid']
+            mjd = obj.get('_mjd', 0)
+            if key not in ztfobj_dict or mjd > ztfobj_dict[key][0]:
+                ztfobj_dict[key] = (mjd, obj)
+        
+        if ztfobj_dict:
+            ztfobj_list = []
+            for mjd, obj in ztfobj_dict.values():
+                clean_obj = {k: v for k, v in obj.items() if k != '_mjd'}
+                clean_obj['_oid'] = clean_obj['oid']
+                ztfobj_list.append(clean_obj)
 
-        # remove _mjd before insertion
-        for obj in ztfobj_list:
-            obj.pop('_mjd', None)
+            ztf_object_stmt = update(ZtfObject).where(
+                ZtfObject.oid == bindparam('_oid')
+            ).values({
+                "ndethist": bindparam("ndethist"),
+                "ncovhist": bindparam("ncovhist"),
+                "mjdstarthist": bindparam("mjdstarthist"),
+                "mjdendhist": bindparam("mjdendhist"),
+            })
+            conn.execute(ztf_object_stmt, ztfobj_list)
 
-            ztf_object_stmt = update(ZtfObject)
-            ztf_object_result = session.connection().execute(
-                ztf_object_stmt
-                .where(ZtfObject.oid == bindparam('_oid'))
-                .values({
-                    "ndethist": bindparam("ndethist"),
-                    "ncovhist": bindparam("ncovhist"),
-                    "mjdstarthist": bindparam("mjdstarthist"),
-                    "mjdendhist": bindparam("mjdendhist"),
-                }),
-                ztfobj_list
-            )
-
-        # Deduplicate ps1 using inherited _mjd
         ps1_dict = {}
         for p in ps1:
             key = (p['oid'], p.get('measurement_id'))
-            if key not in ps1_dict or p.get('_mjd', 0) > ps1_dict[key].get('_mjd', 0):
-                ps1_dict[key] = p
-        ps1 = list(ps1_dict.values())
+            mjd = p.get('_mjd', 0)
+            if key not in ps1_dict or mjd > ps1_dict[key][0]:
+                ps1_dict[key] = (mjd, {k: v for k, v in p.items() if k != '_mjd'})
 
-        # remove _mjd before insertion
-        for p in ps1:
-            p.pop('_mjd', None)
-
-        # insert ps1_ztf
-        if len(ps1) > 0:
-            ps_stmt = insert(ZtfPS1)
-            ps_result = session.connection().execute(
-                ps_stmt.on_conflict_do_update(
-                    constraint="pk_ztfps1_oid_measurement_id",
-                    set_=ps_stmt.excluded
-                ),
-                ps1
+        if ps1_dict:
+            ps1_clean = [obj for mjd, obj in ps1_dict.values()]
+            ps_stmt = insert(ZtfPS1).on_conflict_do_update(
+                constraint="pk_ztfps1_oid_measurement_id",
+                set_=insert(ZtfPS1).excluded
             )
+            conn.execute(ps_stmt, ps1_clean)
     
-        # Deduplicate ss using inherited _mjd
         ss_dict = {}
         for s in ss:
             key = (s['oid'], s.get('measurement_id'))
-            if key not in ss_dict or s.get('_mjd', 0) > ss_dict[key].get('_mjd', 0):
-                ss_dict[key] = s
-        ss = list(ss_dict.values())    
+            mjd = s.get('_mjd', 0)
+            if key not in ss_dict or mjd > ss_dict[key][0]:
+                ss_dict[key] = (mjd, {k: v for k, v in s.items() if k != '_mjd'})
 
-        # remove _mjd before insertion
-        for s in ss:
-            s.pop('_mjd', None)
-
-        # insert ss_ztf
-        if len(ss) > 0:
-            ss_stmt = insert(ZtfSS)
-            ss_result = session.connection().execute(
-                ss_stmt.on_conflict_do_update(
-                    constraint="pk_ztfss_oid_measurement_id",
-                    set_=ss_stmt.excluded
-                ),
-                ss
+        if ss_dict:
+            ss_clean = [obj for mjd, obj in ss_dict.values()]
+            ss_stmt = insert(ZtfSS).on_conflict_do_update(
+                constraint="pk_ztfss_oid_measurement_id",
+                set_=insert(ZtfSS).excluded
             )
+            conn.execute(ss_stmt, ss_clean)
         
-        # deduplicate gaia using inherited mjd
         gaia_dict = {}
         for g in gaia:
             key = g['oid']
-            if key not in gaia_dict or g.get('_mjd', 0) > gaia_dict[key].get('_mjd', 0):
-                gaia_dict[key] = g
-        gaia = list(gaia_dict.values())
+            mjd = g.get('_mjd', 0)
+            if key not in gaia_dict or mjd > gaia_dict[key][0]:
+                gaia_dict[key] = (mjd, {k: v for k, v in g.items() if k != '_mjd'})
 
-        # remove _mjd before insertion
-        for g in gaia:
-            g.pop('_mjd', None)
-
-        # insert gaia_ztf
-        if len(gaia) > 0:
-            gaia_stmt = insert(ZtfGaia)
-            gaia_result = session.connection().execute(
-                gaia_stmt.on_conflict_do_update(
-                    constraint="pk_ztfgaia_oid",
-                    set_=gaia_stmt.excluded
-                ),
-                gaia
+        if gaia_dict:
+            gaia_clean = [obj for mjd, obj in gaia_dict.values()]
+            gaia_stmt = insert(ZtfGaia).on_conflict_do_update(
+                constraint="pk_ztfgaia_oid",
+                set_=insert(ZtfGaia).excluded
             )
-        # Deduplicate dq using inherited _mjd
+            conn.execute(gaia_stmt, gaia_clean)
+
         dq_dict = {}
         for d in dq:
             key = (d['oid'], d.get('measurement_id'))
-            if key not in dq_dict or d.get('_mjd', 0) > dq_dict[key].get('_mjd', 0):
-                dq_dict[key] = d
-        dq = list(dq_dict.values())
-
-        # remove _mjd before insertion
-        for d in dq:
-            d.pop('_mjd', None)
+            mjd = d.get('_mjd', 0)
+            if key not in dq_dict or mjd > dq_dict[key][0]:
+                dq_dict[key] = (mjd, {k: v for k, v in d.items() if k != '_mjd'})
             
-        # insert data quality_ztf
-        if len(dq) > 0:
-            dq_stmt = insert(ZtfDataquality)
-            dq_result = session.connection().execute(
-                dq_stmt.on_conflict_do_update(
-                    constraint="pk_ztfdataquality_oid_measurement_id",
-                    set_=dq_stmt.excluded
-                ),
-                dq
+        if dq_dict:
+            dq_clean = [obj for mjd, obj in dq_dict.values()]
+            dq_stmt = insert(ZtfDataquality).on_conflict_do_update(
+                constraint="pk_ztfdataquality_oid_measurement_id",
+                set_=insert(ZtfDataquality).excluded
             )
+            conn.execute(dq_stmt, dq_clean)
 
-        # deduplicate reference using inherited mjd
         ref_dict = {}
         for r in reference:
             key = (r['oid'], r.get('rfid'))
-            if key not in ref_dict or r.get('_mjd', 0) > ref_dict[key].get('_mjd', 0):
-                ref_dict[key] = r
-        reference = list(ref_dict.values())
+            mjd = r.get('_mjd', 0)
+            if key not in ref_dict or mjd > ref_dict[key][0]:
+                ref_dict[key] = (mjd, {k: v for k, v in r.items() if k != '_mjd'})
  
-        # remove _mjd before insertion
-        for r in reference:
-            r.pop('_mjd', None)
-
-        # insert reference_ztf
-        if len(reference) > 0:
-            reference_stmt = insert(ZtfReference)
-            reference_result = session.connection().execute(
-                reference_stmt.on_conflict_do_update(
-                    constraint="pk_ztfreference_oid_rfid",
-                    set_=reference_stmt.excluded
-                ),
-                reference
+        if ref_dict:
+            reference_clean = [obj for mjd, obj in ref_dict.values()]
+            reference_stmt = insert(ZtfReference).on_conflict_do_update(
+                constraint="pk_ztfreference_oid_rfid",
+                set_=insert(ZtfReference).excluded
             )
-
-
+            conn.execute(reference_stmt, reference_clean)
+            
 class ZTFMagstatCommand(Command):
     type = "ZTFMagstatCommand"
 
