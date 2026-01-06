@@ -503,6 +503,7 @@ def parse_magstats(sub_magstats: dict, oid: str, sid: int) -> dict:
 def parse_mpc_orbits(mpc_orbits: dict) -> dict:
     parsed_mpc_orbit = {
         "ssObjectId": mpc_orbits["ssObjectId"],
+        "mjd": mpc_orbits["mjd"],
         "designation": mpc_orbits["designation"],
         "packed_primary_provisional_designation": mpc_orbits["packed_primary_provisional_designation"],
         "unpacked_primary_provisional_designation": mpc_orbits["unpacked_primary_provisional_designation"],
