@@ -61,8 +61,8 @@
       "type": "int"
     },
     {
-      "default": null,
       "doc": "Point Source model flux [nJy].",
+      "default": null,
       "name": "psfFlux",
       "type": [
         "null",
@@ -70,8 +70,8 @@
       ]
     },
     {
-      "default": null,
       "doc": "Uncertainty of psfFlux [nJy].",
+      "default": null,
       "name": "psfFluxErr",
       "type": [
         "null",
@@ -84,8 +84,8 @@
       "type": "double"
     },
     {
-      "default": null,
       "doc": "Forced photometry flux for a point source model measured on the visit image centered at the DiaObject position [nJy].",
+      "default": null,
       "name": "scienceFlux",
       "type": [
         "null",
@@ -93,8 +93,8 @@
       ]
     },
     {
-      "default": null,
       "doc": "Uncertainty of scienceFlux [nJy].",
+      "default": null,
       "name": "scienceFluxErr",
       "type": [
         "null",
@@ -102,7 +102,7 @@
       ]
     },
     {
-      "doc": "Time when the image was processed and this DiaSource record was generated, expressed as Modified Julian Date, International Atomic Time.",
+      "doc": "Time when this record was generated, expressed as Modified Julian Date, International Atomic Time.",
       "name": "timeProcessedMjdTai",
       "type": "double"
     },

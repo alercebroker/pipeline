@@ -255,8 +255,7 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
         with self.db_connection.session() as session:
             # Query LSST SS detection data (sid=2)
             lsst_ss_stmt = select(
-                LsstSsDetection.oid,
-                LsstSsDetection.oid.label('ssObjectId'),
+                LsstSsDetection.ssObjectId,
                 LsstSsDetection.measurement_id,
                 LsstSsDetection.designation,
                 LsstSsDetection.eclLambda,
@@ -295,7 +294,7 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
                 cast(LsstSsDetection.topo_vz, DOUBLE_PRECISION).label('topo_vz'),
                 cast(LsstSsDetection.topo_vtot, DOUBLE_PRECISION).label('topo_vtot'),
                 LsstSsDetection.diaDistanceRank, 
-            ).where(LsstSsDetection.oid.in_(list(ss_oids)))
+            ).where(LsstSsDetection.ssObjectId.in_(list(ss_oids)))
             lsst_ss_detections = session.execute(lsst_ss_stmt).all()
             
             # Query general SS detection data (sid=2)
@@ -394,14 +393,14 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
         # Create lookup for LSST dia detections by (oid, measurement_id)
         lsst_det_lookup = {}
         for lsst_det in parsed_lsst_dets:
-            key = (lsst_det['oid'], lsst_det['measurement_id'])
+            key = (lsst_det['ssObjectId'], lsst_det['measurement_id'])
             lsst_det_lookup[key] = lsst_det
 
         # Combine all three datasets
         parsed_lsst_ss_list = []
         for lsst_ss_det in parsed_lsst_ss_dets:
             # The measurement_id in LsstSsDetection corresponds to the Detection table
-            ss_key = (lsst_ss_det['oid'], lsst_ss_det['measurement_id'])
+            ss_key = (lsst_ss_det['ssObjectId'], lsst_ss_det['measurement_id'])
             
             # Start with the SS-specific data
             combined_dict = {**lsst_ss_det}

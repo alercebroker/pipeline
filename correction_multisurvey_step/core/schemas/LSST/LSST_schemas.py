@@ -405,7 +405,7 @@ ss_source_lsst_db: dict[str, DType] = {
     # ---- DIA SOURCE COLUMNS ----
     "sid": pd.Int32Dtype(),
     "measurement_id": pd.Int64Dtype(),
-    "oid": pd.Int64Dtype(),
+    "ssObjectId": pd.Int64Dtype(),
     "visit": pd.Int64Dtype(),
     "detector": pd.Int32Dtype(),
     "parentDiaSourceId": pd.Int64Dtype(),

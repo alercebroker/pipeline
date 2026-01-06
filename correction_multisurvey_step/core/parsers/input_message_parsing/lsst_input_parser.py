@@ -90,7 +90,7 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
         if not ss_sources_df.empty:    
             ss_sources_df = ss_sources_df.merge(
                 sources_df.drop(columns=["new"], errors="ignore"),
-                on=["measurement_id", "oid"],
+                on=["measurement_id", "ssObjectId"],
                 how="left")
             
         # When there's mpc orbits, make a separate df for them

@@ -117,7 +117,7 @@ class LSSTDataJoiner(SurveyDataJoiner):
                 # Sort by 'new' column (new=True will be on top)
                 df = df.sort_values(["new"], ascending=[False])
                 # Drop duplicates based on measurement_id and oid, keeping first (new=True)
-                df = df.drop_duplicates(["measurement_id", "oid"], keep="first")
+                df = df.drop_duplicates(["measurement_id", "ssObjectId"], keep="first")
             result[key] = df
         # It is possible to drop duplicates for mpc orbits based on id, and updated/created time (choosing highest date from the two
         # and then order and dedup based on that value, but its also possible and probable that the mpc orbits will still be duplicated in scribe so this would 
