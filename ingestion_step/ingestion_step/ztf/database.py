@@ -15,10 +15,13 @@ from ingestion_step.core.database import (
     FORCED_DETECTION_COLUMNS,
     OBJECT_COLUMNS,
     db_insert_on_conflict_do_nothing_builder,
+    db_insert_on_conflict_do_update_builder,
 )
 
 
-def insert_objects(driver: PsqlDatabase, objects_df: pd.DataFrame, chunk_size: int | None = None):
+def insert_objects(
+    driver: PsqlDatabase, objects_df: pd.DataFrame, chunk_size: int | None = None
+):
     if len(objects_df) == 0:
         return
     if chunk_size is None:
@@ -63,7 +66,9 @@ def insert_objects(driver: PsqlDatabase, objects_df: pd.DataFrame, chunk_size: i
         session.commit()
 
 
-def insert_detections(driver: PsqlDatabase, detections_df: pd.DataFrame, chunk_size: int | None = None):
+def insert_detections(
+    driver: PsqlDatabase, detections_df: pd.DataFrame, chunk_size: int | None = None
+):
     if len(detections_df) == 0:
         return
     if chunk_size is None:
@@ -113,13 +118,15 @@ def insert_detections(driver: PsqlDatabase, detections_df: pd.DataFrame, chunk_s
     detections_ztf_dict = detections_ztf_df_parsed.to_dict("records")
     with driver.session() as session:
         for i in range(0, len(detections_df), chunk_size):
-            detection_sql_stmt = db_insert_on_conflict_do_nothing_builder(
+            detection_sql_stmt = db_insert_on_conflict_do_update_builder(
                 Detection,
                 detections_dict[i : i + chunk_size],
+                pk=["oid", "measurement_id", "sid"],
             )
-            detection_ztf_sql_stmt = db_insert_on_conflict_do_nothing_builder(
+            detection_ztf_sql_stmt = db_insert_on_conflict_do_update_builder(
                 ZtfDetection,
                 detections_ztf_dict[i : i + chunk_size],
+                pk=["oid", "measurement_id"],
             )
 
             session.execute(detection_sql_stmt)
@@ -128,7 +135,9 @@ def insert_detections(driver: PsqlDatabase, detections_df: pd.DataFrame, chunk_s
 
 
 def insert_forced_photometry(
-    connection: PsqlDatabase, forced_photometry_df: pd.DataFrame, chunk_size: int | None = None
+    connection: PsqlDatabase,
+    forced_photometry_df: pd.DataFrame,
+    chunk_size: int | None = None,
 ):
     if len(forced_photometry_df) == 0:
         return
@@ -204,7 +213,9 @@ def insert_forced_photometry(
         session.commit()
 
 
-def insert_non_detections(driver: PsqlDatabase, non_detections_df: pd.DataFrame, chunk_size: int | None = None):
+def insert_non_detections(
+    driver: PsqlDatabase, non_detections_df: pd.DataFrame, chunk_size: int | None = None
+):
     if len(non_detections_df) == 0:
         return
     if chunk_size is None:

@@ -117,6 +117,8 @@ class BaseDbTests(unittest.TestCase):
         result_detections = self.query_data(Detection)
         result_ztf_detections = self.query_data(ZtfDetection)
 
+        self.maxDiff = None
+
         for res, exp in self.ziped_lists(
             result_detections, msgs.detections_expected, "measurement_id"
         ):

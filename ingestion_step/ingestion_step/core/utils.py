@@ -1,4 +1,4 @@
-from typing import Any, Callable
+from typing import Any, Callable, Literal
 
 import pandas as pd
 
@@ -40,3 +40,19 @@ def groupby_messageid(df: pd.DataFrame) -> dict[int, list[dict[str, Any]]]:
         .apply(lambda x: x.to_dict("records"), include_groups=False)
         .to_dict()
     )
+
+
+def deduplicate(columns: list[str], sort: str | list[str] | None = None):
+    def _deduplicate(df: pd.DataFrame):
+        if sort is not None:
+            df.sort_values(sort, inplace=True)
+        df.drop_duplicates(subset=columns, keep="first", inplace=True)
+
+    return _deduplicate
+
+
+def drop_na(columns: list[str], axis: Literal[0, 1, "index", "columns"] = 0):
+    def _drop_na(df: pd.DataFrame):
+        df.dropna(axis=axis, subset=columns, how="any")
+
+    return _drop_na
