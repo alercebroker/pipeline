@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from idmapper.mapper import catalog_oid_to_masterid
 
-from ingestion_step.core.utils import add_constant_column, copy_column
+from ingestion_step.core.utils import add_constant_column, copy_column, deduplicate
 
 ERRORS = {
     1: 0.065,
@@ -117,10 +117,7 @@ def _calculate_mag(
         e_mag = ZERO_MAG
     else:
         e_mag = (
-            1.0857
-            * forcediffimfluxunc
-            * flux2uJy
-            / np.abs(forcediffimflux * flux2uJy)
+            1.0857 * forcediffimfluxunc * flux2uJy / np.abs(forcediffimflux * flux2uJy)
         )
 
     return mag, e_mag
@@ -198,6 +195,7 @@ CANDIDATES_TRANSFORMS = [
     add_constant_column("sid", 0, pd.Int32Dtype()),
     isdiffpos_to_int,
     jd_to_mjd,
+    deduplicate(["oid", "measurement_id"], sort="mjd"),
     sigmara_to_e_ra,
     sigmadec_to_e_dec,
     copy_column("fid", "band"),
