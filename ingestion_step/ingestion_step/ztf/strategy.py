@@ -13,9 +13,9 @@ from ingestion_step.ztf.database import (
 )
 from ingestion_step.ztf.serializer import (
     serialize_detections,
-    serialize_prv_candidates,
     serialize_forced_photometries,
     serialize_non_detections,
+    serialize_prv_candidates,
 )
 from ingestion_step.ztf.transforms import (
     CANDIDATES_TRANSFORMS,
@@ -48,8 +48,6 @@ class ZtfStrategy(StrategyInterface[ZtfData]):
         non_detections = prv_candidates[prv_candidates["candid"].isnull()]
         forced_photometries = fp_hists
 
-
-
         return ZtfData(
             objects=objects,
             detections=detections,
@@ -59,13 +57,23 @@ class ZtfStrategy(StrategyInterface[ZtfData]):
         )
 
     @classmethod
-    def insert_into_db(cls, driver: PsqlDatabase, parsed_data: ZtfData, chunk_size: int | None = None
+    def insert_into_db(
+        cls, driver: PsqlDatabase, parsed_data: ZtfData, chunk_size: int | None = None
     ):
         insert_objects(driver, parsed_data["objects"], chunk_size=chunk_size)
-        insert_detections(driver, parsed_data["detections"], chunk_size=chunk_size)
+        insert_detections(
+            driver,
+            parsed_data["detections"],
+            chunk_size=chunk_size,
+            on_conflict_do_update=True,
+        )
         insert_detections(driver, parsed_data["prv_detections"], chunk_size=chunk_size)
-        insert_non_detections(driver, parsed_data["non_detections"], chunk_size=chunk_size)
-        insert_forced_photometry(driver, parsed_data["forced_photometries"], chunk_size=chunk_size)
+        insert_non_detections(
+            driver, parsed_data["non_detections"], chunk_size=chunk_size
+        )
+        insert_forced_photometry(
+            driver, parsed_data["forced_photometries"], chunk_size=chunk_size
+        )
 
     @classmethod
     def serialize(cls, parsed_data: ZtfData) -> list[Message]:
@@ -73,9 +81,7 @@ class ZtfStrategy(StrategyInterface[ZtfData]):
         detections = serialize_detections(parsed_data["detections"])
         prv_detections = serialize_prv_candidates(parsed_data["prv_detections"])
         forced = serialize_forced_photometries(parsed_data["forced_photometries"])
-        non_detections = serialize_non_detections(
-            parsed_data["non_detections"]
-        )
+        non_detections = serialize_non_detections(parsed_data["non_detections"])
 
         message_objects = groupby_messageid(objects)
         message_detections = groupby_messageid(detections)

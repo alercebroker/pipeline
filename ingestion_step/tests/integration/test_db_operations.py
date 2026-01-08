@@ -112,7 +112,9 @@ class BaseDbTests(unittest.TestCase):
             self.assertDictEqual(res, exp)
 
     def test_detection(self):
-        insert_detections(self.psql_db, msgs.new_detections_df)
+        insert_detections(
+            self.psql_db, msgs.new_detections_df, on_conflict_do_update=True
+        )
 
         result_detections = self.query_data(Detection)
         result_ztf_detections = self.query_data(ZtfDetection)

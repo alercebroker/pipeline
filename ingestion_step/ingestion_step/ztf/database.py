@@ -67,7 +67,10 @@ def insert_objects(
 
 
 def insert_detections(
-    driver: PsqlDatabase, detections_df: pd.DataFrame, chunk_size: int | None = None
+    driver: PsqlDatabase,
+    detections_df: pd.DataFrame,
+    chunk_size: int | None = None,
+    on_conflict_do_update: bool = False,
 ):
     if len(detections_df) == 0:
         return
@@ -118,16 +121,26 @@ def insert_detections(
     detections_ztf_dict = detections_ztf_df_parsed.to_dict("records")
     with driver.session() as session:
         for i in range(0, len(detections_df), chunk_size):
-            detection_sql_stmt = db_insert_on_conflict_do_update_builder(
-                Detection,
-                detections_dict[i : i + chunk_size],
-                pk=["oid", "measurement_id", "sid"],
-            )
-            detection_ztf_sql_stmt = db_insert_on_conflict_do_update_builder(
-                ZtfDetection,
-                detections_ztf_dict[i : i + chunk_size],
-                pk=["oid", "measurement_id"],
-            )
+            if on_conflict_do_update:
+                detection_sql_stmt = db_insert_on_conflict_do_update_builder(
+                    Detection,
+                    detections_dict[i : i + chunk_size],
+                    pk=["oid", "measurement_id", "sid"],
+                )
+                detection_ztf_sql_stmt = db_insert_on_conflict_do_update_builder(
+                    ZtfDetection,
+                    detections_ztf_dict[i : i + chunk_size],
+                    pk=["oid", "measurement_id"],
+                )
+            else:
+                detection_sql_stmt = db_insert_on_conflict_do_nothing_builder(
+                    Detection,
+                    detections_dict[i : i + chunk_size],
+                )
+                detection_ztf_sql_stmt = db_insert_on_conflict_do_nothing_builder(
+                    ZtfDetection,
+                    detections_ztf_dict[i : i + chunk_size],
+                )
 
             session.execute(detection_sql_stmt)
             session.execute(detection_ztf_sql_stmt)
