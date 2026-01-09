@@ -64,8 +64,8 @@ class ZtfObject(Base):
     g_r_mean_corr = Column(REAL)
     corrected = Column(Boolean, nullable=False, default=False)
     stellar = Column(Boolean, nullable=True, default=None)
-    reference_change = Column(Boolean) # bool 
-    diffpos = Column(Boolean) # bool   
+    reference_change = Column(Boolean)  # bool
+    diffpos = Column(Boolean)  # bool
     ndethist = Column(Integer)  # int4,
     ncovhist = Column(Integer)  # int4,
     mjdstarthist = Column(DOUBLE_PRECISION)
@@ -577,7 +577,9 @@ class LsstSsDetection(Base):
     #! CHECK
     __table_args__ = (
         PrimaryKeyConstraint(
-            "ssObjectId", "measurement_id", name="pk_lsstssdetection_ssobjectid_measurementid"
+            "ssObjectId",
+            "measurement_id",
+            name="pk_lsstssdetection_ssobjectid_measurementid",
         ),
         Index("ix_lsstssdetection_ssobjectid", "ssObjectId", postgresql_using="hash"),
     )
@@ -890,36 +892,44 @@ class MagStat(Base):
 
     __table_args__ = (
         PrimaryKeyConstraint("oid", "sid", "band", name="pk_magstat_oid_sid_band"),
-    )   
+    )
 
 
-class classifier(Base):
+class Classifier(Base):
     __tablename__ = "classifier"
-    classifier_id = Column(Integer, primary_key=True)
-    classifier_name = Column(VARCHAR)
-    classifier_version = Column(VARCHAR)
-    tid = Column(SmallInteger)
+
+    classifier_id = Column(Integer, nullable=False)
+    classifier_name = Column(VARCHAR, nullable=False)
+    classifier_version = Column(VARCHAR, nullable=False)
+    tid = Column(SmallInteger, nullable=False)
 
     created_date = Column(Date, server_default=func.now())
+
+    __table_args__ = (
+        PrimaryKeyConstraint("classifier_id", name="pk_classifier_classifierid"),
+    )
 
 
 class Taxonomy(Base):
     __tablename__ = "taxonomy"
-    class_id = Column(Integer, primary_key=True)
-    class_name = Column(VARCHAR)
-    order = Column(Integer)
-    classifier_id = Column(SmallInteger)
+
+    class_id = Column(Integer, nullable=False)
+    class_name = Column(VARCHAR, nullable=False)
+    order = Column(Integer, nullable=False)
+    classifier_id = Column(SmallInteger, nullable=False)
 
     created_date = Column(Date, server_default=func.now())
+
+    __table_args__ = (PrimaryKeyConstraint("class_id", name="pk_taxonomy_classid"),)
 
 
 class Probability(Base):
     __tablename__ = "probability"
 
-    oid = Column(BigInteger)
+    oid = Column(BigInteger, nullable=False)
     sid = Column(SmallInteger, nullable=False)
-    classifier_id = Column(SmallInteger)
-    classifier_version = Column(SmallInteger)
+    classifier_id = Column(SmallInteger, nullable=False)
+    classifier_version = Column(SmallInteger, nullable=False)
     class_id = Column(SmallInteger, nullable=False)
     probability = Column(REAL, nullable=False)
     ranking = Column(SmallInteger)
@@ -948,6 +958,7 @@ class Probability(Base):
 
 class Feature(Base):
     __tablename__ = "feature"
+
     oid = Column(BigInteger, nullable=False)
     sid = Column(SmallInteger, nullable=False)  # int2,
     feature_id = Column(SmallInteger, nullable=False)
@@ -966,38 +977,54 @@ class Feature(Base):
 
 class FeatureNameLut(Base):
     __tablename__ = "feature_name_lut"
-    feature_id = Column(SmallInteger, primary_key=True, autoincrement=True)
-    feature_name = Column(VARCHAR)
+
+    feature_id = Column(SmallInteger, nullable=False, autoincrement=True)
+    feature_name = Column(VARCHAR, nullable=False)
 
     created_date = Column(Date, server_default=func.now())
+
+    __table_args__ = (
+        PrimaryKeyConstraint("feature_id", name="pk_feature_name_lut_featureid"),
+    )
 
 
 class FeatureVersionLut(Base):
     __tablename__ = "feature_version_lut"
-    version_id = Column(SmallInteger, primary_key=True, autoincrement=True)
-    version_name = Column(VARCHAR)
+
+    version_id = Column(SmallInteger, nullable=False, autoincrement=True)
+    version_name = Column(VARCHAR, nullable=False)
+
+    __table_args__ = (
+        PrimaryKeyConstraint("version_id", name="pk_feature_version_lut_versionid"),
+    )
 
 
 class SidLut(Base):
     __tablename__ = "sid_lut"
 
-    sid = Column(SmallInteger, primary_key=True, autoincrement=False)
+    sid = Column(SmallInteger, nullable=False, autoincrement=False)
     tid = Column(SmallInteger)
-    survey_name = Column(VARCHAR)
+    survey_name = Column(VARCHAR, nullable=False)
 
     created_date = Column(Date, server_default=func.now())
 
+    __table_args__ = (PrimaryKeyConstraint("sid", name="pk_sid_lut_sid"),)
 
-class Bands(Base):
-    __tablename__ = "bands"
 
-    sid = Column(SmallInteger, primary_key=True, autoincrement=False)
-    tid = Column(SmallInteger, primary_key=True, autoincrement=False)
-    band = Column(SmallInteger, primary_key=True, autoincrement=False)
-    band_name = Column(VARCHAR)
+class Band(Base):
+    __tablename__ = "band"
+
+    sid = Column(SmallInteger, nullable=False, autoincrement=False)
+    tid = Column(SmallInteger, nullable=False, autoincrement=False)
+    band = Column(SmallInteger, nullable=False, autoincrement=False)
+    band_name = Column(VARCHAR, nullable=False)
     order = Column(Integer)
 
     created_date = Column(Date, server_default=func.now())
+
+    __table_args__ = (
+        PrimaryKeyConstraint("sid", "tid", "band", name="pk_band_sid_tid_band"),
+    )
 
 
 class Xmatch(Base):
