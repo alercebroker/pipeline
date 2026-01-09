@@ -998,3 +998,26 @@ class Bands(Base):
     order = Column(Integer)
 
     created_date = Column(Date, server_default=func.now())
+
+
+class Xmatch(Base):
+    __tablename__ = "xmatch"
+
+    oid = Column(BigInteger, nullable=False)
+    sid = Column(SmallInteger, nullable=False)
+    catid = Column(SmallInteger, nullable=False)
+
+    dist = Column(REAL, nullable=False)
+    oid_catalog = Column(VARCHAR, nullable=False)
+
+    created_date = Column(Date, server_default=func.now())
+    updated_date = Column(Date, onupdate=func.now())
+
+    __table_args__ = (
+        PrimaryKeyConstraint(
+            "oid",
+            "sid",
+            "catid",
+            name="pk_xmatch_oid_sid_catid",
+        ),
+    )
