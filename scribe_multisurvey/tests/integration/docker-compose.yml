@@ -1,13 +1,13 @@
 version: "3"
 services:
   zookeeper:
-    image: bitnami/zookeeper:latest
+    image: zookeeper:3.9.4
     hostname: zookeeper
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
 
   kafka:
-    image: bitnami/kafka:3.3.1
+    image: apache/kafka:4.1.1
     hostname: kafka
     depends_on:
       - zookeeper
@@ -20,14 +20,8 @@ services:
     ports:
       - "9092:9092"
 
-  mongodb:
-    image: mongo
-    ports:
-      - "27017:27017"
-    command: mongod --notablescan
-
   postgres:
-    image: postgres
+    image: postgres:16.11
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_DB=postgres

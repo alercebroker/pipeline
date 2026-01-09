@@ -1,7 +1,9 @@
-from db_plugins.db.sql._connection import PsqlDatabase
 import unittest
 from unittest import mock
+
 from sqlalchemy.orm import Session
+
+from db_plugins.db.sql._connection import PsqlDatabase
 
 
 class SQLConnectionTest(unittest.TestCase):

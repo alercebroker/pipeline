@@ -1,12 +1,13 @@
-from db_plugins.db.sql.models import Object
+import unittest
+
+import pytest
+from sqlalchemy import select
+from sqlalchemy.inspection import inspect
+
 from db_plugins.db.sql._connection import (
     PsqlDatabase,
 )
-
-from sqlalchemy import select
-from sqlalchemy.inspection import inspect
-import pytest
-import unittest
+from db_plugins.db.sql.models import Object
 
 
 @pytest.mark.usefixtures("psql_service")

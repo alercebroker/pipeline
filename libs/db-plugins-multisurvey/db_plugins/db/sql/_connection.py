@@ -1,9 +1,11 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
-from .models import Base
+import logging
 from contextlib import contextmanager
 from typing import Callable, ContextManager
-import logging
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
+
+from .models import Base
 
 
 def get_db_url(config: dict):
@@ -17,15 +19,11 @@ class PsqlDatabase:
     def __init__(self, db_config: dict, engine=None) -> None:
         db_url = get_db_url(db_config)
         schema = db_config.get("SCHEMA", None)
-        if schema:         
+        if schema:
             self._engine = engine or create_engine(
                 db_url,
                 echo=False,
-                connect_args={
-                    "options": "-csearch_path={}".format(
-                        schema
-                    )
-                },
+                connect_args={"options": "-csearch_path={}".format(schema)},
             )
         else:
             self._engine = engine or create_engine(db_url, echo=False)
@@ -52,3 +50,4 @@ class PsqlDatabase:
             raise Exception(e)
         finally:
             session.close()
+

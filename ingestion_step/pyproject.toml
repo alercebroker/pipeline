@@ -34,7 +34,6 @@ moto = { extras = ["secretsmanager"], version = "^4.1.11" }
 db-plugins = { path = "../libs/db-plugins-multisurvey", develop = true }
 idmapper = { path = "../libs/idmapper", develop = true }
 psycopg2-binary = "*"
-test-utils = { path = "../libs/test_utils", develop = true }
 
 
 [tool.poetry.group.dev.dependencies]
@@ -60,7 +59,6 @@ reportUnknownParameterType = false
 reportUnknownVariableType = false
 extraPaths = [
     "../libs/db-plugins-multisurvey/",
-    "../libs/test_utils/",
     "../libs/apf/",
     "../libs/survey_parser_plugins/",
     "../libs/idmapper/",

@@ -1,7 +1,7 @@
-import pytest
 import os
+
 import psycopg2
-import pymongo
+import pytest
 
 
 @pytest.fixture(scope="session")
@@ -35,7 +35,7 @@ def docker_compose_file(pytestconfig):
 
 def is_responsive_psql(url):
     try:
-        host, port = url.split(':')
+        host, port = url.split(":")
         conn = psycopg2.connect(
             f"dbname='postgres' user='postgres' host={host} port={port} password='postgres'"
         )
@@ -44,7 +44,6 @@ def is_responsive_psql(url):
     except Exception as e:
         print(f"Connection failed: {e}")
         return False
-
 
 
 @pytest.fixture(scope="session")
