@@ -128,6 +128,7 @@ class LsstStrategy(StrategyInterface[LsstData]):
         for i, (message_id, source) in enumerate(dia_sources_by_msg.items()):
             messages[i] = {
                 "oid": source["oid"],
+                "sid": source["sid"],
                 "measurement_id": source["measurement_id"],
                 "source": source,
                 "previous_sources": prv_sources_groups.get(message_id, []),
