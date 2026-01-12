@@ -23,7 +23,6 @@ COPY libs/apf /libs/apf
 COPY libs/db-plugins-multisurvey /libs/db-plugins-multisurvey
 COPY alerce_classifiers /alerce_classifiers
 COPY schemas /schemas
-COPY schemas /schemas
 WORKDIR /app
 RUN poetry install --no-root --without=dev --with=rubin
 

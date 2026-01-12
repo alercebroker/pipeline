@@ -22,7 +22,7 @@ import pandas as pd
 # In a real implementation, this would query a database or a configuration file.
 # TODO: Replace with actual implementation
 def classifier_name_to_id(classifier_name: str) -> int:
-    return 0 #esto sacar de la config?
+    return 0#esto sacar de la config  0 #esto sacar de la config?
 
 
 class StampClassifierStep(GenericStep):
@@ -38,6 +38,10 @@ class StampClassifierStep(GenericStep):
         )
         self.dict_mapping_classes = self.model.dict_mapping_classes
         self.psql_connection = PSQLConnection(config["DB_CONFIG"])
+        if "CLS_ID" not in config["MODEL_CONFIG"]:
+            self.classifier_id = 0
+        else:
+            self.classifier_id = config["MODEL_CONFIG"]["CLS_ID"]
 
     def pre_execute(self, messages: List[dict]) -> List[dict]:
         # Preprocessing: parsing, formatting and validation.
@@ -216,8 +220,8 @@ class StampClassifierStep(GenericStep):
         # Write probabilities in the database
         store_probability(
             self.psql_connection,
-            classifier_id=classifier_name_to_id("rubin_stamp_classifier"),
-            classifier_version=self.model.model_version, #esto sacar de la config 
+            classifier_id=self.classifier_id,#classifier_name_to_id("rubin_stamp_classifier"),
+            classifier_version=self.model.model_version,
             predictions=messages,
         )
         return messages
