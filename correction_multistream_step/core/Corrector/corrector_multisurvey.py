@@ -43,7 +43,7 @@ class StrategySelector:
             
             # Check if it's a no-corrections strategy or if it doesnt have any module for strategy, it considers it a no corrections survey
             if getattr(strategy_module, 'NO_CORRECTIONS', False):
-                self.logger.info(f"Survey '{survey}' marked as a survey wit no corrections")
+                self.logger.info(f"Survey '{survey}' marked as a survey with no corrections")
                 self._no_correction_surveys.add(survey)
                 return None
             

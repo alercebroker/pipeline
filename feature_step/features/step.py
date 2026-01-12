@@ -8,17 +8,25 @@ from apf.core.step import GenericStep
 from apf.consumers import KafkaConsumer
 
 from lc_classifier.features.core.base import AstroObject, discard_bogus_detections
-from lc_classifier.features.preprocess.ztf import ZTFLightcurvePreprocessor
-from lc_classifier.features.composites.ztf import ZTFFeatureExtractor
+from lc_classifier.features.preprocess.ztf import ZTFLightcurvePreprocessor #me falta crear esto
+from lc_classifier.features.composites.ztf import ZTFFeatureExtractor #me falta crear esto
+from lc_classifier.features.composites.lsst import LSSTFeatureExtractor 
+from lc_classifier.features.preprocess.lsst import LSSTLightcurvePreprocessor
+
 
 from .database import (
     PSQLConnection,
     get_sql_references,
+    get_feature_name_lut,
+    get_or_create_version_id,
 )
 
 from .utils.metrics import get_sid
 from .utils.parsers import parse_output, parse_scribe_payload
-from .utils.parsers import detections_to_astro_object
+from .utils.parsers import detections_to_astro_object,detections_to_astro_object_lsst
+from .utils.parsers import parse_output_lsst,parse_scribe_payload_lsst
+from .utils.data_utils import clean_and_flatten_columns, save_astro_objects_to_csvs
+
 
 from importlib.metadata import version
 
@@ -44,16 +52,50 @@ class FeatureStep(GenericStep):
 
         super().__init__(config=config, **step_args)
         # Bogus detections are dropped in pre_execute
-        self.lightcurve_preprocessor = ZTFLightcurvePreprocessor()  # (drop_bogus=True)
-        self.feature_extractor = ZTFFeatureExtractor()
-
+       
         scribe_class = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
         self.scribe_producer = scribe_class(self.config["SCRIBE_PRODUCER_CONFIG"])
-        self.extractor_version = version("feature-step")
-        self.extractor_group = ZTFFeatureExtractor.__name__
 
+        self.scribe_topic_name = self.config["SCRIBE_PRODUCER_CONFIG"].get("TOPIC")
         self.db_sql = db_sql
         self.logger = logging.getLogger("alerce.FeatureStep")
+        self.survey = self.config.get("SURVEY")
+        
+        # Get schema from configuration
+        self.schema = self.config.get("DB_CONFIG", {}).get("SCHEMA", "multisurvey")
+
+        if self.survey == "ztf":
+            self.id_column = "candid"
+            self.lightcurve_preprocessor = ZTFLightcurvePreprocessor(drop_bogus=True)
+            self.feature_extractor = ZTFFeatureExtractor()
+            self.extractor_group = ZTFFeatureExtractor.__name__
+            self.detections_to_astro_object_fn = detections_to_astro_object
+            self.parse_output_fn = parse_output
+            self.parse_scribe_payload = parse_scribe_payload
+            self.extractor_version = version("feature-step")
+            self.feature_name_lut = None
+
+
+
+        if self.survey == "lsst":
+            self.id_column = "measurement_id"
+            self.lightcurve_preprocessor = LSSTLightcurvePreprocessor()
+            self.feature_extractor = LSSTFeatureExtractor()
+            self.extractor_group = LSSTFeatureExtractor.__name__
+            self.detections_to_astro_object_fn = detections_to_astro_object_lsst
+            self.parse_output_fn = parse_output_lsst
+            self.parse_scribe_payload = parse_scribe_payload_lsst
+            
+            # Get version name and resolve version_id from version_lut table
+            version_name = version("feature-step")
+            self.extractor_version = get_or_create_version_id(
+                self.db_sql, self.schema, version_name, self.logger
+            )
+            
+            # Fetch feature name lookup table from multisurvey schema
+            self.feature_name_lut = get_feature_name_lut(
+                self.db_sql, self.schema, self.logger
+            )
 
         self.min_detections_features = config.get("MIN_DETECTIONS_FEATURES", None)
         if self.min_detections_features is None:
@@ -62,12 +104,14 @@ class FeatureStep(GenericStep):
             self.min_detections_features = int(self.min_detections_features)
 
     def produce_to_scribe(self, astro_objects: List[AstroObject]):
-        commands = parse_scribe_payload(
+        commands = self.parse_scribe_payload(
             astro_objects,
             self.extractor_version,
             self.extractor_group,
+            self.feature_name_lut
         )
-        update_object_cmds = commands["update_object"]
+
+        update_object_cmds = commands.get("update_object", [])
         update_features_cmds = commands["upserting_features"]
 
         count_objs = 0
@@ -84,73 +128,103 @@ class FeatureStep(GenericStep):
             count_features += 1
             if count_features == len(update_features_cmds):
                 flush = True
-            self.scribe_producer.produce({"payload": json.dumps(command)}, flush=flush)
+            oid = command["payload"]["oid"]
+            self.scribe_producer.producer.produce(
+                topic= self.scribe_topic_name,
+                value=json.dumps(command).encode("utf-8"),
+                key=str(oid).encode("utf-8"),
+            )
+
+            if flush:
+                self.scribe_producer.producer.flush()
+
 
     def pre_produce(self, result: Iterable[Dict[str, Any]] | Dict[str, Any]):
         self.set_producer_key_field("oid")
         return result
 
-    def _get_sql_references(self, oids: List[str]) -> Optional[pd.DataFrame]:
-        db_references = get_sql_references(
-            oids, self.db_sql, keys=["oid", "rfid", "sharpnr", "chinr"]
-        )
-        db_references = db_references[db_references["chinr"] >= 0.0].copy()
-        return db_references
-
     def pre_execute(self, messages: List[dict]):
-        filtered_messages = []
 
+        filtered_messages = []
         for message in messages:
             filtered_message = message.copy()
-            filtered_message["detections"] = discard_bogus_detections(
-                filtered_message["detections"]
-            )
-            filtered_messages.append(filtered_message)
+            if self.survey == "ztf":
+                filtered_message["detections"] = discard_bogus_detections(
+                    filtered_message.get("detections", [])
+                )
+                filtered_messages.append(filtered_message)
+            elif self.survey == "lsst":
+                dets = filtered_message.get('sources', []) + filtered_message.get('previous_sources', [])
+                dets = [elem for elem in dets if elem.get('band') is not None]
+                filtered_message['detections'] = dets
+                filtered_messages.append(filtered_message)
 
-        def has_enough_detections(message: dict) -> bool:
-            n_dets = len([True for det in message["detections"] if not det["forced"]])
+        def has_enough_detections(message: dict) -> bool: # (ZTF)
+            n_dets = len([True for det in message["detections"] if not det.get("forced", False)])
             return n_dets >= self.min_detections_features
+        
+        if self.survey == "ztf":
+            filtered_messages = list(filter(has_enough_detections, filtered_messages))
+        else:
+            filtered_messages = list(filter(has_enough_detections, filtered_messages))
 
-        filtered_messages = filter(has_enough_detections, filtered_messages)
-        filtered_messages = list(filtered_messages)
+        if len(filtered_messages) > 0:
+            self.logger.info("TIENE LENGTH MAYOR A CERO")
+
         return filtered_messages
+    
+
 
     def execute(self, messages):
+
         candids = {}
         astro_objects = []
         messages_to_process = []
 
         oids = set()
+        bands = set()
         for msg in messages:
             oids.add(msg["oid"])
-        references_db = self._get_sql_references(list(oids))
 
+        if self.survey == "ztf":
+            db_references = get_sql_references(
+                list(oids), self.db_sql, keys=["oid", "rfid", "sharpnr", "chinr"]
+            )
+            references_db = db_references[db_references["chinr"] >= 0.0].copy()
         for message in messages:
             if not message["oid"] in candids:
                 candids[message["oid"]] = []
-            candids[message["oid"]].extend(message["candid"])
+            candids[message["oid"]].extend(message[self.id_column]) #guarda los candid de cada oid
             m = map(
-                lambda x: {**x, "index_column": str(x["candid"]) + "_" + x["oid"]},
+                lambda x: {**x, "index_column": str(x[self.id_column]) + "_" + str(x["oid"])},
                 message.get("detections", []),
             )
-            xmatch_data = message["xmatches"]
 
-            ao = detections_to_astro_object(list(m), xmatch_data, references_db)
+            if self.survey == "ztf":
+                xmatch_data = message["xmatches"]
+                ao = self.detections_to_astro_object_fn(list(m), xmatch_data,references_db)
+            else:
+                forced = message.get("forced_sources", None) #si no hay detections, filtrar forced photometry
+                ao = self.detections_to_astro_object_fn(list(m), forced)
             astro_objects.append(ao)
             messages_to_process.append(message)
 
         self.lightcurve_preprocessor.preprocess_batch(astro_objects)
         self.feature_extractor.compute_features_batch(astro_objects, progress_bar=False)
 
+        # Guardar resultados en CSVs por objeto usando función externa
+        #batch_folder = save_astro_objects_to_csvs(astro_objects, messages_to_process, base_folder="csvs")
         self.produce_to_scribe(astro_objects)
-        output = parse_output(astro_objects, messages_to_process, candids)
+        output = self.parse_output_fn(astro_objects, messages_to_process, candids)
         return output
 
     def post_execute(self, result):
+        
         self.metrics["sid"] = get_sid(result)
 
         for message in result:
-            del message["reference"]
+            if "reference" in message:
+                del message["reference"]
 
         return result
 

@@ -37,7 +37,7 @@ class CorrectionMultistreamStep(GenericStep):
         input_parser = get_input_message_parser(self.survey)
 
         # Parse the data using the parser corresponding to the survey strategy
-        parsed_data = input_parser.parse_input_messages(messages)
+        parsed_data, oid_to_sids = input_parser.parse_input_messages(messages)
 
         # Get the list of all oids and measurement_ids. This will be used to query the database
         oids = parsed_data['oids']
@@ -48,7 +48,7 @@ class CorrectionMultistreamStep(GenericStep):
 
         # Obtain all the data from the database according to the corresponding survey
         # The data is parsed using the schemas corresponding to the survey to avoid precision loss
-        historical_data = db_strategy.get_all_historical_data_as_dataframes(oids)
+        historical_data = db_strategy.get_all_historical_data_as_dataframes(oid_to_sids)
 
         # Create the processor
         processor = SurveyDataProcessor()
@@ -78,6 +78,12 @@ class CorrectionMultistreamStep(GenericStep):
                 key=str(oid).encode("utf-8"),               
                 value=json.dumps(payload, cls=NumpyEncoder).encode("utf-8"), 
             )
+            self.scribe_producer.producer.poll(0)
+
+    def post_produce(self):
+        self.producer.producer.poll(0)
+        return 
+
 
     def tear_down(self):
         if isinstance(self.consumer, KafkaConsumer):

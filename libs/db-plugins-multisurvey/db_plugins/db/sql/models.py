@@ -8,9 +8,10 @@ from sqlalchemy import (
     Integer,
     PrimaryKeyConstraint,
     SmallInteger,
+    String,
     func,
 )
-from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, REAL
+from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, JSONB, REAL
 from sqlalchemy.orm import DeclarativeBase
 
 
@@ -165,28 +166,184 @@ class LsstDiaObject(Base):
     __table_args__ = (PrimaryKeyConstraint("oid", name="pk_lsstdiaobject_oid"),)
 
 
-class LsstMpcorb(Base):
-    __tablename__ = "lsst_mpcorb"
-    ssObjectId = Column(BigInteger, nullable=False)
+class LsstSsObject(Base):
+    __tablename__ = "lsst_ss_object"
 
-    diaSourceId = Column(BigInteger, nullable=False)
+    oid = Column(BigInteger, primary_key=True, nullable=False)
 
-    mpcDesignation = Column(VARCHAR, nullable=True)
-    mpcH = Column(REAL, nullable=True)
-    epoch = Column(DOUBLE_PRECISION, nullable=True)
-    M = Column(DOUBLE_PRECISION, nullable=True)
-    peri = Column(DOUBLE_PRECISION, nullable=True)
-    node = Column(DOUBLE_PRECISION, nullable=True)
-    incl = Column(DOUBLE_PRECISION, nullable=True)
-    e = Column(DOUBLE_PRECISION, nullable=True)
-    a = Column(DOUBLE_PRECISION, nullable=True)
-    q = Column(DOUBLE_PRECISION, nullable=True)
-    t_p = Column(DOUBLE_PRECISION, nullable=True)
+    designation = Column(String, nullable=True)  #!!!!!!!
+    nObs = Column(Integer, nullable=False)
+    arc = Column(REAL, nullable=False)
+
+    firstmjd = Column(DOUBLE_PRECISION, nullable=True)
+
+    MOIDEarth = Column(REAL, nullable=True)
+    MOIDEarthDeltaV = Column(REAL, nullable=True)
+    MOIDEarthEclipticLongitude = Column(REAL, nullable=True)
+    MOIDEarthTrueAnomaly = Column(REAL, nullable=True)
+    MOIDEarthTrueAnomalyObject = Column(REAL, nullable=True)
+
+    tisserand_J = Column(REAL, nullable=True)
+
+    extendednessMax = Column(REAL, nullable=True)
+    extendednessMedian = Column(REAL, nullable=True)
+    extendednessMin = Column(REAL, nullable=True)
+
+    u_nObs = Column(Integer, nullable=True)
+    u_H = Column(REAL, nullable=True)
+    u_HErr = Column(REAL, nullable=True)
+    u_G12 = Column(REAL, nullable=True)
+    u_G12Err = Column(REAL, nullable=True)
+    u_H_u_G12_Cov = Column(REAL, nullable=True)
+    u_nObsUsed = Column(Integer, nullable=True)
+    u_Chi2 = Column(REAL, nullable=True)
+    u_phaseAngleMin = Column(REAL, nullable=True)
+    u_phaseAngleMax = Column(REAL, nullable=True)
+    u_slope_fit_failed = Column(Boolean, nullable=True)
+
+    g_nObs = Column(Integer, nullable=True)
+    g_H = Column(REAL, nullable=True)
+    g_HErr = Column(REAL, nullable=True)
+    g_G12 = Column(REAL, nullable=True)
+    g_G12Err = Column(REAL, nullable=True)
+    g_H_g_G12_Cov = Column(REAL, nullable=True)
+    g_nObsUsed = Column(Integer, nullable=True)
+    g_Chi2 = Column(REAL, nullable=True)
+    g_phaseAngleMin = Column(REAL, nullable=True)
+    g_phaseAngleMax = Column(REAL, nullable=True)
+    g_slope_fit_failed = Column(Boolean, nullable=True)
+
+    r_nObs = Column(Integer, nullable=True)
+    r_H = Column(REAL, nullable=True)
+    r_HErr = Column(REAL, nullable=True)
+    r_G12 = Column(REAL, nullable=True)
+    r_G12Err = Column(REAL, nullable=True)
+    r_H_r_G12_Cov = Column(REAL, nullable=True)
+    r_nObsUsed = Column(Integer, nullable=True)
+    r_Chi2 = Column(REAL, nullable=True)
+    r_phaseAngleMin = Column(REAL, nullable=True)
+    r_phaseAngleMax = Column(REAL, nullable=True)
+    r_slope_fit_failed = Column(Boolean, nullable=True)
+
+    i_nObs = Column(Integer, nullable=True)
+    i_H = Column(REAL, nullable=True)
+    i_HErr = Column(REAL, nullable=True)
+    i_G12 = Column(REAL, nullable=True)
+    i_G12Err = Column(REAL, nullable=True)
+    i_H_i_G12_Cov = Column(REAL, nullable=True)
+    i_nObsUsed = Column(Integer, nullable=True)
+    i_Chi2 = Column(REAL, nullable=True)
+    i_phaseAngleMin = Column(REAL, nullable=True)
+    i_phaseAngleMax = Column(REAL, nullable=True)
+    i_slope_fit_failed = Column(Boolean, nullable=True)
+
+    z_nObs = Column(Integer, nullable=True)
+    z_H = Column(REAL, nullable=True)
+    z_HErr = Column(REAL, nullable=True)
+    z_G12 = Column(REAL, nullable=True)
+    z_G12Err = Column(REAL, nullable=True)
+    z_H_z_G12_Cov = Column(REAL, nullable=True)
+    z_nObsUsed = Column(Integer, nullable=True)
+    z_Chi2 = Column(REAL, nullable=True)
+    z_phaseAngleMin = Column(REAL, nullable=True)
+    z_phaseAngleMax = Column(REAL, nullable=True)
+    z_slope_fit_failed = Column(Boolean, nullable=True)
+
+    y_nObs = Column(Integer, nullable=True)
+    y_H = Column(REAL, nullable=True)
+    y_HErr = Column(REAL, nullable=True)
+    y_G12 = Column(REAL, nullable=True)
+    y_G12Err = Column(REAL, nullable=True)
+    y_H_y_G12_Cov = Column(REAL, nullable=True)
+    y_nObsUsed = Column(Integer, nullable=True)
+    y_Chi2 = Column(REAL, nullable=True)
+    y_phaseAngleMin = Column(REAL, nullable=True)
+    y_phaseAngleMax = Column(REAL, nullable=True)
+    y_slope_fit_failed = Column(Boolean, nullable=True)
 
     created_date = Column(Date, server_default=func.now())
 
+    __table_args__ = (PrimaryKeyConstraint("oid", name="pk_lsstssobject_oid"),)
+
+
+class LsstMpcOrbits(Base):
+    __tablename__ = "mpc_orbits"
+
+    # Primary key
+    ssObjectId = Column(BigInteger, primary_key=True)
+
+    designation = Column(String, nullable=False)  #!!!!!!!
+    packed_primary_provisional_designation = Column(String, nullable=False)  #!!!!!!!
+    unpacked_primary_provisional_designation = Column(String, nullable=False)  #!!!!!!!
+
+    mpc_orb_jsonb = Column(JSONB, nullable=True)  #!!!!!!!
+
+    created_at = Column(Date, nullable=True)
+    updated_at = Column(Date, nullable=True)
+
+    orbit_type_int = Column(Integer, nullable=True)
+    u_param = Column(Integer, nullable=True)
+    nopp = Column(Integer, nullable=True)
+
+    arc_length_total = Column(DOUBLE_PRECISION, nullable=True)
+    arc_length_sel = Column(DOUBLE_PRECISION, nullable=True)
+
+    nobs_total = Column(Integer, nullable=True)
+    nobs_total_sel = Column(Integer, nullable=True)
+
+    a = Column(DOUBLE_PRECISION, nullable=True)
+    q = Column(DOUBLE_PRECISION, nullable=True)
+    e = Column(DOUBLE_PRECISION, nullable=True)
+    i = Column(DOUBLE_PRECISION, nullable=True)
+    node = Column(DOUBLE_PRECISION, nullable=True)
+    argperi = Column(DOUBLE_PRECISION, nullable=True)
+    peri_time = Column(DOUBLE_PRECISION, nullable=True)
+
+    yarkovsky = Column(DOUBLE_PRECISION, nullable=True)
+    srp = Column(DOUBLE_PRECISION, nullable=True)
+    a1 = Column(DOUBLE_PRECISION, nullable=True)
+    a2 = Column(DOUBLE_PRECISION, nullable=True)
+    a3 = Column(DOUBLE_PRECISION, nullable=True)
+    dt = Column(DOUBLE_PRECISION, nullable=True)
+
+    mean_anomaly = Column(DOUBLE_PRECISION, nullable=True)
+    period = Column(DOUBLE_PRECISION, nullable=True)
+    mean_motion = Column(DOUBLE_PRECISION, nullable=True)
+
+    a_unc = Column(DOUBLE_PRECISION, nullable=True)
+    q_unc = Column(DOUBLE_PRECISION, nullable=True)
+    e_unc = Column(DOUBLE_PRECISION, nullable=True)
+    i_unc = Column(DOUBLE_PRECISION, nullable=True)
+    node_unc = Column(DOUBLE_PRECISION, nullable=True)
+    argperi_unc = Column(DOUBLE_PRECISION, nullable=True)
+    peri_time_unc = Column(DOUBLE_PRECISION, nullable=True)
+    yarkovsky_unc = Column(DOUBLE_PRECISION, nullable=True)
+    srp_unc = Column(DOUBLE_PRECISION, nullable=True)
+    a1_unc = Column(DOUBLE_PRECISION, nullable=True)
+    a2_unc = Column(DOUBLE_PRECISION, nullable=True)
+    a3_unc = Column(DOUBLE_PRECISION, nullable=True)
+    dt_unc = Column(DOUBLE_PRECISION, nullable=True)
+    mean_anomaly_unc = Column(DOUBLE_PRECISION, nullable=True)
+    period_unc = Column(DOUBLE_PRECISION, nullable=True)
+    mean_motion_unc = Column(DOUBLE_PRECISION, nullable=True)
+
+    epoch_mjd = Column(DOUBLE_PRECISION, nullable=True)
+
+    h = Column(DOUBLE_PRECISION, nullable=True)
+    g = Column(DOUBLE_PRECISION, nullable=True)
+
+    not_normalized_rms = Column(DOUBLE_PRECISION, nullable=True)
+    normalized_rms = Column(DOUBLE_PRECISION, nullable=True)
+
+    earth_moid = Column(DOUBLE_PRECISION, nullable=True)
+
+    fitting_datetime = Column(Date, nullable=True)
+
+    created_date = Column(Date, server_default=func.now())
+    updated_date = Column(Date, onupdate=func.now())
+
     __table_args__ = (
-        PrimaryKeyConstraint("ssObjectId", name="pk_lsstmpcorb_ssObjectId"),
+        PrimaryKeyConstraint("ssObjectId", name="pk_lsstmpcorbits_ss_object_id"),
     )
 
 
@@ -249,9 +406,6 @@ class ZtfDetection(Base):
         ),
         Index("ix_ztfdetection_oid", "oid", postgresql_using="hash"),
     )
-
-
-# Ommiting lsst ss source for now, this is just dia Source
 
 
 class LsstDetection(Base):
@@ -335,7 +489,7 @@ class LsstDetection(Base):
     dipoleFitAttempted = Column(Boolean)
     timeProcessedMjdTai = Column(DOUBLE_PRECISION, nullable=False)
     timeWithdrawnMjdTai = Column(DOUBLE_PRECISION, nullable=True)
-    bboxSize = Column(BigInteger)
+    bboxSize = Column(Integer)
     pixelFlags = Column(Boolean)
     pixelFlags_bad = Column(Boolean)
     pixelFlags_cr = Column(Boolean)
@@ -372,36 +526,55 @@ class LsstDetection(Base):
 class LsstSsDetection(Base):
     __tablename__ = "lsst_ss_detection"
 
-    measurement_id = Column(BigInteger, nullable=False)  # int8,
+    measurement_id = Column(BigInteger, nullable=False)
+    oid = Column(BigInteger, nullable=False)
 
-    ssObjectId = Column(BigInteger, nullable=True)
-    eclipticLambda = Column(DOUBLE_PRECISION, nullable=True)
-    eclipticBeta = Column(DOUBLE_PRECISION, nullable=True)
-    galacticL = Column(DOUBLE_PRECISION, nullable=True)
-    galacticB = Column(DOUBLE_PRECISION, nullable=True)
-    phaseAngle = Column(REAL, nullable=True)
-    heliocentricDist = Column(REAL, nullable=True)
-    topocentricDist = Column(REAL, nullable=True)
-    predictedVMagnitude = Column(REAL, nullable=True)
-    residualRa = Column(DOUBLE_PRECISION, nullable=True)
-    residualDec = Column(DOUBLE_PRECISION, nullable=True)
-    heliocentricX = Column(REAL, nullable=True)
-    heliocentricY = Column(REAL, nullable=True)
-    heliocentricZ = Column(REAL, nullable=True)
-    heliocentricVX = Column(REAL, nullable=True)
-    heliocentricVY = Column(REAL, nullable=True)
-    heliocentricVZ = Column(REAL, nullable=True)
-    topocentricX = Column(REAL, nullable=True)
-    topocentricY = Column(REAL, nullable=True)
-    topocentricZ = Column(REAL, nullable=True)
-    topocentricVX = Column(REAL, nullable=True)
-    topocentricVY = Column(REAL, nullable=True)
-    topocentricVZ = Column(REAL, nullable=True)
+    designation = Column(String)  #!!!!!!!
+    eclLambda = Column(DOUBLE_PRECISION, nullable=False)
+    eclBeta = Column(DOUBLE_PRECISION, nullable=False)
+    galLon = Column(DOUBLE_PRECISION, nullable=False)
+    galLat = Column(DOUBLE_PRECISION, nullable=False)
+    elongation = Column(REAL)
+    phaseAngle = Column(REAL)
+    topoRange = Column(REAL)
+    topoRangeRate = Column(REAL)
+    helioRange = Column(REAL)
+    helioRangeRate = Column(REAL)
+    ephRa = Column(DOUBLE_PRECISION)
+    ephDec = Column(DOUBLE_PRECISION)
+    ephVmag = Column(REAL)
+    ephRate = Column(REAL)
+    ephRateRa = Column(REAL)
+    ephRateDec = Column(REAL)
+    ephOffset = Column(REAL)
+    ephOffsetRa = Column(DOUBLE_PRECISION)
+    ephOffsetDec = Column(DOUBLE_PRECISION)
+    ephOffsetAlongTrack = Column(REAL)
+    ephOffsetCrossTrack = Column(REAL)
+    helio_x = Column(REAL)
+    helio_y = Column(REAL)
+    helio_z = Column(REAL)
+    helio_vx = Column(REAL)
+    helio_vy = Column(REAL)
+    helio_vz = Column(REAL)
+    helio_vtot = Column(REAL)
+    topo_x = Column(REAL)
+    topo_y = Column(REAL)
+    topo_z = Column(REAL)
+    topo_vx = Column(REAL)
+    topo_vy = Column(REAL)
+    topo_vz = Column(REAL)
+    topo_vtot = Column(REAL)
+    diaDistanceRank = Column(Integer)
 
     created_date = Column(Date, server_default=func.now())
 
+    #! CHECK
     __table_args__ = (
-        PrimaryKeyConstraint("measurement_id", name="pk_lsstssdetection_measurementid"),
+        PrimaryKeyConstraint(
+            "oid", "measurement_id", name="pk_lsstssdetection_oid_measurementid"
+        ),
+        Index("ix_lsstssdetection_ssobjectid", "oid", postgresql_using="hash"),
     )
 
 
@@ -795,7 +968,7 @@ class FeatureNameLut(Base):
 class FeatureVersionLut(Base):
     __tablename__ = "feature_version_lut"
     version_id = Column(SmallInteger, primary_key=True, autoincrement=True)
-    version_name = Column(VARCHAR) 
+    version_name = Column(VARCHAR)
 
 
 class SidLut(Base):

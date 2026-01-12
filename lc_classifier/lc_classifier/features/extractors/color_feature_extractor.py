@@ -16,7 +16,9 @@ class ColorFeatureExtractor(FeatureExtractor):
         self, detections: pd.DataFrame
     ) -> Tuple[pd.DataFrame, pd.DataFrame]:
         detections = detections[detections["brightness"].notna()]
+
         corrected_mags = detections[detections.unit == "magnitude"]
+
         corrected_mags = corrected_mags[corrected_mags["e_brightness"] < 1.0]
 
         diff_fluxes = detections[detections.unit == "diff_flux"].copy()
@@ -104,7 +106,6 @@ class ColorFeatureExtractor(FeatureExtractor):
                 # max brightness, min magnitude
                 band_max = np.min(band_detections["brightness"])
                 band_maxima.append(band_max)
-
         features = []
         for i in range(len(self.bands) - 1):
             feature_name = f"{self.bands[i]}-{self.bands[i+1]}_mean" + feature_suffix

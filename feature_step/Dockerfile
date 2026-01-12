@@ -24,9 +24,8 @@ COPY mhps /mhps
 COPY lc_classifier /lc_classifier
 COPY libs/apf /libs/apf
 COPY libs/test_utils /libs/test_utils
-COPY schemas/feature_step /schemas/feature_step
-COPY schemas/xmatch_step /schemas/xmatch_step
-COPY schemas/scribe_step /schemas/scribe_step
+COPY schemas /schemas
+
 RUN poetry run python -m pip install setuptools wheel Cython==0.29.36 numpy
 RUN poetry run python -m pip install ../mhps
 RUN poetry run python -m pip install -r ../P4J/requirements.txt
@@ -34,6 +33,7 @@ RUN poetry install --without=test --no-root
 COPY feature_step/scripts /app/scripts
 COPY feature_step/settings.py /app/settings.py
 COPY feature_step/features /app/features
+#COPY feature_step/config2.yaml /app/config2.yaml
 
 FROM python:3.10-slim
 COPY --from=builder /app /app

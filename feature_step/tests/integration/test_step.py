@@ -11,9 +11,9 @@ CONSUMER_CONFIG = {
         "auto.offset.reset": "beginning",
         "enable.partition.eof": True,
     },
-    "TOPICS": ["ztf"],
+    "TOPICS": ["ztf"],#["lsst-magstat-test"], #ztf
     "consume.messages": 1,
-    "consume.timeout": 0,
+    "consume.timeout": 10,
 }
 
 PRODUCER_CONFIG = {
@@ -44,7 +44,7 @@ SCRIBE_PRODUCER_CONFIG = {
 
 
 def test_step_ztf(kafka_service):
-    CONSUMER_CONFIG["TOPICS"] = ["ztf"]
+    #CONSUMER_CONFIG["TOPICS"] = ["lsst-magstat-test"]
     step_config = {
         "PRODUCER_CONFIG": PRODUCER_CONFIG,
         "CONSUMER_CONFIG": CONSUMER_CONFIG,
@@ -53,3 +53,7 @@ def test_step_ztf(kafka_service):
     db_sql = mock.MagicMock()
     step = FeatureStep(config=step_config, db_sql=db_sql)
     step.start()
+
+
+if __name__ == "__main__":
+    test_step_ztf(None)
