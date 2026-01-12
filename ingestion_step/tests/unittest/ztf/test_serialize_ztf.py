@@ -13,6 +13,7 @@ def test_serialize(ztf_parsed_data: ZtfData):
 
     expected_keys = [
         "oid",
+        "sid",
         "measurement_id",
         "detections",
         "prv_detections",
@@ -23,7 +24,7 @@ def test_serialize(ztf_parsed_data: ZtfData):
     for msg in msgs:
         assert set(msg.keys()) == set(expected_keys)
 
-    for key in expected_keys[2:]:
+    for key in expected_keys[3:]:
         total_length = 0
         for msg in msgs:
             total_length += len(msg[key])

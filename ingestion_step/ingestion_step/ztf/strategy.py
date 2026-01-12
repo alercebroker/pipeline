@@ -102,6 +102,7 @@ class ZtfStrategy(StrategyInterface[ZtfData]):
             messages.append(
                 {
                     "oid": obj["oid"],
+                    "sid": obj["sid"],
                     "measurement_id": obj["measurement_id"],
                     "detections": detections,
                     "prv_detections": prv_detections,
