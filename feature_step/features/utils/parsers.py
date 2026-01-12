@@ -384,6 +384,8 @@ def prepare_ao_features_for_db_lsst(astro_object: AstroObject, feature_name_lut)
     - Use provided feature_name_lut to map feature names to IDs
     """
     ao_features = astro_object.features[["name", "fid", "value"]].copy()
+    #deberia votar features con value nan
+    ao_features = ao_features[ao_features["value"].notna()]
     ao_features["band"] = ao_features["fid"].apply(fid_mapper_for_db_lsst)
     ao_features.replace({np.nan: None, np.inf: None, -np.inf: None}, inplace=True)
     ao_features["name"] = ao_features["name"].replace( 
