@@ -22,7 +22,7 @@ import pandas as pd
 # In a real implementation, this would query a database or a configuration file.
 # TODO: Replace with actual implementation
 def classifier_name_to_id(classifier_name: str) -> int:
-    return 0
+    return 0 #esto sacar de la config?
 
 
 class StampClassifierStep(GenericStep):
@@ -202,8 +202,7 @@ class StampClassifierStep(GenericStep):
                                   'SN': 0.0, 
                                   'VS': 0.0, 
                                   'asteroid': 1.0, 
-                                  'bogus': 0.0,
-                                  'satellite': 0.0},  # All probability to asteroid class
+                                  'bogus': 0.0,},  # All probability to asteroid class
                 "midpointMjdTai": message["midpointMjdTai"],
                 "ra": message["ra"],
                 "dec": message["dec"],
@@ -218,7 +217,7 @@ class StampClassifierStep(GenericStep):
         store_probability(
             self.psql_connection,
             classifier_id=classifier_name_to_id("rubin_stamp_classifier"),
-            classifier_version=self.model.model_version,
+            classifier_version=self.model.model_version, #esto sacar de la config 
             predictions=messages,
         )
         return messages

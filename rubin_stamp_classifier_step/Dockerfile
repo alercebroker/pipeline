@@ -22,8 +22,8 @@ COPY rubin_stamp_classifier_step/pyproject.toml \
 COPY libs/apf /libs/apf
 COPY libs/db-plugins-multisurvey /libs/db-plugins-multisurvey
 COPY alerce_classifiers /alerce_classifiers
-COPY schemas/rubin_stamp_classifier_step /schemas/rubin_stamp_classifier_step
-COPY schemas/surveys/lsst_v9.0 /schemas/surveys/lsst_v9.0
+COPY schemas /schemas
+COPY schemas /schemas
 WORKDIR /app
 RUN poetry install --no-root --without=dev --with=rubin
 
