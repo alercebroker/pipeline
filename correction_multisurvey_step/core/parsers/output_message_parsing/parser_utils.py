@@ -3,8 +3,60 @@ import numpy as np
 import json
 from typing import Dict, List, Any
 from datetime import date, datetime
+from collections import defaultdict
 
-def parse_output_correction(corrected_data: dict, measurement_ids: dict, oids: list) -> List[Dict]:
+
+def get_measurement_ids(corrected_data: dict, survey: str) -> Dict[int, List[str]]:
+    """
+    Function to get the measurement IDs grouped by oid depending on the survey
+    """
+
+    result = defaultdict(list)
+
+    if survey == "lsst":
+        keys = ["sources", "ss_sources"]
+
+    elif survey == "ztf":
+        keys = ["detections", "previous_detections"]
+
+    else:
+        raise ValueError(f"Unknown survey: {survey}")
+
+    for key in keys:
+        df = corrected_data.get(key)
+
+        if df is None or df.empty:
+            continue
+
+        # Make sure required columns exist
+        if not {"oid", "measurement_id"}.issubset(df.columns):
+            continue
+
+        grouped = df.groupby("oid")["measurement_id"].apply(list)
+
+        for oid, mids in grouped.items():
+            result[oid].extend(mids)
+
+    return dict(result)
+
+def get_sids_from_messages(messages: List[Dict[str, Any]]) -> Dict[int, List[str]]:
+    """
+    Function to get the sids for each oid in the messages
+
+    Args:
+        messages (List[Dict[str, Any]]): List of messages
+
+    Returns:
+        Dict[int, List[str]]: Dictionary with oids as keys and a single sid per oid as values
+    """
+    result = {}
+    for message in messages:
+        oid = message.get("oid")
+        sid = message.get("sid")
+        result[oid] = sid
+    return result
+
+def parse_output_correction(corrected_data: dict, measurement_ids: dict, oids: list, sids) -> List[Dict]:
     """
     Function to parse the output of the correction multisurvey step regardless of survey of the data
     It groups by the oid all of the inner dataframes from corrected data and returns a list of dicts corresponding
@@ -14,6 +66,7 @@ def parse_output_correction(corrected_data: dict, measurement_ids: dict, oids: l
         corrected_data: Dictionary with the output of the correction multisurvey step
         measurement_ids: List of measurement IDs
         oids: List of object IDs
+        sids: Dict of survey IDs to object IDs
     
     Returns:
         Dictionary with the output of the correction multisurvey step
@@ -58,10 +111,12 @@ def parse_output_correction(corrected_data: dict, measurement_ids: dict, oids: l
         else:
             unique_measurement_ids_long = unique_measurement_ids
         
+        sid = sids[oid]
         # Build message for output
         output_message = {
             "oid": oid,
             "measurement_id": unique_measurement_ids_long,
+            "sid": sid
         }
         
         for data_type in corrected_data.keys():
@@ -91,3 +146,4 @@ class NumpyEncoder(json.JSONEncoder):
         elif isinstance(obj, pd.Timestamp):
             return obj.isoformat()  # Handle pandas Timestamp objects
         return super().default(obj)
+

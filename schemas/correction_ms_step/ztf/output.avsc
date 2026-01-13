@@ -6,6 +6,10 @@
       "name": "oid",
       "type": "long"
     },
+    {
+      "name": "sid",
+      "type": "int"
+    },
     { "name": "measurement_id", 
       "type": 
       {

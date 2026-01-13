@@ -15,10 +15,10 @@ class LSSTDataJoiner(SurveyDataJoiner):
         # Separate detections into sources and previous sources 
         if not db_sql_detections_df.empty:
             processed['db_sql_sources_df'] = db_sql_detections_df[
-                db_sql_detections_df["parentDiaSourceId"].isnull()
+                db_sql_detections_df["has_stamp"] == False
             ]
             processed['db_sql_previous_sources_df'] = db_sql_detections_df[
-                ~db_sql_detections_df["parentDiaSourceId"].isnull()
+                db_sql_detections_df["has_stamp"] == True
             ]
         else:
             processed['db_sql_sources_df'] = pd.DataFrame()
@@ -59,18 +59,20 @@ class LSSTDataJoiner(SurveyDataJoiner):
         result['previous_sources'] = result['previous_sources'][
             ~result['previous_sources'].apply(lambda row: (row['measurement_id'], row['oid']) in unique_sources_set, axis=1)
         ]
-        
 
         result['ss_sources'] = pd.concat([
             msg_data.get('ss_sources_df', pd.DataFrame()),
-            historical_data.get('db_sql_ss_detections_df', pd.DataFrame())
+            historical_data.get('db_sql_ss_sources_df', pd.DataFrame())
         ], ignore_index=True)
+
+        
         
 
         result['dia_object'] = pd.concat([ # not doing anything with the historical data for dia objects so far so the historical data is empty
             msg_data.get('dia_objects_df', pd.DataFrame()),
             historical_data.get('db_sql_dia_objects_df', pd.DataFrame())  
         ], ignore_index=True)
+
         result['mpc_orbits'] = pd.concat([ # not doing anything with the historical data for mpc orbits so far so the historical data is empty
             msg_data.get('mpc_orbits_df', pd.DataFrame()),
             historical_data.get('db_sql_mpc_orbits_df', pd.DataFrame())

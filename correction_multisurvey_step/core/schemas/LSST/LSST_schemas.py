@@ -164,6 +164,7 @@ dia_source_schema: dict[str, DType] = {
     "glint_trail": pd.BooleanDtype(),
     "band": pd.Int32Dtype(),
     "new": pd.BooleanDtype(),
+    "has_stamp": pd.BooleanDtype()
 }
 
 
@@ -270,6 +271,7 @@ dia_source_lsst_db: dict[str, DType] = {
     "mjd": pd.Float64Dtype(),
     "ssObjectId": pd.Int64Dtype(),
     "diaObjectId": pd.Int64Dtype(),
+    "has_stamp": pd.BooleanDtype(),
 }
 
 dia_object_schema: dict[str, DType] = {

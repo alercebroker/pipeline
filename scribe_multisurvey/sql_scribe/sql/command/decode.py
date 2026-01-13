@@ -5,9 +5,7 @@ from .commands import (
     ZTFCorrectionCommand,
     ZTFMagstatCommand,
     LSSTMagstatCommand,
-    LSSTUpdateDiaObjectCommand,
-    LSSTFeatureCommand,
-    LSSTCorrectionCommand
+    LSSTFeatureCommand
 )
 
 
@@ -81,18 +79,8 @@ def command_factory(msg: str) -> Command:
             options=message.get("options", {})
         )
 
-    if survey == "lsst" and step == "magstat_objects":
-        return LSSTUpdateDiaObjectCommand(
-            payload=message["payload"],
-            criteria=message.get("criteria", {}),
-            options=message.get("options", {})
-        )
-
     if survey == "lsst" and step == "features":
         return LSSTFeatureCommand(**message)
     
-    if survey == "lsst" and step == "correction":
-        return LSSTCorrectionCommand(**message)
-
     raise ValueError(f"Unrecognized command type {survey} in table {step}.")
 

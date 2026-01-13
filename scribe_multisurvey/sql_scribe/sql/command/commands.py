@@ -39,9 +39,6 @@ from .parser import (
     parse_ztf_dq,
     parse_ztf_refernece,
     parse_obj_stats,
-    parse_magstats,
-    parse_dia_object,
-    parse_mpc_orbits,
     parse_ztf_object,
     parse_ztf_magstats,
     parse_ztf_objstats
@@ -82,6 +79,7 @@ class ZTFCorrectionCommand(Command):
         ps1_ztf
         ss_ztf
         gaia_ztf
+        reference_ztf
         """
 
         oid = data["oid"]
@@ -321,7 +319,7 @@ class ZTFMagstatCommand(Command):
         object_stats = parse_ztf_objstats(data, oid, sid)
         magstats_list = [
             parse_ztf_magstats(ms, oid, sid)
-            for ms in data["magstats"]
+            for ms in data["magstats"]["0"]
         ]
 
         return {
@@ -445,121 +443,6 @@ class LSSTMagstatCommand(Command):
                 objectstat_list
             )
 
-
-class LSSTUpdateDiaObjectCommand(Command):
-    type = "LSSTUpdateDiaObjectCommand"
-
-    def _format_data(self, data):
-        
-        oid = data["oid"]
-
-        dia_object = parse_dia_object(data, oid)
-        
-
-        return {
-            "dia_object": dia_object,
-        }
-
-    @staticmethod
-    def db_operation(session: Session, data: List):
-        objects_update_list = []
-
-        for single_data in data:
-            objects_update_list.append(single_data["dia_object"])
-        
-        # update dia object
-        if len(objects_update_list) > 0:
-            object_stmt = update(LsstDiaObject)
-            object_result = session.connection().execute(
-                object_stmt
-                .where(LsstDiaObject.oid == bindparam('_oid'))
-                .values({
-                    "validityStartMjdTai": bindparam("validityStartMjdTai"),
-                    "ra": bindparam("ra"),
-                    "raErr": bindparam("raErr"),
-                    "dec": bindparam("dec"),
-                    "decErr": bindparam("decErr"),
-                    "ra_dec_Cov": bindparam("ra_dec_Cov"),
-                    "u_psfFluxMean": bindparam("u_psfFluxMean"),
-                    "u_psfFluxMeanErr": bindparam("u_psfFluxMeanErr"),
-                    "u_psfFluxSigma": bindparam("u_psfFluxSigma"),
-                    "u_psfFluxNdata": bindparam("u_psfFluxNdata"),
-                    "u_fpFluxMean": bindparam("u_fpFluxMean"),
-                    "u_fpFluxMeanErr": bindparam("u_fpFluxMeanErr"),
-                    "g_psfFluxMean": bindparam("g_psfFluxMean"),
-                    "g_psfFluxMeanErr": bindparam("g_psfFluxMeanErr"),
-                    "g_psfFluxSigma": bindparam("g_psfFluxSigma"),
-                    "g_psfFluxNdata": bindparam("g_psfFluxNdata"),
-                    "g_fpFluxMean": bindparam("g_fpFluxMean"),
-                    "g_fpFluxMeanErr": bindparam("g_fpFluxMeanErr"),
-                    "r_psfFluxMean": bindparam("r_psfFluxMean"),
-                    "r_psfFluxMeanErr": bindparam("r_psfFluxMeanErr"),
-                    "r_psfFluxSigma": bindparam("r_psfFluxSigma"),
-                    "r_psfFluxNdata": bindparam("r_psfFluxNdata"),
-                    "r_fpFluxMean": bindparam("r_fpFluxMean"),
-                    "r_fpFluxMeanErr": bindparam("r_fpFluxMeanErr"),
-                    "i_psfFluxMean": bindparam("i_psfFluxMean"),
-                    "i_psfFluxMeanErr": bindparam("i_psfFluxMeanErr"),
-                    "i_psfFluxSigma": bindparam("i_psfFluxSigma"),
-                    "i_psfFluxNdata": bindparam("i_psfFluxNdata"),
-                    "i_fpFluxMean": bindparam("i_fpFluxMean"),
-                    "i_fpFluxMeanErr": bindparam("i_fpFluxMeanErr"),
-                    "z_psfFluxMean": bindparam("z_psfFluxMean"),
-                    "z_psfFluxMeanErr": bindparam("z_psfFluxMeanErr"),
-                    "z_psfFluxSigma": bindparam("z_psfFluxSigma"),
-                    "z_psfFluxNdata": bindparam("z_psfFluxNdata"),
-                    "z_fpFluxMean": bindparam("z_fpFluxMean"),
-                    "z_fpFluxMeanErr": bindparam("z_fpFluxMeanErr"),
-                    "y_psfFluxMean": bindparam("y_psfFluxMean"),
-                    "y_psfFluxMeanErr": bindparam("y_psfFluxMeanErr"),
-                    "y_psfFluxSigma": bindparam("y_psfFluxSigma"),
-                    "y_psfFluxNdata": bindparam("y_psfFluxNdata"),
-                    "y_fpFluxMean": bindparam("y_fpFluxMean"),
-                    "y_fpFluxMeanErr": bindparam("y_fpFluxMeanErr"),
-                    "u_scienceFluxMean": bindparam("u_scienceFluxMean"),
-                    "u_scienceFluxMeanErr": bindparam("u_scienceFluxMeanErr"),
-                    "g_scienceFluxMean": bindparam("g_scienceFluxMean"),
-                    "g_scienceFluxMeanErr": bindparam("g_scienceFluxMeanErr"),
-                    "r_scienceFluxMean": bindparam("r_scienceFluxMean"),
-                    "r_scienceFluxMeanErr": bindparam("r_scienceFluxMeanErr"),
-                    "i_scienceFluxMean": bindparam("i_scienceFluxMean"),
-                    "i_scienceFluxMeanErr": bindparam("i_scienceFluxMeanErr"),
-                    "z_scienceFluxMean": bindparam("z_scienceFluxMean"),
-                    "z_scienceFluxMeanErr": bindparam("z_scienceFluxMeanErr"),
-                    "y_scienceFluxMean": bindparam("y_scienceFluxMean"),
-                    "y_scienceFluxMeanErr": bindparam("y_scienceFluxMeanErr"),
-                    "u_psfFluxMin": bindparam("u_psfFluxMin"),
-                    "u_psfFluxMax": bindparam("u_psfFluxMax"),
-                    "u_psfFluxMaxSlope": bindparam("u_psfFluxMaxSlope"),
-                    "u_psfFluxErrMean": bindparam("u_psfFluxErrMean"),
-                    "g_psfFluxMin": bindparam("g_psfFluxMin"),
-                    "g_psfFluxMax": bindparam("g_psfFluxMax"),
-                    "g_psfFluxMaxSlope": bindparam("g_psfFluxMaxSlope"),
-                    "g_psfFluxErrMean": bindparam("g_psfFluxErrMean"),
-                    "r_psfFluxMin": bindparam("r_psfFluxMin"),
-                    "r_psfFluxMax": bindparam("r_psfFluxMax"),
-                    "r_psfFluxMaxSlope": bindparam("r_psfFluxMaxSlope"),
-                    "r_psfFluxErrMean": bindparam("r_psfFluxErrMean"),
-                    "i_psfFluxMin": bindparam("i_psfFluxMin"),
-                    "i_psfFluxMax": bindparam("i_psfFluxMax"),
-                    "i_psfFluxMaxSlope": bindparam("i_psfFluxMaxSlope"),
-                    "i_psfFluxErrMean": bindparam("i_psfFluxErrMean"),
-                    "z_psfFluxMin": bindparam("z_psfFluxMin"),
-                    "z_psfFluxMax": bindparam("z_psfFluxMax"),
-                    "z_psfFluxMaxSlope": bindparam("z_psfFluxMaxSlope"),
-                    "z_psfFluxErrMean": bindparam("z_psfFluxErrMean"),
-                    "y_psfFluxMin": bindparam("y_psfFluxMin"),
-                    "y_psfFluxMax": bindparam("y_psfFluxMax"),
-                    "y_psfFluxMaxSlope": bindparam("y_psfFluxMaxSlope"),
-                    "y_psfFluxErrMean": bindparam("y_psfFluxErrMean"),
-                    "firstDiaSourceMjdTai": bindparam("firstDiaSourceMjdTai"),
-                    "lastDiaSourceMjdTai": bindparam("lastDiaSourceMjdTai"),
-                    "nDiaSources": bindparam("nDiaSources"),
-                }),
-                objects_update_list
-            )
-
-
 class LSSTFeatureCommand(Command):
     type = "LSSTFeatureCommand"
 
@@ -602,109 +485,6 @@ class LSSTFeatureCommand(Command):
             )
 
             session.connection().execute(features_stmt, deduplicated_data)
-
-class LSSTCorrectionCommand(Command):
-    type = "LSSTCorrectionCommand"
-
-    def _format_data(self, data):
-        all_mpc_orbits = []
-        for correction in data["mpc_orbits"]:
-            parsed_orbit = parse_mpc_orbits(correction)
-            all_mpc_orbits.append(parsed_orbit)
-        
-        return all_mpc_orbits
-
-    @staticmethod
-    def db_operation(session: Session, data: List):
-        if len(data) == 0:
-            return
-        
-        # Deduplicate based on id, keeping the most recent update or created date if two orbits share id in batch
-        dedup = {}
-        for row in data:
-            orbit_ssObjectId = row["ssObjectId"]
-            
-            # Use updated_at, fallback to created_at, then fallback to mjd
-            current_timestamp = row.get("updated_at") or row.get("created_at") or row.get("mjd")
-            if orbit_ssObjectId not in dedup:
-                dedup[orbit_ssObjectId] = row
-            else:
-                existing_timestamp = (
-                    dedup[orbit_ssObjectId].get("updated_at") 
-                    or dedup[orbit_ssObjectId].get("created_at") 
-                    or dedup[orbit_ssObjectId].get("mjd")
-                )
-                if current_timestamp > existing_timestamp:
-                    dedup[orbit_ssObjectId] = row
-        
-        
-        deduplicated_data = []
-        for row in dedup.values():
-            row_with_prefix = row.copy()
-            row_with_prefix['_ssObjectId'] = row['ssObjectId']
-            deduplicated_data.append(row_with_prefix)
-        orbits_update_list = deduplicated_data
-        if len(orbits_update_list) > 0:
-            orbit_stmt = update(LsstMpcOrbits)
-            orbit_result = session.connection().execute(
-                orbit_stmt
-                .where(LsstMpcOrbits.ssObjectId == bindparam('_ssObjectId'))
-                .values({
-                    "ssObjectId": bindparam("ssObjectId"),
-                    "designation": bindparam("designation"),
-                    "packed_primary_provisional_designation": bindparam("packed_primary_provisional_designation"),
-                    "unpacked_primary_provisional_designation": bindparam("unpacked_primary_provisional_designation"),
-                    "mpc_orb_jsonb": bindparam("mpc_orb_jsonb"),
-                    "updated_at": bindparam("updated_at"),
-                    "orbit_type_int": bindparam("orbit_type_int"),
-                    "u_param": bindparam("u_param"),
-                    "nopp": bindparam("nopp"),
-                    "arc_length_total": bindparam("arc_length_total"),
-                    "arc_length_sel": bindparam("arc_length_sel"),
-                    "nobs_total": bindparam("nobs_total"),
-                    "nobs_total_sel": bindparam("nobs_total_sel"),
-                    "a": bindparam("a"),
-                    "q": bindparam("q"),
-                    "e": bindparam("e"),
-                    "i": bindparam("i"),
-                    "node": bindparam("node"),
-                    "peri_time": bindparam("peri_time"),
-                    "yarkovsky": bindparam("yarkovsky"),
-                    "srp": bindparam("srp"),
-                    "a1": bindparam("a1"),
-                    "a2": bindparam("a2"),
-                    "a3": bindparam("a3"),
-                    "dt": bindparam("dt"),
-                    "mean_anomaly": bindparam("mean_anomaly"),
-                    "period": bindparam("period"),
-                    "mean_motion": bindparam("mean_motion"),
-                    "a_unc": bindparam("a_unc"),
-                    "q_unc": bindparam("q_unc"),
-                    "e_unc": bindparam("e_unc"),
-                    "i_unc": bindparam("i_unc"),
-                    "node_unc": bindparam("node_unc"),
-                    "argperi_unc": bindparam("argperi_unc"),
-                    "peri_time_unc": bindparam("peri_time_unc"),
-                    "yarkovsky_unc": bindparam("yarkovsky_unc"),
-                    "srp_unc": bindparam("srp_unc"),
-                    "a1_unc": bindparam("a1_unc"),
-                    "a2_unc": bindparam("a2_unc"),
-                    "a3_unc": bindparam("a3_unc"),
-                    "dt_unc": bindparam("dt_unc"),
-                    "mean_anomaly_unc": bindparam("mean_anomaly_unc"),
-                    "period_unc": bindparam("period_unc"),
-                    "mean_motion_unc": bindparam("mean_motion_unc"),
-                    "epoch_mjd": bindparam("epoch_mjd"),
-                    "h": bindparam("h"),
-                    "g": bindparam("g"),
-                    "not_normalized_rms": bindparam("not_normalized_rms"),
-                    "normalized_rms": bindparam("normalized_rms"),
-                    "earth_moid": bindparam("earth_moid"),
-                    "fitting_datetime": bindparam("fitting_datetime")
-                }),
-                orbits_update_list
-            )
-
 
 
 ### ###### ###

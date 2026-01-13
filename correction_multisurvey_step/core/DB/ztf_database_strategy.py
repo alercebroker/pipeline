@@ -28,7 +28,7 @@ class ZTFDatabaseStrategy(DatabaseStrategy):
     """
     Database strategy for ZTF survey.
     """
-    def __init__(self,  db_connection, _schemas=None):
+    def __init__(self, db_connection):
         super().__init__(db_connection)
         self._schemas = None
 

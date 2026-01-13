@@ -12,7 +12,9 @@ import copy
 # Corrector receives a parsed data dict, which contains specific keys per surveys
 # We use this dict to select only the corresponding keys that have detections to be corrected
 SURVEY_DETECTION_KEYS = {
-    "ztf": ["detections", "previous_detections", "forced_photometries"]}
+    "ztf": ["detections", "previous_detections", "forced_photometries"],
+    "lsst": ["sources", "previous_sources", "forced_sources", "ss_sources"]
+}
 
 class StrategySelector:
     """Factory class for selecting correction strategies"""
@@ -83,7 +85,6 @@ class Corrector:
 
         Args:
             parsed_data: Dict with historical data + message data. Each key is a dataframe)
-            strategy_selector
         """
         self.logger = logging.getLogger(f"alerce.{self.__class__.__name__}")
         self.parsed_data = copy.deepcopy(parsed_data)
@@ -182,7 +183,7 @@ class Corrector:
         
         # If no corrections are available for the survey, return original data without modifications
         if not self._has_corrections:
-            self.logger.info(f"NO CORRECTIONS AVAILABLE")
+            self.logger.info(f"NO CORRECTIONS AVAILABLE for survey '{self._survey}'")
             return self.parsed_data
         
         # Apply corrections to detection DataFrames for each of the survey detection keys
@@ -200,8 +201,6 @@ class Corrector:
                     self.logger.info(f"Corrected {num_corrected} detections in {key}")
                 else:
                     self.logger.info(f"No corrections applied to {key}")
-
-
         
         # Return the parsed data with the corrections applied
         return self.parsed_data
@@ -209,5 +208,3 @@ class Corrector:
     def has_corrections_for_survey(self) -> bool:
         """Check if the current survey has corrections available"""
         return self._has_corrections
-    
-

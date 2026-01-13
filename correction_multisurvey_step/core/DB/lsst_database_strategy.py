@@ -17,7 +17,7 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
     Handles all LSST-specific database operations including queries and parsing.
     """
     
-    def __init__(self, db_connection, _schemas=None):
+    def __init__(self, db_connection):
         super().__init__(db_connection)
         self._schemas = None
 
@@ -69,6 +69,7 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
                 LsstDetection.diaObjectId,
                 LsstDetection.ssObjectId,
                 LsstDetection.parentDiaSourceId,
+                LsstDetection.has_stamp,
                 cast(LsstDetection.raErr, DOUBLE_PRECISION).label("raErr"),
                 cast(LsstDetection.decErr, DOUBLE_PRECISION).label("decErr"),
                 cast(LsstDetection.ra_dec_Cov, DOUBLE_PRECISION).label("ra_dec_Cov"),
@@ -304,7 +305,7 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
             ss_detections = session.execute(ss_stmt).all()
             
             # Query corresponding lsst detection for the same oids and sid 2
-            lsst_detections = self.query_lsst_detection(oids, 2)            
+            lsst_detections = self.query_lsst_detection(oids, 2)     
 
             # Parse and merge SS detections with corresponding dia sources
             return self._parse_lsst_ss_detections(
@@ -412,7 +413,7 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
             # Merge with LSST dia source data (sid=2)
             if ss_key in lsst_det_lookup:
                 combined_dict = {**combined_dict, **lsst_det_lookup[ss_key]}
-            
+
             combined_dict["new"] = False
             combined_dict["midpointMjdTai"] = combined_dict.get("mjd")
             if "created_date" in combined_dict:

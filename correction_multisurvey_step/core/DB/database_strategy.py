@@ -81,25 +81,3 @@ class DatabaseStrategy(ABC):
         return result
     
 
-def get_database_strategy(survey: str, db_connection: PSQLConnection) -> DatabaseStrategy:
-    """
-    Factory function to get the appropriate database strategy for a survey.
-    
-    Args:
-        survey: Survey identifier ('lsst', 'ztf', etc.)
-        db_connection: Database connection instance
-        
-    Returns:
-        DatabaseStrategy: Concrete strategy for the survey
-    """
-    survey_lower = survey.lower()
-    
-    if survey_lower == 'lsst':
-        from .lsst_database_strategy import LSSTDatabaseStrategy
-        return LSSTDatabaseStrategy(db_connection)
-    elif survey_lower == 'ztf':
-        from .ztf_database_strategy import ZTFDatabaseStrategy
-        return ZTFDatabaseStrategy(db_connection)
-    else:
-        supported_surveys = ['lsst', 'ztf']
-        raise ValueError(f"Unknown survey: '{survey}'. Supported: {supported_surveys}")

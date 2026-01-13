@@ -7,7 +7,7 @@ from ._base import BaseStatistics
 class BaseMagnitudeStatistics(BaseStatistics):
     """Base class for magnitude-related statistics - corresponds to the Base MagStats table only
        Specific survey statistics are handled by the survey specifc statistics"""
-    _JOIN = ["oid", "band"]  
+    _JOIN = ["oid", "band", "sid"]  
 
     def __init__(self, detections: List[dict], non_detections: List[dict] = None):
         super().__init__(detections)

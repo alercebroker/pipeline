@@ -56,12 +56,21 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
         msg_df = pd.DataFrame(raw_data['msg_data'])
         
         # Apply schemas to each data type, handling empty cases
-        sources_df = self._apply_schema_or_empty(
+        sources_sids_df = self._apply_schema_or_empty(
             raw_data['sources'], 
             schemas['sources_schema']
         )
 
-        oid_to_sids = (sources_df.groupby('oid')['sid']
+        # Split sources_sids_df into sources_df and ss_sources_df  according to sid
+        split_sources_groups = dict(tuple(sources_sids_df.groupby("sid")))
+
+        # Sources df are the alerts with sid=1
+        sources_df = split_sources_groups.get(1, pd.DataFrame()).copy()
+
+        # ss_sources_df are going to be the join of the alerts with sid=2 and the data from ss_sources
+        ss_sources_alert_data_df = split_sources_groups.get(2, pd.DataFrame()).copy()
+
+        oid_to_sids = (sources_sids_df.groupby('oid')['sid']
                .unique()  # Get unique sids only (in the batch we might have multiple entries per oid with same sid. we only want to know which sids are present)
                .apply(lambda x: x.tolist())  
                .to_dict())
@@ -89,7 +98,7 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
         # When there are ss_sources, join with sources on measurement_id to get full info
         if not ss_sources_df.empty:    
             ss_sources_df = ss_sources_df.merge(
-                sources_df.drop(columns=["new"], errors="ignore"),
+                ss_sources_alert_data_df.drop(columns=["new"], errors="ignore"),
                 on=["measurement_id", "ssObjectId"],
                 how="left")
             
@@ -114,9 +123,7 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
         """
         
         oids = set(msg_df["oid"])
-        measurement_ids = (msg_df.groupby("oid")["measurement_id"]
-                          .apply(lambda x: [str(id) for id in x]).to_dict())
-        
+   
         log_output = {
                 'counts': {
                     'Current Sources': len(sources_df),
@@ -146,7 +153,6 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
                 #'non_detections_df': non_detections_df, # Omitting in schema v10.0
             },
             'oids': list(oids),
-            'measurement_ids': measurement_ids
             }
 
         return parsed_input, oid_to_sids
@@ -173,7 +179,7 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
             
             # Parse previous sources
             for prev_source in msg["previous_sources"]:
-                parsed_prv_source = {"new": True, **prev_source}
+                parsed_prv_source = {"new": True, "has_stamp": False,**prev_source}
                 all_previous_sources.append(parsed_prv_source)
 
 
@@ -217,7 +223,7 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
 
             # Parse main source
             source = msg["source"]
-            parsed_source = {"new": True, **source}
+            parsed_source = {"new": True, "has_stamp": True, **source}
             all_sources.append(parsed_source)
         
         return {

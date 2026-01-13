@@ -82,38 +82,3 @@ class InputMessageParsingStrategy(ABC):
             """
             pass
 
-
-def get_input_message_parser(survey: str) -> InputMessageParsingStrategy:
-    """
-    Factory function to get the appropriate input message parser for a survey.
-    
-    Args:
-        survey (str): Survey identifier (case-insensitive). Currently supported:
-                     - 'lsst': Vera Rubin Observatory Legacy Survey of Space and Time
-                     - 'ztf': Zwicky Transient Facility
-    
-    Returns:
-        InputMessageParsingStrategy: Concrete parser instance for the specified survey
-    
-    Raises:
-        ValueError: If the survey is not supported. The error message lists all
-                   currently supported surveys for easy debugging.
-    """
-    survey_lower = survey.lower()
-    
-    # Dynamic import to avoid loading all parsers at once 
-    if survey_lower == 'lsst':
-        from .lsst_input_parser import LSSTInputMessageParser
-        return LSSTInputMessageParser()
-    elif survey_lower == 'ztf':
-        from .ztf_input_parser import ZTFInputMessageParser
-        return ZTFInputMessageParser()
-    else:
-        supported_surveys = ['lsst', 'ztf']
-        raise ValueError(
-            f"Unknown survey: '{survey}'. "
-            f"Supported surveys: {supported_surveys}. "
-        )
-    
-
-    

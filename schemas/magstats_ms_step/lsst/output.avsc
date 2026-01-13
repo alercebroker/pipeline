@@ -4,6 +4,7 @@
   "doc": "Magstats ms step schema output for the LSST survey",
   "fields": [
     { "name": "oid", "type": "long" },
+    { "name": "sid", "type": "int" },
     { "name": "measurement_id", "type": {"type": "array", "items": "long"}},
     { "name": "meanra", "type":  ["null", "float" ]},
     { "name": "meandec", "type": ["null", "float" ]},
