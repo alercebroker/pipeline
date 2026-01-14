@@ -285,7 +285,7 @@ class LsstMpcOrbits(Base):
     mpc_orb_jsonb = Column(JSONB, nullable=True)  #!!!!!!!
 
     created_at = Column(Date, nullable=True)
-    updated_at = Column(Date, nullable=True, onupdate=func.now())
+    updated_at = Column(Date, nullable=True)
 
     orbit_type_int = Column(Integer, nullable=True)
     u_param = Column(Integer, nullable=True)
@@ -346,7 +346,7 @@ class LsstMpcOrbits(Base):
     fitting_datetime = Column(Date, nullable=True)
 
     created_date = Column(Date, server_default=func.now())
-    updated_date = Column(Date, onupdate=func.now())
+    updated_date = Column(Date, server_default=func.now(), onupdate=func.now())
 
     __table_args__ = (
         PrimaryKeyConstraint("ssObjectId", name="pk_lsstmpcorbits_ss_object_id"),
