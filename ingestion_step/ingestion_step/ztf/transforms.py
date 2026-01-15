@@ -30,10 +30,7 @@ def objectId_to_oid(df: pd.DataFrame):
     and uses them to calculate the new columns:
         - `oid`
     """
-    df["oid"] = df.apply(
-        lambda x: int(catalog_oid_to_masterid("ZTF", x["objectId"])),
-        axis=1,
-    )
+    df["oid"] = df["objectId"].apply(lambda x: int(catalog_oid_to_masterid("ZTF", x)))
 
 
 def jd_to_mjd(df: pd.DataFrame):
