@@ -47,12 +47,15 @@ def deduplicate(columns: list[str], sort: str | list[str] | None = None):
         if sort is not None:
             df.sort_values(sort, inplace=True)
         df.drop_duplicates(subset=columns, keep="first", inplace=True)
+        df.reset_index(inplace=True, drop=True)
 
     return _deduplicate
 
 
 def drop_na(columns: list[str], axis: Literal[0, 1, "index", "columns"] = 0):
     def _drop_na(df: pd.DataFrame):
-        df.dropna(axis=axis, subset=columns, how="any")
+        df.dropna(axis=axis, subset=columns, how="any", inplace=True)
+        if axis == "index" or axis == 0:
+            df.reset_index(inplace=True, drop=True)
 
     return _drop_na

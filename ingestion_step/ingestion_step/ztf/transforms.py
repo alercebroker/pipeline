@@ -174,7 +174,6 @@ def filter_by_forcediffimflux(df: pd.DataFrame):
         ].index,
         inplace=True,
     )
-
     df.drop(
         df[
             (df["forcediffimfluxunc"].isna())
@@ -183,6 +182,7 @@ def filter_by_forcediffimflux(df: pd.DataFrame):
         ].index,
         inplace=True,
     )
+    df.reset_index(inplace=True, drop=True)
 
 
 CANDIDATES_TRANSFORMS = [

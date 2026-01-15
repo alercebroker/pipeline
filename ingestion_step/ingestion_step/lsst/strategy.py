@@ -8,6 +8,7 @@ from ingestion_step.core.types import Message
 from ingestion_step.core.utils import apply_transforms
 from ingestion_step.lsst.database import (
     insert_dia_objects,
+    insert_fake_ss_objects,
     insert_forced_sources,
     insert_mpc_orbit,
     insert_sources,
@@ -23,6 +24,7 @@ from ingestion_step.lsst.extractor import (
 )
 from ingestion_step.lsst.transforms import (
     get_dia_object_transforms,
+    get_fake_ss_object_transforms,
     get_forced_source_transforms,
     get_mpc_orbits_transforms,
     get_source_transforms,
@@ -38,6 +40,8 @@ class LsstData(ParsedData):
     dia_object: pd.DataFrame
     mpc_orbits: pd.DataFrame
 
+    fake_ss_object: pd.DataFrame
+
 
 class LsstStrategy(StrategyInterface[LsstData]):
     @classmethod
@@ -49,18 +53,15 @@ class LsstStrategy(StrategyInterface[LsstData]):
         dia_object = LsstDiaObjectExtractor.extract(messages)
         mpc_orbits = LsstMpcOrbitExtractor.extract(messages)
 
-        source_transforms = get_source_transforms()
-        ss_source_transforms = get_ss_source_transforms()
-        forced_source_transforms = get_forced_source_transforms()
-        dia_object_transforms = get_dia_object_transforms()
-        mpc_orbits_transforms = get_mpc_orbits_transforms()
+        apply_transforms(dia_sources, get_source_transforms())
+        apply_transforms(ss_sources, get_ss_source_transforms())
+        apply_transforms(previous_sources, get_source_transforms())
+        apply_transforms(forced_sources, get_forced_source_transforms())
+        apply_transforms(dia_object, get_dia_object_transforms())
+        apply_transforms(mpc_orbits, get_mpc_orbits_transforms())
 
-        apply_transforms(dia_sources, source_transforms)
-        apply_transforms(ss_sources, ss_source_transforms)
-        apply_transforms(previous_sources, source_transforms)
-        apply_transforms(forced_sources, forced_source_transforms)
-        apply_transforms(dia_object, dia_object_transforms)
-        apply_transforms(mpc_orbits, mpc_orbits_transforms)
+        fake_ss_object = mpc_orbits.copy()
+        apply_transforms(fake_ss_object, get_fake_ss_object_transforms())
 
         return LsstData(
             dia_sources=dia_sources,
@@ -69,6 +70,7 @@ class LsstStrategy(StrategyInterface[LsstData]):
             forced_sources=forced_sources,
             dia_object=dia_object,
             mpc_orbits=mpc_orbits,
+            fake_ss_object=fake_ss_object,
         )
 
     @classmethod
@@ -87,6 +89,10 @@ class LsstStrategy(StrategyInterface[LsstData]):
         insert_ss_sources(driver, parsed_data["ss_sources"], chunk_size=chunk_size)
         insert_forced_sources(
             driver, parsed_data["forced_sources"], chunk_size=chunk_size
+        )
+
+        insert_fake_ss_objects(
+            driver, parsed_data["fake_ss_object"], chunk_size=chunk_size
         )
 
     @classmethod

@@ -100,3 +100,18 @@ def get_mpc_orbits_transforms() -> list[Transform]:
         deduplicate(["ssObjectId"], sort="midpointMjdTai"),
         copy_column("midpointMjdTai", "mjd"),
     ]
+
+
+def get_fake_ss_object_transforms() -> list[Transform]:
+    return [
+        copy_column("ssObjectId", "oid"),
+        add_constant_column("tid", TID, pd.Int32Dtype()),
+        add_constant_column("sid", SS_SID, pd.Int32Dtype()),
+        add_constant_column("n_det", 1, pd.Int32Dtype()),
+        add_constant_column("n_forced", 0, pd.Int32Dtype()),
+        add_constant_column("n_non_det", 0, pd.Int32Dtype()),
+        add_constant_column("meanra", 0, pd.Float64Dtype()),
+        add_constant_column("meandec", 0, pd.Float64Dtype()),
+        copy_column("mjd", "firstmjd"),
+        copy_column("mjd", "lastmjd"),
+    ]
