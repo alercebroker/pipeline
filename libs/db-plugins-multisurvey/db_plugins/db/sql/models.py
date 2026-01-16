@@ -1048,3 +1048,11 @@ class Xmatch(Base):
             name="pk_xmatch_oid_sid_catid",
         ),
     )
+    
+class CatalogIdLut(Base):
+    __tablename__ = "catalog_id_lut"
+    catalog_id = Column(SmallInteger, autoincrement=True)
+    catalog_name = Column(VARCHAR)
+    created_date = Column(Date, server_default=func.now())
+
+    __table_args__ = (PrimaryKeyConstraint("catalog_id", name="pk_catalog_id_lut_catalog_name"),)
