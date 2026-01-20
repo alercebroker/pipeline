@@ -955,25 +955,21 @@ class Probability(Base):
         ),
     )
 
-
 class Feature(Base):
     __tablename__ = "feature"
-
-    oid = Column(BigInteger, nullable=False)
-    sid = Column(SmallInteger, nullable=False)  # int2,
-    feature_id = Column(SmallInteger, nullable=False)
-    band = Column(SmallInteger, nullable=False)
+    
+    oid = Column(BigInteger, nullable=False, primary_key=True)
+    sid = Column(SmallInteger, nullable=False, primary_key=True)
+    feature_id = Column(SmallInteger, nullable=False, primary_key=True)
+    band = Column(SmallInteger, nullable=False, primary_key=True)
     version = Column(SmallInteger, nullable=False)
     value = Column(DOUBLE_PRECISION)
-
     updated_date = Column(Date, onupdate=func.now())
-
+    
     __table_args__ = (
-        PrimaryKeyConstraint(
-            "oid", "sid", "feature_id", "band", name="pk_feature_oid_featureid_band"
-        ),
+        Index('idx_feature_oid', 'oid'),
+        {'postgresql_partition_by': 'HASH (oid)'}
     )
-
 
 class FeatureNameLut(Base):
     __tablename__ = "feature_name_lut"

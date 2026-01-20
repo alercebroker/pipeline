@@ -3,7 +3,8 @@ from abc import ABC, abstractmethod
 from typing import Dict, List
 from importlib.metadata import version
 import logging
-
+from io import StringIO
+        
 
 ## En el import desde los models se deben traer todos los modelos que se modififiquen en los steps. 
 ## Al menos desde correction hacia atras.
@@ -443,6 +444,7 @@ class LSSTMagstatCommand(Command):
                 objectstat_list
             )
 
+
 class LSSTFeatureCommand(Command):
     type = "LSSTFeatureCommand"
 
@@ -452,40 +454,64 @@ class LSSTFeatureCommand(Command):
         sid = data["sid"]
         feature_version = data["features_version"].split('.')[0] if isinstance(data["features_version"], str) else data["features_version"]
         
-        deduplication_dict = {}
-
+        features_tuples = [] 
         for feature in data["features"]:
-            key = (oid, sid, feature["feature_id"], feature["band"])
-            deduplication_dict[key] = {
-                "oid": oid,
-                "sid": sid,
-                "feature_id": feature["feature_id"],
-                "band": feature["band"],
-                "version": feature_version,
-                "value": feature["value"],
-            }
-        
-        return list(deduplication_dict.values())
-
+            features_tuples.append((oid, sid, feature['feature_id'], feature['band'], feature['value'], feature_version))
+        return sorted(features_tuples)
+    
     @staticmethod
     def db_operation(session: Session, data: List):
+        if len(data) == 0:
+            return
         
-        if len(data) > 0:
-            dedup = {}
-            for row in data:
-                key = (row["oid"], row["sid"], row["feature_id"], row["band"])
-                dedup[key] = row 
-
+        buf = StringIO()
+        for row in data:
+            buf.write(','.join(map(str, row)) + '\n')
+        buf.seek(0)
+        
+        raw_conn = session.connection().connection
+        with raw_conn.cursor() as cur:
+            # Create temp table (once per connection, persists)
+            cur.execute("""
+                CREATE TEMP TABLE IF NOT EXISTS staging_features (
+                    oid BIGINT,
+                    sid SMALLINT,
+                    feature_id INT,
+                    band SMALLINT,
+                    value FLOAT8,
+                    version INT
+                ) ON COMMIT DROP
+            """)
             
-            deduplicated_data = list(dedup.values())
-
-            features_stmt = insert(Feature).on_conflict_do_update(
-                constraint="pk_feature_oid_featureid_band",
-                set_=insert(Feature).excluded, 
-            )
-
-            session.connection().execute(features_stmt, deduplicated_data)
-
+            cur.copy_from(buf, 'staging_features', sep=',', 
+                        columns=('oid', 'sid', 'feature_id', 'band', 'value', 'version'))
+            
+            # Batch UPDATE
+            cur.execute("""
+                UPDATE feature AS f
+                SET value = s.value, version = s.version, updated_date = NOW()
+                FROM staging_features AS s
+                WHERE f.oid = s. oid AND f.sid = s.sid 
+                AND f.feature_id = s.feature_id AND f.band = s.band
+            """)
+            
+            # Batch INSERT
+            cur.execute("""
+                INSERT INTO feature (oid, sid, feature_id, band, value, version, updated_date)
+                SELECT s. oid, s.sid, s.feature_id, s.band, s.value, s.version, NOW()
+                FROM staging_features s
+                LEFT JOIN feature f ON (
+                    f.oid = s.oid AND f. sid = s.sid 
+                    AND f.feature_id = s.feature_id AND f.band = s.band
+                )
+                WHERE f.oid IS NULL
+            """)
+            
+            # Clear staging
+            cur.execute("TRUNCATE staging_features")
+            
+            raw_conn.commit()
+        
 
 ### ###### ###
 ### LEGACY ###
