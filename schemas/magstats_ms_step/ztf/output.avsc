@@ -1,6 +1,6 @@
 {
   "type": "record",
-  "name": "ingestion_ztf",
+  "name": "magstats_ms_ztf",
   "fields": [
     {
       "name": "oid",
@@ -10,9 +10,19 @@
       "name": "sid",
       "type": "int"
     },
-    {
-      "name": "measurement_id",
-      "type": "long"
+    { "name": "measurement_id", 
+      "type": 
+      {
+        "type": "array", 
+        "items": "long"
+        }
+    },
+    { 
+      "name": "meanra", 
+      "type":  ["null", "float"]
+    },
+    { "name": "meandec", 
+    "type": ["null", "float"]
     },
     {
       "name": "detections",
@@ -22,7 +32,7 @@
       }
     },
     {
-      "name": "prv_detections",
+      "name": "previous_detections",
       "type": {
         "type": "array",
         "items": "prv_candidate"
