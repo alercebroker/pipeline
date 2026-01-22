@@ -13,6 +13,7 @@ from lc_classifier.features.composites.ztf import ZTFFeatureExtractor #me falta 
 from lc_classifier.features.composites.lsst import LSSTFeatureExtractor 
 from lc_classifier.features.preprocess.lsst import LSSTLightcurvePreprocessor
 
+from xmatch_client import XmatchClient
 
 from .database import (
     PSQLConnection,
@@ -52,6 +53,8 @@ class FeatureStep(GenericStep):
 
         super().__init__(config=config, **step_args)
         # Bogus detections are dropped in pre_execute
+       
+        
        
         scribe_class = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
         self.scribe_producer = scribe_class(self.config["SCRIBE_PRODUCER_CONFIG"])
@@ -97,11 +100,119 @@ class FeatureStep(GenericStep):
                 self.db_sql, self.schema, self.logger
             )
 
+            # Initialize xmatch client
+            xmatch_config = self.config.get("XMATCH_CONFIG", {})
+            #xmatch_config = {"base_url": "http://localhost:8081", "batch_size": 500}
+
+            print(xmatch_config)
+            self.xmatch_client = XmatchClient(**xmatch_config)
+
         self.min_detections_features = config.get("MIN_DETECTIONS_FEATURES", None)
         if self.min_detections_features is None:
             self.min_detections_features = 1
         else:
             self.min_detections_features = int(self.min_detections_features)
+
+    def get_xmatch_info(self, messages: List[dict]) -> Dict[str, Any]:
+        """
+        Get xmatch information for LSST objects using conesearch.
+        
+        Parameters
+        ----------
+        messages : List[dict]
+            List of messages containing oid, ra, dec information
+            
+        Returns
+        -------
+        Dict[str, Any]
+            Dictionary mapping oid to xmatch results
+        """
+        oids = []
+        ras = []
+        decs = []
+        
+        for msg in messages:
+            #print(msg['dia_object'])
+            if len(msg['dia_object']) == 0:
+                continue
+            oids.append(str(msg['dia_object'][0]["oid"]))
+            ras.append(msg['dia_object'][0]["meanra"])
+            decs.append(msg['dia_object'][0]["meandec"])
+
+        
+        results = self.xmatch_client.conesearch_with_metadata(
+            ras=ras, 
+            decs=decs, 
+            oids=oids
+        )
+        
+        return results
+
+    def produce_xmatch_to_scribe(self, xmatch_results: List[Dict[str, Any]], messages: List[dict]):
+        """
+        Produce xmatch results to scribe.
+        
+        Parameters
+        ----------
+        xmatch_results : List[Dict[str, Any]]
+            List of xmatch results from conesearch_with_metadata
+        messages : List[dict]
+            Original messages to extract sid information
+        """
+        if not xmatch_results:
+            return
+        
+        # Crear mapeo de oid -> sid desde los mensajes
+        oid_to_sid = {}
+        for msg in messages:
+            if len(msg.get('sources', [])) > 0:
+                oid = str(msg['sources'][0].get('oid'))
+                sid = msg['sources'][0].get('sid')
+                oid_to_sid[oid] = sid
+            elif len(msg.get('dia_object', [])) > 0:
+                oid = str(msg['dia_object'][0].get('oid'))
+                # Si no hay sources, intentar obtener sid de previous_sources o usar valor por defecto
+                if len(msg.get('previous_sources', [])) > 0:
+                    sid = msg['previous_sources'][0].get('sid')
+                else:
+                    sid = 3  # Valor por defecto para LSST
+                oid_to_sid[oid] = sid
+        
+        # Procesar cada resultado de xmatch
+        flush = False
+        count_features = 0
+        for idx, match in enumerate(xmatch_results):
+            #print('xmatch:', match)
+            oid = str(match["oid"])
+            sid = oid_to_sid.get(oid, 3)  # Usar sid del mensaje o valor por defecto
+            
+            # Crear comando en el formato especificado
+            xmatch_command = {
+                'step': 'xmatch',
+                'survey': 'lsst',
+                'payload': {
+                    'oid': int(oid),
+                    'sid': sid,
+                    'catalog': match.get('catalog', 'allwise'),
+                    'dist': match.get('distance'),
+                    'oid_catalog': match.get('match_id')
+                }
+            }
+            
+            if idx == len(xmatch_results) - 1:
+                flush = True
+            
+            #print('xmatch_command:', xmatch_command)
+
+            print('xmatch command:', xmatch_command)
+            self.scribe_producer.producer.produce(
+                topic= self.scribe_topic_name,
+                value=json.dumps(xmatch_command).encode("utf-8"),
+                key=str(oid).encode("utf-8"),
+            )
+
+            if flush:
+                self.scribe_producer.producer.flush()
 
     def produce_to_scribe(self, astro_objects: List[AstroObject]):
         commands = self.parse_scribe_payload(
@@ -120,11 +231,12 @@ class FeatureStep(GenericStep):
             count_objs += 1
             if count_objs == len(update_object_cmds):
                 flush = True
-            self.scribe_producer.produce({"payload": json.dumps(command)}, flush=flush)
+            #self.scribe_producer.produce({"payload": json.dumps(command)}, flush=flush)
 
         count_features = 0
         flush = False
         for command in update_features_cmds:
+            #print("comando features:",command)
             count_features += 1
             if count_features == len(update_features_cmds):
                 flush = True
@@ -144,6 +256,12 @@ class FeatureStep(GenericStep):
         return result
 
     def pre_execute(self, messages: List[dict]):
+
+        # Para LSST: obtener xmatch info para TODOS los mensajes antes de filtrar
+        if self.survey == "lsst" and len(messages) > 0:
+            xmatch_results = self.get_xmatch_info(messages)
+            # Enviar resultados de xmatch a scribe
+            self.produce_xmatch_to_scribe(xmatch_results, messages)
 
         filtered_messages = []
         for message in messages:
