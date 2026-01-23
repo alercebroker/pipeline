@@ -1052,3 +1052,26 @@ class CatalogIdLut(Base):
     created_date = Column(Date, server_default=func.now())
 
     __table_args__ = (PrimaryKeyConstraint("catalog_id", name="pk_catalog_id_lut_catalog_name"),)
+
+
+class Allwise(Base):
+    __tablename__ = "allwise"
+    oid_catalog = Column(String, primary_key=True)
+    ra = Column(DOUBLE_PRECISION, nullable=False)
+    dec = Column(DOUBLE_PRECISION, nullable=False)
+    w1mpro = Column(DOUBLE_PRECISION)
+    w2mpro = Column(DOUBLE_PRECISION)
+    w3mpro = Column(DOUBLE_PRECISION)
+    w4mpro = Column(DOUBLE_PRECISION)
+    w1sigmpro = Column(DOUBLE_PRECISION)
+    w2sigmpro = Column(DOUBLE_PRECISION)
+    w3sigmpro = Column(DOUBLE_PRECISION)
+    w4sigmpro = Column(DOUBLE_PRECISION)
+    j_m_2mass = Column(DOUBLE_PRECISION)
+    h_m_2mass = Column(DOUBLE_PRECISION)
+    k_m_2mass = Column(DOUBLE_PRECISION)
+    j_msig_2mass = Column(DOUBLE_PRECISION)
+    h_msig_2mass = Column(DOUBLE_PRECISION)
+    k_msig_2mass = Column(DOUBLE_PRECISION)
+
+    __table_args__ = (PrimaryKeyConstraint("oid_catalog", name="pk_allwise_oid_catalog"),)

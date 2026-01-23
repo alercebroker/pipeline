@@ -88,37 +88,38 @@ class ZTFMagnitudeStatistics(BaseMagnitudeStatistics):
         return pd.DataFrame({"saturation_rate": rate}, index=total.index)
 
 
-    def calculate_dmdt(self) -> pd.DataFrame:
-        dt_min = 0.5
-        
-        if self._non_detections.size == 0:
-            return pd.DataFrame(
-                columns=["dt_first", "dm_first", "sigmadm_first", "dmdt_first"]
-            )
-        
-        first_mag = self._grouped_value("mag", which="first")
-        first_e_mag = self._grouped_value("e_mag", which="first")
-        first_mjd = self._grouped_value("mjd", which="first")
-        
-        nd = self._non_detections.set_index(self._JOIN)
-        
-        dt = first_mjd - nd["mjd"]
-        dm = first_mag - nd["diffmaglim"]
-        sigmadm = first_e_mag - nd["diffmaglim"]
-        dmdt = (first_mag + first_e_mag - nd["diffmaglim"]) / dt
-        
-        results = pd.DataFrame({
-            "dt": dt, "dm": dm, "sigmadm": sigmadm, "dmdt": dmdt
-        }).reset_index()
-        
-        idx = (
-            self._group(results[results["dt"] > dt_min])["dmdt"]
-            .idxmin()
-            .dropna()
+def calculate_dmdt(self) -> pd.DataFrame:
+    dt_min = 0.5
+    
+    if self._non_detections.size == 0:
+        return pd.DataFrame(
+            columns=["dt_first", "dm_first", "sigmadm_first", "dmdt_first"],
+            index=pd.MultiIndex.from_tuples([], names=self._JOIN)
         )
-        
-        results = results.dropna().loc[idx].set_index(self._JOIN)
-        return results.rename(columns={c: f"{c}_first" for c in results.columns})
+    
+    first_mag = self._grouped_value("mag", which="first")
+    first_e_mag = self._grouped_value("e_mag", which="first")
+    first_mjd = self._grouped_value("mjd", which="first")
+    
+    nd = self._non_detections.set_index(self._JOIN)
+    
+    dt = first_mjd - nd["mjd"]
+    dm = first_mag - nd["diffmaglim"]
+    sigmadm = first_e_mag - nd["diffmaglim"]
+    dmdt = (first_mag + first_e_mag - nd["diffmaglim"]) / dt
+    
+    results = pd.DataFrame({
+        "dt": dt, "dm": dm, "sigmadm": sigmadm, "dmdt": dmdt
+    }).reset_index()
+    
+    idx = (
+        self._group(results[results["dt"] > dt_min])["dmdt"]
+        .idxmin()
+        .dropna()
+    )
+    
+    results = results.dropna().loc[idx].set_index(self._JOIN)
+    return results.rename(columns={c: f"{c}_first" for c in results.columns})
     
 
 register_survey_class_magstat("ZTF", ZTFMagnitudeStatistics)

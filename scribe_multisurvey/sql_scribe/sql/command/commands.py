@@ -24,6 +24,7 @@ from db_plugins.db.sql.models import (
     LsstDiaObject,
     Feature,
     LsstMpcOrbits,
+    Xmatch
 )
 from sqlalchemy import update, bindparam
 from sqlalchemy.dialects.postgresql import insert
@@ -42,7 +43,8 @@ from .parser import (
     parse_obj_stats,
     parse_ztf_object,
     parse_ztf_magstats,
-    parse_ztf_objstats
+    parse_ztf_objstats,
+    parse_xmatch,
 )
 
 
@@ -512,7 +514,46 @@ class LSSTFeatureCommand(Command):
             
             raw_conn.commit()
         
+class XmatchCommand(Command):
+    type = "XmatchCommand"
 
+    def _format_data(self, data):
+        
+        
+        parsed_xmatch = parse_xmatch(data)
+        
+        return {
+            "xmatches": parsed_xmatch
+        }
+        
+    @staticmethod
+    def db_operation(session: Session, data: List):
+        if len(data) > 0:
+            dedup_dict = {}
+            
+            for item in data:
+                xmatch = item['xmatches']
+                key = (xmatch['oid'], xmatch['sid'], xmatch['catalog_id'])
+                dedup_dict[key] = {
+                    'oid': xmatch['oid'],
+                    'sid': xmatch['sid'],
+                    'catid': xmatch['catalog_id'],
+                    'oid_catalog': xmatch['oid_catalog'],
+                    'dist': xmatch['dist'],
+                }
+            
+            deduplicated_data = list(dedup_dict.values())
+            
+            if deduplicated_data:
+                insert_stmt = insert(Xmatch).values(deduplicated_data)
+                upsert_stmt = session.connection().execute(insert_stmt.on_conflict_do_update(
+                    index_elements=['oid', 'sid', 'catid'],
+                    set_={
+                        'oid_catalog': insert_stmt.excluded.oid_catalog,
+                        'dist': insert_stmt.excluded.dist,
+                    })
+                )
+                
 ### ###### ###
 ### LEGACY ###
 ### ###### ###

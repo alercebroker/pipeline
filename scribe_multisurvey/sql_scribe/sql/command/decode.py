@@ -5,7 +5,8 @@ from .commands import (
     ZTFCorrectionCommand,
     ZTFMagstatCommand,
     LSSTMagstatCommand,
-    LSSTFeatureCommand
+    LSSTFeatureCommand,
+    XmatchCommand
 )
 
 
@@ -82,5 +83,8 @@ def command_factory(msg: str) -> Command:
     if survey == "lsst" and step == "features":
         return LSSTFeatureCommand(**message)
     
+    if step == "xmatch" and survey in {"lsst", "ztf"}:
+        return XmatchCommand(**message)
+
     raise ValueError(f"Unrecognized command type {survey} in table {step}.")
 

@@ -353,10 +353,10 @@ def parse_ztf_magstats(sub_magstats: dict, oid: str, sid: int):
         "stellar": sub_magstats["stellar"], 
         "corrected": sub_magstats["corrected"], 
         "ndubious": sub_magstats["ndubious"], 
-        "dmdt_first": sub_magstats["dmdt_first"], 
-        "dm_first": sub_magstats["dm_first"], 
-        "sigmadm_first": sub_magstats["sigmadm_first"], 
-        "dt_first": sub_magstats["dt_first"], 
+        "dmdt_first": sub_magstats.get("dmdt_first", None), 
+        "dm_first": sub_magstats.get("dm_first", None),
+        "sigmadm_first": sub_magstats.get("sigmadm_first", None), 
+        "dt_first": sub_magstats.get("dt_first", None),
         "magmean": sub_magstats["magmean"], 
         "magmedian": sub_magstats["magmedian"], 
         "magmax": sub_magstats["magmax"], 
@@ -377,3 +377,21 @@ def parse_ztf_magstats(sub_magstats: dict, oid: str, sid: int):
         "lastmjd": sub_magstats["lastmjd"]
     }
     return ztf_magstats
+
+
+def parse_xmatch(sub_xmatch: dict):
+    catalog = sub_xmatch["catalog"]
+    if catalog =="allwise":
+        cat_id = 0
+    else: 
+        cat_id = -999
+    xmatch = {
+        "oid": sub_xmatch["oid"], 
+        "_oid": sub_xmatch["oid"], 
+        "sid": sub_xmatch["sid"], 
+        "catalog": sub_xmatch["catalog"], 
+        "catalog_id": cat_id, 
+        "dist": sub_xmatch["dist"],
+        "oid_catalog": sub_xmatch["oid_catalog"]
+        }
+    return xmatch
