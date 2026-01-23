@@ -24,6 +24,7 @@ COPY mhps /mhps
 COPY lc_classifier /lc_classifier
 COPY libs/apf /libs/apf
 COPY libs/test_utils /libs/test_utils
+COPY libs/xmatch_client /libs/xmatch_client
 COPY schemas /schemas
 
 RUN poetry run python -m pip install setuptools wheel Cython==0.29.36 numpy
@@ -33,11 +34,12 @@ RUN poetry install --without=test --no-root
 COPY feature_step/scripts /app/scripts
 COPY feature_step/settings.py /app/settings.py
 COPY feature_step/features /app/features
-#COPY feature_step/config2.yaml /app/config2.yaml
 
 FROM python:3.10-slim
 COPY --from=builder /app /app
 COPY --from=builder /libs/apf /libs/apf
+COPY --from=builder /libs/xmatch_client /libs/xmatch_client
+COPY --from=builder /libs/test_utils /libs/test_utils
 COPY --from=builder /mhps /mhps
 COPY --from=builder /P4J /P4J
 COPY --from=builder /lc_classifier /lc_classifier

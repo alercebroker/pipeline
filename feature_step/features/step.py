@@ -135,9 +135,9 @@ class FeatureStep(GenericStep):
             #print(msg['dia_object'])
             if len(msg['dia_object']) == 0:
                 continue
-            oids.append(str(msg['dia_object'][0]["oid"]))
-            ras.append(msg['dia_object'][0]["meanra"])
-            decs.append(msg['dia_object'][0]["meandec"])
+            oids.append(str(msg["oid"]))
+            ras.append(msg["meanra"])
+            decs.append(msg["meandec"])
 
         
         results = self.xmatch_client.conesearch_with_metadata(
@@ -164,19 +164,11 @@ class FeatureStep(GenericStep):
         
         # Crear mapeo de oid -> sid desde los mensajes
         oid_to_sid = {}
-        for msg in messages:
-            if len(msg.get('sources', [])) > 0:
-                oid = str(msg['sources'][0].get('oid'))
-                sid = msg['sources'][0].get('sid')
-                oid_to_sid[oid] = sid
-            elif len(msg.get('dia_object', [])) > 0:
-                oid = str(msg['dia_object'][0].get('oid'))
-                # Si no hay sources, intentar obtener sid de previous_sources o usar valor por defecto
-                if len(msg.get('previous_sources', [])) > 0:
-                    sid = msg['previous_sources'][0].get('sid')
-                else:
-                    sid = 3  # Valor por defecto para LSST
-                oid_to_sid[oid] = sid
+        for msg in messages:            
+            oid = str(msg['oid'])
+            sid = msg['sid']
+            oid_to_sid[oid] = sid
+           
         
         # Procesar cada resultado de xmatch
         flush = False
@@ -184,7 +176,7 @@ class FeatureStep(GenericStep):
         for idx, match in enumerate(xmatch_results):
             #print('xmatch:', match)
             oid = str(match["oid"])
-            sid = oid_to_sid.get(oid, 3)  # Usar sid del mensaje o valor por defecto
+            sid = oid_to_sid.get(oid, 1)  # Usar sid del mensaje o valor por defecto
             
             # Crear comando en el formato especificado
             xmatch_command = {
@@ -202,8 +194,6 @@ class FeatureStep(GenericStep):
             if idx == len(xmatch_results) - 1:
                 flush = True
             
-            #print('xmatch_command:', xmatch_command)
-
             print('xmatch command:', xmatch_command)
             self.scribe_producer.producer.produce(
                 topic= self.scribe_topic_name,
@@ -258,6 +248,7 @@ class FeatureStep(GenericStep):
     def pre_execute(self, messages: List[dict]):
 
         # Para LSST: obtener xmatch info para TODOS los mensajes antes de filtrar
+        print(messages[0].keys())
         if self.survey == "lsst" and len(messages) > 0:
             xmatch_results = self.get_xmatch_info(messages)
             # Enviar resultados de xmatch a scribe
@@ -332,7 +323,7 @@ class FeatureStep(GenericStep):
 
         # Guardar resultados en CSVs por objeto usando función externa
         #batch_folder = save_astro_objects_to_csvs(astro_objects, messages_to_process, base_folder="csvs")
-        self.produce_to_scribe(astro_objects)
+        #self.produce_to_scribe(astro_objects)
         output = self.parse_output_fn(astro_objects, messages_to_process, candids)
         return output
 
