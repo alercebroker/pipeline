@@ -221,7 +221,7 @@ class FeatureStep(GenericStep):
             count_objs += 1
             if count_objs == len(update_object_cmds):
                 flush = True
-            #self.scribe_producer.produce({"payload": json.dumps(command)}, flush=flush)
+            self.scribe_producer.produce({"payload": json.dumps(command)}, flush=flush)
 
         count_features = 0
         flush = False
@@ -248,7 +248,6 @@ class FeatureStep(GenericStep):
     def pre_execute(self, messages: List[dict]):
 
         # Para LSST: obtener xmatch info para TODOS los mensajes antes de filtrar
-        print(messages[0].keys())
         if self.survey == "lsst" and len(messages) > 0:
             xmatch_results = self.get_xmatch_info(messages)
             # Enviar resultados de xmatch a scribe
@@ -323,7 +322,7 @@ class FeatureStep(GenericStep):
 
         # Guardar resultados en CSVs por objeto usando función externa
         #batch_folder = save_astro_objects_to_csvs(astro_objects, messages_to_process, base_folder="csvs")
-        #self.produce_to_scribe(astro_objects)
+        self.produce_to_scribe(astro_objects)
         output = self.parse_output_fn(astro_objects, messages_to_process, candids)
         return output
 
