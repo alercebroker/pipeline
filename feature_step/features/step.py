@@ -215,24 +215,37 @@ class FeatureStep(GenericStep):
         count_features = 0
         flush = False
         for command in update_features_cmds:
-            #print("comando features:",command)
             count_features += 1
             if count_features == len(update_features_cmds):
                 flush = True
-            oid = command["payload"]["oid"]
-            self.scribe_producer.producer.produce(
-                topic= self.scribe_topic_name,
-                value=json.dumps(command).encode("utf-8"),
-                key=str(oid).encode("utf-8"),
-            )
 
-            if flush:
-                self.scribe_producer.producer.flush()
+            if self.survey == "ztf":
+                self.scribe_producer.produce({"payload": json.dumps(command)}, flush=flush)
+            
+            elif self.survey=="lsst":
+                oid = command["payload"]["oid"]
+                self.scribe_producer.producer.produce(
+                    topic= self.scribe_topic_name,
+                    value=json.dumps(command).encode("utf-8"),
+                    key=str(oid).encode("utf-8"),
+                )
+
+                if flush:
+                    self.scribe_producer.producer.flush()
+            
+
 
 
     def pre_produce(self, result: Iterable[Dict[str, Any]] | Dict[str, Any]):
         self.set_producer_key_field("oid")
         return result
+    
+    def _get_sql_references(self, oids: List[str]) -> Optional[pd.DataFrame]:
+        db_references = get_sql_references(
+            oids, self.db_sql, keys=["oid", "rfid", "sharpnr", "chinr"]
+        )
+        db_references = db_references[db_references["chinr"] >= 0.0].copy()
+        return db_references
 
     def pre_execute(self, messages: List[dict]):
 
@@ -284,10 +297,8 @@ class FeatureStep(GenericStep):
             oids.add(msg["oid"])
 
         if self.survey == "ztf":
-            db_references = get_sql_references(
-                list(oids), self.db_sql, keys=["oid", "rfid", "sharpnr", "chinr"]
-            )
-            references_db = db_references[db_references["chinr"] >= 0.0].copy()
+            references_db = self._get_sql_references(list(oids))
+
         for message in messages:
             if not message["oid"] in candids:
                 candids[message["oid"]] = []

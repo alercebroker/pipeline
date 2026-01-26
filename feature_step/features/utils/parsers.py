@@ -504,7 +504,6 @@ def parse_scribe_payload_lsst(
                 "oid": int(oid),
                 "features_version": features_version,
                 "sid": sid,
-                #"features_group": features_group, # esto va? como puedo saber?
                 "features": features_list,
             },
         }
