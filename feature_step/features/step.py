@@ -53,9 +53,6 @@ class FeatureStep(GenericStep):
 
         super().__init__(config=config, **step_args)
         # Bogus detections are dropped in pre_execute
-       
-        
-       
         scribe_class = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
         self.scribe_producer = scribe_class(self.config["SCRIBE_PRODUCER_CONFIG"])
 
@@ -102,9 +99,6 @@ class FeatureStep(GenericStep):
 
             # Initialize xmatch client
             xmatch_config = self.config.get("XMATCH_CONFIG", {})
-            #xmatch_config = {"base_url": "http://localhost:8081", "batch_size": 500}
-
-            print(xmatch_config)
             self.xmatch_client = XmatchClient(**xmatch_config)
 
         self.min_detections_features = config.get("MIN_DETECTIONS_FEATURES", None)
@@ -132,9 +126,6 @@ class FeatureStep(GenericStep):
         decs = []
         
         for msg in messages:
-            #print(msg['dia_object'])
-            if len(msg['dia_object']) == 0:
-                continue
             oids.append(str(msg["oid"]))
             ras.append(msg["meanra"])
             decs.append(msg["meandec"])
@@ -172,7 +163,6 @@ class FeatureStep(GenericStep):
         
         # Procesar cada resultado de xmatch
         flush = False
-        count_features = 0
         for idx, match in enumerate(xmatch_results):
             #print('xmatch:', match)
             oid = str(match["oid"])
@@ -194,7 +184,6 @@ class FeatureStep(GenericStep):
             if idx == len(xmatch_results) - 1:
                 flush = True
             
-            print('xmatch command:', xmatch_command)
             self.scribe_producer.producer.produce(
                 topic= self.scribe_topic_name,
                 value=json.dumps(xmatch_command).encode("utf-8"),
