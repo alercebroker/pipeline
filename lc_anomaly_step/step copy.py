@@ -5,6 +5,7 @@ from lc_classification.core.parsers.kafka_parser import KafkaParser
 import logging
 import json
 import numexpr
+import pandas as pd
 from alerce_classifiers.base.dto import OutputDTO
 from lc_classification.core.parsers.input_dto import create_input_dto
 from typing import List, Tuple
@@ -21,6 +22,7 @@ from lc_classification.core.db.models import (
 ZTF_CLASSIFIER_CLASS = (
     "lc_classifier.classifier.models.HierarchicalRandomForest"
 )
+
 ANOMALY_CLASS = "alerce_classifiers.anomaly.model.AnomalyDetector"
 
 
@@ -51,17 +53,15 @@ class LateClassifier(GenericStep):
         """engine for anomaly detector model"""
         if self.isanomaly:
             self.sql_engine = create_engine(
-                f"postgresql://{self.db_config['ANOMALY_USER']}:{self.db_config['ANOMALY_PASSWORD']}@{self.db_config['ANOMALY_HOST']}:{self.db_config['ANOMALY_PORT']}/{self.db_config['ANOMALY_DB_NAME']}",
+                f"postgresql://{os.getenv('ANOMALY_USER')}:{os.getenv('ANOMALY_PASSWORD')}@{os.getenv('ANOMALY_HOST')}:{os.getenv('ANOMALY_PORT')}/{os.getenv('ANOMALY_DB_NAME')}",
                 connect_args={
                     "options": "-csearch_path={}".format(
-                        self.db_config["ANOMALY_SCHEMA"]
+                        os.getenv("ANOMALY_SCHEMA")
                     )
                 },
             )
             self.logger.info("Engine for anomaly model")
-            self.db_config = config["DB_CONFIG"]
         # ANOMALY
-
         self.logger.info("Loading Models")
 
         if model:
@@ -74,6 +74,7 @@ class LateClassifier(GenericStep):
                 self.model.download_model()
                 self.model.load_model(self.model.MODEL_PICKLE_PATH)
                 self.classifier_version = self.config["MODEL_VERSION"]
+
             else:
                 mapper = get_class(
                     config["MODEL_CONFIG"]["PARAMS"]["mapper"]
@@ -83,6 +84,7 @@ class LateClassifier(GenericStep):
                     **config["MODEL_CONFIG"]["PARAMS"]
                 )
                 self.classifier_version = self.model.model_version
+
         self.scribe_producer = get_class(
             config["SCRIBE_PRODUCER_CONFIG"]["CLASS"]
         )(config["SCRIBE_PRODUCER_CONFIG"])
@@ -214,20 +216,15 @@ class LateClassifier(GenericStep):
 
         probabilities = self.predict(model_input)
         self.log_class_distribution(probabilities)
-
-        _ = self.anomaly_execute((probabilities, messages, model_input.features))
-
-        return OutputDTO(DataFrame([]), {}), messages, model_input.features
+        return probabilities, messages, model_input.features
 
     def post_execute(self, result: Tuple[OutputDTO, List[dict], DataFrame]):
-        return result
+        probabilities = result[0]
 
-    def anomaly_execute(self, result: Tuple[OutputDTO, List[dict], DataFrame]):
+        def format_records(input: OutputDTO) -> Tuple:
 
-        def format_records(input_dto: OutputDTO) -> Tuple:
-
-            df_top = input_dto.hierarchical["top"].copy().reset_index()
-            df_all = input_dto.probabilities.copy().reset_index()
+            df_top = input.hierarchical["top"].copy().reset_index()
+            df_all = input.probabilities.copy().reset_index()
             df_all = df_all.rename(
                 columns={
                     "CV/Nova": "CVNova",
@@ -293,13 +290,26 @@ class LateClassifier(GenericStep):
                     conn.execute(stmt)
                     conn.commit()
 
-        try:
-            records_all, records_top = format_records(result[0])
-            insert_to_db(records_all, self.sql_engine, AnomalyScore)
-            insert_to_db(records_top, self.sql_engine, AnomalyScoreTop)
-        except Exception as e:
-            self.logger.warning(f"Error:  {e}")
-        return OutputDTO(DataFrame([]), {}), result[1], result[2]
+        if self.isanomaly:
+            import pandas as pd
+            from alerce_classifiers.base.dto import OutputDTO
+
+            try:
+                records_all, records_top = format_records(probabilities)
+                insert_to_db(records_all, self.sql_engine, AnomalyScore)
+                insert_to_db(records_top, self.sql_engine, AnomalyScoreTop)
+            except Exception as e:
+                self.logger.warning(f"Error:  {e}")
+            return OutputDTO(pd.DataFrame([]), {}), result[1], result[2]
+
+        parsed_result = self.scribe_parser.parse(
+            probabilities,
+            classifier_version=self.classifier_version,
+        )
+
+        self.produce_scribe(parsed_result.value)
+
+        return result
 
     def tear_down(self):
         if isinstance(self.consumer, KafkaConsumer):
