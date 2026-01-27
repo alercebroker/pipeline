@@ -60,7 +60,10 @@ class LsstStrategy(StrategyInterface[LsstData]):
         apply_transforms(dia_object, get_dia_object_transforms())
         apply_transforms(mpc_orbits, get_mpc_orbits_transforms())
 
-        fake_ss_object = mpc_orbits.copy()
+        fake_ss_object = dia_sources.copy()[dia_sources["sid"] == 2][
+            ["ssObjectId", "mjd"]
+        ]
+        fake_ss_object.reset_index(inplace=True, drop=True)
         apply_transforms(fake_ss_object, get_fake_ss_object_transforms())
 
         return LsstData(

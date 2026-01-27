@@ -58,12 +58,11 @@ def sigmara_to_e_ra(df: pd.DataFrame):
     """
 
     def _sigmara_to_e_ra(x: dict[str, Any]) -> float:
-        if "sigmara" in x:
+        if "sigmara" in x and not pd.isna(x["sigmara"]):
             return x["sigmara"]
-        if x["dec"] is not pd.NA and x["dec"] is not None:
+        if "dec" in x and not pd.isna(x["dec"]):
             return ERRORS[x["fid"]] / abs(math.cos(math.radians(x["dec"])))
-        else:
-            return float("nan")
+        return float("nan")
 
     df["e_ra"] = df.apply(
         _sigmara_to_e_ra,
