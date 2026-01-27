@@ -86,6 +86,7 @@ class PeriodExtractor(FeatureExtractor):
 
     def get_observations(self, astro_object: AstroObject) -> pd.DataFrame:
         observations = astro_object.detections
+        #print(len(observations))
         if self.use_forced_photo:
             if astro_object.forced_photometry is not None:
                 observations = pd.concat(
@@ -94,11 +95,14 @@ class PeriodExtractor(FeatureExtractor):
         observations = observations[observations["unit"] == self.unit]
         observations = observations[observations["brightness"].notna()]
         observations = observations.sort_values("mjd")
+        #print(len(observations))
         observations = self._trim_lightcurve(observations)
+        #print(len(observations))
         return observations
 
     def compute_features_single_object(self, astro_object: AstroObject):
         observations = self.get_observations(astro_object)
+        #print(len(observations))
 
         period_candidate = np.nan
         significance = np.nan
@@ -112,7 +116,10 @@ class PeriodExtractor(FeatureExtractor):
             if n_obs_band >= self.min_length:
                 useful_bands.append(band)
 
+        #print(useful_bands)
+
         observations = observations[observations["fid"].isin(useful_bands)]
+        #print(len(observations))
 
         if len(observations) < self.min_length:
             # don't compute the period if the lightcurve

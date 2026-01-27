@@ -10,11 +10,12 @@ from ..core.base import LightcurvePreprocessor, AstroObject
 from ..core.base import discard_bogus_detections
 
 
-class ZTFLightcurvePreprocessor(LightcurvePreprocessor):
+class LSSTLightcurvePreprocessor(LightcurvePreprocessor):
     def __init__(self, drop_bogus: bool = False):
         self.drop_bogus = drop_bogus
 
     def preprocess_single_object(self, astro_object: AstroObject):
+        #tengo que poder correr esto
         self._helio_time_correction(astro_object)
         self.drop_absurd_detections(astro_object)
         # TODO: does error need a np.maximum(error, 0.01) ?
@@ -64,7 +65,7 @@ class ZTFLightcurvePreprocessor(LightcurvePreprocessor):
                         (
                             (mag_det["brightness"] < 30.0) #queda igual
                             & (mag_det["brightness"] > 6.0) #queda igual
-                            & (mag_det["e_brightness"] < 1.0)
+                            & (mag_det["e_brightness"] < 1.0) #e_brightness me esta quedando entre 18 y 20 #esto era 1.0
                         )
                     ],
                     table[~magnitude_mask],
@@ -95,39 +96,3 @@ class ZTFLightcurvePreprocessor(LightcurvePreprocessor):
             astro_object.forced_photometry = drop_bogus_dets(
                 astro_object.forced_photometry
             )
-
-
-class ShortenPreprocessor(LightcurvePreprocessor):
-    def __init__(self, n_days: float):
-        self.n_days = n_days
-
-    def preprocess_single_object(self, astro_object: AstroObject):
-        first_mjd = np.min(astro_object.detections["mjd"])
-        max_mjd = first_mjd + self.n_days
-        astro_object.detections = astro_object.detections[
-            astro_object.detections["mjd"] <= max_mjd
-        ]
-        last_detection_mjd = np.max(astro_object.detections["mjd"])
-        astro_object.forced_photometry = astro_object.forced_photometry[
-            astro_object.forced_photometry["mjd"] < last_detection_mjd
-        ]
-
-
-class ShortenNDetPreprocessor(LightcurvePreprocessor):
-    def __init__(self, n_dets: float):
-        self.n_dets = n_dets
-
-    def preprocess_single_object(self, astro_object: AstroObject):
-        dets = astro_object.detections[
-            astro_object.detections["unit"] == "diff_flux"
-        ].copy()
-        dets = dets.sort_values(by="mjd").iloc[0 : self.n_dets].copy()
-        max_mjd = np.max(dets["mjd"])
-        del dets
-
-        astro_object.detections = astro_object.detections[
-            astro_object.detections["mjd"] <= max_mjd
-        ]
-        astro_object.forced_photometry = astro_object.forced_photometry[
-            astro_object.forced_photometry["mjd"] < max_mjd
-        ]
