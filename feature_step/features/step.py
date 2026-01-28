@@ -60,6 +60,7 @@ class FeatureStep(GenericStep):
         self.db_sql = db_sql
         self.logger = logging.getLogger("alerce.FeatureStep")
         self.survey = self.config.get("SURVEY")
+        self.use_xmatch = self.config.get("USE_XMATCH", False)
         
         # Get schema from configuration
         self.schema = self.config.get("DB_CONFIG", {}).get("SCHEMA", "multisurvey")
@@ -98,8 +99,9 @@ class FeatureStep(GenericStep):
             )
 
             # Initialize xmatch client
-            xmatch_config = self.config.get("XMATCH_CONFIG", {})
-            self.xmatch_client = XmatchClient(**xmatch_config)
+            if self.use_xmatch
+                xmatch_config = self.config.get("XMATCH_CONFIG", {})
+                self.xmatch_client = XmatchClient(**xmatch_config)
 
         self.min_detections_features = config.get("MIN_DETECTIONS_FEATURES", None)
         if self.min_detections_features is None:
@@ -250,7 +252,7 @@ class FeatureStep(GenericStep):
     def pre_execute(self, messages: List[dict]):
 
         # Para LSST: obtener xmatch info para TODOS los mensajes antes de filtrar
-        if self.survey == "lsst" and len(messages) > 0:
+        if self.use_xmatch and self.survey == "lsst" and len(messages) > 0:
             xmatch_results = self.get_xmatch_info(messages)
             # Enviar resultados de xmatch a scribe
             self.produce_xmatch_to_scribe(xmatch_results, messages)
