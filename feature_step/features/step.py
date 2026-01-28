@@ -99,7 +99,7 @@ class FeatureStep(GenericStep):
             )
 
             # Initialize xmatch client
-            if self.use_xmatch
+            if self.use_xmatch:
                 xmatch_config = self.config.get("XMATCH_CONFIG", {})
                 self.xmatch_client = XmatchClient(**xmatch_config)
 
