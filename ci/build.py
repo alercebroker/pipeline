@@ -79,8 +79,15 @@ async def _update_package_version(packages: list, version: str, dry_run: bool):
                 "/pipeline",
                 client.host().directory(
                     str(path),
-                    exclude=[".venv/", "**/.venv/", "*/.venv/",
-                             "*.venv", "tests/", "**/tests/"],
+                    exclude=[
+                        ".venv/",
+                        "**/.venv/",
+                        "*/.venv/",
+                        "*.venv",
+                        "tests/",
+                        "**/tests/",
+                        "training/",
+                    ],
                 ),
             )
         )

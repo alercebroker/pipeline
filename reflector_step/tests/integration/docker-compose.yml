@@ -1,7 +1,7 @@
 version: "3"
 services:
   kafka1:
-    image: "bitnami/kafka:latest"
+    image: "bitnamilegacy/kafka:latest"
     ports:
       - "9092:9092"
     environment:
@@ -15,7 +15,7 @@ services:
       - ALLOW_PLAINTEXT_LISTENER=yes
 
   kafka2:
-    image: "bitnami/kafka:latest"
+    image: "bitnamilegacy/kafka:latest"
     ports:
       - "9093:9093"
     environment:

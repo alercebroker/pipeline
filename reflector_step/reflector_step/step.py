@@ -1,6 +1,7 @@
 from typing import Any, Literal
 
 from apf.core.step import DefaultProducer, GenericStep
+
 from reflector_step.utils.consumer import RawKafkaConsumerBytes
 
 
@@ -61,20 +62,19 @@ class CustomMirrormaker(GenericStep):
             isRawKafkaConsumer = type(self.consumer) is RawKafkaConsumerBytes
 
             if isRawKafkaConsumer:
-                if self.survey == "ztf":                
+                if self.survey == "ztf":
                     if self.keep_original_timestamp:
-                        producer_kwargs["timestamp"] = msg["timestamp"] 
+                        producer_kwargs["timestamp"] = msg["timestamp"]
 
                     if self.use_message_topic:
                         self.producer.topic = [msg["topic"]]
-            
+
                     if msg.get("key"):
                         producer_kwargs["key"] = msg["key"]
 
                 self.producer.produce(msg["value"], **producer_kwargs)
 
             else:
-
                 if not self.keep_original_timestamp and self.survey == "lsst":
                     msg.pop("timestamp", None)
 
@@ -82,7 +82,7 @@ class CustomMirrormaker(GenericStep):
                     self.producer.topic = [msg.get("topic")]
 
                 self.producer.produce(msg, **producer_kwargs)
-                
+
         if not isinstance(self.producer, DefaultProducer):
             self.logger.info(f"Produced {count} messages")
 

@@ -1,18 +1,22 @@
-import unittest
 import pathlib
+import unittest
+
 import pytest
 from confluent_kafka import Producer
+
 from reflector_step.step import CustomMirrormaker
 from reflector_step.utils import RawKafkaConsumer
 from tests.unittest.data.datagen import create_messages
 
-PATH = pathlib.Path(pathlib.Path(__file__).parent.parent.parent.parent, "schemas/ztf", "alert.avsc")
+PATH = pathlib.Path(
+    pathlib.Path(__file__).parent.parent.parent.parent, "schemas/ztf", "alert.avsc"
+)
 
 PRODUCER_CONFIG = {
     "CLASS": "reflector_step.utils.RawKafkaProducer",
     "TOPIC": "test",
     "PARAMS": {"bootstrap.servers": "localhost:9093"},
-    "SCHEMA_PATH": PATH
+    "SCHEMA_PATH": PATH,
 }
 
 CONSUMER_CONFIG = {
@@ -45,13 +49,12 @@ class MyTestCase(unittest.TestCase):
             config=self.step_config,
             keep_original_timestamp=True,
             use_message_topic=False,
+            survey="ztf",
         )
 
         messages = create_messages(n_messages, "test_topic")
         for msg in messages:
-            external.produce(
-                topic=msg.topic(), value=msg.value(), timestamp=123
-            )
+            external.produce(topic=msg.topic(), value=msg.value(), timestamp=123)
         external.flush()
         step.start()
         consumer = RawKafkaConsumer(

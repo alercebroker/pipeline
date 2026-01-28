@@ -405,6 +405,8 @@ class ZtfDetection(Base):
     has_stamp = Column(Boolean)  # bool,
     created_date = Column(Date, server_default=func.now())
 
+    created_date = Column(Date, server_default=func.now())
+
     __table_args__ = (
         PrimaryKeyConstraint(
             "oid", "measurement_id", name="pk_ztfdetection_oid_measurementid"
@@ -755,6 +757,8 @@ class ZtfPS1(Base):
 
     created_date = Column(Date, server_default=func.now())
 
+    created_date = Column(Date, server_default=func.now())
+
     __table_args__ = (
         PrimaryKeyConstraint(
             "oid", "measurement_id", name="pk_ztfps1_oid_measurement_id"
@@ -955,9 +959,10 @@ class Probability(Base):
         ),
     )
 
+
 class Feature(Base):
     __tablename__ = "feature"
-    
+
     oid = Column(BigInteger, nullable=False, primary_key=True)
     sid = Column(SmallInteger, nullable=False, primary_key=True)
     feature_id = Column(SmallInteger, nullable=False, primary_key=True)
@@ -965,11 +970,12 @@ class Feature(Base):
     version = Column(SmallInteger, nullable=False)
     value = Column(DOUBLE_PRECISION)
     updated_date = Column(Date, onupdate=func.now())
-    
+
     __table_args__ = (
-        Index('idx_feature_oid', 'oid'),
-        {'postgresql_partition_by': 'HASH (oid)'}
+        Index("idx_feature_oid", "oid"),
+        {"postgresql_partition_by": "HASH (oid)"},
     )
+
 
 class FeatureNameLut(Base):
     __tablename__ = "feature_name_lut"
@@ -1044,14 +1050,17 @@ class Xmatch(Base):
             name="pk_xmatch_oid_sid_catid",
         ),
     )
-    
+
+
 class CatalogIdLut(Base):
     __tablename__ = "catalog_id_lut"
     catalog_id = Column(SmallInteger, autoincrement=True)
     catalog_name = Column(VARCHAR)
     created_date = Column(Date, server_default=func.now())
 
-    __table_args__ = (PrimaryKeyConstraint("catalog_id", name="pk_catalog_id_lut_catalog_name"),)
+    __table_args__ = (
+        PrimaryKeyConstraint("catalog_id", name="pk_catalog_id_lut_catalog_name"),
+    )
 
 
 class Allwise(Base):
@@ -1074,4 +1083,6 @@ class Allwise(Base):
     h_msig_2mass = Column(DOUBLE_PRECISION)
     k_msig_2mass = Column(DOUBLE_PRECISION)
 
-    __table_args__ = (PrimaryKeyConstraint("oid_catalog", name="pk_allwise_oid_catalog"),)
+    __table_args__ = (
+        PrimaryKeyConstraint("oid_catalog", name="pk_allwise_oid_catalog"),
+    )

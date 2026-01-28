@@ -1,41 +1,53 @@
-import pandas as pd
-from typing import Dict, Any
-from .surveyDataJoiner import SurveyDataJoiner
 import logging
+from typing import Any, Dict
+
+import pandas as pd
+
+from .surveyDataJoiner import SurveyDataJoiner
+
 
 class LSSTDataJoiner(SurveyDataJoiner):
     """LSST-specific data joining strategy."""
-    
-    def process_historical_data(self, historical_data: Dict[str, Any]) -> Dict[str, pd.DataFrame]:
+
+    def process_historical_data(
+        self, historical_data: Dict[str, Any]
+    ) -> Dict[str, pd.DataFrame]:
         """Process LSST historical data."""
         processed = {}
-        
-        db_sql_detections_df = historical_data.get('detections', pd.DataFrame())
-        
-        # Separate detections into sources and previous sources 
+
+        db_sql_detections_df = historical_data.get("detections", pd.DataFrame())
+
+        # Separate detections into sources and previous sources
         if not db_sql_detections_df.empty:
-            processed['db_sql_sources_df'] = db_sql_detections_df[
+            processed["db_sql_sources_df"] = db_sql_detections_df[
                 db_sql_detections_df["has_stamp"] == False
             ]
-            processed['db_sql_previous_sources_df'] = db_sql_detections_df[
+            processed["db_sql_previous_sources_df"] = db_sql_detections_df[
                 db_sql_detections_df["has_stamp"] == True
             ]
         else:
-            processed['db_sql_sources_df'] = pd.DataFrame()
-            processed['db_sql_previous_sources_df'] = pd.DataFrame()
-        
-        processed['db_sql_forced_photometries_df'] = historical_data.get('forced_photometry', pd.DataFrame())
-        processed['db_sql_ss_sources_df'] = historical_data.get('ss_detections', pd.DataFrame())
-        
-        #processed['db_sql_non_detections_df'] = historical_data.get('non_detections', pd.DataFrame()) # Ommited for now, as we are not using non detections in schema v10.0
+            processed["db_sql_sources_df"] = pd.DataFrame()
+            processed["db_sql_previous_sources_df"] = pd.DataFrame()
+
+        processed["db_sql_forced_photometries_df"] = historical_data.get(
+            "forced_photometry", pd.DataFrame()
+        )
+        processed["db_sql_ss_sources_df"] = historical_data.get(
+            "ss_detections", pd.DataFrame()
+        )
+
+        # processed['db_sql_non_detections_df'] = historical_data.get('non_detections', pd.DataFrame()) # Ommited for now, as we are not using non detections in schema v10.0
         # Not using the ss_objects and dia_objects from the database for now, and instead keeping only the ones from the message
-        #processed['db_sql_ss_objects_df'] = historical_data.get('ss_objects', pd.DataFrame())
-        #processed['db_sql_dia_objects_df'] = historical_data.get('dia_objects', pd.DataFrame())
-        
+        # processed['db_sql_ss_objects_df'] = historical_data.get('ss_objects', pd.DataFrame())
+        # processed['db_sql_dia_objects_df'] = historical_data.get('dia_objects', pd.DataFrame())
+
         return processed
-    
-    def combine_data(self, msg_data: Dict[str, pd.DataFrame], 
-                    historical_data: Dict[str, pd.DataFrame]) -> Dict[str, pd.DataFrame]:
+
+    def combine_data(
+        self,
+        msg_data: Dict[str, pd.DataFrame],
+        historical_data: Dict[str, pd.DataFrame],
+    ) -> Dict[str, pd.DataFrame]:
         """Combine LSST message and historical data."""
         result = {}
 
@@ -91,18 +103,19 @@ class LSSTDataJoiner(SurveyDataJoiner):
             historical_data.get('db_sql_non_detections_df', pd.DataFrame())
         ], ignore_index=True)
         """
-    
+
         return result
 
-
-#! Added MJD column to sort by in order to deduplicate
-#TODO check if this logic is correct
-    def post_process_data(self, combined_data: Dict[str, pd.DataFrame]) -> Dict[str, pd.DataFrame]:
+    #! Added MJD column to sort by in order to deduplicate
+    # TODO check if this logic is correct
+    def post_process_data(
+        self, combined_data: Dict[str, pd.DataFrame]
+    ) -> Dict[str, pd.DataFrame]:
         """Post-process LSST data: sort and deduplicate."""
         result = {}
-        # For sources previous sources and forced photometries order so new ones are on top, and 
+        # For sources previous sources and forced photometries order so new ones are on top, and
         # drop duplicates based on measurement_id and oid
-        for key in ['sources', 'previous_sources', 'forced_sources']:
+        for key in ["sources", "previous_sources", "forced_sources"]:
             df = combined_data.get(key, pd.DataFrame())
             if not df.empty:
                 # Sort by 'new' column (new=True will be on top)
@@ -110,7 +123,7 @@ class LSSTDataJoiner(SurveyDataJoiner):
                 # Drop duplicates based on measurement_id and oid, keeping first (new=True)
                 df = df.drop_duplicates(["measurement_id", "oid"], keep="first")
             result[key] = df
-        for key in ['ss_sources']:
+        for key in ["ss_sources"]:
             df = combined_data.get(key, pd.DataFrame())
             if not df.empty:
                 # Sort by 'new' column (new=True will be on top)
@@ -119,16 +132,16 @@ class LSSTDataJoiner(SurveyDataJoiner):
                 df = df.drop_duplicates(["measurement_id", "ssObjectId"], keep="first")
             result[key] = df
         # It is possible to drop duplicates for mpc orbits based on id, and updated/created time (choosing highest date from the two
-        # and then order and dedup based on that value, but its also possible and probable that the mpc orbits will still be duplicated in scribe so this would 
+        # and then order and dedup based on that value, but its also possible and probable that the mpc orbits will still be duplicated in scribe so this would
         # be unnecesary to do here) The firt tests dont have either of the dates so we inherite the mjd of the parent for that case
-        for key in ['mpc_orbits']:
+        for key in ["mpc_orbits"]:
             df = combined_data.get(key, pd.DataFrame())
             if not df.empty:
                 df["_sort_mjd"] = (
-                        df["updated_at"]
-                        .combine_first(df["created_at"])
-                        .combine_first(df["mjd"])
-                    )
+                    df["updated_at"]
+                    .combine_first(df["created_at"])
+                    .combine_first(df["mjd"])
+                )
                 df = df.sort_values("_sort_mjd", ascending=False)
                 df = df.drop_duplicates(["ssObjectId"], keep="first")
                 df = df.drop(columns="_sort_mjd")
@@ -151,13 +164,11 @@ class LSSTDataJoiner(SurveyDataJoiner):
         result['non_detections'] = non_detections_df
         """
 
-        # Since we don't extract from the database the SS and DIA object, we only keep the ones from the message, meaning 
+        # Since we don't extract from the database the SS and DIA object, we only keep the ones from the message, meaning
         # it is not necessary to drop duplicates  # TODO CHECK THIS LOGIC => do we want to query db objects in the future then combine them!
 
-        result['dia_object'] = combined_data.get('dia_object', pd.DataFrame())
-        #result['ss_object'] = combined_data.get('ss_object', pd.DataFrame())
-        
-        logger = logging.getLogger(f"alerce.{self.__class__.__name__}")
+        result["dia_object"] = combined_data.get("dia_object", pd.DataFrame())
+        # result['ss_object'] = combined_data.get('ss_object', pd.DataFrame())
 
         if not result['sources'].empty:
             logger.info(f"Obtained {len(result['sources'][result['sources']['new']])} new dia sources")

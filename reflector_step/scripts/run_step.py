@@ -1,10 +1,10 @@
+import logging
 import os
 import sys
 
-import logging
 from apf.core.settings import config_from_yaml_file
-from reflector_step.step import CustomMirrormaker
 
+from reflector_step.step import CustomMirrormaker
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 PACKAGE_PATH = os.path.abspath(os.path.join(SCRIPT_PATH, ".."))
@@ -21,13 +21,20 @@ logging.basicConfig(
 
 step_config = settings["STEP_CONFIG"]
 
-keep_original_timestamp = step_config.pop("keep_original_timestamp")
-use_message_topic = step_config.pop("use_message_topic")
+keep_original_timestamp = step_config.pop("keep_original_timestamp", False)
+use_message_topic = step_config.pop("use_message_topic", False)
+producer_key = step_config.pop("producer_key", None)
+survey = str(step_config.pop("survey")).lower()
+
+if survey not in ["ztf", "lsst"]:
+    raise Exception("In config field `survey` must be one of ['ztf', 'lsst']")
 
 step = CustomMirrormaker(
     config=step_config,
     keep_original_timestamp=keep_original_timestamp,
+    survey=survey,
     use_message_topic=use_message_topic,
+    producer_key=producer_key,
 )
 
 step.start()

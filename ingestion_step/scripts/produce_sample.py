@@ -1,9 +1,9 @@
 import os
 import sys
-from typing import Any, Iterable
 from random import Random
+from typing import Any, Iterable
 
-
+import pandas as pd
 from apf.core import get_class
 from apf.core.settings import config_from_yaml_file
 from apf.core.step import GenericProducer
@@ -11,19 +11,23 @@ from tqdm import tqdm
 
 sys.path.append("tests")
 
-from generator.lsst_alert import LsstAlertGenerator
-
 from data.generator_ztf import (  # pyright: ignore
     generate_alerts as generate_alerts_ztf,
 )
 
+from generator.lsst_alert import LsstAlertGenerator
+
 PRODUCE_SAMPLE_CONFIG: dict[str, Any] = config_from_yaml_file(
-    os.getenv("CONFIG_PRODUCE_SAMPLE_YAML_PATH", "config.produce_sample.yaml")
+    os.getenv(
+        "CONFIG_PRODUCE_SAMPLE_YAML_PATH",
+        "/scripts/config-sample-generator.yaml",
+    )
 )
 
 rng = Random(42)
 generator_lsst = LsstAlertGenerator(rng=rng, new_obj_rate=0.1)
 GENERATORS = {"lsst": generator_lsst, "ztf": generate_alerts_ztf}
+
 
 class SampleProducer:
     producer: GenericProducer
@@ -32,7 +36,10 @@ class SampleProducer:
         Producer = get_class(config["CLASS"])
 
         self.producer = Producer(config)
-        self.producer.set_key_field("alertId")
+        if self.survey == "lsst":
+            self.producer.set_key_function(lsst_partition)
+        elif self.survey == "ztf":
+            self.producer.set_key_field("alertId")
 
     def produce(self, msgs: Iterable[dict[str, Any]], flush: bool = True):
         for msg in tqdm(msgs):
@@ -42,6 +49,7 @@ class SampleProducer:
 
     def flush(self):
         self.producer.producer.flush()
+
 
 def produce():
     survey = PRODUCE_SAMPLE_CONFIG.get("SURVEY", "lsst")
@@ -60,6 +68,6 @@ def produce():
 
     batch_size = PRODUCE_SAMPLE_CONFIG.get("BATCH_SIZE", 100)
     for i in range(0, len(alerts), batch_size):
-        batch = alerts[i:i + batch_size]
+        batch = alerts[i : i + batch_size]
         producer.produce(batch, flush=False)
-    producer.flush() 
+    producer.flush()

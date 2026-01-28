@@ -1,13 +1,13 @@
 version: "3"
 services:
   zookeeper:
-    image: zookeeper:3.9.4
+    image: bitnamilegacy/zookeeper:latest
     hostname: zookeeper
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
 
   kafka:
-    image: apache/kafka:4.1.1
+    image: bitnamilegacy/kafka:3.3.1
     hostname: kafka
     depends_on:
       - zookeeper

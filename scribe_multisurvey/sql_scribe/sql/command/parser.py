@@ -32,12 +32,11 @@ def multisurvey_detection_to_ztf(command: dict):
     new_command["fid"] = fid_map[new_command["fid"]]
     new_command["candid"] = int(new_command["candid"])
     new_command["parent_candid"] = (
-        int(new_command["parent_candid"])
-        if new_command["parent_candid"]
-        else None
+        int(new_command["parent_candid"]) if new_command["parent_candid"] else None
     )
 
     return new_command
+
 
 """
 def parse_ztf_pf(raw_detection: dict, oid: str):
@@ -67,6 +66,7 @@ def parse_ztf_det(raw_detection: dict, oid: str) -> dict:
 
 """
 
+
 def parse_fp(raw_detection: dict, oid: str) -> dict:
     forced_photometry = {
         "oid": oid,
@@ -78,6 +78,7 @@ def parse_fp(raw_detection: dict, oid: str) -> dict:
         "band": raw_detection["band"],
     }
     return forced_photometry
+
 
 def parse_ztf_fp(raw_detection: dict, oid: str) -> dict:
     forced_photometry = {
@@ -122,6 +123,7 @@ def parse_ztf_fp(raw_detection: dict, oid: str) -> dict:
 
     return forced_photometry
 
+
 def parse_det(raw_detection: dict, oid: str) -> dict:
     detection = {
         "oid": oid,
@@ -134,6 +136,7 @@ def parse_det(raw_detection: dict, oid: str) -> dict:
     }
 
     return detection
+
 
 def parse_ztf_det(raw_detection: dict, oid: str) -> dict:
     detection = {
@@ -166,7 +169,7 @@ def parse_ztf_det(raw_detection: dict, oid: str) -> dict:
     }
     return detection
 
-    
+
 def parse_ztf_ss(candidate: dict, oid: str) -> dict:
     ss = {
         "oid": oid,
@@ -174,21 +177,23 @@ def parse_ztf_ss(candidate: dict, oid: str) -> dict:
         "measurement_id": candidate["measurement_id"],
         "ssdistnr": candidate["ssdistnr"],
         "ssmagnr": candidate["ssmagnr"],
-        "ssnamenr":None if candidate["ssnamenr"] == 'null' else  candidate["ssnamenr"],
+        "ssnamenr": None if candidate["ssnamenr"] == "null" else candidate["ssnamenr"],
     }
     return ss
+
 
 def parse_ztf_object(candidate: dict, oid: str) -> dict:
     ztfobj = {
         "oid": oid,
-       "_oid": oid,
+        "_oid": oid,
         "_mjd": candidate["mjd"],
         "ndethist": candidate["ndethist"],
         "ncovhist": candidate["ncovhist"],
         "mjdstarthist": candidate["jdstarthist"] - 2400000.5,
-        "mjdendhist": candidate["jdendhist"] - 2400000.5
+        "mjdendhist": candidate["jdendhist"] - 2400000.5,
     }
     return ztfobj
+
 
 def parse_ztf_ps1(candidate: dict, oid: str) -> dict:
     ps1 = {
@@ -197,7 +202,8 @@ def parse_ztf_ps1(candidate: dict, oid: str) -> dict:
         "measurement_id": candidate["measurement_id"],
         "objectidps1": (
             int(candidate["objectidps1"])
-            if candidate["objectidps1"] != "-999" or candidate["objectidps1"] is not None
+            if candidate["objectidps1"] != "-999"
+            or candidate["objectidps1"] is not None
             else None
         ),
         "sgmag1": candidate["sgmag1"],
@@ -206,9 +212,10 @@ def parse_ztf_ps1(candidate: dict, oid: str) -> dict:
         "szmag1": candidate["szmag1"],
         "sgscore1": candidate["sgscore1"],
         "distpsnr1": candidate["distpsnr1"],
-        "objectidps2":(
+        "objectidps2": (
             int(candidate["objectidps2"])
-            if candidate["objectidps2"] != "-999" or candidate["objectidps2"] is not None
+            if candidate["objectidps2"] != "-999"
+            or candidate["objectidps2"] is not None
             else None
         ),
         "sgmag2": candidate["sgmag2"],
@@ -217,9 +224,10 @@ def parse_ztf_ps1(candidate: dict, oid: str) -> dict:
         "szmag2": candidate["szmag2"],
         "sgscore2": candidate["sgscore2"],
         "distpsnr2": candidate["distpsnr2"],
-        "objectidps3":(
+        "objectidps3": (
             int(candidate["objectidps3"])
-            if candidate["objectidps3"] != "-999" or candidate["objectidps3"] is not None
+            if candidate["objectidps3"] != "-999"
+            or candidate["objectidps3"] is not None
             else None
         ),
         "sgmag3": candidate["sgmag3"],
@@ -232,6 +240,7 @@ def parse_ztf_ps1(candidate: dict, oid: str) -> dict:
     }
     return ps1
 
+
 def parse_ztf_gaia(candidate: dict, oid: str) -> dict:
     gaia = {
         "oid": oid,
@@ -243,6 +252,7 @@ def parse_ztf_gaia(candidate: dict, oid: str) -> dict:
         "maggaiabright": candidate["maggaiabright"],
     }
     return gaia
+
 
 def parse_ztf_dq(candidate: dict, oid: str) -> dict:
     dq = {
@@ -281,6 +291,7 @@ def parse_ztf_dq(candidate: dict, oid: str) -> dict:
     }
     return dq
 
+
 def parse_ztf_refernece(candidate: dict, oid: str) -> dict:
     reference = {
         "oid": oid,
@@ -301,6 +312,7 @@ def parse_ztf_refernece(candidate: dict, oid: str) -> dict:
         "nframesref": candidate["nframesref"],
     }
     return reference
+
 
 def parse_obj_stats(raw_magstats, oid: str, sid: int) -> dict:
     obj = {
@@ -323,9 +335,10 @@ def parse_obj_stats(raw_magstats, oid: str, sid: int) -> dict:
 
     return obj
 
+
 def parse_ztf_objstats(raw_magstats, oid: str, sid: int) -> dict:
     obj = {
-         "_oid": oid,
+        "_oid": oid,
         "oid": oid,
         "sid": sid,
         "meanra": raw_magstats["meanra"],
@@ -341,57 +354,58 @@ def parse_ztf_objstats(raw_magstats, oid: str, sid: int) -> dict:
         "corrected": raw_magstats["corrected"],
         "stellar": raw_magstats["stellar"],
         "reference_change": raw_magstats["reference_change"],
-        "diffpos": raw_magstats["diffpos"]
+        "diffpos": raw_magstats["diffpos"],
     }
     return obj
+
 
 def parse_ztf_magstats(sub_magstats: dict, oid: str, sid: int):
     ztf_magstats = {
         "oid": oid,
         "sid": sid,
-        "band": sub_magstats["band"], 
-        "stellar": sub_magstats["stellar"], 
-        "corrected": sub_magstats["corrected"], 
-        "ndubious": sub_magstats["ndubious"], 
-        "dmdt_first": sub_magstats.get("dmdt_first", None), 
+        "band": sub_magstats["band"],
+        "stellar": sub_magstats["stellar"],
+        "corrected": sub_magstats["corrected"],
+        "ndubious": sub_magstats["ndubious"],
+        "dmdt_first": sub_magstats.get("dmdt_first", None),
         "dm_first": sub_magstats.get("dm_first", None),
-        "sigmadm_first": sub_magstats.get("sigmadm_first", None), 
+        "sigmadm_first": sub_magstats.get("sigmadm_first", None),
         "dt_first": sub_magstats.get("dt_first", None),
-        "magmean": sub_magstats["magmean"], 
-        "magmedian": sub_magstats["magmedian"], 
-        "magmax": sub_magstats["magmax"], 
-        "magmin": sub_magstats["magmin"], 
-        "magsigma": sub_magstats["magsigma"], 
-        "maglast": sub_magstats["maglast"], 
-        "magfirst": sub_magstats["magfirst"], 
-        "magmean_corr": sub_magstats["magmean_corr"], 
-        "magmedian_corr": sub_magstats["magmedian_corr"], 
-        "magmax_corr": sub_magstats["magmax_corr"], 
-        "magmin_corr": sub_magstats["magmin_corr"], 
-        "magsigma_corr": sub_magstats["magsigma_corr"], 
-        "maglast_corr": sub_magstats["maglast_corr"], 
-        "magfirst_corr": sub_magstats["magfirst_corr"], 
-        "saturation_rate": sub_magstats["saturation_rate"], 
+        "magmean": sub_magstats["magmean"],
+        "magmedian": sub_magstats["magmedian"],
+        "magmax": sub_magstats["magmax"],
+        "magmin": sub_magstats["magmin"],
+        "magsigma": sub_magstats["magsigma"],
+        "maglast": sub_magstats["maglast"],
+        "magfirst": sub_magstats["magfirst"],
+        "magmean_corr": sub_magstats["magmean_corr"],
+        "magmedian_corr": sub_magstats["magmedian_corr"],
+        "magmax_corr": sub_magstats["magmax_corr"],
+        "magmin_corr": sub_magstats["magmin_corr"],
+        "magsigma_corr": sub_magstats["magsigma_corr"],
+        "maglast_corr": sub_magstats["maglast_corr"],
+        "magfirst_corr": sub_magstats["magfirst_corr"],
+        "saturation_rate": sub_magstats["saturation_rate"],
         "n_det": sub_magstats["ndet"],
         "firstmjd": sub_magstats["firstmjd"],
-        "lastmjd": sub_magstats["lastmjd"]
+        "lastmjd": sub_magstats["lastmjd"],
     }
     return ztf_magstats
 
 
 def parse_xmatch(sub_xmatch: dict):
     catalog = sub_xmatch["catalog"]
-    if catalog =="allwise":
+    if catalog == "allwise":
         cat_id = 0
-    else: 
+    else:
         cat_id = -999
     xmatch = {
-        "oid": sub_xmatch["oid"], 
-        "_oid": sub_xmatch["oid"], 
-        "sid": sub_xmatch["sid"], 
-        "catalog": sub_xmatch["catalog"], 
-        "catalog_id": cat_id, 
+        "oid": sub_xmatch["oid"],
+        "_oid": sub_xmatch["oid"],
+        "sid": sub_xmatch["sid"],
+        "catalog": sub_xmatch["catalog"],
+        "catalog_id": cat_id,
         "dist": sub_xmatch["dist"],
-        "oid_catalog": sub_xmatch["oid_catalog"]
-        }
+        "oid_catalog": sub_xmatch["oid_catalog"],
+    }
     return xmatch

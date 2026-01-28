@@ -1,10 +1,10 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
-from .models import Base
-from contextlib import contextmanager
-from typing import Callable, ContextManager
 import logging
-from sqlalchemy import text
+from contextlib import contextmanager
+
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import Session, sessionmaker
+
+from .models import Base
 
 
 def get_db_url(config: dict):
@@ -35,20 +35,20 @@ class PsqlDatabase:
     def create_db(self):
         # Create all tables EXCEPT feature
         tables_to_create = [
-            table for table in Base.metadata.tables.values() 
-            if table.name != 'feature'
+            table for table in Base.metadata.tables.values() if table.name != "feature"
         ]
         Base.metadata.create_all(self._engine, tables=tables_to_create)
         # Create features table with partitions directly using SQL
         self._create_feature_table()
         self.create_feature_partitions()
-    
+
     def _create_feature_table(self):
         with self._engine.connect() as conn:
             schema_prefix = f"{self.schema}." if self.schema else ""
             conn.execute(text(f"DROP TABLE IF EXISTS {schema_prefix}feature CASCADE"))
-            
-            conn.execute(text(f"""
+
+            conn.execute(
+                text(f"""
                 CREATE TABLE {schema_prefix}feature (
                     oid bigint NOT NULL,
                     sid smallint NOT NULL,
@@ -58,32 +58,36 @@ class PsqlDatabase:
                     value double precision,
                     updated_date date
                 ) PARTITION BY HASH (oid)
-            """))
-            
-            conn.execute(text(f"CREATE INDEX ON {schema_prefix}feature USING btree (oid)"))
-            
+            """)
+            )
+
+            conn.execute(
+                text(f"CREATE INDEX ON {schema_prefix}feature USING btree (oid)")
+            )
+
             conn.commit()
-    
+
     def create_feature_partitions(self):
         """Create the 10 partitions for feature table"""
         with self._engine.connect() as conn:
             schema_prefix = f"{self.schema}." if self.schema else ""
-            
+
             for i in range(10):
-                conn.execute(text(f"""
+                conn.execute(
+                    text(f"""
                     CREATE TABLE IF NOT EXISTS {schema_prefix}feature_part_{i} 
                     PARTITION OF {schema_prefix}feature 
                     FOR VALUES WITH (MODULUS 10, REMAINDER {i})
-                """))
-                
-            conn.commit()
+                """)
+                )
 
+            conn.commit()
 
     def drop_db(self):
         Base.metadata.drop_all(self._engine)
 
     @contextmanager
-    def session(self) -> Callable[..., ContextManager[Session]]:
+    def session(self):
         session: Session = self._session_factory()
         try:
             yield session

@@ -1,0 +1,8 @@
+services:
+  alerts_store:
+    build:
+      context: ../..
+      dockerfile: ./libs/alerts_store/Dockerfile
+    volumes:
+      - ./config.yaml:/config/config.yaml
+      - ./data:/data

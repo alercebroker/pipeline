@@ -1,3 +1,5 @@
+from typing import Literal
+
 import pandas as pd
 
 from ingestion_step.core.utils import (
