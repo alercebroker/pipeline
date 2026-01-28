@@ -1,19 +1,9 @@
-from apf.producers import KafkaProducer
+from apf.producers import KafkaSchemalessProducer
 
-
-class RawKafkaProducer(KafkaProducer):
-    """Producer that prevents serialization of the message"""
-
-    def __init__(self, config: dict):
-        warn = "SCHEMA" in config
-        config.setdefault(
-            "SCHEMA", {"name": "dummy", "type": "record", "fields": []}
-        )  # Dummy schema
-        super().__init__(config)
-        if warn:
-            self.logger.warning(
-                f"SCHEMA in PRODUCER_CONFIG defined but is ignored by {self.__class__.__name__}"
-            )
-
+class RawKafkaProducer(KafkaSchemalessProducer):
+    """Producer that sends raw bytes without serialization"""
+    
     def _serialize_message(self, message):
-        return message.value()
+        if isinstance(message, bytes):
+            return message
+        return super()._serialize_message(message)

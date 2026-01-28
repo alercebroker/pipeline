@@ -1,0 +1,502 @@
+from sqlalchemy import select, cast, Float
+from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
+from db_plugins.db.sql.models import (
+    Detection, LsstDetection, LsstForcedPhotometry, 
+    ForcedPhotometry, LsstSsDetection
+)
+from ..schemas.schema_applier import apply_schema
+
+import logging
+from typing import List, Dict, Any, Tuple
+from .database_strategy import DatabaseStrategy
+
+class LSSTDatabaseStrategy(DatabaseStrategy):
+    """
+    Database strategy for LSST survey.
+    
+    Handles all LSST-specific database operations including queries and parsing.
+    """
+    
+    def __init__(self, db_connection):
+        super().__init__(db_connection)
+        self._schemas = None
+
+    def _get_schemas(self):
+        """Load schemas for LSST survey"""
+        if self._schemas is None:
+            from core.schemas.LSST.LSST_schemas import (
+                dia_forced_sources_lsst_db, 
+                dia_source_lsst_db,
+                ss_source_lsst_db
+            )
+            self._schemas = {
+                'detections': dia_source_lsst_db,
+                'forced_photometry': dia_forced_sources_lsst_db,
+                'ss_detections': ss_source_lsst_db
+            }
+        return self._schemas
+    
+    def get_detection_schema(self) -> Dict[str, Any]:
+        """Return the schema for LSST detections."""
+        return self._get_schemas()['detections']
+    
+    def get_forced_photometry_schema(self) -> Dict[str, Any]:
+        """Return the schema for LSST forced photometry."""
+        return self._get_schemas()['forced_photometry']
+    
+    def get_non_detection_schema(self) -> Dict[str, Any]:
+        """Return the schema for LSST non-detections."""
+        return {}  # Non-detection schema omitted in LSST v10.0
+    
+    def get_ss_detection_schema(self) -> Dict[str, Any]:
+        """Return the schema for LSST ss source schema."""
+        return self._get_schemas()['ss_detections']
+    
+    def query_lsst_detection(self, oids: List[str], sid: int) -> Dict[str, Any]:
+        """
+        Queries to lsst detection table for all oids in a list and a single sid
+        """
+        sid_list = [sid]
+        with self.db_connection.session() as session:
+            # Query LSST-specific detection data with casting
+            lsst_stmt = select(
+                LsstDetection.sid,
+                LsstDetection.measurement_id,
+                LsstDetection.measurement_id.label("diaSourceId"),
+                LsstDetection.oid,
+                LsstDetection.visit,
+                LsstDetection.detector,
+                LsstDetection.diaObjectId,
+                LsstDetection.ssObjectId,
+                LsstDetection.parentDiaSourceId,
+                LsstDetection.has_stamp,
+                cast(LsstDetection.raErr, DOUBLE_PRECISION).label("raErr"),
+                cast(LsstDetection.decErr, DOUBLE_PRECISION).label("decErr"),
+                cast(LsstDetection.ra_dec_Cov, DOUBLE_PRECISION).label("ra_dec_Cov"),
+                cast(LsstDetection.x, DOUBLE_PRECISION).label("x"),
+                cast(LsstDetection.xErr, DOUBLE_PRECISION).label("xErr"),
+                cast(LsstDetection.y, DOUBLE_PRECISION).label("y"),
+                cast(LsstDetection.yErr, DOUBLE_PRECISION).label("yErr"),
+                LsstDetection.centroid_flag,
+                cast(LsstDetection.apFlux, DOUBLE_PRECISION).label("apFlux"),
+                cast(LsstDetection.apFluxErr, DOUBLE_PRECISION).label("apFluxErr"),
+                LsstDetection.apFlux_flag,
+                LsstDetection.apFlux_flag_apertureTruncated,
+                LsstDetection.isNegative,
+                cast(LsstDetection.snr, DOUBLE_PRECISION).label("snr"),
+                cast(LsstDetection.psfFlux, DOUBLE_PRECISION).label("psfFlux"),
+                cast(LsstDetection.psfFluxErr, DOUBLE_PRECISION).label("psfFluxErr"),
+                cast(LsstDetection.psfLnL, DOUBLE_PRECISION).label("psfLnL"),
+                cast(LsstDetection.psfChi2, DOUBLE_PRECISION).label("psfChi2"),
+                LsstDetection.psfNdata,
+                LsstDetection.psfFlux_flag,
+                LsstDetection.psfFlux_flag_edge,
+                LsstDetection.psfFlux_flag_noGoodPixels,
+                cast(LsstDetection.trailFlux, DOUBLE_PRECISION).label("trailFlux"),
+                cast(LsstDetection.trailFluxErr, DOUBLE_PRECISION).label("trailFluxErr"),
+                cast(LsstDetection.trailRa, DOUBLE_PRECISION).label("trailRa"),
+                cast(LsstDetection.trailRaErr, DOUBLE_PRECISION).label("trailRaErr"),
+                cast(LsstDetection.trailDec, DOUBLE_PRECISION).label("trailDec"),
+                cast(LsstDetection.trailDecErr, DOUBLE_PRECISION).label("trailDecErr"),
+                cast(LsstDetection.trailLength, DOUBLE_PRECISION).label("trailLength"),
+                cast(LsstDetection.trailLengthErr, DOUBLE_PRECISION).label("trailLengthErr"),
+                cast(LsstDetection.trailAngle, DOUBLE_PRECISION).label("trailAngle"),
+                cast(LsstDetection.trailAngleErr, DOUBLE_PRECISION).label("trailAngleErr"),
+                cast(LsstDetection.trailChi2, DOUBLE_PRECISION).label("trailChi2"),
+                LsstDetection.trailNdata,
+                LsstDetection.trail_flag_edge,
+                cast(LsstDetection.dipoleMeanFlux, DOUBLE_PRECISION).label("dipoleMeanFlux"),
+                cast(LsstDetection.dipoleMeanFluxErr, DOUBLE_PRECISION).label("dipoleMeanFluxErr"),
+                cast(LsstDetection.dipoleFluxDiff, DOUBLE_PRECISION).label("dipoleFluxDiff"),
+                cast(LsstDetection.dipoleFluxDiffErr, DOUBLE_PRECISION).label("dipoleFluxDiffErr"),
+                cast(LsstDetection.dipoleLength, DOUBLE_PRECISION).label("dipoleLength"),
+                cast(LsstDetection.dipoleAngle, DOUBLE_PRECISION).label("dipoleAngle"),
+                cast(LsstDetection.dipoleChi2, DOUBLE_PRECISION).label("dipoleChi2"),
+                LsstDetection.dipoleNdata,
+                cast(LsstDetection.scienceFlux, DOUBLE_PRECISION).label("scienceFlux"),
+                cast(LsstDetection.scienceFluxErr, DOUBLE_PRECISION).label("scienceFluxErr"),
+                LsstDetection.forced_PsfFlux_flag,
+                LsstDetection.forced_PsfFlux_flag_edge,
+                LsstDetection.forced_PsfFlux_flag_noGoodPixels,
+                cast(LsstDetection.templateFlux, DOUBLE_PRECISION).label("templateFlux"),
+                cast(LsstDetection.templateFluxErr, DOUBLE_PRECISION).label("templateFluxErr"),
+                cast(LsstDetection.ixx, DOUBLE_PRECISION).label("ixx"),
+                cast(LsstDetection.iyy, DOUBLE_PRECISION).label("iyy"),
+                cast(LsstDetection.ixy, DOUBLE_PRECISION).label("ixy"),
+                cast(LsstDetection.ixxPSF, DOUBLE_PRECISION).label("ixxPSF"),
+                cast(LsstDetection.iyyPSF, DOUBLE_PRECISION).label("iyyPSF"),
+                cast(LsstDetection.ixyPSF, DOUBLE_PRECISION).label("ixyPSF"),
+                LsstDetection.shape_flag,
+                LsstDetection.shape_flag_no_pixels,
+                LsstDetection.shape_flag_not_contained,
+                LsstDetection.shape_flag_parent_source,
+                cast(LsstDetection.extendedness, DOUBLE_PRECISION).label("extendedness"),
+                cast(LsstDetection.reliability, DOUBLE_PRECISION).label("reliability"),
+                LsstDetection.isDipole,
+                LsstDetection.dipoleFitAttempted,
+                LsstDetection.timeProcessedMjdTai,
+                LsstDetection.timeWithdrawnMjdTai,
+                LsstDetection.bboxSize,
+                LsstDetection.pixelFlags,
+                LsstDetection.pixelFlags_bad,
+                LsstDetection.pixelFlags_cr,
+                LsstDetection.pixelFlags_crCenter,
+                LsstDetection.pixelFlags_edge,
+                LsstDetection.pixelFlags_nodata,
+                LsstDetection.pixelFlags_nodataCenter,
+                LsstDetection.pixelFlags_interpolated,
+                LsstDetection.pixelFlags_interpolatedCenter,
+                LsstDetection.pixelFlags_offimage,
+                LsstDetection.pixelFlags_saturated,
+                LsstDetection.pixelFlags_saturatedCenter,
+                LsstDetection.pixelFlags_suspect,
+                LsstDetection.pixelFlags_suspectCenter,
+                LsstDetection.pixelFlags_streak,
+                LsstDetection.pixelFlags_streakCenter,
+                LsstDetection.pixelFlags_injected,
+                LsstDetection.pixelFlags_injectedCenter,
+                LsstDetection.pixelFlags_injected_template,
+                LsstDetection.pixelFlags_injected_templateCenter,
+                LsstDetection.glint_trail
+            ).where(LsstDetection.oid.in_(oids) & LsstDetection.sid.in_(sid_list))
+            lsst_detections = session.execute(lsst_stmt).all()
+        return lsst_detections
+
+    def get_detections(self, oids: List[str], sids: List[int]) -> List[Dict[str, Any]]:
+        """
+        Get LSST detections (dia sources only, sid=1).
+        Filters results to match (oid, sid) pairs.
+        """
+        if not oids:
+            return []
+        
+        # Create set of valid (oid, sid) pairs for sid=1 only
+        oid_sid_pairs = set()
+        for oid, sid in zip(oids, sids):
+            if sid == 1:  # Only dia sources
+                oid_sid_pairs.add((int(oid), sid))
+        
+        if not oid_sid_pairs:
+            return []
+        
+        # Extract unique oids for query
+        unique_oids = list(set(oid for oid, sid in oid_sid_pairs))
+        
+        with self.db_connection.session() as session:
+        
+            lsst_detections = self.query_lsst_detection(oids, 1)
+            
+            # Query general detection data
+            stmt = select(Detection).where(
+                Detection.oid.in_(unique_oids) & Detection.sid.in_([1])
+            )
+            detections = session.execute(stmt).all()
+            
+            # Parse and filter by valid (oid, sid) pairs
+            return self._parse_lsst_detections(lsst_detections, detections, oid_sid_pairs)
+    
+    def get_forced_photometry(self, oids: List[str], sids: List[int]) -> List[Dict[str, Any]]:
+        """
+        Get LSST forced photometry filtered by (oid, sid) pairs.
+        Each forced photometry record must match its corresponding sid.
+        """
+        if not oids:
+            return []
+        
+        # Create set of valid (oid, sid) pairs
+        oid_sid_pairs = set((int(oid), sid) for oid, sid in zip(oids, sids))
+        
+        # Extract unique oids for query
+        unique_oids = list(set(oid for oid, sid in oid_sid_pairs))
+        
+        with self.db_connection.session() as session:
+            # Query LSST-specific forced photometry with casting
+            lsst_stmt = select(
+                LsstForcedPhotometry.oid,
+                LsstForcedPhotometry.oid.label('diaObjectId'),
+                LsstForcedPhotometry.measurement_id,
+                LsstForcedPhotometry.measurement_id.label('diaForcedSourceId'),
+                LsstForcedPhotometry.sid,
+                LsstForcedPhotometry.visit,
+                LsstForcedPhotometry.detector,
+                cast(LsstForcedPhotometry.psfFlux, DOUBLE_PRECISION).label('psfFlux'),
+                cast(LsstForcedPhotometry.psfFluxErr, DOUBLE_PRECISION).label('psfFluxErr'),
+                cast(LsstForcedPhotometry.scienceFlux, DOUBLE_PRECISION).label('scienceFlux'),
+                cast(LsstForcedPhotometry.scienceFluxErr, DOUBLE_PRECISION).label('scienceFluxErr'),
+                LsstForcedPhotometry.timeProcessedMjdTai,
+                LsstForcedPhotometry.timeWithdrawnMjdTai,
+            ).where(LsstForcedPhotometry.oid.in_(unique_oids))
+            
+            lsst_forced = session.execute(lsst_stmt).all()
+            
+            # Query general forced photometry
+            stmt = select(ForcedPhotometry).where(ForcedPhotometry.oid.in_(unique_oids))
+            forced = session.execute(stmt).all()
+            
+            # Parse and filter by valid (oid, sid) pairs
+            return self._parse_lsst_forced_photometry(lsst_forced, forced, oid_sid_pairs)
+    
+    def get_ss_detections(self, oids: List[str], sids: List[int]) -> List[Dict[str, Any]]:
+        """
+        Get LSST SS detections (sid=2) with corresponding dia source data (sid=1).
+        For each SS detection, we need to fetch and concatenate the corresponding dia source.
+        """
+        if not oids:
+            return []
+        
+        # Create mapping of oids that have sid=2
+        ss_oids = set()
+        for oid, sid in zip(oids, sids):
+            if sid == 2:
+                ss_oids.add(int(oid))
+        
+        if not ss_oids:
+            return []
+        
+        with self.db_connection.session() as session:
+            # Query LSST SS detection data (sid=2)
+            lsst_ss_stmt = select(
+                LsstSsDetection.ssObjectId,
+                LsstSsDetection.measurement_id,
+                LsstSsDetection.designation,
+                LsstSsDetection.eclLambda,
+                LsstSsDetection.eclBeta,
+                LsstSsDetection.galLon,
+                LsstSsDetection.galLat,
+                cast(LsstSsDetection.elongation, DOUBLE_PRECISION).label('elongation'),
+                cast(LsstSsDetection.phaseAngle, DOUBLE_PRECISION).label('phaseAngle'),
+                cast(LsstSsDetection.topoRange, DOUBLE_PRECISION).label('topoRange'),
+                cast(LsstSsDetection.topoRangeRate, DOUBLE_PRECISION).label('topoRangeRate'), 
+                cast(LsstSsDetection.helioRange, DOUBLE_PRECISION).label('helioRange'),
+                cast(LsstSsDetection.helioRangeRate, DOUBLE_PRECISION).label('helioRangeRate'),
+                LsstSsDetection.ephRa,
+                LsstSsDetection.ephDec,
+                cast(LsstSsDetection.ephVmag, DOUBLE_PRECISION).label('ephVmag'),
+                cast(LsstSsDetection.ephRate, DOUBLE_PRECISION).label('ephRate'),
+                cast(LsstSsDetection.ephRateRa, DOUBLE_PRECISION).label('ephRateRa'),
+                cast(LsstSsDetection.ephRateDec, DOUBLE_PRECISION).label('ephRateDec'), 
+                cast(LsstSsDetection.ephOffset, DOUBLE_PRECISION).label('ephOffset'),
+                LsstSsDetection.ephOffsetRa,
+                LsstSsDetection.ephOffsetDec,
+                cast(LsstSsDetection.ephOffsetAlongTrack, DOUBLE_PRECISION).label('ephOffsetAlongTrack'), 
+                cast(LsstSsDetection.ephOffsetCrossTrack, DOUBLE_PRECISION).label('ephOffsetCrossTrack'), 
+                cast(LsstSsDetection.helio_x, DOUBLE_PRECISION).label('helio_x'),
+                cast(LsstSsDetection.helio_y, DOUBLE_PRECISION).label('helio_y'),
+                cast(LsstSsDetection.helio_z, DOUBLE_PRECISION).label('helio_z'),
+                cast(LsstSsDetection.helio_vx, DOUBLE_PRECISION).label('helio_vx'),
+                cast(LsstSsDetection.helio_vy, DOUBLE_PRECISION).label('helio_vy'),
+                cast(LsstSsDetection.helio_vz, DOUBLE_PRECISION).label('helio_vz'),
+                cast(LsstSsDetection.helio_vtot, DOUBLE_PRECISION).label('helio_vtot'),
+                cast(LsstSsDetection.topo_x, DOUBLE_PRECISION).label('topo_x'),
+                cast(LsstSsDetection.topo_y, DOUBLE_PRECISION).label('topo_y'),
+                cast(LsstSsDetection.topo_z, DOUBLE_PRECISION).label('topo_z'),
+                cast(LsstSsDetection.topo_vx, DOUBLE_PRECISION).label('topo_vx'),
+                cast(LsstSsDetection.topo_vy, DOUBLE_PRECISION).label('topo_vy'),
+                cast(LsstSsDetection.topo_vz, DOUBLE_PRECISION).label('topo_vz'),
+                cast(LsstSsDetection.topo_vtot, DOUBLE_PRECISION).label('topo_vtot'),
+                LsstSsDetection.diaDistanceRank, 
+            ).where(LsstSsDetection.ssObjectId.in_(list(ss_oids)))
+            lsst_ss_detections = session.execute(lsst_ss_stmt).all()
+            
+            # Query general SS detection data (sid=2)
+            ss_stmt = select(Detection).where(
+                Detection.oid.in_(list(ss_oids)) & Detection.sid.in_([2])
+            )
+            ss_detections = session.execute(ss_stmt).all()
+            
+            # Query corresponding lsst detection for the same oids and sid 2
+            lsst_detections = self.query_lsst_detection(oids, 2)     
+
+            # Parse and merge SS detections with corresponding dia sources
+            return self._parse_lsst_ss_detections(
+                lsst_ss_detections, ss_detections, lsst_detections
+                )
+
+    def get_non_detections(self, oids: List[str], sids: List[int]) -> List[Dict[str, Any]]:
+        """Non-detection handling omitted in LSST v10.0"""
+        return []
+    
+    def _parse_lsst_detections(self, lsst_models: list, models: list, 
+                                valid_pairs: set) -> List[Dict[str, Any]]:
+        """
+        Parse LSST detections, filtering by valid (oid, sid) pairs.
+        """
+        parsed_lsst_dets = []
+        for row in lsst_models:
+            parsed_det = dict(row._mapping)
+            parsed_lsst_dets.append(parsed_det)
+
+        parsed_dets = []
+        for d in models:
+            d_dict = d[0].__dict__
+            parsed_d = {k: v for k, v in d_dict.items() if not k.startswith("_")}
+            parsed_dets.append(parsed_d)
+
+        det_lookup = {}
+        for det_record in parsed_dets:
+            key = (det_record['oid'], det_record['measurement_id'])
+            det_lookup[key] = det_record
+
+        parsed_lsst_list = []
+        for lsst_det in parsed_lsst_dets:
+            lsst_key = (lsst_det['oid'], lsst_det['measurement_id'])
+            
+            # Check if this (oid, sid) pair is valid
+            pair_key = (lsst_det['oid'], lsst_det['sid'])
+            if pair_key not in valid_pairs:
+                continue
+            
+            if lsst_key in det_lookup:
+                combined_dict = {**lsst_det, **det_lookup[lsst_key]}
+                combined_dict["new"] = False
+                combined_dict["midpointMjdTai"] = combined_dict.get("mjd")
+                if "created_date" in combined_dict:
+                    del combined_dict["created_date"]
+                parsed_lsst_list.append(combined_dict)
+                
+        return parsed_lsst_list
+
+    def _parse_lsst_ss_detections(self, lsst_ss_models: list, ss_models: list, 
+                               lsst_det_models: list) -> List[Dict[str, Any]]:
+        """
+        Parse LSST SS detections and merge with corresponding dia source data.
+        
+        Args:
+            lsst_ss_models: SS detection records from LsstSsDetection table
+            ss_models: General Detection records with sid=2
+            lsst_det_models: LSST dia source records (from LsstDetection table with sid=2)
+        """
+        # Parse SS detection data
+        parsed_lsst_ss_dets = []
+        for row in lsst_ss_models:
+            parsed_det = dict(row._mapping)
+            parsed_lsst_ss_dets.append(parsed_det)
+
+        # Parse general SS detections (sid=2)
+        parsed_ss_dets = []
+        for d in ss_models:
+            d_dict = d[0].__dict__
+            parsed_d = {k: v for k, v in d_dict.items() if not k.startswith("_")}
+            parsed_ss_dets.append(parsed_d)
+
+        # Parse LSST dia source data (sid=2)
+        parsed_lsst_dets = []
+        for row in lsst_det_models:
+            parsed_det = dict(row._mapping)
+            parsed_lsst_dets.append(parsed_det)
+
+        # Create lookup for general SS detections by (oid, measurement_id)
+        ss_det_lookup = {}
+        for ss_det in parsed_ss_dets:
+            key = (ss_det['oid'], ss_det['measurement_id'])
+            ss_det_lookup[key] = ss_det
+
+        # Create lookup for LSST dia detections by (oid, measurement_id)
+        lsst_det_lookup = {}
+        for lsst_det in parsed_lsst_dets:
+            key = (lsst_det['ssObjectId'], lsst_det['measurement_id'])
+            lsst_det_lookup[key] = lsst_det
+
+        # Combine all three datasets
+        parsed_lsst_ss_list = []
+        for lsst_ss_det in parsed_lsst_ss_dets:
+            # The measurement_id in LsstSsDetection corresponds to the Detection table
+            ss_key = (lsst_ss_det['ssObjectId'], lsst_ss_det['measurement_id'])
+            
+            # Start with the SS-specific data
+            combined_dict = {**lsst_ss_det}
+            
+            # Merge with general Detection data (sid=2)
+            if ss_key in ss_det_lookup:
+                combined_dict = {**combined_dict, **ss_det_lookup[ss_key]}
+            
+            # Merge with LSST dia source data (sid=2)
+            if ss_key in lsst_det_lookup:
+                combined_dict = {**combined_dict, **lsst_det_lookup[ss_key]}
+
+            combined_dict["new"] = False
+            combined_dict["midpointMjdTai"] = combined_dict.get("mjd")
+            if "created_date" in combined_dict:
+                del combined_dict["created_date"]
+                
+            parsed_lsst_ss_list.append(combined_dict)
+
+        return parsed_lsst_ss_list
+
+    def _parse_lsst_forced_photometry(self, lsst_models: list, models: list,
+                                       valid_pairs: set) -> List[Dict[str, Any]]:
+        """
+        Parse LSST forced photometry, filtering by valid (oid, sid) pairs.
+        """
+        parsed_lsst_fphots = [dict(row._mapping) for row in lsst_models]
+
+        parsed_fphots = []
+        for d in models:
+            d_dict = d[0].__dict__
+            parsed_d = {k: v for k, v in d_dict.items() if not k.startswith("_")}
+            parsed_fphots.append(parsed_d)
+            
+        fp_lookup = {}
+        for fp_record in parsed_fphots:
+            key = (fp_record['oid'], fp_record['measurement_id'])
+            fp_lookup[key] = fp_record
+
+        parsed_lsst_list = []
+        for lsst_record in parsed_lsst_fphots:
+            lsst_key = (lsst_record['oid'], lsst_record['measurement_id'])
+            
+            # Check if this (oid, sid) pair is valid
+            pair_key = (lsst_record['oid'], lsst_record['sid'])
+            if pair_key not in valid_pairs:
+                continue
+            
+            if lsst_key in fp_lookup:
+                combined_dict = {**lsst_record, **fp_lookup[lsst_key]}
+                combined_dict["new"] = False
+                combined_dict["midpointMjdTai"] = combined_dict.get("mjd")
+                if "created_date" in combined_dict:
+                    del combined_dict["created_date"]
+                parsed_lsst_list.append(combined_dict)
+
+        return parsed_lsst_list
+
+    def get_all_historical_data_as_dataframes(self, oid_to_sids):
+        """
+        Get all historical data types for given (oid, sid) pairs as DataFrames.
+        
+        Args:
+            oids: List of object IDs
+            oid_to_sids: Dict mapping each oid to list of sids (e.g., {123: [1], 456: [2], 789: [1, 2]})
+            
+        Returns:
+            Dict with DataFrames for each data type, with proper schemas applied
+        """
+        # Convert oid_to_sids dict to parallel lists where each oid might have multiple entries if it has both sids
+        expanded_oids = []
+        expanded_sids = []
+        
+        for oid in oid_to_sids.keys():
+            sids_for_oid = oid_to_sids.get(oid, [])
+            for sid in sids_for_oid:
+                expanded_oids.append(oid)
+                expanded_sids.append(sid)
+        
+        raw_data = {
+            'detections': self.get_detections(expanded_oids, expanded_sids),
+            'forced_photometry': self.get_forced_photometry(expanded_oids, expanded_sids),
+            'ss_detections': self.get_ss_detections(expanded_oids, expanded_sids)
+        }
+
+        result = {
+            'detections': apply_schema(raw_data['detections'], self.get_detection_schema()),
+            'forced_photometry': apply_schema(raw_data['forced_photometry'], self.get_forced_photometry_schema()),
+            'ss_detections': apply_schema(raw_data['ss_detections'], self.get_ss_detection_schema())
+        }
+
+        logger = logging.getLogger(f"alerce.{self.__class__.__name__}")
+        logger.info(
+            f"Retrieved {result['detections'].shape[0]} detections, "
+            f"{result['forced_photometry'].shape[0]} forced photometries, and "
+            f"{result['ss_detections'].shape[0]} SS detections from the database."
+        )
+        return result

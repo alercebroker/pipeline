@@ -1,0 +1,38 @@
+[tool.poetry]
+name = "magstats-multisurvey-step"
+version = "27.5.7a23.dev1"
+description = ""
+authors = ["ASHuenchuleo <arsepulh@gmail.com>", "Pablo Castellanos"]
+readme = "README.md"
+packages = [{ include = "magstats_multisurvey_step" }]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+confluent-kafka = "^2.12.0"
+apf-base = { path = "../libs/apf", develop = true }
+methodtools = "^0.4.7"
+numpy = "~1.24.2"
+pandas = "~1.5.3"
+
+[tool.poetry.group.dev.dependencies]
+black = "^22.12.0"
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.2.0"
+pytest-cov = "^4.0.0"
+pytest-docker = "^1.0.1"
+pytest-repeat = "^0.9.3"
+
+[tool.black]
+line-length = 79
+
+[tool.pylint.messages_control]
+disable = [
+    "missing-module-docstring",
+    "missing-function-docstring",
+    "missing-class-docstring",
+]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

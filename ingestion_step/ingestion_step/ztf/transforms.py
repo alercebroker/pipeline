@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from idmapper.mapper import catalog_oid_to_masterid
 
-from ingestion_step.core.utils import add_constant_column, copy_column
+from ingestion_step.core.utils import add_constant_column, copy_column, deduplicate
 
 ERRORS = {
     1: 0.065,
@@ -30,10 +30,7 @@ def objectId_to_oid(df: pd.DataFrame):
     and uses them to calculate the new columns:
         - `oid`
     """
-    df["oid"] = df.apply(
-        lambda x: int(catalog_oid_to_masterid("ZTF", x["objectId"])),
-        axis=1,
-    )
+    df["oid"] = df["objectId"].apply(lambda x: int(catalog_oid_to_masterid("ZTF", x)))
 
 
 def jd_to_mjd(df: pd.DataFrame):
@@ -61,12 +58,11 @@ def sigmara_to_e_ra(df: pd.DataFrame):
     """
 
     def _sigmara_to_e_ra(x: dict[str, Any]) -> float:
-        if "sigmara" in x:
+        if "sigmara" in x and not pd.isna(x["sigmara"]):
             return x["sigmara"]
-        if x["dec"] is not pd.NA and x["dec"] is not None:
+        if "dec" in x and not pd.isna(x["dec"]):
             return ERRORS[x["fid"]] / abs(math.cos(math.radians(x["dec"])))
-        else:
-            return float("nan")
+        return float("nan")
 
     df["e_ra"] = df.apply(
         _sigmara_to_e_ra,
@@ -117,10 +113,7 @@ def _calculate_mag(
         e_mag = ZERO_MAG
     else:
         e_mag = (
-            1.0857
-            * forcediffimfluxunc
-            * flux2uJy
-            / np.abs(forcediffimflux * flux2uJy)
+            1.0857 * forcediffimfluxunc * flux2uJy / np.abs(forcediffimflux * flux2uJy)
         )
 
     return mag, e_mag
@@ -180,7 +173,6 @@ def filter_by_forcediffimflux(df: pd.DataFrame):
         ].index,
         inplace=True,
     )
-
     df.drop(
         df[
             (df["forcediffimfluxunc"].isna())
@@ -189,6 +181,7 @@ def filter_by_forcediffimflux(df: pd.DataFrame):
         ].index,
         inplace=True,
     )
+    df.reset_index(inplace=True, drop=True)
 
 
 CANDIDATES_TRANSFORMS = [
@@ -198,6 +191,7 @@ CANDIDATES_TRANSFORMS = [
     add_constant_column("sid", 0, pd.Int32Dtype()),
     isdiffpos_to_int,
     jd_to_mjd,
+    deduplicate(["oid", "measurement_id"], sort="mjd"),
     sigmara_to_e_ra,
     sigmadec_to_e_dec,
     copy_column("fid", "band"),
@@ -223,17 +217,17 @@ PRV_CANDIDATES_TRANSFORMS = [
 ]
 
 FP_TRANSFORMS = [
-    filter_by_forcediffimflux,
+    add_constant_column("tid", 0, pd.Int32Dtype()),
+    add_constant_column("sid", 0, pd.Int32Dtype()),
+    add_constant_column("e_ra", 0.0, pd.Float64Dtype()),
+    add_constant_column("e_dec", 0.0, pd.Float64Dtype()),
     objectId_to_oid,
     copy_column("pid", "candid"),
     copy_column("candid", "measurement_id"),
-    add_constant_column("tid", 0, pd.Int32Dtype()),
-    add_constant_column("sid", 0, pd.Int32Dtype()),
     jd_to_mjd,
     forcediffimflux_to_mag,
     forcediffimflux_to_e_mag,
     copy_column("fid", "band"),
-    add_constant_column("e_ra", 0.0, pd.Float64Dtype()),
-    add_constant_column("e_dec", 0.0, pd.Float64Dtype()),
     calculate_isdiffpos,
+    filter_by_forcediffimflux,
 ]

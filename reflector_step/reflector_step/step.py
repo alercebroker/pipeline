@@ -2,7 +2,7 @@ from typing import Any, Literal
 
 from apf.core.step import DefaultProducer, GenericStep
 
-from reflector_step.utils.consumer import RawKafkaConsumer
+from reflector_step.utils.consumer import RawKafkaConsumerBytes
 
 
 def lsst_partition(msg: dict[str, Any]) -> str:
@@ -47,12 +47,10 @@ class CustomMirrormaker(GenericStep):
         self.use_message_topic = use_message_topic
         self.survey = survey
 
-        isRawKafkaConsumer = type(self.consumer) is RawKafkaConsumer
+        isRawKafkaConsumer = type(self.consumer) is RawKafkaConsumerBytes
 
         if self.survey == "lsst" and not isRawKafkaConsumer:
             self.producer.set_key_function(lsst_partition)
-        elif self.survey == "ztf" and not isRawKafkaConsumer:
-            self.producer.set_key_field(producer_key)
 
     def produce(self, messages):
         to_produce = [messages] if isinstance(messages, dict) else messages
@@ -61,16 +59,30 @@ class CustomMirrormaker(GenericStep):
             count += 1
             producer_kwargs = {"flush": count == len(to_produce)}
 
-            if self.keep_original_timestamp and self.survey == "ztf":
-                producer_kwargs["timestamp"] = msg.timestamp()[1]
+            isRawKafkaConsumer = type(self.consumer) is RawKafkaConsumerBytes
 
-            if not self.keep_original_timestamp and self.survey == "lsst":
-                msg.pop("timestamp")
+            if isRawKafkaConsumer:
+                if self.survey == "ztf":
+                    if self.keep_original_timestamp:
+                        producer_kwargs["timestamp"] = msg["timestamp"]
 
-            if self.use_message_topic:
-                self.producer.topic = [msg.topic()]
+                    if self.use_message_topic:
+                        self.producer.topic = [msg["topic"]]
 
-            self.producer.produce(msg, **producer_kwargs)
+                    if msg.get("key"):
+                        producer_kwargs["key"] = msg["key"]
+
+                self.producer.produce(msg["value"], **producer_kwargs)
+
+            else:
+                if not self.keep_original_timestamp and self.survey == "lsst":
+                    msg.pop("timestamp", None)
+
+                if self.use_message_topic:
+                    self.producer.topic = [msg.get("topic")]
+
+                self.producer.produce(msg, **producer_kwargs)
+
         if not isinstance(self.producer, DefaultProducer):
             self.logger.info(f"Produced {count} messages")
 

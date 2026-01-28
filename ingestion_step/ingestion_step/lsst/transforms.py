@@ -6,13 +6,15 @@ from ingestion_step.core.utils import (
     Transform,
     add_constant_column,
     copy_column,
+    deduplicate,
+    drop_na,
 )
 
 DIA_SID = 1
 SS_SID = 2
 TID = 1
 
-band_map = {"u": 0, "g": 1, "r": 2, "i": 3, "z": 4, "y": 5}
+band_map = {"u": 6, "g": 1, "r": 2, "i": 3, "z": 4, "y": 5}
 
 
 def add_oid(df: pd.DataFrame):
@@ -51,22 +53,6 @@ def band_to_int(df: pd.DataFrame):
     df.drop(columns=["_band"], inplace=True)
 
 
-def deduplicate(columns: list[str], sort: str | list[str] | None = None):
-    def _deduplicate(df: pd.DataFrame):
-        if sort is not None:
-            df.sort_values(sort, inplace=True)
-        df.drop_duplicates(subset=columns, keep="first", inplace=True)
-
-    return _deduplicate
-
-
-def drop_na(columns: list[str], axis: Literal[0, 1, "index", "columns"] = 0):
-    def _drop_na(df: pd.DataFrame):
-        df.dropna(axis=axis, subset=columns, how="any")
-
-    return _drop_na
-
-
 def get_source_transforms() -> list[Transform]:
     return [
         add_oid,
@@ -91,7 +77,6 @@ def get_forced_source_transforms() -> list[Transform]:
 
 def get_ss_source_transforms() -> list[Transform]:
     return [
-        copy_column("ssObjectId", "oid"),
         copy_column("diaSourceId", "measurement_id"),
         deduplicate(["measurement_id"]),
     ]
@@ -116,4 +101,19 @@ def get_mpc_orbits_transforms() -> list[Transform]:
         drop_na(["ssObjectId"]),
         deduplicate(["ssObjectId"], sort="midpointMjdTai"),
         copy_column("midpointMjdTai", "mjd"),
+    ]
+
+
+def get_fake_ss_object_transforms() -> list[Transform]:
+    return [
+        copy_column("ssObjectId", "oid"),
+        add_constant_column("tid", TID, pd.Int32Dtype()),
+        add_constant_column("sid", SS_SID, pd.Int32Dtype()),
+        add_constant_column("n_det", 1, pd.Int32Dtype()),
+        add_constant_column("n_forced", 0, pd.Int32Dtype()),
+        add_constant_column("n_non_det", 0, pd.Int32Dtype()),
+        add_constant_column("meanra", 0, pd.Float64Dtype()),
+        add_constant_column("meandec", 0, pd.Float64Dtype()),
+        copy_column("mjd", "firstmjd"),
+        copy_column("mjd", "lastmjd"),
     ]

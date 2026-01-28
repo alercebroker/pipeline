@@ -1,4 +1,4 @@
-from mongo_scribe.sql.command.parser import multistream_detection_to_ztf
+from mongo_scribe.sql.command.parser import multisurvey_detection_to_ztf
 
 def test_conversion_to_ztf():
     incoming_command = {
@@ -46,5 +46,5 @@ def test_conversion_to_ztf():
         "parent_candid": None
     }
 
-    output = multistream_detection_to_ztf(incoming_command)
+    output = multisurvey_detection_to_ztf(incoming_command)
     assert output == expected_output

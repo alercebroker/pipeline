@@ -23,7 +23,6 @@ COPY ingestion_step/poetry.lock ingestion_step/pyproject.toml /app/
 COPY libs/apf libs/apf
 COPY libs/db-plugins-multisurvey libs/db-plugins-multisurvey
 COPY libs/idmapper libs/idmapper
-COPY libs/test_utils libs/test_utils
 COPY libs/survey_parser_plugins libs/survey_parser_plugins
 
 COPY schemas/ztf schemas/ztf
