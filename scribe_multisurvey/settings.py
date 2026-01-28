@@ -1,10 +1,6 @@
 import os
 import pathlib
 
-##################################################
-#       mongo_scribe   Settings File
-##################################################
-
 metrics_schema_path = pathlib.Path(
     pathlib.Path(__file__).parent.parent, "schemas/scribe_step", "metrics.json"
 )
@@ -53,7 +49,6 @@ if os.getenv("METRICS_KAFKA_USERNAME") and os.getenv("METRICS_KAFKA_PASSWORD"):
 
 ## Step Configuration
 STEP_CONFIG = {
-    "DB_TYPE": os.getenv("DB_ENGINE", "mongo"),
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "METRICS_CONFIG": METRICS_CONFIG,
     "FEATURE_FLAGS": {

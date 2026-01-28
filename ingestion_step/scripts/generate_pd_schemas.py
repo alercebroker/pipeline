@@ -87,9 +87,10 @@ survey_schemas = {
         "ss_source": "../schemas/surveys/lsst_v10.0/lsst.v10_0.ssSource.avsc",
     },
     "ztf": {
-        "candidate": "../schemas/ztf/candidate.avsc",
-        "fp_hist": "../schemas/ztf/fp_hist.avsc",
-        "prv_candidate": "../schemas/ztf/prv_candidate.avsc",
+        "candidate": "../schemas/ingestion_step/ztf/test_no_extra_fields/candidate.avsc",
+        "prv_candidate": "../schemas/ingestion_step/ztf/test_no_extra_fields/prv_candidate.avsc",
+        "forced_photometry": "../schemas/ingestion_step/ztf/test_no_extra_fields/forced_photometry.avsc",
+        "non_detection": "../schemas/ingestion_step/ztf/test_no_extra_fields/non_detection.avsc",
     },
 }
 
@@ -107,5 +108,5 @@ def generate(args: list[str] = sys.argv):
 
 
 if __name__ == "__main__":
-    generate()
-
+    for name in survey_schemas.keys():
+        generate(["", name])

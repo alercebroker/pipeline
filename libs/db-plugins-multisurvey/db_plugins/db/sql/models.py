@@ -64,6 +64,12 @@ class ZtfObject(Base):
     g_r_mean_corr = Column(REAL)
     corrected = Column(Boolean, nullable=False, default=False)
     stellar = Column(Boolean, nullable=True, default=None)
+    reference_change = Column(Boolean)  # bool
+    diffpos = Column(Boolean)  # bool
+    ndethist = Column(Integer)  # int4,
+    ncovhist = Column(Integer)  # int4,
+    mjdstarthist = Column(DOUBLE_PRECISION)
+    mjdendhist = Column(DOUBLE_PRECISION)
 
     created_date = Column(Date, server_default=func.now())
 
@@ -175,7 +181,7 @@ class LsstSsObject(Base):
     nObs = Column(Integer, nullable=False)
     arc = Column(REAL, nullable=False)
 
-    firstmjd = Column(DOUBLE_PRECISION, nullable=True)
+    firstObservationMjdTai = Column(DOUBLE_PRECISION, nullable=True)
 
     MOIDEarth = Column(REAL, nullable=True)
     MOIDEarthDeltaV = Column(REAL, nullable=True)
@@ -267,7 +273,7 @@ class LsstSsObject(Base):
 
 
 class LsstMpcOrbits(Base):
-    __tablename__ = "mpc_orbits"
+    __tablename__ = "lsst_mpc_orbits"
 
     # Primary key
     ssObjectId = Column(BigInteger, primary_key=True)
@@ -340,7 +346,7 @@ class LsstMpcOrbits(Base):
     fitting_datetime = Column(Date, nullable=True)
 
     created_date = Column(Date, server_default=func.now())
-    updated_date = Column(Date, onupdate=func.now())
+    updated_date = Column(Date, server_default=func.now(), onupdate=func.now())
 
     __table_args__ = (
         PrimaryKeyConstraint("ssObjectId", name="pk_lsstmpcorbits_ss_object_id"),
@@ -390,13 +396,14 @@ class ZtfDetection(Base):
     magapbig = Column(REAL)  # float4,
     sigmagapbig = Column(REAL)  # float4,
     rfid = Column(BigInteger)  # int8,
-    magpsf_corr = Column(Integer)  # float4,
-    sigmapsf_corr = Column(Integer)  # float4,
-    sigmapsf_corr_ext = Column(Integer)  # float4,
+    magpsf_corr = Column(REAL)  # float4,
+    sigmapsf_corr = Column(REAL)  # float4,
+    sigmapsf_corr_ext = Column(REAL)  # float4,
     corrected = Column(Boolean)  # bool,
     dubious = Column(Boolean)  # bool,
     parent_candid = Column(BigInteger)  # int8,
     has_stamp = Column(Boolean)  # bool,
+    created_date = Column(Date, server_default=func.now())
 
     created_date = Column(Date, server_default=func.now())
 
@@ -527,7 +534,7 @@ class LsstSsDetection(Base):
     __tablename__ = "lsst_ss_detection"
 
     measurement_id = Column(BigInteger, nullable=False)
-    oid = Column(BigInteger, nullable=False)
+    ssObjectId = Column(BigInteger, nullable=False)
 
     designation = Column(String)  #!!!!!!!
     eclLambda = Column(DOUBLE_PRECISION, nullable=False)
@@ -572,9 +579,11 @@ class LsstSsDetection(Base):
     #! CHECK
     __table_args__ = (
         PrimaryKeyConstraint(
-            "oid", "measurement_id", name="pk_lsstssdetection_oid_measurementid"
+            "ssObjectId",
+            "measurement_id",
+            name="pk_lsstssdetection_ssobjectid_measurementid",
         ),
-        Index("ix_lsstssdetection_ssobjectid", "oid", postgresql_using="hash"),
+        Index("ix_lsstssdetection_ssobjectid", "ssObjectId", postgresql_using="hash"),
     )
 
 
@@ -609,16 +618,15 @@ class ZtfForcedPhotometry(Base):
     sid = Column(SmallInteger, nullable=False)  # int2,
     measurement_id = Column(BigInteger, nullable=False)  # int8,
     pid = Column(BigInteger)  # int8
-    mag = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    e_mag = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    mag_corr = Column(DOUBLE_PRECISION)  # float8,
-    e_mag_corr = Column(DOUBLE_PRECISION)  # float8,
-    e_mag_corr_ext = Column(DOUBLE_PRECISION)  # float8,
+    mag = Column(REAL, nullable=False)  # float4,
+    e_mag = Column(REAL, nullable=False)  # float4,
+    mag_corr = Column(REAL)  # float4,
+    e_mag_corr = Column(REAL)  # float4,
+    e_mag_corr_ext = Column(REAL)  # float4,
     isdiffpos = Column(Integer, nullable=False)  # int4 NOT NULL,
     corrected = Column(Boolean, nullable=False)  # bool NOT NULL,
     dubious = Column(Boolean, nullable=False)  # bool NOT NULL,
     parent_candid = Column(BigInteger)  # varchar,
-    has_stamp = Column(Boolean, nullable=False)  # bool NOT NULL,
     field = Column(Integer, nullable=False)  # int4,
     rcid = Column(Integer, nullable=False)  # int4,
     rfid = Column(BigInteger, nullable=False)  # int8,
@@ -745,7 +753,9 @@ class ZtfPS1(Base):
     szmag3 = Column(REAL)
     sgscore3 = Column(REAL)
     distpsnr3 = Column(REAL)
-    nmtchps = Column(SmallInteger)
+    nmtchps = Column(Integer)
+
+    created_date = Column(Date, server_default=func.now())
 
     created_date = Column(Date, server_default=func.now())
 
@@ -792,7 +802,7 @@ class ZtfDataquality(Base):
     nneg = Column(Integer)
     nbad = Column(Integer)
     sumrat = Column(REAL)
-    scorr = Column(REAL)
+    scorr = Column(DOUBLE_PRECISION)
     dsnrms = Column(REAL)
     ssnrms = Column(REAL)
     magzpsci = Column(REAL)
@@ -857,27 +867,30 @@ class MagStat(Base):
     band = Column(SmallInteger, nullable=False)  # int2
     stellar = Column(Boolean)  # bool
     corrected = Column(Boolean)  # bool
-    ndubious = Column(BigInteger)  # int8
-    dmdt_first = Column(BigInteger)  # int8
-    dm_first = Column(BigInteger)  # int8
-    sigmadm_first = Column(BigInteger)  # int8
-    dt_first = Column(BigInteger)  # int8
-    magmean = Column(DOUBLE_PRECISION)  # float8
-    magmedian = Column(DOUBLE_PRECISION)  # float8
-    magmax = Column(DOUBLE_PRECISION)  # float8
-    magmin = Column(DOUBLE_PRECISION)  # float8
-    magsigma = Column(DOUBLE_PRECISION)  # float8
-    maglast = Column(BigInteger)  # int8
-    magfirst = Column(BigInteger)  # int8
-    magmean_corr = Column(DOUBLE_PRECISION)  # float8
-    magmedian_corr = Column(DOUBLE_PRECISION)  # float8
-    magmax_corr = Column(DOUBLE_PRECISION)  # float8
-    magmin_corr = Column(DOUBLE_PRECISION)  # float8
-    magsigma_corr = Column(DOUBLE_PRECISION)  # float8
-    maglast_corr = Column(DOUBLE_PRECISION)  # float8
-    magfirst_corr = Column(DOUBLE_PRECISION)  # float8
+    ndubious = Column(Integer)  # int4
+    dmdt_first = Column(REAL)  # float4
+    dm_first = Column(REAL)  # float4
+    sigmadm_first = Column(REAL)  # float4
+    dt_first = Column(REAL)  # float4
+    magmean = Column(REAL)  # float4
+    magmedian = Column(REAL)  # float4
+    magmax = Column(REAL)  # float4
+    magmin = Column(REAL)  # float4
+    magsigma = Column(REAL)  # float4
+    maglast = Column(REAL)  # float4
+    magfirst = Column(REAL)  # float4
+    magmean_corr = Column(REAL)  # float4
+    magmedian_corr = Column(REAL)  # float4
+    magmax_corr = Column(REAL)  # float4
+    magmin_corr = Column(REAL)  # float4
+    magsigma_corr = Column(REAL)  # float4
+    maglast_corr = Column(REAL)  # float4
+    magfirst_corr = Column(REAL)  # float4
     step_id_corr = Column(VARCHAR)  # varchar
-    saturation_rate = Column(DOUBLE_PRECISION)  # float8
+    n_det = Column(Integer)  # int4
+    firstmjd = Column(DOUBLE_PRECISION)  # float8
+    lastmjd = Column(DOUBLE_PRECISION)  # float8
+    saturation_rate = Column(REAL)  # float4
 
     updated_date = Column(Date, onupdate=func.now())
 
@@ -886,33 +899,41 @@ class MagStat(Base):
     )
 
 
-class classifier(Base):
+class Classifier(Base):
     __tablename__ = "classifier"
-    classifier_id = Column(Integer, primary_key=True)
-    classifier_name = Column(VARCHAR)
-    classifier_version = Column(VARCHAR)
-    tid = Column(SmallInteger)
+
+    classifier_id = Column(Integer, nullable=False)
+    classifier_name = Column(VARCHAR, nullable=False)
+    classifier_version = Column(VARCHAR, nullable=False)
+    tid = Column(SmallInteger, nullable=False)
 
     created_date = Column(Date, server_default=func.now())
+
+    __table_args__ = (
+        PrimaryKeyConstraint("classifier_id", name="pk_classifier_classifierid"),
+    )
 
 
 class Taxonomy(Base):
     __tablename__ = "taxonomy"
-    class_id = Column(Integer, primary_key=True)
-    class_name = Column(VARCHAR)
-    order = Column(Integer)
-    classifier_id = Column(SmallInteger)
+
+    class_id = Column(Integer, nullable=False)
+    class_name = Column(VARCHAR, nullable=False)
+    order = Column(Integer, nullable=False)
+    classifier_id = Column(SmallInteger, nullable=False)
 
     created_date = Column(Date, server_default=func.now())
+
+    __table_args__ = (PrimaryKeyConstraint("class_id", name="pk_taxonomy_classid"),)
 
 
 class Probability(Base):
     __tablename__ = "probability"
 
-    oid = Column(BigInteger)
+    oid = Column(BigInteger, nullable=False)
     sid = Column(SmallInteger, nullable=False)
-    classifier_id = Column(SmallInteger)
-    classifier_version = Column(SmallInteger)
+    classifier_id = Column(SmallInteger, nullable=False)
+    classifier_version = Column(SmallInteger, nullable=False)
     class_id = Column(SmallInteger, nullable=False)
     probability = Column(REAL, nullable=False)
     ranking = Column(SmallInteger)
@@ -941,53 +962,127 @@ class Probability(Base):
 
 class Feature(Base):
     __tablename__ = "feature"
-    oid = Column(BigInteger, nullable=False)
-    sid = Column(SmallInteger, nullable=False)  # int2,
-    feature_id = Column(SmallInteger, nullable=False)
-    band = Column(SmallInteger, nullable=False)
+
+    oid = Column(BigInteger, nullable=False, primary_key=True)
+    sid = Column(SmallInteger, nullable=False, primary_key=True)
+    feature_id = Column(SmallInteger, nullable=False, primary_key=True)
+    band = Column(SmallInteger, nullable=False, primary_key=True)
     version = Column(SmallInteger, nullable=False)
     value = Column(DOUBLE_PRECISION)
-
     updated_date = Column(Date, onupdate=func.now())
 
     __table_args__ = (
-        PrimaryKeyConstraint(
-            "oid", "sid", "feature_id", "band", name="pk_feature_oid_featureid_band"
-        ),
+        Index("idx_feature_oid", "oid"),
+        {"postgresql_partition_by": "HASH (oid)"},
     )
 
 
 class FeatureNameLut(Base):
     __tablename__ = "feature_name_lut"
-    feature_id = Column(SmallInteger, primary_key=True, autoincrement=True)
-    feature_name = Column(VARCHAR)
+
+    feature_id = Column(SmallInteger, nullable=False, autoincrement=True)
+    feature_name = Column(VARCHAR, nullable=False)
 
     created_date = Column(Date, server_default=func.now())
+
+    __table_args__ = (
+        PrimaryKeyConstraint("feature_id", name="pk_feature_name_lut_featureid"),
+    )
 
 
 class FeatureVersionLut(Base):
     __tablename__ = "feature_version_lut"
-    version_id = Column(SmallInteger, primary_key=True, autoincrement=True)
-    version_name = Column(VARCHAR)
+
+    version_id = Column(SmallInteger, nullable=False, autoincrement=True)
+    version_name = Column(VARCHAR, nullable=False)
+
+    __table_args__ = (
+        PrimaryKeyConstraint("version_id", name="pk_feature_version_lut_versionid"),
+    )
 
 
 class SidLut(Base):
     __tablename__ = "sid_lut"
 
-    sid = Column(SmallInteger, primary_key=True, autoincrement=False)
+    sid = Column(SmallInteger, nullable=False, autoincrement=False)
     tid = Column(SmallInteger)
-    survey_name = Column(VARCHAR)
+    survey_name = Column(VARCHAR, nullable=False)
 
     created_date = Column(Date, server_default=func.now())
 
+    __table_args__ = (PrimaryKeyConstraint("sid", name="pk_sid_lut_sid"),)
 
-class Bands(Base):
-    __tablename__ = "bands"
 
-    sid = Column(SmallInteger, primary_key=True, autoincrement=False)
-    tid = Column(SmallInteger, primary_key=True, autoincrement=False)
-    band = Column(SmallInteger, primary_key=True, autoincrement=False)
-    band_name = Column(VARCHAR)
+class Band(Base):
+    __tablename__ = "band"
+
+    sid = Column(SmallInteger, nullable=False, autoincrement=False)
+    tid = Column(SmallInteger, nullable=False, autoincrement=False)
+    band = Column(SmallInteger, nullable=False, autoincrement=False)
+    band_name = Column(VARCHAR, nullable=False)
     order = Column(Integer)
 
     created_date = Column(Date, server_default=func.now())
+
+    __table_args__ = (
+        PrimaryKeyConstraint("sid", "tid", "band", name="pk_band_sid_tid_band"),
+    )
+
+
+class Xmatch(Base):
+    __tablename__ = "xmatch"
+
+    oid = Column(BigInteger, nullable=False)
+    sid = Column(SmallInteger, nullable=False)
+    catid = Column(SmallInteger, nullable=False)
+
+    dist = Column(REAL, nullable=False)
+    oid_catalog = Column(VARCHAR, nullable=False)
+
+    created_date = Column(Date, server_default=func.now())
+    updated_date = Column(Date, onupdate=func.now())
+
+    __table_args__ = (
+        PrimaryKeyConstraint(
+            "oid",
+            "sid",
+            "catid",
+            name="pk_xmatch_oid_sid_catid",
+        ),
+    )
+
+
+class CatalogIdLut(Base):
+    __tablename__ = "catalog_id_lut"
+    catalog_id = Column(SmallInteger, autoincrement=True)
+    catalog_name = Column(VARCHAR)
+    created_date = Column(Date, server_default=func.now())
+
+    __table_args__ = (
+        PrimaryKeyConstraint("catalog_id", name="pk_catalog_id_lut_catalog_name"),
+    )
+
+
+class Allwise(Base):
+    __tablename__ = "allwise"
+    oid_catalog = Column(String, primary_key=True)
+    ra = Column(DOUBLE_PRECISION, nullable=False)
+    dec = Column(DOUBLE_PRECISION, nullable=False)
+    w1mpro = Column(DOUBLE_PRECISION)
+    w2mpro = Column(DOUBLE_PRECISION)
+    w3mpro = Column(DOUBLE_PRECISION)
+    w4mpro = Column(DOUBLE_PRECISION)
+    w1sigmpro = Column(DOUBLE_PRECISION)
+    w2sigmpro = Column(DOUBLE_PRECISION)
+    w3sigmpro = Column(DOUBLE_PRECISION)
+    w4sigmpro = Column(DOUBLE_PRECISION)
+    j_m_2mass = Column(DOUBLE_PRECISION)
+    h_m_2mass = Column(DOUBLE_PRECISION)
+    k_m_2mass = Column(DOUBLE_PRECISION)
+    j_msig_2mass = Column(DOUBLE_PRECISION)
+    h_msig_2mass = Column(DOUBLE_PRECISION)
+    k_msig_2mass = Column(DOUBLE_PRECISION)
+
+    __table_args__ = (
+        PrimaryKeyConstraint("oid_catalog", name="pk_allwise_oid_catalog"),
+    )
