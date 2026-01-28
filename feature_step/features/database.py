@@ -48,3 +48,71 @@ def get_sql_references(
         reference = session.execute(stmt).all()
         df = parse_sql_reference(reference, keys)
         return df
+
+
+def get_feature_name_lut(db_sql: PSQLConnection, schema: str, logger=None) -> dict:
+    """Fetch feature name lookup table from multisurvey schema for LSST survey."""
+    if db_sql is None:
+        if logger:
+            logger.warning("No database connection available for feature name lookup")
+        return {}
+    
+    try:
+        from sqlalchemy import text
+        
+        with db_sql.session() as session:
+            # Query the feature_name_lut table from configured schema
+            query = text(f"SELECT feature_id, feature_name FROM {schema}.feature_name_lut ORDER BY feature_id")
+            result = session.execute(query)
+            
+            # Create dictionary with id as key and name as value
+            feature_lut = {row[0]: row[1] for row in result.fetchall()}
+            
+            if logger:
+                logger.info(f"Loaded {len(feature_lut)} feature names from lookup table")
+            return feature_lut
+            
+    except Exception as e:
+        if logger:
+            logger.error(f"Error fetching feature name lookup table: {e}")
+        return {}
+
+
+def get_or_create_version_id(db_sql: PSQLConnection, schema: str, version_name: str, logger=None) -> int:
+    """Get version_id from version_lut table, or create it if it doesn't exist."""
+    if db_sql is None:
+        if logger:
+            logger.warning("No database connection available for version lookup")
+        return None
+        
+    try:
+        from sqlalchemy import text
+        
+        with db_sql.session() as session:
+            # First, try to get existing version_id
+            select_query = text(f"SELECT version_id FROM {schema}.feature_version_lut WHERE version_name = :version_name")
+            result = session.execute(select_query, {"version_name": version_name})
+            row = result.fetchone()
+            
+            if row:
+                version_id = row[0]
+                if logger:
+                    logger.info(f"Found existing version_id {version_id} for version_name '{version_name}'")
+                return version_id
+            else:
+                # Insert new version_name and get the generated version_id
+                insert_query = text(
+                    f"INSERT INTO {schema}.feature_version_lut (version_name) VALUES (:version_name) RETURNING version_id"
+                )
+                result = session.execute(insert_query, {"version_name": version_name})
+                version_id = result.fetchone()[0]
+                session.commit()
+                
+                if logger:
+                    logger.info(f"Created new version_id {version_id} for version_name '{version_name}'")
+                return version_id
+                
+    except Exception as e:
+        if logger:
+            logger.error(f"Error handling version_lut table: {e}")
+        return None

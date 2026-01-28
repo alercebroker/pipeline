@@ -8,6 +8,10 @@
       "type": "long"
     },
     {
+      "name": "sid",
+      "type": "int"
+    },
+    {
       "name": "measurement_id",
       "type": "long"
     },
@@ -23,6 +27,13 @@
       }
     },
     {
+      "name": "ss_source",
+      "type": [
+        "null",
+        "ssSource"
+      ]
+    },
+    {
       "name": "forced_sources",
       "type": {
         "type": "array",
@@ -34,6 +45,13 @@
       "type": [
         "null",
         "diaObject"
+      ]
+    },
+    {
+      "name": "mpc_orbit",
+      "type": [
+        "null",
+        "mpc_orbits"
       ]
     }
   ]

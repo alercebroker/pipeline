@@ -9,7 +9,7 @@ from .schemas import (
     dia_forced_source_schema,
     dia_object_schema,
     dia_source_schema,
-    mpcorb_schema,
+    mpc_orbits_schema,
     ss_source_schema,
 )
 
@@ -33,7 +33,9 @@ class LsstDiaSourceExtractor(BaseExtractor):
         message: Message,
         measurements: list[dict[str, Any]],
     ) -> dict[str, list[Any]]:
-        return {"has_stamp": [cls._has_stamp(message)]}
+        return {
+            "has_stamp": [cls._has_stamp(message)],
+        }
 
 
 class LsstSsSourceExtractor(BaseExtractor):
@@ -66,7 +68,9 @@ class LsstPrvSourceExtractor(BaseExtractor):
         message: Message,
         measurements: list[dict[str, Any]],
     ) -> dict[str, list[Any]]:
-        return {"has_stamp": [False] * len(measurements)}
+        return {
+            "has_stamp": [False] * len(measurements),
+        }
 
 
 class LsstForcedSourceExtractor(BaseExtractor):
@@ -93,12 +97,12 @@ class LsstDiaObjectExtractor(BaseExtractor):
         }
 
 
-class LsstMpcorbExtractor(BaseExtractor):
-    field = "MPCORB"
-    schema = mpcorb_schema
+class LsstMpcOrbitExtractor(BaseExtractor):
+    field = "mpc_orbits"
+    schema = mpc_orbits_schema
     extra_columns_schema = {
-        "diaSourceId": pd.Int64Dtype(),
         "midpointMjdTai": pd.Float64Dtype(),
+        "ssObjectId": pd.Int64Dtype(),
     }
 
     @classmethod
@@ -107,6 +111,6 @@ class LsstMpcorbExtractor(BaseExtractor):
     ) -> dict[str, list[Any]]:
         source = message["diaSource"]
         return {
-            "diaSourceId": [message["diaSourceId"]] * len(measurements),
             "midpointMjdTai": [source["midpointMjdTai"]] * len(measurements),
+            "ssObjectId": [source["ssObjectId"]] * len(measurements),
         }

@@ -7,6 +7,10 @@
       "type": "long"
     },
     {
+      "name": "sid",
+      "type": "int"
+    },
+    {
       "name": "measurement_id",
       "type": "long"
     },
@@ -14,21 +18,21 @@
       "name": "detections",
       "type": {
         "type": "array",
-        "items": "detection"
+        "items": "candidate"
       }
     },
     {
       "name": "prv_detections",
       "type": {
         "type": "array",
-        "items": "detection"
+        "items": "prv_candidate"
       }
     },
     {
       "name": "forced_photometries",
       "type": {
         "type": "array",
-        "items": "detection"
+        "items": "forced_photometry"
       }
     },
     {

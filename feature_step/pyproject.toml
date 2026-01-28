@@ -7,7 +7,7 @@ readme = "README.md"
 packages = [{include = "features"}]
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.12"
+python = ">=3.10,<3.11"
 numpy = "^1.16"
 pandas = "^2.0.1"
 lc-classifier = { path = "../lc_classifier", develop = true}
@@ -15,6 +15,7 @@ apf_base = { path = "../libs/apf", develop = true }
 psycopg2-binary = "^2.9.6"
 SQLAlchemy="2.0.19"
 db-plugins = "^25.0.0"
+xmatch-client = { path = "../libs/xmatch_client", develop = true }
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.4.4"
