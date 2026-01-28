@@ -51,63 +51,41 @@ class LSSTDataJoiner(SurveyDataJoiner):
         """Combine LSST message and historical data."""
         result = {}
 
-        result["sources"] = pd.concat(
-            [
-                msg_data.get("sources_df", pd.DataFrame()),
-                historical_data.get("db_sql_sources_df", pd.DataFrame()),
-            ],
-            ignore_index=True,
-        )
+        result['sources'] = pd.concat([
+            msg_data.get('sources_df', pd.DataFrame()),
+            historical_data.get('db_sql_sources_df', pd.DataFrame())
+        ], ignore_index=True)
+        
+        result['previous_sources'] = pd.concat([
+            msg_data.get('previous_sources_df', pd.DataFrame()),
+            historical_data.get('db_sql_previous_sources_df', pd.DataFrame())
+        ], ignore_index=True)
+        
+        result['forced_sources'] = pd.concat([
+            msg_data.get('forced_sources_df', pd.DataFrame()),
+            historical_data.get('db_sql_forced_photometries_df', pd.DataFrame())
+        ], ignore_index=True)
+        
+        if not result['sources'].empty:
+            unique_sources_set = set(zip(result['sources']['measurement_id'], result['sources']['oid']))
+            result['previous_sources'] = result['previous_sources'][
+                ~result['previous_sources'].apply(lambda row: (row['measurement_id'], row['oid']) in unique_sources_set, axis=1)
+            ]
 
-        result["previous_sources"] = pd.concat(
-            [
-                msg_data.get("previous_sources_df", pd.DataFrame()),
-                historical_data.get("db_sql_previous_sources_df", pd.DataFrame()),
-            ],
-            ignore_index=True,
-        )
+        result['ss_sources'] = pd.concat([
+            msg_data.get('ss_sources_df', pd.DataFrame()),
+            historical_data.get('db_sql_ss_sources_df', pd.DataFrame())
+        ], ignore_index=True)        
 
-        result["forced_sources"] = pd.concat(
-            [
-                msg_data.get("forced_sources_df", pd.DataFrame()),
-                historical_data.get("db_sql_forced_photometries_df", pd.DataFrame()),
-            ],
-            ignore_index=True,
-        )
+        result['dia_object'] = pd.concat([ # not doing anything with the historical data for dia objects so far so the historical data is empty
+            msg_data.get('dia_objects_df', pd.DataFrame()),
+            historical_data.get('db_sql_dia_objects_df', pd.DataFrame())  
+        ], ignore_index=True)
 
-        # Remove from previous sources sources that are already in sources (to not end up with duplicates because of alerts that also appear in prvious_sources)
-        unique_sources_set = set(
-            zip(result["sources"]["measurement_id"], result["sources"]["oid"])
-        )
-        result["previous_sources"] = result["previous_sources"][
-            ~result["previous_sources"].apply(
-                lambda row: (row["measurement_id"], row["oid"]) in unique_sources_set,
-                axis=1,
-            )
-        ]
-
-        result["ss_sources"] = pd.concat(
-            [
-                msg_data.get("ss_sources_df", pd.DataFrame()),
-                historical_data.get("db_sql_ss_sources_df", pd.DataFrame()),
-            ],
-            ignore_index=True,
-        )
-
-        result["dia_object"] = pd.concat(
-            [  # not doing anything with the historical data for dia objects so far so the historical data is empty
-                msg_data.get("dia_objects_df", pd.DataFrame()),
-                historical_data.get("db_sql_dia_objects_df", pd.DataFrame()),
-            ],
-            ignore_index=True,
-        )
-        result["mpc_orbits"] = pd.concat(
-            [  # not doing anything with the historical data for mpc orbits so far so the historical data is empty
-                msg_data.get("mpc_orbits_df", pd.DataFrame()),
-                historical_data.get("db_sql_mpc_orbits_df", pd.DataFrame()),
-            ],
-            ignore_index=True,
-        )
+        result['mpc_orbits'] = pd.concat([ # not doing anything with the historical data for mpc orbits so far so the historical data is empty
+            msg_data.get('mpc_orbits_df', pd.DataFrame()),
+            historical_data.get('db_sql_mpc_orbits_df', pd.DataFrame())
+        ], ignore_index=True)      
 
         """
         # Ommited for now, as we are not receiving ss objects in schema v.10 yet
@@ -192,20 +170,24 @@ class LSSTDataJoiner(SurveyDataJoiner):
         result["dia_object"] = combined_data.get("dia_object", pd.DataFrame())
         # result['ss_object'] = combined_data.get('ss_object', pd.DataFrame())
 
-        logger = logging.getLogger(f"alerce.{self.__class__.__name__}")
+        if not result['sources'].empty:
+            logger.info(f"Obtained {len(result['sources'][result['sources']['new']])} new dia sources")
+        else:
+            logger.info("Obtained 0 new dia sources")
 
-        logger.info(
-            f"Obtained {len(result['sources'][result['sources']['new']])} new dia sources"
-        )
-        logger.info(
-            f"Obtained {len(result['previous_sources'][result['previous_sources']['new']])} new previous dia sources"
-        )
-        logger.info(
-            f"Obtained {len(result['forced_sources'][result['forced_sources']['new']])} new forced dia sources"
-        )
-        logger.info(
-            f"Obtained {len(result['ss_sources'][result['ss_sources']['new']])} new ss sources"
-        )
+        if not result['previous_sources'].empty:
+            logger.info(f"Obtained {len(result['previous_sources'][result['previous_sources']['new']])} new previous dia sources")
+        else:
+            logger.info("Obtained 0 new previous dia sources")
+
+        if not result['forced_sources'].empty:
+            logger.info(f"Obtained {len(result['forced_sources'][result['forced_sources']['new']])} new forced dia sources")
+        else:
+            logger.info("Obtained 0 new forced dia sources")
+
+        if not result['ss_sources'].empty:
+            logger.info(f"Obtained {len(result['ss_sources'][result['ss_sources']['new']])} new ss sources")
+        else:
+            logger.info("Obtained 0 new ss sources")
 
         return result
-
