@@ -357,7 +357,7 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
         return parsed_lsst_list
 
     def _parse_lsst_ss_detections(self, lsst_ss_models: list, ss_models: list, 
-                               lsst_det_models: list) -> List[Dict[str, Any]]:
+                            lsst_det_models: list) -> List[Dict[str, Any]]:
         """
         Parse LSST SS detections and merge with corresponding dia source data.
         
@@ -366,6 +366,17 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
             ss_models: General Detection records with sid=2
             lsst_det_models: LSST dia source records (from LsstDetection table with sid=2)
         """
+        # Define SS-specific columns that should be 0/'0' in fallback scenario of sid 2 without ss data
+        ss_specific_columns = [
+            "designation", "eclLambda", "eclBeta", "galLon", "galLat",
+            "elongation", "phaseAngle", "topoRange", "topoRangeRate",
+            "helioRange", "helioRangeRate", "ephRa", "ephDec", "ephVmag",
+            "ephRate", "ephRateRa", "ephRateDec", "ephOffset", "ephOffsetRa",
+            "ephOffsetDec", "ephOffsetAlongTrack", "ephOffsetCrossTrack",
+            "helio_x", "helio_y", "helio_z", "helio_vx", "helio_vy", "helio_vz",
+            "helio_vtot", "topo_x", "topo_y", "topo_z", "topo_vx", "topo_vy",
+            "topo_vz", "topo_vtot", "diaDistanceRank"
+        ]
         # Parse SS detection data
         parsed_lsst_ss_dets = []
         for row in lsst_ss_models:
@@ -397,22 +408,35 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
             key = (lsst_det['ssObjectId'], lsst_det['measurement_id'])
             lsst_det_lookup[key] = lsst_det
 
-        # Combine all three datasets
-        parsed_lsst_ss_list = []
+        # Create lookup for SS-specific data by (oid, measurement_id)
+        lsst_ss_det_lookup = {}
         for lsst_ss_det in parsed_lsst_ss_dets:
-            # The measurement_id in LsstSsDetection corresponds to the Detection table
-            ss_key = (lsst_ss_det['ssObjectId'], lsst_ss_det['measurement_id'])
+            key = (lsst_ss_det['ssObjectId'], lsst_ss_det['measurement_id'])
+            lsst_ss_det_lookup[key] = lsst_ss_det
+
+        parsed_lsst_ss_list = []
+        
+        # Process all SS detections
+        for ss_det in parsed_ss_dets:
+            ss_key = (ss_det['oid'], ss_det['measurement_id'])
+
+            combined_dict = {**ss_det}
             
-            # Start with the SS-specific data
-            combined_dict = {**lsst_ss_det}
-            
-            # Merge with general Detection data (sid=2)
-            if ss_key in ss_det_lookup:
-                combined_dict = {**combined_dict, **ss_det_lookup[ss_key]}
-            
-            # Merge with LSST dia source data (sid=2)
+            # Merge with LSST dia source data if available
             if ss_key in lsst_det_lookup:
                 combined_dict = {**combined_dict, **lsst_det_lookup[ss_key]}
+            
+            # Merge with SS-specific data if available
+            if ss_key in lsst_ss_det_lookup:
+                combined_dict = {**combined_dict, **lsst_ss_det_lookup[ss_key]}
+            else:
+                # No SS-specific data for this record - add default values
+                for col in ss_specific_columns:
+                    if col not in combined_dict:
+                        if col == "designation":
+                            combined_dict[col] = '0'
+                        else:
+                            combined_dict[col] = 0
 
             combined_dict["new"] = False
             combined_dict["midpointMjdTai"] = combined_dict.get("mjd")
