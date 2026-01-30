@@ -39,8 +39,8 @@ valid_features_dict = {
         "features_version": "v1",
         "features_group": "group",
         "features": [
-            {"name": "feature1", "value": 12.34, "fid": 'g'},
-            {"name": "feature2", "value": None, "fid": 'Y'},
+            {"name": "feature1", "value": 12.34, "fid": "g"},
+            {"name": "feature2", "value": None, "fid": "Y"},
         ],
     },
     "options": {},

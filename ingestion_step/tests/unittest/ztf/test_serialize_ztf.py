@@ -13,6 +13,7 @@ def test_serialize(ztf_parsed_data: ZtfData):
 
     expected_keys = [
         "oid",
+        "sid",
         "measurement_id",
         "detections",
         "prv_detections",
@@ -23,7 +24,7 @@ def test_serialize(ztf_parsed_data: ZtfData):
     for msg in msgs:
         assert set(msg.keys()) == set(expected_keys)
 
-    for key in expected_keys[2:]:
+    for key in expected_keys[3:]:
         total_length = 0
         for msg in msgs:
             total_length += len(msg[key])
@@ -34,10 +35,13 @@ def test_serialize(ztf_parsed_data: ZtfData):
 
 def test_serialize_detections(ztf_parsed_data: ZtfData):
     detections = serializer.serialize_detections(ztf_parsed_data["detections"])
-    prv_detections = serializer.serialize_detections(ztf_parsed_data["prv_detections"])
-    forced = serializer.serialize_detections(ztf_parsed_data["forced_photometries"])
+    prv_detections = serializer.serialize_prv_candidates(
+        ztf_parsed_data["prv_detections"]
+    )
+    forced = serializer.serialize_forced_photometries(
+        ztf_parsed_data["forced_photometries"]
+    )
 
-    assert "extra_fields" in detections
     assert len(detections) == len(ztf_parsed_data["detections"])
     assert len(prv_detections) == len(ztf_parsed_data["prv_detections"])
     assert len(forced) == len(ztf_parsed_data["forced_photometries"])

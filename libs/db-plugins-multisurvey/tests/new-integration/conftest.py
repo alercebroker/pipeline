@@ -1,7 +1,7 @@
-import pytest
 import os
+
 import psycopg2
-import pymongo
+import pytest
 
 
 @pytest.fixture(scope="session")

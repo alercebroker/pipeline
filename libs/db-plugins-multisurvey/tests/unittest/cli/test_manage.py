@@ -1,7 +1,9 @@
 import unittest
 from unittest import mock
-from db_plugins.cli import manage
+
 from click.testing import CliRunner
+
+from db_plugins.cli import manage
 
 
 class TestManage(unittest.TestCase):
@@ -87,40 +89,3 @@ class TestManage(unittest.TestCase):
         result = self.runner.invoke(manage.migrate, "--settings_path fail")
         assert result.exit_code != 0
         assert "Settings file not found" == str(result.exception)
-
-    @mock.patch("db_plugins.db.mongo._connection.MongoConnection", autospec=True)
-    def test_init_mongo(self, mock_connection):
-        # smoke test
-        # TODO make actual test
-        manage.init_mongo(
-            {
-                "USER": "",
-                "HOST": "",
-                "PASSWORD": "",
-                "PORT": "",
-                "DATABASE": "",
-            },
-            db=mock_connection,
-        )
-
-    @mock.patch("db_plugins.cli.manage.init_mongo")
-    def test_initdb_mongo(self, mock_init_mongo):
-        with self.runner.isolated_filesystem(temp_dir=self.settings_path) as td:
-            with open("settings.py", "w") as f:
-                f.write("DB_CONFIG=")
-                DB_CONFIG = {
-                    "MONGO": {
-                        "USER": "",
-                        "PASSWORD": "",
-                        "HOST": "",
-                        "DATABASE": "",
-                        "PORT": 123,
-                    },
-                }
-                f.write(str(DB_CONFIG))
-            result = self.runner.invoke(manage.initdb, ["--settings_path", td])
-            assert result.exit_code == 0
-            mock_init_mongo.assert_called()
-            assert (
-                "Database created with credentials from {}".format(td) in result.output
-            )

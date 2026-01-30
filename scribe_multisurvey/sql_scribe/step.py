@@ -1,4 +1,5 @@
 import logging
+
 from apf.core.step import GenericStep
 from typing import List
 
@@ -17,7 +18,7 @@ class SqlScribe(GenericStep):
         Description of parameter `consumer`.
     """
 
-    def __init__(self, consumer=None, config=None, db="mongo", **step_args):
+    def __init__(self, consumer=None, config=None, **step_args):
         super().__init__(consumer, config=config, **step_args)
 
         self.db_client = SQLCommandExecutor(config["PSQL_CONFIG"])

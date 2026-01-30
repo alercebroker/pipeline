@@ -1,13 +1,12 @@
-import click
-import sys
+import importlib
 import os
+import sys
+
+import click
+
 from db_plugins.db.sql.initialization import init as init_sql
 from db_plugins.db.sql.initialization import make_migrations as make_sql_migrations
 from db_plugins.db.sql.initialization import migrate as migrate_sql
-from db_plugins.db.mongo.initialization import (
-    init_mongo_database as init_mongo,
-)
-import importlib
 
 
 @click.group()
@@ -26,11 +25,6 @@ def initdb(settings_path, db=None):
     if "SQL" in DB_CONFIG:
         init_sql(DB_CONFIG["SQL"], db)
         click.echo("Database created with credentials from {}".format(settings_path))
-
-    elif "MONGO" in DB_CONFIG:
-        init_mongo(DB_CONFIG["MONGO"], db)
-        click.echo("Database created with credentials from {}".format(settings_path))
-
     else:
         raise Exception("Invalid settings file")
     sys.path.pop(-1)

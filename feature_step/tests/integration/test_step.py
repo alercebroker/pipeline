@@ -13,7 +13,7 @@ CONSUMER_CONFIG = {
     },
     "TOPICS": ["ztf"],
     "consume.messages": 1,
-    "consume.timeout": 0,
+    "consume.timeout": 10,
 }
 
 PRODUCER_CONFIG = {
@@ -49,7 +49,12 @@ def test_step_ztf(kafka_service):
         "PRODUCER_CONFIG": PRODUCER_CONFIG,
         "CONSUMER_CONFIG": CONSUMER_CONFIG,
         "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
+        "SURVEY": "ztf"
     }
     db_sql = mock.MagicMock()
     step = FeatureStep(config=step_config, db_sql=db_sql)
     step.start()
+
+
+if __name__ == "__main__":
+    test_step_ztf(None)

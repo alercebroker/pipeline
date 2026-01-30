@@ -12,9 +12,7 @@ def test_extract_candidates(ztf_alerts: list[Message]):
 
     fields = {"objectId", "candid", "parent_candid", "has_stamp"}
     assert fields <= set(candidates.keys())
-    assert not any(
-        candidates["forced"]
-    ), "`forced` should be false on candidates"
+    assert not any(candidates["forced"]), "`forced` should be false on candidates"
 
 
 def test_extract_prv_candidates(ztf_alerts: list[Message]):
@@ -22,9 +20,9 @@ def test_extract_prv_candidates(ztf_alerts: list[Message]):
 
     fields = {"objectId", "parent_candid", "has_stamp"}
     assert fields <= set(prv_candidates.keys())
-    assert not any(
-        prv_candidates["forced"]
-    ), "`forced` should be false on prv_candidates"
+    assert not any(prv_candidates["forced"]), (
+        "`forced` should be false on prv_candidates"
+    )
 
 
 def test_extract_fp_hists(ztf_alerts: list[Message]):
@@ -38,7 +36,6 @@ def test_extract_fp_hists(ztf_alerts: list[Message]):
         "forcediffimflux",
         "forcediffimfluxunc",
         "parent_candid",
-        "has_stamp",
     }
 
     assert fields <= set(fp_hists.keys())

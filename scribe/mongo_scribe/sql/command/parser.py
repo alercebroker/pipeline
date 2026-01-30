@@ -1,4 +1,4 @@
-def multistream_detection_to_ztf(command: dict):
+def multisurvey_detection_to_ztf(command: dict):
     if "oid" not in command:
         raise ValueError("OID was not found")
 

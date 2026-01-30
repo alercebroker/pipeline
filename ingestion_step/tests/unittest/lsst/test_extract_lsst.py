@@ -4,8 +4,7 @@ from ingestion_step.lsst.extractor import (
     LsstDiaSourceExtractor,
     LsstForcedSourceExtractor,
     # LsstSsObjectExtractor,
-    LsstMpcorbExtractor,
-    # LsstNonDetectionsExtractor,
+    LsstMpcOrbitExtractor,
     LsstPrvSourceExtractor,
     LsstSsSourceExtractor,
 )
@@ -67,3 +66,11 @@ def test_extract_forced(lsst_alerts: list[Message]):
 
     fields = {"message_id"}
     assert fields <= set(forced_sources.keys())
+
+
+def test_extract_mpc_orbits(lsst_alerts: list[Message]):
+    mpc_orbits = LsstMpcOrbitExtractor.extract(lsst_alerts)
+    assert len(mpc_orbits) == sum(1 for alert in lsst_alerts if alert["mpc_orbits"])
+
+    # fields = {"message_id"}
+    # assert fields <= set(mpc_orbits.keys())

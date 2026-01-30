@@ -670,7 +670,7 @@
       "name": "bboxSize",
       "type": [
         "null",
-        "long"
+        "int"
       ]
     },
     {

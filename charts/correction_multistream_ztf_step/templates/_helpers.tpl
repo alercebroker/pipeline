@@ -1,7 +1,7 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "correction-multistream-ztf-step.name" -}}
+{{- define "correction-multisurvey-ztf-step.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
@@ -10,7 +10,7 @@ Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
 */}}
-{{- define "correction-multistream-ztf-step.fullname" -}}
+{{- define "correction-multisurvey-ztf-step.fullname" -}}
 {{- if .Values.fullnameOverride }}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -26,16 +26,16 @@ If release name contains chart name it will be used as a full name.
 {{/*
 Create chart name and version as used by the chart label.
 */}}
-{{- define "correction-multistream-ztf-step.chart" -}}
+{{- define "correction-multisurvey-ztf-step.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Common labels
 */}}
-{{- define "correction-multistream-ztf-step.labels" -}}
-helm.sh/chart: {{ include "correction-multistream-ztf-step.chart" . }}
-{{ include "correction-multistream-ztf-step.selectorLabels" . }}
+{{- define "correction-multisurvey-ztf-step.labels" -}}
+helm.sh/chart: {{ include "correction-multisurvey-ztf-step.chart" . }}
+{{ include "correction-multisurvey-ztf-step.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
@@ -45,17 +45,17 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{/*
 Selector labels
 */}}
-{{- define "correction-multistream-ztf-step.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "correction-multistream-ztf-step.name" . }}
+{{- define "correction-multisurvey-ztf-step.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "correction-multisurvey-ztf-step.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
 Create the name of the service account to use
 */}}
-{{- define "correction-multistream-ztf-step.serviceAccountName" -}}
+{{- define "correction-multisurvey-ztf-step.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create }}
-{{- default (include "correction-multistream-ztf-step.fullname" .) .Values.serviceAccount.name }}
+{{- default (include "correction-multisurvey-ztf-step.fullname" .) .Values.serviceAccount.name }}
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}

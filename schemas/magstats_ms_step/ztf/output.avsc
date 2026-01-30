@@ -1,0 +1,56 @@
+{
+  "type": "record",
+  "name": "magstats_ms_ztf",
+  "fields": [
+    {
+      "name": "oid",
+      "type": "long"
+    },
+    {
+      "name": "sid",
+      "type": "int"
+    },
+    { "name": "measurement_id", 
+      "type": 
+      {
+        "type": "array", 
+        "items": "long"
+        }
+    },
+    { 
+      "name": "meanra", 
+      "type":  ["null", "float"]
+    },
+    { "name": "meandec", 
+    "type": ["null", "float"]
+    },
+    {
+      "name": "detections",
+      "type": {
+        "type": "array",
+        "items": "candidate"
+      }
+    },
+    {
+      "name": "previous_detections",
+      "type": {
+        "type": "array",
+        "items": "prv_candidate"
+      }
+    },
+    {
+      "name": "forced_photometries",
+      "type": {
+        "type": "array",
+        "items": "forced_photometry"
+      }
+    },
+    {
+      "name": "non_detections",
+      "type": {
+        "type": "array",
+        "items": "non_detection"
+      }
+    }
+  ]
+}

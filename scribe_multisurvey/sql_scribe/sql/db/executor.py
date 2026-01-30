@@ -1,14 +1,16 @@
 from typing import Callable, Dict, List
 
-
-from .connection import PSQLConnection, Session
 from sql_scribe.sql.command.commands import (
     Command,
-    ZTFCorrectionCommand, 
-    ZTFMagstatCommand,
+    LSSTFeatureCommand,
     LSSTMagstatCommand,
-    LSSTUpdateDiaObjectCommand
+    XmatchCommand,
+    ZTFCorrectionCommand,
+    ZTFMagstatCommand,
 )
+
+from .connection import PSQLConnection, Session
+
 
 class CommandHandler:
     def __init__(self, query_function: Callable[[Session, List], None]):
@@ -38,7 +40,8 @@ class SQLCommandExecutor:
             ZTFCorrectionCommand,
             ZTFMagstatCommand,
             LSSTMagstatCommand,
-            LSSTUpdateDiaObjectCommand
+            LSSTFeatureCommand,
+            XmatchCommand,
         )
         self.handlers: Dict[str, CommandHandler] = {
             c.type: CommandHandler(c.db_operation) for c in commands_list

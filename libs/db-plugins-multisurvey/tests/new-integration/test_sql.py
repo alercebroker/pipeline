@@ -1,77 +1,39 @@
 import unittest
+
 import pytest
 from sqlalchemy import (
-    create_engine,
     inspect,
-    MetaData,
-    Table,
-    Column,
-    Integer,
-    String,
     select,
-    text,
 )
-from sqlalchemy.orm import sessionmaker, scoped_session
-from contextlib import contextmanager
-
-from db_plugins.db.sql.models_new import (
-    Base,
-    Object,
-    ZtfObject,
-    Detection,
-    ZtfDetection,
-    ForcedPhotometry,
-    ZtfForcedPhotometry,
-    NonDetection,
-)
+from sqlalchemy.orm import scoped_session, sessionmaker
 from test_data import (
-    OBJECT_DATA,
-    ZTF_OBJECT_DATA,
     DETECTION_DATA,
-    ZTF_DETECTION_DATA,
     FORCED_PHOTOMETRY_DATA,
-    ZTF_FORCED_PHOTOMETRY_DATA,
     NON_DETECTION_DATA,
+    OBJECT_DATA,
+    ZTF_DETECTION_DATA,
+    ZTF_FORCED_PHOTOMETRY_DATA,
+    ZTF_OBJECT_DATA,
 )
 
+from db_plugins.db.sql._connection import PsqlDatabase
+from db_plugins.db.sql.models import (
+    Detection,
+    ForcedPhotometry,
+    Object,
+    ZtfDetection,
+    ZtfForcedPhotometry,
+    ZtfNonDetection,
+    ZtfObject,
+)
 
-# Clase para manejar la conexión a la base de datos
-class PsqlDatabase:
-    def __init__(self, config):
-        self.host = config.get("HOST", "localhost")
-        self.user = config.get("USER", "postgres")
-        self.password = config.get("PASSWORD", "postgres")
-        self.port = config.get("PORT", 5435)
-        self.db_name = config.get("DB_NAME", "postgres")
-
-        self._engine = self._create_engine()
-        self._session_factory = scoped_session(
-            sessionmaker(autocommit=False, autoflush=True, bind=self._engine)
-        )
-
-    def _create_engine(self):
-        conn_str = f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.db_name}"
-        return create_engine(conn_str)
-
-    @contextmanager
-    def session(self):
-        session = self._session_factory()
-        try:
-            yield session
-            session.commit()
-        except Exception:
-            session.rollback()
-            raise
-        finally:
-            session.close()
-
-    def create_db(self):
-        """Crear todas las tablas definidas en los modelos"""
-        Base.metadata.create_all(self._engine)
-
-    def drop_db(self):
-        """Eliminar todas las tablas de la base de datos"""
-        Base.metadata.drop_all(self._engine)
+psql_config = {
+    "HOST": "localhost",
+    "USER": "postgres",
+    "PASSWORD": "postgres",
+    "PORT": 5432,
+    "DB_NAME": "postgres",
+}
 
 
 # Test de conexión
@@ -81,18 +43,11 @@ class SQLConnectionTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        config = {
-            "HOST": "localhost",
-            "USER": "postgres",
-            "PASSWORD": "postgres",
-            "PORT": 5435,
-            "DB_NAME": "postgres",
-        }
         cls.session_options = {
             "autocommit": False,
             "autoflush": True,
         }
-        cls.db = PsqlDatabase(config)
+        cls.db = PsqlDatabase(psql_config)
 
     def tearDown(self):
         self.db.drop_db()
@@ -133,14 +88,7 @@ class ObjectModelTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        config = {
-            "HOST": "localhost",
-            "USER": "postgres",
-            "PASSWORD": "postgres",
-            "PORT": 5435,
-            "DB_NAME": "postgres",
-        }
-        cls.db = PsqlDatabase(config)
+        cls.db = PsqlDatabase(psql_config)
 
     def setUp(self):
         """Preparar la base de datos antes de cada prueba"""
@@ -239,14 +187,7 @@ class ZtfObjectModelTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        config = {
-            "HOST": "localhost",
-            "USER": "postgres",
-            "PASSWORD": "postgres",
-            "PORT": 5435,
-            "DB_NAME": "postgres",
-        }
-        cls.db = PsqlDatabase(config)
+        cls.db = PsqlDatabase(psql_config)
 
     def setUp(self):
         """Preparar la base de datos antes de cada prueba"""
@@ -351,14 +292,7 @@ class DetectionModelTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        config = {
-            "HOST": "localhost",
-            "USER": "postgres",
-            "PASSWORD": "postgres",
-            "PORT": 5435,
-            "DB_NAME": "postgres",
-        }
-        cls.db = PsqlDatabase(config)
+        cls.db = PsqlDatabase(psql_config)
 
     def setUp(self):
         """Preparar la base de datos antes de cada prueba"""
@@ -493,14 +427,7 @@ class ZtfDetectionModelTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        config = {
-            "HOST": "localhost",
-            "USER": "postgres",
-            "PASSWORD": "postgres",
-            "PORT": 5435,
-            "DB_NAME": "postgres",
-        }
-        cls.db = PsqlDatabase(config)
+        cls.db = PsqlDatabase(psql_config)
 
     def setUp(self):
         """Preparar la base de datos antes de cada prueba"""
@@ -640,14 +567,7 @@ class ForcedPhotometryModelTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        config = {
-            "HOST": "localhost",
-            "USER": "postgres",
-            "PASSWORD": "postgres",
-            "PORT": 5435,
-            "DB_NAME": "postgres",
-        }
-        cls.db = PsqlDatabase(config)
+        cls.db = PsqlDatabase(psql_config)
 
     def setUp(self):
         """Preparar la base de datos antes de cada prueba"""
@@ -799,14 +719,7 @@ class ZtfForcedPhotometryModelTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        config = {
-            "HOST": "localhost",
-            "USER": "postgres",
-            "PASSWORD": "postgres",
-            "PORT": 5435,
-            "DB_NAME": "postgres",
-        }
-        cls.db = PsqlDatabase(config)
+        cls.db = PsqlDatabase(psql_config)
 
     def setUp(self):
         """Preparar la base de datos antes de cada prueba"""
@@ -974,14 +887,7 @@ class NonDetectionModelTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        config = {
-            "HOST": "localhost",
-            "USER": "postgres",
-            "PASSWORD": "postgres",
-            "PORT": 5435,
-            "DB_NAME": "postgres",
-        }
-        cls.db = PsqlDatabase(config)
+        cls.db = PsqlDatabase(psql_config)
 
     def setUp(self):
         """Preparar la base de datos antes de cada prueba"""
@@ -994,7 +900,7 @@ class NonDetectionModelTest(unittest.TestCase):
     def test_query_empty_tables(self):
         """Verificar que se pueden realizar consultas a la tabla NonDetection vacía"""
         with self.db.session() as session:
-            query = select(NonDetection)
+            query = select(ZtfNonDetection)
             obj = session.execute(query)
             # Verificar que no hay objetos (base de datos vacía)
             self.assertEqual(len(list(obj)), 0)
@@ -1010,7 +916,7 @@ class NonDetectionModelTest(unittest.TestCase):
             object_oid = test_object.oid
 
         # Crear una nueva entrada de no-detección
-        test_non_detection = NonDetection(
+        test_non_detection = ZtfNonDetection(
             oid=object_oid, band=1, mjd=60030.12345, diffmaglim=19.5
         )
 
@@ -1019,7 +925,7 @@ class NonDetectionModelTest(unittest.TestCase):
 
         # Verificar que la no-detección se ha guardado
         with self.db.session() as session:
-            query = select(NonDetection)
+            query = select(ZtfNonDetection)
             non_detections = list(session.execute(query))
 
             self.assertEqual(len(non_detections), 1)
@@ -1036,7 +942,7 @@ class NonDetectionModelTest(unittest.TestCase):
 
         # Crear instancias de NonDetection para cada conjunto de datos
         non_detection_data = NON_DETECTION_DATA["filter"]
-        non_detections = [NonDetection(**data) for data in non_detection_data]
+        non_detections = [ZtfNonDetection(**data) for data in non_detection_data]
 
         # Agregar todas las no-detecciones en una sola sesión
         with self.db.session() as session:
@@ -1045,7 +951,7 @@ class NonDetectionModelTest(unittest.TestCase):
 
         # Verificar que se han guardado todas las no-detecciones
         with self.db.session() as session:
-            query = select(NonDetection)
+            query = select(ZtfNonDetection)
             saved_non_detections = list(session.execute(query).scalars())
 
             # Verificar que el número de no-detecciones guardadas coincide con las creadas
@@ -1062,7 +968,9 @@ class NonDetectionModelTest(unittest.TestCase):
                 session.commit()
 
         # Crear y agregar múltiples no-detecciones a la base de datos
-        non_detections = [NonDetection(**data) for data in NON_DETECTION_DATA["filter"]]
+        non_detections = [
+            ZtfNonDetection(**data) for data in NON_DETECTION_DATA["filter"]
+        ]
         with self.db.session() as session:
             for nd in non_detections:
                 session.add(nd)
@@ -1070,36 +978,38 @@ class NonDetectionModelTest(unittest.TestCase):
         # Probar diferentes filtros
         with self.db.session() as session:
             # Filtrar por diffmaglim > 20.0
-            query1 = select(NonDetection).where(NonDetection.diffmaglim > 20.0)
+            query1 = select(ZtfNonDetection).where(ZtfNonDetection.diffmaglim > 20.0)
             deep_non_detections = list(session.execute(query1).scalars())
             self.assertEqual(
                 len(deep_non_detections), 2
             )  # Debería encontrar 2 no-detecciones
 
             # Filtrar por band = 1
-            query2 = select(NonDetection).where(NonDetection.band == 1)
+            query2 = select(ZtfNonDetection).where(ZtfNonDetection.band == 1)
             band1_non_detections = list(session.execute(query2).scalars())
             self.assertEqual(
                 len(band1_non_detections), 2
             )  # Debería encontrar 2 no-detecciones
 
             # Filtrar por rango de mjd
-            query3 = select(NonDetection).where(NonDetection.mjd.between(60035, 60041))
+            query3 = select(ZtfNonDetection).where(
+                ZtfNonDetection.mjd.between(60035, 60041)
+            )
             mid_mjd_non_detections = list(session.execute(query3).scalars())
             self.assertEqual(
                 len(mid_mjd_non_detections), 2
             )  # Debería encontrar 2 no-detecciones
 
             # Filtrar por un oid específico
-            query4 = select(NonDetection).where(NonDetection.oid == 12345680)
+            query4 = select(ZtfNonDetection).where(ZtfNonDetection.oid == 12345680)
             obj_non_detections = list(session.execute(query4).scalars())
             self.assertEqual(
                 len(obj_non_detections), 2
             )  # Debería encontrar 2 no-detecciones
 
             # Filtrar por múltiples condiciones
-            query5 = select(NonDetection).where(
-                NonDetection.diffmaglim > 19.5, NonDetection.band == 1
+            query5 = select(ZtfNonDetection).where(
+                ZtfNonDetection.diffmaglim > 19.5, ZtfNonDetection.band == 1
             )
             combined_filter_non_detections = list(session.execute(query5).scalars())
             self.assertEqual(

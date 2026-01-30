@@ -6,7 +6,7 @@ from db_plugins.db.sql.models import (
     LsstDetection,
     LsstDiaObject,
     LsstForcedPhotometry,
-    LsstMpcorb,
+    LsstMpcOrbits,
     LsstSsDetection,
     Object,
 )
@@ -55,7 +55,7 @@ def insert_dia_objects(
         session.commit()
 
 
-def insert_mpcorb(
+def insert_mpc_orbit(
     driver: PsqlDatabase, mpcorbs: pd.DataFrame, chunk_size: int | None = None
 ):
     if len(mpcorbs) == 0:
@@ -63,16 +63,47 @@ def insert_mpcorb(
     if chunk_size is None:
         chunk_size = len(mpcorbs)
 
-    lsst_columns = set(mpcorbs.columns) - {"message_id", "midpointMjdTai"}
+    lsst_columns = set(mpcorbs.columns) - {"message_id", "midpointMjdTai", "mjd", "id"}
 
     mpcorbs_dict = mpcorbs[list(lsst_columns)].to_dict("records")
 
     with driver.session() as session:
         for i in range(0, len(mpcorbs), chunk_size):
             mpcorbs_sql_stmt = db_insert_on_conflict_do_update_builder(
-                LsstMpcorb, mpcorbs_dict[i : i + chunk_size], pk=["ssObjectId"]
+                LsstMpcOrbits, mpcorbs_dict[i : i + chunk_size], pk=["ssObjectId"]
             )
             session.execute(mpcorbs_sql_stmt)
+        session.commit()
+
+
+def insert_fake_ss_objects(
+    driver: PsqlDatabase, fake_ss_object: pd.DataFrame, chunk_size: int | None = None
+):
+    if len(fake_ss_object) == 0:
+        return
+    if chunk_size is None:
+        chunk_size = len(fake_ss_object)
+
+    lsst_columns = {
+        "oid",
+        "tid",
+        "sid",
+        "meanra",
+        "meandec",
+        "firstmjd",
+        "lastmjd",
+        "n_forced",
+        "n_non_det",
+    }
+
+    fake_ss_object_dict = fake_ss_object[list(lsst_columns)].to_dict("records")
+
+    with driver.session() as session:
+        for i in range(0, len(fake_ss_object), chunk_size):
+            fake_ss_object_sql_stmt = db_insert_on_conflict_do_nothing_builder(
+                Object, fake_ss_object_dict[i : i + chunk_size]
+            )
+            session.execute(fake_ss_object_sql_stmt)
         session.commit()
 
 

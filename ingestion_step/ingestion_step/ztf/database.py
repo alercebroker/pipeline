@@ -15,6 +15,7 @@ from ingestion_step.core.database import (
     FORCED_DETECTION_COLUMNS,
     OBJECT_COLUMNS,
     db_insert_on_conflict_do_nothing_builder,
+    db_insert_on_conflict_do_update_builder,
 )
 
 
@@ -25,7 +26,6 @@ def insert_objects(
         return
     if chunk_size is None:
         chunk_size = len(objects_df)
-
     # editing the df
     objects_df["meanra"] = objects_df["ra"]
     objects_df["meandec"] = objects_df["dec"]
@@ -50,7 +50,6 @@ def insert_objects(
         ]
     ]
     objects_ztf_dict = objects_ztf_df_parsed.to_dict("records")
-
     with driver.session() as session:
         for i in range(0, len(objects_df), chunk_size):
             object_sql_stmt = db_insert_on_conflict_do_nothing_builder(
@@ -68,13 +67,15 @@ def insert_objects(
 
 
 def insert_detections(
-    driver: PsqlDatabase, detections_df: pd.DataFrame, chunk_size: int | None = None
+    driver: PsqlDatabase,
+    detections_df: pd.DataFrame,
+    chunk_size: int | None = None,
+    on_conflict_do_update: bool = False,
 ):
     if len(detections_df) == 0:
         return
     if chunk_size is None:
         chunk_size = len(detections_df)
-
     # editing the df
     detections_df["magpsf_corr"] = None
     detections_df["sigmapsf_corr"] = None
@@ -118,17 +119,28 @@ def insert_detections(
     ]
 
     detections_ztf_dict = detections_ztf_df_parsed.to_dict("records")
-
     with driver.session() as session:
         for i in range(0, len(detections_df), chunk_size):
-            detection_sql_stmt = db_insert_on_conflict_do_nothing_builder(
-                Detection,
-                detections_dict[i : i + chunk_size],
-            )
-            detection_ztf_sql_stmt = db_insert_on_conflict_do_nothing_builder(
-                ZtfDetection,
-                detections_ztf_dict[i : i + chunk_size],
-            )
+            if on_conflict_do_update:
+                detection_sql_stmt = db_insert_on_conflict_do_update_builder(
+                    Detection,
+                    detections_dict[i : i + chunk_size],
+                    pk=["oid", "measurement_id", "sid"],
+                )
+                detection_ztf_sql_stmt = db_insert_on_conflict_do_update_builder(
+                    ZtfDetection,
+                    detections_ztf_dict[i : i + chunk_size],
+                    pk=["oid", "measurement_id"],
+                )
+            else:
+                detection_sql_stmt = db_insert_on_conflict_do_nothing_builder(
+                    Detection,
+                    detections_dict[i : i + chunk_size],
+                )
+                detection_ztf_sql_stmt = db_insert_on_conflict_do_nothing_builder(
+                    ZtfDetection,
+                    detections_ztf_dict[i : i + chunk_size],
+                )
 
             session.execute(detection_sql_stmt)
             session.execute(detection_ztf_sql_stmt)
@@ -136,7 +148,7 @@ def insert_detections(
 
 
 def insert_forced_photometry(
-    driver: PsqlDatabase,
+    connection: PsqlDatabase,
     forced_photometry_df: pd.DataFrame,
     chunk_size: int | None = None,
 ):
@@ -170,7 +182,6 @@ def insert_forced_photometry(
             "corrected",
             "dubious",
             "parent_candid",
-            "has_stamp",
             "field",
             "rcid",
             "rfid",
@@ -199,7 +210,7 @@ def insert_forced_photometry(
     ]
     forced_photometry_ztf_dict = forced_photometry_ztf_df_parsed.to_dict("records")
 
-    with driver.session() as session:
+    with connection.session() as session:
         for i in range(0, len(forced_photometry_df), chunk_size):
             forced_photometry_sql_stmt = db_insert_on_conflict_do_nothing_builder(
                 ForcedPhotometry,
@@ -222,7 +233,6 @@ def insert_non_detections(
         return
     if chunk_size is None:
         chunk_size = len(non_detections_df)
-
     non_detections_df = non_detections_df.reset_index()
     non_detections_dict = non_detections_df[
         [
@@ -236,10 +246,9 @@ def insert_non_detections(
 
     with driver.session() as session:
         for i in range(0, len(non_detections_df), chunk_size):
-            non_detection_sql_stmt = db_insert_on_conflict_do_nothing_builder(
+            non_detections_sql_stmt = db_insert_on_conflict_do_nothing_builder(
                 ZtfNonDetection,
                 non_detections_dict[i : i + chunk_size],
             )
-
-            session.execute(non_detection_sql_stmt)
+            session.execute(non_detections_sql_stmt)
         session.commit()
