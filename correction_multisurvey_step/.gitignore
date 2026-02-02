@@ -1,0 +1,7 @@
+correction_venv
+config.yaml
+config.yml
+
+config_ztf.yaml
+config_lsst.yaml
+config.*.yaml

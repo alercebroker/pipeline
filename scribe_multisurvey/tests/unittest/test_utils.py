@@ -1,4 +1,5 @@
-from sql_scribe.sql.command.parser import multistream_detection_to_ztf
+from sql_scribe.sql.command.parser import multisurvey_detection_to_ztf
+
 
 def test_conversion_to_ztf():
     incoming_command = {
@@ -23,7 +24,7 @@ def test_conversion_to_ztf():
         "dubious": False,
         "has_stamp": False,
         "parent_candid": None,
-        "extra_fields": {}
+        "extra_fields": {},
     }
 
     expected_output = {
@@ -43,8 +44,9 @@ def test_conversion_to_ztf():
         "stellar": False,
         "dubious": False,
         "has_stamp": False,
-        "parent_candid": None
+        "parent_candid": None,
     }
 
-    output = multistream_detection_to_ztf(incoming_command)
+    output = multisurvey_detection_to_ztf(incoming_command)
     assert output == expected_output
+

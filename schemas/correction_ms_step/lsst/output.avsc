@@ -1,13 +1,61 @@
 {
   "type": "record",
-  "name": "correction_lsst",
-  "doc": "Correction ms step schema output for the LSST survey",
+  "name": "ingestion_lsst",
+  "doc": "Ingestion step schema for the LSST survey",
   "fields": [
-    { "name": "oid", "type": "long" },
-    { "name": "measurement_id", "type": {"type": "array", "items": "long"}},
-    { "name": "sources", "type": { "type": "array", "items": "source" }},
-    { "name": "previous_sources", "type": { "type": "array", "items": "source" }},
-    { "name": "forced_sources", "type": { "type": "array", "items": "forced_source" }},
-    { "name": "dia_object", "type": ["null", { "type": "array", "items": "dia_object"}]}
+    {
+      "name": "oid",
+      "type": "long"
+    },
+    {
+      "name": "sid",
+      "type": "int"
+    },
+    
+    { "name": "measurement_id", 
+      "type": {
+        "type": "array", 
+        "items": "long"}},
+    {
+      "name": "sources",
+      "type": {
+        "type": "array",
+        "items": "diaSource"
+      }
+    },
+    {
+      "name": "previous_sources",
+      "type": {
+        "type": "array",
+        "items": "diaSource"
+      }
+    },
+    {
+      "name": "ss_sources",
+      "type": {
+        "type": "array",
+        "items": "ssSource"
+      }
+    },
+    {
+      "name": "forced_sources",
+      "type": {
+        "type": "array",
+        "items": "diaForcedSource"
+      }
+    },
+    { 
+      "name": "dia_object", 
+      "type": [
+        "null", { "type": "array", "items": "diaObject"}
+      ]
+    },
+    {
+      "name": "mpc_orbits",
+      "type": {
+        "type": "array",
+        "items": "mpcOrbits"
+      }
+    }
   ]
 }

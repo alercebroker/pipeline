@@ -1,15 +1,14 @@
 import json
 import os
-import pytest
-import unittest
 import random
+import unittest
 
-from sqlalchemy import text
-
-from sql_scribe.step import MongoScribe
-
+import pytest
 from apf.producers.kafka import KafkaProducer
 from db_plugins.db.sql._connection import PsqlDatabase
+from sqlalchemy import text
+
+from sql_scribe.step import SqlScribe
 
 DB_CONFIG = {
     "PSQL": {
@@ -38,9 +37,7 @@ CONSUMER_CONFIG = {
 PRODUCER_CONFIG = {
     "TOPIC": "test_topic_sql",
     "PARAMS": {"bootstrap.servers": "localhost:9092"},
-    "SCHEMA_PATH": os.path.join(
-        os.path.dirname(__file__), "producer_schema.avsc"
-    ),
+    "SCHEMA_PATH": os.path.join(os.path.dirname(__file__), "producer_schema.avsc"),
 }
 
 
@@ -65,7 +62,7 @@ class PsqlIntegrationTest(unittest.TestCase):
                 )
             )
             session.commit()
-        cls.step = MongoScribe(config=step_config, db="sql")
+        cls.step = SqlScribe(config=step_config)
         cls.producer = KafkaProducer(config=PRODUCER_CONFIG)
 
     @classmethod
@@ -125,14 +122,14 @@ class PsqlIntegrationTest(unittest.TestCase):
 
     def test_insert_detections_into_database(self):
         def create_command():
-            oid = f"ZTF{random.randint(1,100)}"
+            oid = f"ZTF{random.randint(1, 100)}"
             candid = random.randint(1, 100)
             return {
                 "collection": "detection",
                 "type": "update",
                 "criteria": {"candid": candid, "oid": oid},
                 "data": {
-                    "aid": f"AL{random.randint(1,100)}",
+                    "aid": f"AL{random.randint(1, 100)}",
                     "corrected": random.choice([True, False]),
                     "dec": random.random(),
                     "dubious": random.choice([True, False]),
@@ -158,9 +155,7 @@ class PsqlIntegrationTest(unittest.TestCase):
                     "mag_corr": random.choice([None, random.random()]),
                     "mjd": random.random(),
                     "oid": oid,
-                    "parent_candid": random.choice(
-                        ["None", random.randint(1, 100)]
-                    ),
+                    "parent_candid": random.choice(["None", random.randint(1, 100)]),
                     "pid": random.randint(1, 100),
                     "ra": random.random(),
                     "sid": "ZTF",
@@ -195,7 +190,6 @@ class PsqlIntegrationTest(unittest.TestCase):
             inserted_candids = set([row[1] for row in result])
             assert oids == inserted_oids
             assert candids == inserted_candids
-
 
     def test_upsert_non_detections(self):
         command = {
@@ -755,12 +749,8 @@ class PsqlIntegrationTest(unittest.TestCase):
             "criteria": {
                 "oid": "oid_test_update",
             },
-            "data": {
-                "g_r_mean_corr": 100,
-                "g_r_max_corr": 100
-            },
+            "data": {"g_r_mean_corr": 100, "g_r_max_corr": 100},
         }
-        
 
         with self.db.session() as session:
             session.execute(
@@ -799,12 +789,9 @@ class PsqlIntegrationTest(unittest.TestCase):
                 "_id": "test_score_oid",
             },
             "data": {
-                'detector_name': "test_detector_name",
-                'detector_version': "test_version",
-                'categories': [
-                    {"name": "test_category_name", "score": "123"}
-                ]
-                
+                "detector_name": "test_detector_name",
+                "detector_version": "test_version",
+                "categories": [{"name": "test_category_name", "score": "123"}],
             },
         }
 

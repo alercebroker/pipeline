@@ -71,7 +71,7 @@ candidate_schema: dict[str, DType] = {
     "ncovhist": pd.Int32Dtype(),
     "jdstarthist": pd.Float64Dtype(),
     "jdendhist": pd.Float64Dtype(),
-    "scorr": pd.Float64Dtype(),
+    "scorr": pd.Float32Dtype(),
     "tooflag": pd.Int32Dtype(),
     "objectidps1": pd.Int64Dtype(),
     "objectidps2": pd.Int64Dtype(),

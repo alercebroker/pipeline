@@ -79,16 +79,18 @@ DType = (
 
 survey_schemas = {
     "lsst": {
-        "dia_forced_source": "../schemas/surveys/lsst_v9.0/lsst.v9_0.diaForcedSource.avsc",
-        "dia_source": "../schemas/surveys/lsst_v9.0/lsst.v9_0.diaSource.avsc",
-        "ss_source": "../schemas/surveys/lsst_v9.0/lsst.v9_0.ssSource.avsc",
-        "dia_object": "../schemas/surveys/lsst_v9.0/lsst.v9_0.diaObject.avsc",
-        "mpcorb": "../schemas/surveys/lsst_v9.0/lsst.v9_0.MPCORB.avsc",
+        "dia_forced_source": "../schemas/surveys/lsst_v10.0/lsst.v10_0.diaForcedSource.avsc",
+        "dia_object": "../schemas/surveys/lsst_v10.0/lsst.v10_0.diaObject.avsc",
+        "dia_source": "../schemas/surveys/lsst_v10.0/lsst.v10_0.diaSource.avsc",
+        "mpc_orbits": "../schemas/surveys/lsst_v10.0/lsst.v10_0.mpc_orbits.avsc",
+        "ss_object": "../schemas/surveys/lsst_v10.0/lsst.v10_0.ssObject.avsc",
+        "ss_source": "../schemas/surveys/lsst_v10.0/lsst.v10_0.ssSource.avsc",
     },
     "ztf": {
-        "candidate": "../schemas/ztf/candidate.avsc",
-        "fp_hist": "../schemas/ztf/fp_hist.avsc",
-        "prv_candidate": "../schemas/ztf/prv_candidate.avsc",
+        "candidate": "../schemas/ingestion_step/ztf/test_no_extra_fields/candidate.avsc",
+        "prv_candidate": "../schemas/ingestion_step/ztf/test_no_extra_fields/prv_candidate.avsc",
+        "forced_photometry": "../schemas/ingestion_step/ztf/test_no_extra_fields/forced_photometry.avsc",
+        "non_detection": "../schemas/ingestion_step/ztf/test_no_extra_fields/non_detection.avsc",
     },
 }
 
@@ -103,3 +105,8 @@ def generate(args: list[str] = sys.argv):
     pd_schemas = {name: process_schema(schema) for name, schema in schemas.items()}
 
     print_schemas(pd_schemas)
+
+
+if __name__ == "__main__":
+    for name in survey_schemas.keys():
+        generate(["", name])

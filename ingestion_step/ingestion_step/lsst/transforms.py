@@ -1,46 +1,49 @@
+from typing import Literal
+
 import pandas as pd
 
 from ingestion_step.core.utils import (
     Transform,
     add_constant_column,
     copy_column,
-    rename_column,
+    deduplicate,
+    drop_na,
 )
 
 DIA_SID = 1
 SS_SID = 2
 TID = 1
 
-band_map = {"u": 0, "g": 1, "r": 2, "i": 3, "z": 4, "y": 5}
+band_map = {"u": 6, "g": 1, "r": 2, "i": 3, "z": 4, "y": 5}
 
 
 def add_oid(df: pd.DataFrame):
-    added_column = False
+    added_tmp_column = False
     if "ssObjectId" not in df.columns:
         df["ssObjectId"] = pd.NA
-        added_column = True
+        added_tmp_column = True
 
     df["oid"] = df["ssObjectId"]
     mask = df["diaObjectId"].notnull() & (df["diaObjectId"] != 0)
     df.loc[mask, "oid"] = df["diaObjectId"]
 
-    if added_column:
+    if added_tmp_column:
         df.drop(columns=["ssObjectId"], inplace=True)
 
 
 def add_sid_to_source(df: pd.DataFrame):
-    added_column = False
+    added_tmp_column = False
     if "ssObjectId" not in df.columns:
         df["ssObjectId"] = pd.NA
 
-        added_column = True
+        added_tmp_column = True
 
     df["sid"] = SS_SID
     if "diaObjectId" in df.columns:
         mask = df["diaObjectId"].notnull() & (df["diaObjectId"] != 0)
         df.loc[mask, "sid"] = DIA_SID
 
-    if added_column:
+    if added_tmp_column:
         df.drop(columns=["ssObjectId"], inplace=True)
 
 
@@ -48,15 +51,6 @@ def band_to_int(df: pd.DataFrame):
     df.rename(columns={"band": "_band"}, inplace=True)
     df["band"] = df["_band"].map(band_map).astype(pd.Int32Dtype())
     df.drop(columns=["_band"], inplace=True)
-
-
-def deduplicate(columns: list[str], sort: str | list[str] | None = None):
-    def _deduplicate(df: pd.DataFrame):
-        if sort is not None:
-            df.sort_values(sort, inplace=True)
-        df.drop_duplicates(subset=columns, keep="first", inplace=True)
-
-    return _deduplicate
 
 
 def get_source_transforms() -> list[Transform]:
@@ -83,9 +77,8 @@ def get_forced_source_transforms() -> list[Transform]:
 
 def get_ss_source_transforms() -> list[Transform]:
     return [
-        copy_column("parentDiaSourceId", "measurement_id"),
-        copy_column("parentDiaSourceId", "diaSourceId"),
-        deduplicate(["measurement_id"], sort="midpointMjdTai"),
+        copy_column("diaSourceId", "measurement_id"),
+        deduplicate(["measurement_id"]),
     ]
 
 
@@ -103,7 +96,24 @@ def get_dia_object_transforms() -> list[Transform]:
     ]
 
 
-def get_mpcorb_transforms() -> list[Transform]:
+def get_mpc_orbits_transforms() -> list[Transform]:
     return [
+        drop_na(["ssObjectId"]),
         deduplicate(["ssObjectId"], sort="midpointMjdTai"),
+        copy_column("midpointMjdTai", "mjd"),
+    ]
+
+
+def get_fake_ss_object_transforms() -> list[Transform]:
+    return [
+        copy_column("ssObjectId", "oid"),
+        add_constant_column("tid", TID, pd.Int32Dtype()),
+        add_constant_column("sid", SS_SID, pd.Int32Dtype()),
+        add_constant_column("n_det", 1, pd.Int32Dtype()),
+        add_constant_column("n_forced", 0, pd.Int32Dtype()),
+        add_constant_column("n_non_det", 0, pd.Int32Dtype()),
+        add_constant_column("meanra", 0, pd.Float64Dtype()),
+        add_constant_column("meandec", 0, pd.Float64Dtype()),
+        copy_column("mjd", "firstmjd"),
+        copy_column("mjd", "lastmjd"),
     ]
