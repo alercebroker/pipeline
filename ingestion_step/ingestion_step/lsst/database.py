@@ -44,9 +44,10 @@ def insert_dia_objects(
                 Object,
                 objects_dict[i : i + chunk_size],
             )
-            objects_dia_lsst_sql_stmt = db_insert_on_conflict_do_nothing_builder(
+            objects_dia_lsst_sql_stmt = db_insert_on_conflict_do_update_builder(
                 LsstDiaObject,
                 objects_dia_lsst_dict[i : i + chunk_size],
+                pk=["oid"],
             )
 
             session.execute(objects_sql_stmt)
