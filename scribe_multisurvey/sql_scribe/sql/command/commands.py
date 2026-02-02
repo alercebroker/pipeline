@@ -534,23 +534,29 @@ class XmatchCommand(Command):
     def _format_data(self, data):
         parsed_xmatch = parse_xmatch(data)
 
-        return {"xmatches": parsed_xmatch}
+        if parsed_xmatch is None:
+            return None
 
+        return {"xmatches": parsed_xmatch}
+    
     @staticmethod
     def db_operation(session: Session, data: List):
         if len(data) > 0:
             dedup_dict = {}
 
             for item in data:
-                xmatch = item["xmatches"]
-                key = (xmatch["oid"], xmatch["sid"], xmatch["catalog_id"])
-                dedup_dict[key] = {
-                    "oid": xmatch["oid"],
-                    "sid": xmatch["sid"],
-                    "catid": xmatch["catalog_id"],
-                    "oid_catalog": xmatch["oid_catalog"],
-                    "dist": xmatch["dist"],
-                }
+                if item is None:
+                    continue
+                else:
+                    xmatch = item["xmatches"]
+                    key = (xmatch["oid"], xmatch["sid"], xmatch["catalog_id"])
+                    dedup_dict[key] = {
+                        "oid": xmatch["oid"],
+                        "sid": xmatch["sid"],
+                        "catid": xmatch["catalog_id"],
+                        "oid_catalog": xmatch["oid_catalog"],
+                        "dist": xmatch["dist"],
+                    }
 
             deduplicated_data = list(dedup_dict.values())
 
