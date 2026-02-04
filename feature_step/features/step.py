@@ -109,7 +109,7 @@ class FeatureStep(GenericStep):
         else:
             self.min_detections_features = int(self.min_detections_features)
 
-    def get_xmatch_info(self, messages: List[dict]) -> Dict[str, Any]:
+    def get_xmatch_info(self, messages: List[dict]) -> List[Dict[str, Any]]:
         """
         Get xmatch information for LSST objects using conesearch.
         
@@ -120,14 +120,16 @@ class FeatureStep(GenericStep):
             
         Returns
         -------
-        Dict[str, Any]
-            Dictionary mapping oid to xmatch results
+        List[Dict[str, Any]]
+            List of xmatch results, each containing oid and match information
         """
         oids = []
         ras = []
         decs = []
         
         for msg in messages:
+            if msg['sid'] == 2:
+                continue  # Saltar sid 2
             oids.append(str(msg["oid"]))
             ras.append(msg["meanra"])
             decs.append(msg["meandec"])
@@ -254,8 +256,16 @@ class FeatureStep(GenericStep):
         # Para LSST: obtener xmatch info para TODOS los mensajes antes de filtrar
         if self.use_xmatch and self.survey == "lsst" and len(messages) > 0:
             xmatch_results = self.get_xmatch_info(messages)
-            # Enviar resultados de xmatch a scribe
-            self.produce_xmatch_to_scribe(xmatch_results, messages)
+            # Crear diccionario de oid -> xmatch para búsqueda rápida
+            xmatch_dict = {str(match['oid']): match for match in xmatch_results}
+            
+            for msg in messages:
+                oid_str = str(msg['oid'])
+                if oid_str in xmatch_dict:
+                    msg['xmatches'] = xmatch_dict[oid_str]
+                else:
+                    msg['xmatches'] = None
+            #self.produce_xmatch_to_scribe(xmatch_results, messages)
 
         filtered_messages = []
         for message in messages:
@@ -312,10 +322,11 @@ class FeatureStep(GenericStep):
 
             if self.survey == "ztf":
                 xmatch_data = message["xmatches"]
-                ao = self.detections_to_astro_object_fn(list(m), xmatch_data,references_db)
+                ao = self.detections_to_astro_object_fn(list(m), xmatch_data, references_db)
             else:
                 forced = message.get("forced_sources", None) #si no hay detections, filtrar forced photometry
-                ao = self.detections_to_astro_object_fn(list(m), forced)
+                xmatch_data = message["xmatches"]
+                ao = self.detections_to_astro_object_fn(list(m), forced, xmatch_data)
             astro_objects.append(ao)
             messages_to_process.append(message)
 
@@ -324,7 +335,7 @@ class FeatureStep(GenericStep):
 
         # Guardar resultados en CSVs por objeto usando función externa
         #batch_folder = save_astro_objects_to_csvs(astro_objects, messages_to_process, base_folder="csvs")
-        self.produce_to_scribe(astro_objects)
+        #self.produce_to_scribe(astro_objects)
         output = self.parse_output_fn(astro_objects, messages_to_process, candids)
         return output
 

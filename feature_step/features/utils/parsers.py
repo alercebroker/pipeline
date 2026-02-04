@@ -105,11 +105,21 @@ def detections_to_astro_object_lsst(
     aid_forced = a[a["forced"]]
     aid_detections = a[~a["forced"]]
 
+    w1 = w2 = w3 = w4 = np.nan
+    if xmatches is not None:
+        w1 = xmatches['metadata']["w1mpro"]['Float64']
+        w2 = xmatches['metadata']["w2mpro"]['Float64']
+        w3 = xmatches['metadata']["w3mpro"]['Float64']
+        w4 = xmatches['metadata']["w4mpro"]['Float64']
+
 
     metadata = pd.DataFrame(
-        [
-            ["aid", "aid"], #placeholder
+        [   ["aid","aid"],
             ["oid", oid],
+            ["W1", w1],
+            ["W2", w2],
+            ["W3", w3],
+            ["W4", w4],
         ],
         columns=["name", "value"],)
     
