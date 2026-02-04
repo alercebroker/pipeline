@@ -18,6 +18,8 @@ from ..extractors.sn_extractor import SNExtractor
 from ..extractors.ulens_extractor import MicroLensExtractor
 from ..extractors.tde_extractor import FleetExtractor
 from ..extractors.tde_extractor import ColorVariationExtractor
+from ..extractors.allwise_colors_feature_extractor import AllwiseColorsFeatureExtractor
+
 
 
 
@@ -67,5 +69,7 @@ class LSSTFeatureExtractor(FeatureExtractorComposite):
 
             SNExtractor(bands, unit="diff_flux", use_forced_photo=True), #esto es photometria forzada
             MicroLensExtractor(bands), #calcula, cambie treshold en e_brightness
+            AllwiseColorsFeatureExtractor(['g','r']),
+
         ]
         return feature_extractors

@@ -168,7 +168,6 @@ class FeatureStep(GenericStep):
         # Procesar cada resultado de xmatch
         flush = False
         for idx, match in enumerate(xmatch_results):
-            #print('xmatch:', match)
             oid = str(match["oid"])
             sid = oid_to_sid.get(oid, 1)  # Usar sid del mensaje o valor por defecto
             
@@ -265,7 +264,7 @@ class FeatureStep(GenericStep):
                     msg['xmatches'] = xmatch_dict[oid_str]
                 else:
                     msg['xmatches'] = None
-            #self.produce_xmatch_to_scribe(xmatch_results, messages)
+            self.produce_xmatch_to_scribe(xmatch_results, messages)
 
         filtered_messages = []
         for message in messages:
@@ -333,9 +332,7 @@ class FeatureStep(GenericStep):
         self.lightcurve_preprocessor.preprocess_batch(astro_objects)
         self.feature_extractor.compute_features_batch(astro_objects, progress_bar=False)
 
-        # Guardar resultados en CSVs por objeto usando función externa
-        #batch_folder = save_astro_objects_to_csvs(astro_objects, messages_to_process, base_folder="csvs")
-        #self.produce_to_scribe(astro_objects)
+        self.produce_to_scribe(astro_objects)
         output = self.parse_output_fn(astro_objects, messages_to_process, candids)
         return output
 

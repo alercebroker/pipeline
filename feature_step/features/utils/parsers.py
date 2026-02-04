@@ -409,6 +409,8 @@ def prepare_ao_features_for_db_lsst(astro_object: AstroObject, feature_name_lut)
     # Use the provided feature_name_lut to map feature names to IDs
     # Create reverse mapping: name -> id
     name_to_id = {name: feature_id for feature_id, name in feature_name_lut.items()}
+    #unique_feature_names = ao_features["name"].unique()
+    #name_to_id = {name: idx for idx, name in enumerate(unique_feature_names)}
     
     # Map feature names to their IDs using the lookup table
     ao_features["feature_id"] = ao_features["name"].map(name_to_id)
@@ -621,14 +623,10 @@ def parse_output_lsst(
         features_for_oid = dict(
             zip(feature_names, ao_features["value"].astype(float))
         )
-        #print(features_for_oid)
         for key in list(features_for_oid.keys()):
             val = features_for_oid[key]
             features_for_oid[key] = None if (val is None or (isinstance(val, float) and np.isnan(val))) else val
 
-        #esto lo voy a hacer distinto.
-        #mantener schema original de sources
-        #eso es sources, previous_sources, photometry forzada, replicar lo del message.
         out_message = {
             "oid": oid,
             "measurement_id": measurement_id,
