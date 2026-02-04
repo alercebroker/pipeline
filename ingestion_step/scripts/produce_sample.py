@@ -24,17 +24,6 @@ PRODUCE_SAMPLE_CONFIG: dict[str, Any] = config_from_yaml_file(
     )
 )
 
-def lsst_partition(msg: dict[str, Any]) -> str:
-    diaObjectId = msg["diaSource"]["diaObjectId"]
-    ssObjectId = msg["diaSource"]["ssObjectId"]
-
-    key = ssObjectId
-    if key == 0 or key is None:
-        key = diaObjectId
-
-    return str(key)
-
-
 rng = Random(42)
 generator_lsst = LsstAlertGenerator(rng=rng, new_obj_rate=0.1)
 GENERATORS = {"lsst": generator_lsst, "ztf": generate_alerts_ztf}
@@ -76,12 +65,7 @@ def produce():
     generator = GENERATORS[survey]
     producer = SampleProducer(PRODUCE_SAMPLE_CONFIG["PRODUCER_CONFIG"])
     alerts = [generator.generate_alert() for _ in range(n_messages)]
-    objectstats = generator.get_all_objstats_dicts()
-    path_parquet = PRODUCE_SAMPLE_CONFIG.get(
-        "PARQUET_PATH_OBJSTATS", "objstats.parquet"
-    )
-    dataframe_objectstats = pd.DataFrame(objectstats)
-    dataframe_objectstats.to_parquet(path_parquet, index=False)
+
     batch_size = PRODUCE_SAMPLE_CONFIG.get("BATCH_SIZE", 100)
     for i in range(0, len(alerts), batch_size):
         batch = alerts[i : i + batch_size]

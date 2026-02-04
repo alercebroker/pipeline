@@ -1,0 +1,302 @@
+from typing import List, Dict
+from .input_message_parsing import InputMessageParsingStrategy
+import pandas as pd
+from core.schemas import schema_applier
+import logging
+
+
+class LSSTInputMessageParser(InputMessageParsingStrategy):
+    """
+    Parser for LSST survey input messages.
+    
+    Key LSST-specific characteristics:
+    - Separates current sources from previous_sources explicitly
+    - Includes forced_sources for photometry at known positions  
+    - Provides non_detections for upper limit constraints
+    - Contains survey-specific objects: ss_object (solar system) and dia_object (difference imaging)
+    - Uses specific field names like "measurement_id", "oid", etc.
+    
+    The parser normalizes LSST's structure into the standard format expected
+    by the rest of the correction pipeline, applying schemas to preserve precision.
+    """
+    
+    def parse_input_messages(self, messages: List[dict]) -> Dict[str, any]:
+        """
+        Parse LSST-specific input messages into standardized pandas DataFrames with proper schemas.
+        
+        This method combines message parsing with schema application to ensure data precision
+        is preserved. It returns ready-to-use pandas DataFrames instead of raw dictionaries.
+        
+        Args:
+            messages (List[dict]): Raw LSST messages with complete structure
+        
+        Returns:
+            Dict[str, any]: Parsed data with pandas DataFrames:
+                - 'msg_data': DataFrame with basic message metadata
+                - 'sources_df': DataFrame with current detections  
+                - 'previous_sources_df': DataFrame with historical detections
+                - 'forced_sources_df': DataFrame with forced photometry
+                - 'non_detections_df': DataFrame with ndets
+                - 'ss_sources_df': DataFrame with solar system sources
+                - 'ss_objects_df': DataFrame with solar system objects
+                - 'dia_objects_df': DataFrame with DIA objects
+                - 'mpc_orbits_df': DataFrame with MPC orbits
+                - 'oids': Set of unique object IDs
+                - 'measurement_ids': Dict mapping oids to measurement_id lists
+        """
+        logger = logging.getLogger(f"alerce.{self.__class__.__name__}")
+
+        # Get raw parsed data first
+        raw_data = self._parse_raw_messages(messages)
+        
+        # Get schemas
+        schemas = self.get_input_schema_config()
+        
+        # Apply schemas to create proper DataFrames
+        msg_df = pd.DataFrame(raw_data['msg_data'])
+        
+        # Apply schemas to each data type, handling empty cases
+        sources_sids_df = self._apply_schema_or_empty(
+            raw_data['sources'], 
+            schemas['sources_schema']
+        )
+
+        # Split sources_sids_df into sources_df and ss_sources_df  according to sid
+        split_sources_groups = dict(tuple(sources_sids_df.groupby("sid")))
+
+        # Sources df are the alerts with sid=1
+        sources_df = split_sources_groups.get(1, pd.DataFrame()).copy()
+
+        # ss_sources_df are going to be the join of the alerts with sid=2 and the data from ss_sources
+        ss_sources_alert_data_df = split_sources_groups.get(2, pd.DataFrame()).copy()
+
+        oid_to_sids = (sources_sids_df.groupby('oid')['sid']
+               .unique()  # Get unique sids only (in the batch we might have multiple entries per oid with same sid. we only want to know which sids are present)
+               .apply(lambda x: x.tolist())  
+               .to_dict())
+
+        previous_sources_df = self._apply_schema_or_empty(
+            raw_data['previous_sources'], 
+            schemas['previous_sources_schema']
+        )
+        
+        forced_sources_df = self._apply_schema_or_empty(
+            raw_data['forced_sources'], 
+            schemas['forced_sources_schema']
+        )
+        
+        dia_objects_df = self._apply_schema_or_empty(
+            raw_data['dia_objects'], 
+            schemas['dia_objects']
+        )
+        
+        ss_sources_df = self._apply_schema_or_empty(
+            raw_data['ss_sources'], 
+            schemas['ss_sources_schema']
+        )
+        
+        # When there are ss_sources, join with sources on measurement_id to get full info
+        if not ss_sources_df.empty:    
+            ss_sources_df = ss_sources_df.merge(
+                ss_sources_alert_data_df.drop(columns=["new"], errors="ignore"),
+                on=["measurement_id", "ssObjectId"],
+                how="left")
+            
+        # Patch fix: handle ss sources without detailed ss data
+        elif not ss_sources_alert_data_df.empty:
+            ss_sources_df = ss_sources_alert_data_df.copy()
+
+        # Ensure all SS-specific columns exist and fill NaN values appropriately
+        if not ss_sources_df.empty:
+            ss_specific_columns = [
+                "designation", "eclLambda", "eclBeta", "galLon", "galLat",
+                "elongation", "phaseAngle", "topoRange", "topoRangeRate",
+                "helioRange", "helioRangeRate", "ephRa", "ephDec", "ephVmag",
+                "ephRate", "ephRateRa", "ephRateDec", "ephOffset", "ephOffsetRa",
+                "ephOffsetDec", "ephOffsetAlongTrack", "ephOffsetCrossTrack",
+                "helio_x", "helio_y", "helio_z", "helio_vx", "helio_vy", "helio_vz",
+                "helio_vtot", "topo_x", "topo_y", "topo_z", "topo_vx", "topo_vy",
+                "topo_vz", "topo_vtot", "diaDistanceRank"
+            ]
+            
+            for col in ss_specific_columns:
+                # If it doesnt exist add columns for missing ss source columns
+                if col not in ss_sources_df.columns:
+                    if col == "designation":
+                        ss_sources_df[col] = '0'
+                    else:
+                        ss_sources_df[col] = 0
+                else:
+                    # Column exists, but fill NaN values with appropriate default (due to mixed case)
+                    if col == "designation":
+                        ss_sources_df[col] = ss_sources_df[col].fillna('0')
+                    else:
+                        ss_sources_df[col] = ss_sources_df[col].fillna(0)
+        
+        # When there's mpc orbits, make a separate df for them
+        mpc_orbits_df = self._apply_schema_or_empty(
+            raw_data['mpc_orbit'], 
+            schemas['mpc_orbits_schema']
+        )
+
+        """
+        # Omitting non-detections and ssobject for now in schema v10.0
+        ss_objects_df = self._apply_schema_or_empty(
+            raw_data['ss_objects'], 
+            schemas['ss_objects']
+        )
+
+        
+        non_detections_df = self._apply_schema_or_empty(
+            raw_data['non_detections'], 
+            schemas['non_detections_schema']
+        )
+        """
+        
+        oids = set(msg_df["oid"])
+   
+        log_output = {
+                'counts': {
+                    'Current Sources': len(sources_df),
+                    'Previous Sources': len(previous_sources_df),
+                    'Forced Sources': len(forced_sources_df),
+                    'DIA Objects': len(dia_objects_df),
+                    'SS Sources': len(ss_sources_df),
+                    'MPC Orbits': len(mpc_orbits_df)}
+                    #'SS Objects': len(ss_objects_df)
+                    #'Non-Detections': len(non_detections_df), # Omitting in schema v10.0
+
+                }
+
+        for data_type, count in log_output['counts'].items():
+            logger.info(f"Received {count} {data_type}")
+
+        parsed_input = {
+            'data': {
+                'msg_data': msg_df,
+                'sources_df': sources_df,
+                'previous_sources_df': previous_sources_df,
+                'forced_sources_df': forced_sources_df, 
+                'dia_objects_df': dia_objects_df,
+                'ss_sources_df': ss_sources_df,
+                'mpc_orbits_df': mpc_orbits_df,
+                #'ss_objects_df': ss_objects_df,
+                #'non_detections_df': non_detections_df, # Omitting in schema v10.0
+            },
+            'oids': list(oids),
+            }
+
+        return parsed_input, oid_to_sids
+    
+    def _parse_raw_messages(self, messages: List[dict]) -> Dict[str, any]:
+        """Extract raw data from messages without schema application."""
+        # Initialize collectors for different data types
+        all_sources = []           
+        all_previous_sources = []  
+        all_forced_sources = []    
+        all_dia_objects = []     
+        all_ss_sources = []
+        all_mpc_orbits = []
+        #all_ss_objects = []       # Ommiting in schema v10.0
+        #all_non_detections = []   # Ommiting in schema v10.0       
+        msg_data = []              
+        
+        for msg in messages:  
+
+            # Extract basic message identifiers
+            oid = msg["oid"]                    
+            measurement_id = msg["measurement_id"] 
+            msg_data.append({"oid": oid, "measurement_id": measurement_id})
+            
+            # Parse previous sources
+            for prev_source in msg["previous_sources"]:
+                parsed_prv_source = {"new": True, "has_stamp": False,**prev_source}
+                all_previous_sources.append(parsed_prv_source)
+
+
+            # Parse forced sources
+            for f_source in msg["forced_sources"]:
+                parsed_forced_source = {"new": True, **f_source}
+                all_forced_sources.append(parsed_forced_source)
+            
+
+            # Parse ss sources
+            if msg["ss_source"] is not None:
+                parsed_ss_source = {"new": True, **msg["ss_source"]}
+                all_ss_sources.append(parsed_ss_source)
+
+            # Parse dia object
+            dia_object = msg.get("dia_object")
+            if dia_object is not None:
+                all_dia_objects.append({**dia_object})
+
+            # Parse mpc_orbits
+            mpc_orbits = msg.get("mpc_orbit")
+            if mpc_orbits is not None:
+                all_mpc_orbits.append({
+                    "oid": oid,
+                    **mpc_orbits
+                })
+                
+            """
+            # Ommiting in schema v10.0
+            # Parse ss objects
+            ss_object = msg["ss_object"]
+            if ss_object is not None:
+                all_ss_objects.append({**ss_object})
+            
+            
+            # Parse non-detections
+            for non_detection in msg["non_detections"]:
+                parsed_non_detection = {**non_detection}
+                all_non_detections.append(parsed_non_detection)
+            """
+
+            # Parse main source
+            source = msg["source"]
+            parsed_source = {"new": True, "has_stamp": True, **source}
+            all_sources.append(parsed_source)
+        
+        return {
+            'msg_data': msg_data,
+            'sources': all_sources,
+            'previous_sources': all_previous_sources,
+            'forced_sources': all_forced_sources,
+            'ss_sources': all_ss_sources,
+            'dia_objects': all_dia_objects,
+            'mpc_orbit': all_mpc_orbits
+            #'ss_objects': all_ss_objects,          # Ommiting in schema v10.0  
+            #'non_detections': all_non_detections,  # Ommiting in schema v10.0
+        }
+    
+    def _apply_schema_or_empty(self, data: List[dict], schema: Dict) -> pd.DataFrame:
+        """Apply schema to data or return empty DataFrame with correct columns."""
+        if data:
+            return schema_applier.apply_schema(data, schema)
+        else:
+            return pd.DataFrame(columns=list(schema.keys()))
+    
+    def get_input_schema_config(self) -> Dict[str, any]:
+        """Return LSST-specific pandas schema configuration for precise data handling."""
+        from core.schemas.LSST.LSST_schemas import (
+            dia_forced_source_schema,         
+            dia_source_schema,
+            ss_source_schema,                  
+            dia_object_schema,
+            mpc_orbits_schema,       
+            #ss_object_schema,                 # Omitting in schema v10.0
+            #dia_non_detection_limit_schema,   # Omitting non-detections in schema v10.0
+      
+        )
+        
+        return {
+            'sources_schema': dia_source_schema,
+            'previous_sources_schema': dia_source_schema,
+            'forced_sources_schema': dia_forced_source_schema,
+            'ss_sources_schema': ss_source_schema,
+            'dia_objects': dia_object_schema,
+            'mpc_orbits_schema': mpc_orbits_schema
+            #'ss_objects_schema': ss_object_schema,             # Omitting in schema v10.0 
+            #'non_detections_schema': dia_non_detection_limit_schema,   # Omitting in schema v10.0
+            
+        }

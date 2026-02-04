@@ -4,8 +4,6 @@ import os
 import psycopg2
 import pytest
 from confluent_kafka.admin import AdminClient, NewTopic
-from pymongo import MongoClient
-from pymongo.errors import ConnectionFailure
 
 
 @pytest.fixture(scope="session")
@@ -14,30 +12,11 @@ def docker_compose_file(pytestconfig):
         str(pytestconfig.rootdir), "tests/integration", "docker-compose.yml"
     )
 
+
 @pytest.fixture(scope="session")
 def docker_compose_command():
     version = os.getenv("COMPOSE", "v2")
     return "docker compose" if version == "v2" else "docker-compose"
-
-
-def is_mongo_responsive(ip, port):
-    client = MongoClient(f"mongodb://{ip}:{port}")
-    try:
-        client.admin.command("ismaster")
-        return True
-    except ConnectionFailure:
-        return False
-
-
-@pytest.fixture(scope="session")
-def mongo_service(docker_ip, docker_services):
-    port = docker_services.port_for("mongodb", 27017)
-    docker_services.wait_until_responsive(
-        timeout=90.0,
-        pause=0.1,
-        check=lambda: is_mongo_responsive(docker_ip, port),
-    )
-    return (docker_ip, port)
 
 
 def is_psql_responsive(ip, port):

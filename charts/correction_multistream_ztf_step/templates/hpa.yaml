@@ -2,15 +2,15 @@
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: {{ include "correction-multistream-ztf-step.fullname" . }}
+  name: {{ include "correction-multisurvey-ztf-step.fullname" . }}
   namespace: {{ .Values.namespace }}
   labels:
-    {{- include "correction-multistream-ztf-step.labels" . | nindent 4 }}
+    {{- include "correction-multisurvey-ztf-step.labels" . | nindent 4 }}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: {{ include "correction-multistream-ztf-step.fullname" . }}
+    name: {{ include "correction-multisurvey-ztf-step.fullname" . }}
   minReplicas: {{ .Values.autoscaling.minReplicas }}
   maxReplicas: {{ .Values.autoscaling.maxReplicas }}
   metrics:
@@ -38,7 +38,7 @@ spec:
         describedObject:
           apiVersion: apps/v1
           kind: Deployment
-          name: {{ include "correction-multistream-ztf-step.fullname" . }}
+          name: {{ include "correction-multisurvey-ztf-step.fullname" . }}
         target:
           type: AverageValue
           averageValue: {{ .Values.autoscaling.targetConsumedMessages  }}

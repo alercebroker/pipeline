@@ -151,10 +151,11 @@ terraform.tfvars
 */.build_state.json
 */.deploy_state.json
 
+**/create_db.py
+
 **/flake.nix
 **/flake.lock
 **/.envrc
 **/.direnv/
 **/nix/
-
 **/config.yaml
