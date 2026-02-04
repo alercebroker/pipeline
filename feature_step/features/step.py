@@ -324,7 +324,7 @@ class FeatureStep(GenericStep):
                 ao = self.detections_to_astro_object_fn(list(m), xmatch_data, references_db)
             else:
                 forced = message.get("forced_sources", None) #si no hay detections, filtrar forced photometry
-                xmatch_data = message["xmatches"]
+                xmatch_data = message.get("xmatches", None)
                 ao = self.detections_to_astro_object_fn(list(m), forced, xmatch_data)
             astro_objects.append(ao)
             messages_to_process.append(message)
