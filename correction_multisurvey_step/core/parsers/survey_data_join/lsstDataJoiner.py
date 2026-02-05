@@ -169,6 +169,7 @@ class LSSTDataJoiner(SurveyDataJoiner):
 
         result["dia_object"] = combined_data.get("dia_object", pd.DataFrame())
         # result['ss_object'] = combined_data.get('ss_object', pd.DataFrame())
+        logger = logging.getLogger(f"alerce.{self.__class__.__name__}")
 
         if not result['sources'].empty:
             logger.info(f"Obtained {len(result['sources'][result['sources']['new']])} new dia sources")

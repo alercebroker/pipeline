@@ -394,6 +394,11 @@ def parse_ztf_magstats(sub_magstats: dict, oid: str, sid: int):
 
 
 def parse_xmatch(sub_xmatch: dict):
+    
+    # omit sid = 2
+    if sub_xmatch["sid"] == 2:
+        return None
+    
     catalog = sub_xmatch["catalog"]
     if catalog == "allwise":
         cat_id = 0

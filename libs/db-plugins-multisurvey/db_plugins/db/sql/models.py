@@ -1054,12 +1054,12 @@ class Xmatch(Base):
 
 class CatalogIdLut(Base):
     __tablename__ = "catalog_id_lut"
-    catalog_id = Column(SmallInteger, autoincrement=True)
+    catid = Column(SmallInteger, autoincrement=True)
     catalog_name = Column(VARCHAR)
     created_date = Column(Date, server_default=func.now())
 
     __table_args__ = (
-        PrimaryKeyConstraint("catalog_id", name="pk_catalog_id_lut_catalog_name"),
+        PrimaryKeyConstraint("catid", name="pk_catalog_id_lut_catalog_name"),
     )
 
 
