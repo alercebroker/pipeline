@@ -5,7 +5,7 @@ from apf.core.step import GenericStep
 import logging
 import numexpr
 from .utils.tools import extract_image_from_fits
-from .db.db import PSQLConnection, store_probability
+from .db.db import PSQLConnection, store_probability, get_taxonomy_by_classifier_id
 from alerce_classifiers.base.dto import OutputDTO, InputDTO
 from alerce_classifiers.base._types import (
     Detections,
@@ -17,12 +17,6 @@ from alerce_classifiers.base._types import (
 from alerce_classifiers.rubin import StampClassifierModel
 import pandas as pd
 
-
-# Dummy function to convert classifier name to ID
-# In a real implementation, this would query a database or a configuration file.
-# TODO: Replace with actual implementation
-def classifier_name_to_id(classifier_name: str) -> int:
-    return 0
 
 
 class StampClassifierStep(GenericStep):
@@ -38,7 +32,16 @@ class StampClassifierStep(GenericStep):
         )
         self.dict_mapping_classes = self.model.dict_mapping_classes
         self.psql_connection = PSQLConnection(config["DB_CONFIG"])
+        if "CLS_ID" not in config["MODEL_CONFIG"]:
+            self.classifier_id = 0
+        else:
+            self.classifier_id = config["MODEL_CONFIG"]["CLS_ID"]
 
+        #aqui deberiamos obtener la taxonomia usando el classifier id
+        #deberia haber una funcion en db.py con arg self.classifier_id
+
+        self.class_taxonomy = get_taxonomy_by_classifier_id(self.classifier_id, self.psql_connection)
+        logging.info(f"Class taxonomy: {self.class_taxonomy}")
     def pre_execute(self, messages: List[dict]) -> List[dict]:
         # Preprocessing: parsing, formatting and validation.
 
@@ -202,8 +205,7 @@ class StampClassifierStep(GenericStep):
                                   'SN': 0.0, 
                                   'VS': 0.0, 
                                   'asteroid': 1.0, 
-                                  'bogus': 0.0,
-                                  'satellite': 0.0},  # All probability to asteroid class
+                                  'bogus': 0.0,},  # All probability to asteroid class
                 "midpointMjdTai": message["midpointMjdTai"],
                 "ra": message["ra"],
                 "dec": message["dec"],
@@ -217,8 +219,9 @@ class StampClassifierStep(GenericStep):
         # Write probabilities in the database
         store_probability(
             self.psql_connection,
-            classifier_id=classifier_name_to_id("rubin_stamp_classifier"),
+            classifier_id=self.classifier_id,
             classifier_version=self.model.model_version,
+            class_taxonomy = self.class_taxonomy,
             predictions=messages,
         )
         return messages

@@ -4,6 +4,7 @@ from contextlib import contextmanager
 from typing import Callable, ContextManager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy import text
 import logging
 
 
@@ -39,13 +40,14 @@ def store_probability(
     psql_connection: PSQLConnection,
     classifier_id: int,
     classifier_version: str,
+    class_taxonomy: dict[str, int],
     predictions: list[dict],
 ) -> None:
     if len(predictions) == 0:
         return
 
     with psql_connection.session() as session:
-        data = _format_data(classifier_id, classifier_version, predictions)
+        data = _format_data(classifier_id, classifier_version, class_taxonomy, predictions)
 
         insert_stmt = insert(Probability)
         insert_stmt = insert_stmt.on_conflict_do_nothing()
@@ -55,7 +57,7 @@ def store_probability(
 
 
 def _format_data(
-    classifier_id: int, classifier_version: str, predictions: list[dict]
+    classifier_id: int, classifier_version: str, class_taxonomy: dict[str, int], predictions: list[dict]
 ) -> list[dict]:
     logging.warning("No clue what LSST's sid is, setting to 0")
     formated_probabilities = []
@@ -79,7 +81,7 @@ def _format_data(
                     "classifier_version": classifier_version_str_to_small_integer(
                         classifier_version
                     ),
-                    "class_id": class_name_to_id(class_name),
+                    "class_id": class_name_to_id(class_name, class_taxonomy),
                     "probability": probability,
                     "ranking": i + 1,
                     "lastmjd": alert_mjd,  # taking midpointMjdTai from current diasource as lastmjd
@@ -104,21 +106,52 @@ CLASS_DICT = {"SN":0, "AGN":1,"VS":2, "asteroid":3, "bogus":4, "satellite":5}
 # CLASS_DICT = {"SN":0, "AGN":1, "VS":2, "asteroid":3, "bogus":4}
 # Hay que agregar las multisuvery credentials a la config env
 
-def class_name_to_id(class_name: str) -> int:
+def class_name_to_id(class_name: str, class_taxonomy: dict[str, int]) -> int:
     """
     Convert a class name to an integer ID.
     This is a placeholder function and should be replaced with actual logic.
     """
 
-    class_dict = CLASS_DICT#{name: idx for idx, name in enumerate(CLASS_LIST)}
+    class_dict = class_taxonomy
     return class_dict.get(class_name, -1)  # Return -1 if class_name not found
 
 
 # TODO: The following function is a placeholder and should be replaced with the actual implementation
-def class_id_to_name(class_id: int) -> str:
+def class_id_to_name(class_id: int, class_taxonomy: dict[str, int]) -> str:
     """
     Convert a class ID to a class name.
     This is a placeholder function and should be replaced with actual logic.
     """
-    class_dict = {idx: name for name, idx in CLASS_DICT.items()}
-    return class_dict.get(class_id, "unknown")  # Return "unknown" if class_id not found
+    class_dict = {idx: name for name, idx in class_taxonomy.items()}
+    return class_dict.get(class_id, "unknown")
+
+
+def get_taxonomy_by_classifier_id(classifier_id: int, psql_connection: PSQLConnection) -> dict[str, int]:
+    """Fetch taxonomy from DB for a given classifier and return {class_name: class_id}.
+
+    Expects a table with columns: class_id, class_name, "order", classifier_id, created_date
+    available under the configured schema.
+    """
+    mapping: dict[str, int] = {}
+    try:
+        with psql_connection.session() as session:
+            query = text(
+                """
+                SELECT class_id, class_name
+                FROM taxonomy
+                WHERE classifier_id = :classifier_id
+                ORDER BY "order" ASC
+                """
+            )
+            result = session.execute(query, {"classifier_id": classifier_id})
+            rows = result.mappings().all()
+            if rows:
+                mapping = {row["class_name"]: int(row["class_id"]) for row in rows}
+            else:
+                logging.warning(
+                    f"No taxonomy rows found for classifier_id={classifier_id}."
+                )
+    except Exception as e:
+        logging.error(f"Error fetching taxonomy for classifier_id={classifier_id}: {e}")
+    
+    return mapping

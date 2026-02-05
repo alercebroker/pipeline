@@ -160,10 +160,10 @@ class TestRubinStampClassifierStep(unittest.TestCase):
             # Check if the stored probabilities match the result
             for probability in db_result:
                 self.assertIn(
-                    class_id_to_name(probability.class_id), result["probabilities"]
+                    class_id_to_name(probability.class_id, self.step.class_taxonomy), result["probabilities"]
                 )
                 self.assertAlmostEqual(
                     probability.probability,
-                    result["probabilities"][class_id_to_name(probability.class_id)],
+                    result["probabilities"][class_id_to_name(probability.class_id, self.step.class_taxonomy)],
                     places=5,
                 )
