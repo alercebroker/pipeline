@@ -2,9 +2,10 @@ import logging
 from contextlib import contextmanager
 
 from sqlalchemy import create_engine, text
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session, sessionmaker
 
-from .models import Base
+from .models import Band, Base, CatalogIdLut, Classifier, FeatureNameLut, Taxonomy
 
 
 def get_db_url(config: dict):
@@ -36,245 +37,257 @@ class PsqlDatabase:
         tables = Base.metadata.tables
 
         # Create all tables EXCEPT feature
-        tables_to_create = [
-            table for table in Base.metadata.tables.values() if table.name != "feature"
-        ]
-        Base.metadata.create_all(self._engine, tables=tables_to_create)
-       
-       # If feature exists in models -> create with SQL partitions
-        if "feature" in tables:
-            self._create_feature_table()
-            self.create_feature_partitions()
-        
+        Base.metadata.create_all(self._engine, tables=tables.values())
+
+        with self._engine.connect() as conn:
+            for mapper in Base.registry.mappers:
+                table_class = mapper.class_
+                if table_class.__n_partitions__ is not None:
+                    table_class.__create_partitions__(conn, self.schema)
+
         # Insert static data
         self.insert_initial_data()
 
-    def _create_feature_table(self):
-        with self._engine.connect() as conn:
-            schema_prefix = f"{self.schema}." if self.schema else ""
-            conn.execute(text(f"DROP TABLE IF EXISTS {schema_prefix}feature CASCADE"))
-
-            conn.execute(
-                text(f"""
-                CREATE TABLE {schema_prefix}feature (
-                    oid bigint NOT NULL,
-                    sid smallint NOT NULL,
-                    feature_id smallint NOT NULL,
-                    band smallint NOT NULL,
-                    version smallint NOT NULL,
-                    value double precision,
-                    updated_date date
-                ) PARTITION BY HASH (oid)
-            """)
-            )
-
-            conn.execute(
-                text(f"CREATE INDEX ON {schema_prefix}feature USING btree (oid)")
-            )
-
-            conn.commit()
-
-    def create_feature_partitions(self):
-        """Create the 10 partitions for feature table"""
-        with self._engine.connect() as conn:
-            schema_prefix = f"{self.schema}." if self.schema else ""
-
-            for i in range(10):
-                conn.execute(
-                    text(f"""
-                    CREATE TABLE IF NOT EXISTS {schema_prefix}feature_part_{i} 
-                    PARTITION OF {schema_prefix}feature 
-                    FOR VALUES WITH (MODULUS 10, REMAINDER {i})
-                """)
-                )
-
-            conn.commit()
-
     def insert_initial_data(self):
-        schema = f"{self.schema}." if self.schema else ""
         model_tables = Base.metadata.tables
 
         with self._engine.connect() as conn:
-
             # ---------- classifier ----------
             if "classifier" in model_tables:
-                conn.execute(text(f"""
-                    INSERT INTO {schema}classifier
-                    (classifier_id, classifier_name, classifier_version, tid, created_date)
-                    VALUES (1, 'stamp_classifier_rubin', '2.0.1', 1, now())
-                    ON CONFLICT DO NOTHING
-                """))
+                stmt = (
+                    insert(Classifier)
+                    .values(
+                        {
+                            "classifier_id": 1,
+                            "classifier_name": "stamp_classifier_rubin",
+                            "classifier_version": "2.0.1",
+                            "tid": 1,
+                        }
+                    )
+                    .on_conflict_do_nothing(index_elements=["classifier_id"])
+                )
+                conn.execute(stmt)
 
             # ---------- feature_name_lut ----------
             if "feature_name_lut" in model_tables:
-                    conn.execute(text(f"""
-                    INSERT INTO {schema}feature_name_lut (feature_name)
-                    VALUES
-                        ('Amplitude'),
-                        ('AndersonDarling'),
-                        ('Autocor_length'),
-                        ('Beyond1Std'),
-                        ('Con'),
-                        ('Coordinate_x'),
-                        ('Coordinate_y'),
-                        ('Coordinate_z'),
-                        ('Eta_e'),
-                        ('ExcessVar'),
-                        ('GP_DRW_sigma'),
-                        ('GP_DRW_tau'),
-                        ('Gskew'),
-                        ('Harmonics_chi'),
-                        ('Harmonics_mag_1'),
-                        ('Harmonics_mag_2'),
-                        ('Harmonics_mag_3'),
-                        ('Harmonics_mag_4'),
-                        ('Harmonics_mag_5'),
-                        ('Harmonics_mag_6'),
-                        ('Harmonics_mag_7'),
-                        ('Harmonics_mse'),
-                        ('Harmonics_phase_2'),
-                        ('Harmonics_phase_3'),
-                        ('Harmonics_phase_4'),
-                        ('Harmonics_phase_5'),
-                        ('Harmonics_phase_6'),
-                        ('Harmonics_phase_7'),
-                        ('IAR_phi'),
-                        ('LinearTrend'),
-                        ('MHPS_PN_flag'),
-                        ('MHPS_high'),
-                        ('MHPS_high_30'),
-                        ('MHPS_low'),
-                        ('MHPS_low_365'),
-                        ('MHPS_non_zero'),
-                        ('MHPS_ratio'),
-                        ('MHPS_ratio_365_30'),
-                        ('MaxSlope'),
-                        ('Mean'),
-                        ('Meanvariance'),
-                        ('MedianAbsDev'),
-                        ('MedianBRP'),
-                        ('Multiband_period'),
-                        ('PPE'),
-                        ('PairSlopeTrend'),
-                        ('PercentAmplitude'),
-                        ('Period_band'),
-                        ('Power_rate_1/2'),
-                        ('Power_rate_1/3'),
-                        ('Power_rate_1/4'),
-                        ('Power_rate_2'),
-                        ('Power_rate_3'),
-                        ('Power_rate_4'),
-                        ('Psi_CS'),
-                        ('Psi_eta'),
-                        ('Pvar'),
-                        ('Q31'),
-                        ('Rcs'),
-                        ('SF_ML_amplitude'),
-                        ('SF_ML_gamma'),
-                        ('SPM_A'),
-                        ('SPM_beta'),
-                        ('SPM_chi'),
-                        ('SPM_gamma'),
-                        ('SPM_t0'),
-                        ('SPM_tau_fall'),
-                        ('SPM_tau_rise'),
-                        ('Skew'),
-                        ('SmallKurtosis'),
-                        ('Std'),
-                        ('StetsonK'),
-                        ('TDE_decay'),
-                        ('TDE_decay_chi'),
-                        ('TDE_mag0'),
-                        ('Timespan'),
-                        ('color_variation'),
-                        ('dbrightness_first_det_band'),
-                        ('dbrightness_forced_phot_band'),
-                        ('delta_period'),
-                        ('fleet_a'),
-                        ('fleet_chi'),
-                        ('fleet_m0'),
-                        ('fleet_t0'),
-                        ('fleet_w'),
-                        ('g-r_max'),
-                        ('g-r_max_corr'),
-                        ('g-r_mean'),
-                        ('g-r_mean_corr'),
-                        ('i-z_max'),
-                        ('i-z_max_corr'),
-                        ('i-z_mean'),
-                        ('i-z_mean_corr'),
-                        ('last_brightness_before_band'),
-                        ('max_brightness_after_band'),
-                        ('max_brightness_before_band'),
-                        ('median_brightness_after_band'),
-                        ('median_brightness_before_band'),
-                        ('n_forced_phot_band_after'),
-                        ('n_forced_phot_band_before'),
-                        ('positive_fraction'),
-                        ('r-i_max'),
-                        ('r-i_max_corr'),
-                        ('r-i_mean'),
-                        ('r-i_mean_corr'),
-                        ('u-g_max'),
-                        ('u-g_max_corr'),
-                        ('u-g_mean'),
-                        ('u-g_mean_corr'),
-                        ('ulens_chi'),
-                        ('ulens_fs'),
-                        ('ulens_mag0'),
-                        ('ulens_t0'),
-                        ('ulens_tE'),
-                        ('ulens_u0'),
-                        ('z-y_max'),
-                        ('z-y_max_corr'),
-                        ('z-y_mean'),
-                        ('z-y_mean_corr')
-                        ON CONFLICT DO NOTHING
-                    """))
+                feature_data = [
+                    {"feature_id": 0, "feature_name": "Amplitude"},
+                    {"feature_id": 1, "feature_name": "AndersonDarling"},
+                    {"feature_id": 2, "feature_name": "Autocor_length"},
+                    {"feature_id": 3, "feature_name": "Beyond1Std"},
+                    {"feature_id": 4, "feature_name": "Con"},
+                    {"feature_id": 5, "feature_name": "Coordinate_x"},
+                    {"feature_id": 6, "feature_name": "Coordinate_y"},
+                    {"feature_id": 7, "feature_name": "Coordinate_z"},
+                    {"feature_id": 8, "feature_name": "Eta_e"},
+                    {"feature_id": 9, "feature_name": "ExcessVar"},
+                    {"feature_id": 10, "feature_name": "GP_DRW_sigma"},
+                    {"feature_id": 11, "feature_name": "GP_DRW_tau"},
+                    {"feature_id": 12, "feature_name": "Gskew"},
+                    {"feature_id": 13, "feature_name": "Harmonics_chi"},
+                    {"feature_id": 14, "feature_name": "Harmonics_mag_1"},
+                    {"feature_id": 15, "feature_name": "Harmonics_mag_2"},
+                    {"feature_id": 16, "feature_name": "Harmonics_mag_3"},
+                    {"feature_id": 17, "feature_name": "Harmonics_mag_4"},
+                    {"feature_id": 18, "feature_name": "Harmonics_mag_5"},
+                    {"feature_id": 19, "feature_name": "Harmonics_mag_6"},
+                    {"feature_id": 20, "feature_name": "Harmonics_mag_7"},
+                    {"feature_id": 21, "feature_name": "Harmonics_mse"},
+                    {"feature_id": 22, "feature_name": "Harmonics_phase_2"},
+                    {"feature_id": 23, "feature_name": "Harmonics_phase_3"},
+                    {"feature_id": 24, "feature_name": "Harmonics_phase_4"},
+                    {"feature_id": 25, "feature_name": "Harmonics_phase_5"},
+                    {"feature_id": 26, "feature_name": "Harmonics_phase_6"},
+                    {"feature_id": 27, "feature_name": "Harmonics_phase_7"},
+                    {"feature_id": 28, "feature_name": "IAR_phi"},
+                    {"feature_id": 29, "feature_name": "LinearTrend"},
+                    {"feature_id": 30, "feature_name": "MHPS_PN_flag"},
+                    {"feature_id": 31, "feature_name": "MHPS_high"},
+                    {"feature_id": 32, "feature_name": "MHPS_high_30"},
+                    {"feature_id": 33, "feature_name": "MHPS_low"},
+                    {"feature_id": 34, "feature_name": "MHPS_low_365"},
+                    {"feature_id": 35, "feature_name": "MHPS_non_zero"},
+                    {"feature_id": 36, "feature_name": "MHPS_ratio"},
+                    {"feature_id": 37, "feature_name": "MHPS_ratio_365_30"},
+                    {"feature_id": 38, "feature_name": "MaxSlope"},
+                    {"feature_id": 39, "feature_name": "Mean"},
+                    {"feature_id": 40, "feature_name": "Meanvariance"},
+                    {"feature_id": 41, "feature_name": "MedianAbsDev"},
+                    {"feature_id": 42, "feature_name": "MedianBRP"},
+                    {"feature_id": 43, "feature_name": "Multiband_period"},
+                    {"feature_id": 44, "feature_name": "PPE"},
+                    {"feature_id": 45, "feature_name": "PairSlopeTrend"},
+                    {"feature_id": 46, "feature_name": "PercentAmplitude"},
+                    {"feature_id": 47, "feature_name": "Period_band"},
+                    {"feature_id": 48, "feature_name": "Power_rate_1/2"},
+                    {"feature_id": 49, "feature_name": "Power_rate_1/3"},
+                    {"feature_id": 50, "feature_name": "Power_rate_1/4"},
+                    {"feature_id": 51, "feature_name": "Power_rate_2"},
+                    {"feature_id": 52, "feature_name": "Power_rate_3"},
+                    {"feature_id": 53, "feature_name": "Power_rate_4"},
+                    {"feature_id": 54, "feature_name": "Psi_CS"},
+                    {"feature_id": 55, "feature_name": "Psi_eta"},
+                    {"feature_id": 56, "feature_name": "Pvar"},
+                    {"feature_id": 57, "feature_name": "Q31"},
+                    {"feature_id": 58, "feature_name": "Rcs"},
+                    {"feature_id": 59, "feature_name": "SF_ML_amplitude"},
+                    {"feature_id": 60, "feature_name": "SF_ML_gamma"},
+                    {"feature_id": 61, "feature_name": "SPM_A"},
+                    {"feature_id": 62, "feature_name": "SPM_beta"},
+                    {"feature_id": 63, "feature_name": "SPM_chi"},
+                    {"feature_id": 64, "feature_name": "SPM_gamma"},
+                    {"feature_id": 65, "feature_name": "SPM_t0"},
+                    {"feature_id": 66, "feature_name": "SPM_tau_fall"},
+                    {"feature_id": 67, "feature_name": "SPM_tau_rise"},
+                    {"feature_id": 68, "feature_name": "Skew"},
+                    {"feature_id": 69, "feature_name": "SmallKurtosis"},
+                    {"feature_id": 70, "feature_name": "Std"},
+                    {"feature_id": 71, "feature_name": "StetsonK"},
+                    {"feature_id": 72, "feature_name": "TDE_decay"},
+                    {"feature_id": 73, "feature_name": "TDE_decay_chi"},
+                    {"feature_id": 74, "feature_name": "TDE_mag0"},
+                    {"feature_id": 75, "feature_name": "Timespan"},
+                    {"feature_id": 76, "feature_name": "color_variation"},
+                    {"feature_id": 77, "feature_name": "dbrightness_first_det_band"},
+                    {"feature_id": 78, "feature_name": "dbrightness_forced_phot_band"},
+                    {"feature_id": 79, "feature_name": "delta_period"},
+                    {"feature_id": 80, "feature_name": "fleet_a"},
+                    {"feature_id": 81, "feature_name": "fleet_chi"},
+                    {"feature_id": 82, "feature_name": "fleet_m0"},
+                    {"feature_id": 83, "feature_name": "fleet_t0"},
+                    {"feature_id": 84, "feature_name": "fleet_w"},
+                    {"feature_id": 85, "feature_name": "g-r_max"},
+                    {"feature_id": 86, "feature_name": "g-r_max_corr"},
+                    {"feature_id": 87, "feature_name": "g-r_mean"},
+                    {"feature_id": 88, "feature_name": "g-r_mean_corr"},
+                    {"feature_id": 89, "feature_name": "i-z_max"},
+                    {"feature_id": 90, "feature_name": "i-z_max_corr"},
+                    {"feature_id": 91, "feature_name": "i-z_mean"},
+                    {"feature_id": 92, "feature_name": "i-z_mean_corr"},
+                    {"feature_id": 93, "feature_name": "last_brightness_before_band"},
+                    {"feature_id": 94, "feature_name": "max_brightness_after_band"},
+                    {"feature_id": 95, "feature_name": "max_brightness_before_band"},
+                    {"feature_id": 96, "feature_name": "median_brightness_after_band"},
+                    {"feature_id": 97, "feature_name": "median_brightness_before_band"},
+                    {"feature_id": 98, "feature_name": "n_forced_phot_band_after"},
+                    {"feature_id": 99, "feature_name": "n_forced_phot_band_before"},
+                    {"feature_id": 100, "feature_name": "positive_fraction"},
+                    {"feature_id": 101, "feature_name": "r-i_max"},
+                    {"feature_id": 102, "feature_name": "r-i_max_corr"},
+                    {"feature_id": 103, "feature_name": "r-i_mean"},
+                    {"feature_id": 104, "feature_name": "r-i_mean_corr"},
+                    {"feature_id": 105, "feature_name": "u-g_max"},
+                    {"feature_id": 106, "feature_name": "u-g_max_corr"},
+                    {"feature_id": 107, "feature_name": "u-g_mean"},
+                    {"feature_id": 108, "feature_name": "u-g_mean_corr"},
+                    {"feature_id": 109, "feature_name": "ulens_chi"},
+                    {"feature_id": 110, "feature_name": "ulens_fs"},
+                    {"feature_id": 111, "feature_name": "ulens_mag0"},
+                    {"feature_id": 112, "feature_name": "ulens_t0"},
+                    {"feature_id": 113, "feature_name": "ulens_tE"},
+                    {"feature_id": 114, "feature_name": "ulens_u0"},
+                    {"feature_id": 115, "feature_name": "z-y_max"},
+                    {"feature_id": 116, "feature_name": "z-y_max_corr"},
+                    {"feature_id": 117, "feature_name": "z-y_mean"},
+                    {"feature_id": 118, "feature_name": "z-y_mean_corr"},
+                ]
+
+                stmt = (
+                    insert(FeatureNameLut)
+                    .values(feature_data)
+                    .on_conflict_do_nothing(index_elements=["feature_id"])
+                )
+                conn.execute(stmt)
 
             # ---------- sid_lut ----------
             if "sid_lut" in model_tables:
-                conn.execute(text(f"""
-                    INSERT INTO {schema}sid_lut (sid, tid, survey_name)
-                    VALUES
-                        (0, 0, 'ZTF'),
-                        (1, 1, 'LSST DIA Object'),
-                        (2, 1, 'LSST SS Object')
-                    ON CONFLICT DO NOTHING
-                """))
+                sid_lut_data = [
+                    {"sid": 0, "tid": 0, "survey_name": "ZTF"},
+                    {"sid": 1, "tid": 1, "survey_name": "LSST DIA Object"},
+                    {"sid": 2, "tid": 1, "survey_name": "LSST SS Object"},
+                ]
+                stmt = (
+                    insert(model_tables["sid_lut"])
+                    .values(sid_lut_data)
+                    .on_conflict_do_nothing(index_elements=["sid"])
+                )
+                conn.execute(stmt)
 
             # ---------- taxonomy ----------
             if "taxonomy" in model_tables:
-                conn.execute(text(f"""
-                    INSERT INTO {schema}taxonomy
-                    (class_id, class_name, "order", classifier_id, created_date)
-                    VALUES
-                        (0, 'SN', 0, 1, now()),
-                        (1, 'AGN', 1, 1, now()),
-                        (2, 'VS', 2, 1, now()),
-                        (3, 'asteroid', 3, 1, now()),
-                        (4, 'bogus', 4, 1, now())
-                    ON CONFLICT DO NOTHING
-                """))
+                taxonomy_data = [
+                    {
+                        "class_id": 0,
+                        "class_name": "SN",
+                        "order": 0,
+                        "classifier_id": 1,
+                    },
+                    {
+                        "class_id": 1,
+                        "class_name": "AGN",
+                        "order": 1,
+                        "classifier_id": 1,
+                    },
+                    {
+                        "class_id": 2,
+                        "class_name": "VS",
+                        "order": 2,
+                        "classifier_id": 1,
+                    },
+                    {
+                        "class_id": 3,
+                        "class_name": "asteroid",
+                        "order": 3,
+                        "classifier_id": 1,
+                    },
+                    {
+                        "class_id": 4,
+                        "class_name": "bogus",
+                        "order": 4,
+                        "classifier_id": 1,
+                    },
+                ]
+                stmt = (
+                    insert(Taxonomy)
+                    .values(taxonomy_data)
+                    .on_conflict_do_nothing(index_elements=["class_id"])
+                )
+                conn.execute(stmt)
 
             # ---------- catalog_id_lut ----------
             if "catalog_id_lut" in model_tables:
-                conn.execute(text(f"""
-                    INSERT INTO {schema}catalog_id_lut
-                    (catid, catalog_name, created_date)
-                    VALUES (0, 'AllWISE', now())
-                    ON CONFLICT DO NOTHING
-                """))
+                stmt = (
+                    insert(CatalogIdLut)
+                    .values({"catid": 0, "catalog_name": "AllWISE"})
+                    .on_conflict_do_nothing(index_elements=["catid"])
+                )
+                conn.execute(stmt)
 
             # ---------- band ----------
             if "band" in model_tables:
-                conn.execute(text(f"""
-                    INSERT INTO {schema}band (sid, tid, band, band_name, "order") VALUES
-                    (1,1,1,'g',1),(1,1,2,'r',2),(1,1,3,'i',3),(1,1,4,'z',4),(1,1,5,'y',5),(1,1,6,'u',0),
-                    (2,1,1,'g',1),(2,1,2,'r',2),(2,1,3,'i',3),(2,1,4,'z',4),(2,1,5,'y',5),(2,1,6,'u',0),
-                    (0,0,1,'g',0),(0,0,2,'r',1),(0,0,3,'i',2)
-                    ON CONFLICT DO NOTHING
-                """))
+                band_data = [
+                    {"sid": 1, "tid": 1, "band": 1, "band_name": "g", "order": 1},
+                    {"sid": 1, "tid": 1, "band": 2, "band_name": "r", "order": 2},
+                    {"sid": 1, "tid": 1, "band": 3, "band_name": "i", "order": 3},
+                    {"sid": 1, "tid": 1, "band": 4, "band_name": "z", "order": 4},
+                    {"sid": 1, "tid": 1, "band": 5, "band_name": "y", "order": 5},
+                    {"sid": 1, "tid": 1, "band": 6, "band_name": "u", "order": 0},
+                    {"sid": 2, "tid": 1, "band": 1, "band_name": "g", "order": 1},
+                    {"sid": 2, "tid": 1, "band": 2, "band_name": "r", "order": 2},
+                    {"sid": 2, "tid": 1, "band": 3, "band_name": "i", "order": 3},
+                    {"sid": 2, "tid": 1, "band": 4, "band_name": "z", "order": 4},
+                    {"sid": 2, "tid": 1, "band": 5, "band_name": "y", "order": 5},
+                    {"sid": 2, "tid": 1, "band": 6, "band_name": "u", "order": 0},
+                    {"sid": 0, "tid": 0, "band": 1, "band_name": "g", "order": 0},
+                    {"sid": 0, "tid": 0, "band": 2, "band_name": "r", "order": 1},
+                    {"sid": 0, "tid": 0, "band": 3, "band_name": "i", "order": 2},
+                ]
+                stmt = (
+                    insert(Band)
+                    .values(band_data)
+                    .on_conflict_do_nothing(index_elements=["sid", "tid", "band"])
+                )
+                conn.execute(stmt)
 
             conn.commit()
 
