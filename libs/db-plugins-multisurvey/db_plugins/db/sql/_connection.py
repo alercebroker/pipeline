@@ -1,7 +1,7 @@
 import logging
 from contextlib import contextmanager
 
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -34,10 +34,7 @@ class PsqlDatabase:
         )
 
     def create_db(self):
-        tables = Base.metadata.tables
-
-        # Create all tables EXCEPT feature
-        Base.metadata.create_all(self._engine, tables=tables.values())
+        Base.metadata.create_all(self._engine)
 
         with self._engine.connect() as conn:
             for mapper in Base.registry.mappers:
@@ -45,7 +42,6 @@ class PsqlDatabase:
                 if table_class.__n_partitions__ is not None:
                     table_class.__create_partitions__(conn, self.schema)
 
-        # Insert static data
         self.insert_initial_data()
 
     def insert_initial_data(self):
