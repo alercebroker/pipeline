@@ -15,6 +15,8 @@ services:
         hard: -1
     ports:
       - 9200:9200
+    networks:
+      - observability
     healthcheck:
       test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health || exit 1"]
       interval: 30s
@@ -29,8 +31,40 @@ services:
     environment:
       - OPENSEARCH_HOSTS=http://opensearch:9200
       - DISABLE_SECURITY_DASHBOARDS_PLUGIN=true
+    networks:
+      - observability
     depends_on:
       - opensearch
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:5601/api/status | grep -q '\"state\":\"green\"' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  kibana-setup:
+    image: curlimages/curl:latest
+    container_name: kibana-setup
+    networks:
+      - observability
+    depends_on:
+      kibana:
+        condition: service_healthy
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        echo 'Creating index pattern for dummy-step-logs...'
+        curl -X POST 'http://kibana:5601/api/saved_objects/index-pattern/dummy-step-logs' \
+          -H 'osd-xsrf: true' \
+          -H 'Content-Type: application/json' \
+          -d '{"attributes":{"title":"dummy-step-logs","timeFieldName":"@timestamp"}}'
+        echo ''
+        curl -X POST 'http://kibana:5601/api/opensearch-dashboards/settings/defaultIndex' \
+          -H 'osd-xsrf: true' \
+          -H 'Content-Type: application/json' \
+          -d '{"value":"dummy-step-logs"}'
+        echo ''
+        echo '✅ Index pattern created! View logs at http://localhost:5601/app/discover'
 
   fluent-bit:
     image: fluent/fluent-bit:2.1
@@ -38,6 +72,36 @@ services:
     volumes:
       - ./dummy_step.log:/logs/dummy_step.log:ro
       - ./fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf:ro
+    networks:
+      - observability
     depends_on:
       - opensearch
     command: ["/fluent-bit/bin/fluent-bit", "-c", "/fluent-bit/etc/fluent-bit.conf"]
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    network_mode: host
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    network_mode: host
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources:ro
+
+networks:
+  observability:
+    driver: bridge
