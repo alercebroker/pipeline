@@ -70,7 +70,14 @@ class Object(Base):
         Index("ix_object_lastmjd", "lastmjd", postgresql_using="btree"),
         Index("ix_object_meanra", "meanra", postgresql_using="btree"),
         Index("ix_object_meandec", "meandec", postgresql_using="btree"),
+        {"postgresql_partition_by": "HASH (oid)"},
     )
+
+    __n_partitions__ = 8
+
+    @classmethod
+    def __partition_on__(cls, partition_idx: int):
+        return f"FOR VALUES WITH (MODULUS {cls.__n_partitions__}, REMAINDER {partition_idx})"
 
 
 class ZtfObject(Base):
@@ -188,7 +195,16 @@ class LsstDiaObject(Base):
     nDiaSources = Column(Integer, nullable=False)
     created_date = Column(Date, server_default=func.now())
 
-    __table_args__ = (PrimaryKeyConstraint("oid", name="pk_lsstdiaobject_oid"),)
+    __table_args__ = (
+        PrimaryKeyConstraint("oid", name="pk_lsstdiaobject_oid"),
+        {"postgresql_partition_by": "HASH (oid)"},
+    )
+
+    __n_partitions__ = 8
+
+    @classmethod
+    def __partition_on__(cls, partition_idx: int):
+        return f"FOR VALUES WITH (MODULUS {cls.__n_partitions__}, REMAINDER {partition_idx})"
 
 
 class LsstSsObject(Base):
@@ -915,7 +931,14 @@ class MagStat(Base):
 
     __table_args__ = (
         PrimaryKeyConstraint("oid", "sid", "band", name="pk_magstat_oid_sid_band"),
+        {"postgresql_partition_by": "HASH (oid)"},
     )
+
+    __n_partitions__ = 16
+
+    @classmethod
+    def __partition_on__(cls, partition_idx: int):
+        return f"FOR VALUES WITH (MODULUS {cls.__n_partitions__}, REMAINDER {partition_idx})"
 
 
 class Classifier(Base):
@@ -976,7 +999,14 @@ class Probability(Base):
             postgresql_where=ranking == 1,
             postgresql_using="btree",
         ),
+        {"postgresql_partition_by": "HASH (oid)"},
     )
+
+    __n_partitions__ = 16
+
+    @classmethod
+    def __partition_on__(cls, partition_idx: int):
+        return f"FOR VALUES WITH (MODULUS {cls.__n_partitions__}, REMAINDER {partition_idx})"
 
 
 class Feature(Base):
@@ -998,7 +1028,7 @@ class Feature(Base):
         {"postgresql_partition_by": "HASH (oid)"},
     )
 
-    __n_partitions__ = 10
+    __n_partitions__ = 32
 
     @classmethod
     def __partition_on__(cls, partition_idx: int):
