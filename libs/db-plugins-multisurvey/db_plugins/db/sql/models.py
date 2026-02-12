@@ -986,7 +986,6 @@ class Probability(Base):
             "oid",
             "sid",
             "classifier_id",
-            "classifier_version",
             "class_id",
             name="pk_probability_oid_classifierid_classid",
         ),

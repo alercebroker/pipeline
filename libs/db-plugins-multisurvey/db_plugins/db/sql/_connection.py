@@ -52,14 +52,20 @@ class PsqlDatabase:
             if "classifier" in model_tables:
                 stmt = (
                     insert(Classifier)
-                    .values(
+                    .values([
                         {
                             "classifier_id": 1,
                             "classifier_name": "stamp_classifier_rubin",
                             "classifier_version": "2.0.1",
                             "tid": 1,
+                        },
+                        {
+                            "classifier_id": 2,
+                            "classifier_name": "stamp_classifier_2025_beta",
+                            "classifier_version": "2.1.1",
+                            "tid": 0,
                         }
-                    )
+                    ])
                     .on_conflict_do_nothing(index_elements=["classifier_id"])
                 )
                 conn.execute(stmt)
@@ -241,6 +247,42 @@ class PsqlDatabase:
                         "class_name": "bogus",
                         "order": 4,
                         "classifier_id": 1,
+                    },
+                    {
+                        "class_id": 5,
+                        "class_name": "SN",
+                        "order": 5,
+                        "classifier_id": 2,
+                    },
+                    {
+                        "class_id": 6,
+                        "class_name": "AGN",
+                        "order": 6,
+                        "classifier_id": 2,
+                    },
+                    {
+                        "class_id": 7,
+                        "class_name": "VS",
+                        "order": 7,
+                        "classifier_id": 2,
+                    },
+                    {
+                        "class_id": 8,
+                        "class_name": "asteroid",
+                        "order": 8,
+                        "classifier_id": 2,
+                    },
+                    {
+                        "class_id": 9,
+                        "class_name": "bogus",
+                        "order": 9,
+                        "classifier_id": 2,
+                    },
+                    {
+                        "class_id": 10,
+                        "class_name": "satellite",
+                        "order": 10,
+                        "classifier_id": 2,
                     },
                 ]
                 stmt = (
