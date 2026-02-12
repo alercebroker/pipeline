@@ -70,6 +70,7 @@ class GenericStep(abc.ABC):
         if self.metrics_config:
             self.extra_metrics = self.metrics_config.get("EXTRA_METRICS", ["candid"])
         self.commit = self.config.get("COMMIT", True)
+        self.skip_producer = self.config.get("SKIP_PRODUCER", False)
         self.prometheus_metrics = prometheus_metrics
 
     @property
@@ -443,7 +444,10 @@ class GenericStep(abc.ABC):
                 raise error
             result = self._post_execute(result)
             result = self._pre_produce(result)
-            self.produce(result)
+            if not self.skip_producer:
+                self.produce(result)
+            else:
+                logger.info("SKIP_PRODUCER flag is set — skipping message production to topic.")
             self._post_produce()
         self._tear_down()
 
