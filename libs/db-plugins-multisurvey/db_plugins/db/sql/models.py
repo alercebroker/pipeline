@@ -1039,6 +1039,8 @@ class FeatureNameLut(Base):
 
     feature_id = Column(SmallInteger, nullable=False, autoincrement=True)
     feature_name = Column(VARCHAR, nullable=False)
+    sid = Column(SmallInteger, nullable=False)
+    tid = Column(SmallInteger, nullable=False)
 
     created_date = Column(Date, server_default=func.now())
 
@@ -1052,7 +1054,10 @@ class FeatureVersionLut(Base):
 
     version_id = Column(SmallInteger, nullable=False, autoincrement=True)
     version_name = Column(VARCHAR, nullable=False)
+    sid = Column(SmallInteger, nullable=False)
+    tid = Column(SmallInteger, nullable=False)
 
+    
     __table_args__ = (
         PrimaryKeyConstraint("version_id", name="pk_feature_version_lut_versionid"),
     )
