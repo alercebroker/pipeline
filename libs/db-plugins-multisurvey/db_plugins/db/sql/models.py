@@ -3,6 +3,7 @@ from sqlalchemy import (
     BigInteger,
     Boolean,
     Column,
+    Connection,
     Date,
     Index,
     Integer,
@@ -10,13 +11,31 @@ from sqlalchemy import (
     SmallInteger,
     String,
     func,
+    text,
 )
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, JSONB, REAL
 from sqlalchemy.orm import DeclarativeBase
 
 
 class Base(DeclarativeBase):
-    pass
+    __n_partitions__: int | None = None
+
+    @classmethod
+    def __partition_on__(cls, _partition_idx: int) -> str:
+        return ""
+
+    @classmethod
+    def __create_partitions__(cls, conn: Connection, schema: str = None):
+        schema_prefix = f"{schema}." if schema else ""
+        for i in range(cls.__n_partitions__):
+            conn.execute(
+                text(f"""
+                CREATE TABLE IF NOT EXISTS {schema_prefix}{cls.__tablename__}_part_{i} 
+                PARTITION OF {schema_prefix}{cls.__tablename__} 
+                {cls.__partition_on__(i)}
+            """)
+            )
+        conn.commit()
 
 
 class Commons:
@@ -51,7 +70,14 @@ class Object(Base):
         Index("ix_object_lastmjd", "lastmjd", postgresql_using="btree"),
         Index("ix_object_meanra", "meanra", postgresql_using="btree"),
         Index("ix_object_meandec", "meandec", postgresql_using="btree"),
+        {"postgresql_partition_by": "HASH (oid)"},
     )
+
+    __n_partitions__ = 8
+
+    @classmethod
+    def __partition_on__(cls, partition_idx: int):
+        return f"FOR VALUES WITH (MODULUS {cls.__n_partitions__}, REMAINDER {partition_idx})"
 
 
 class ZtfObject(Base):
@@ -169,7 +195,16 @@ class LsstDiaObject(Base):
     nDiaSources = Column(Integer, nullable=False)
     created_date = Column(Date, server_default=func.now())
 
-    __table_args__ = (PrimaryKeyConstraint("oid", name="pk_lsstdiaobject_oid"),)
+    __table_args__ = (
+        PrimaryKeyConstraint("oid", name="pk_lsstdiaobject_oid"),
+        {"postgresql_partition_by": "HASH (oid)"},
+    )
+
+    __n_partitions__ = 8
+
+    @classmethod
+    def __partition_on__(cls, partition_idx: int):
+        return f"FOR VALUES WITH (MODULUS {cls.__n_partitions__}, REMAINDER {partition_idx})"
 
 
 class LsstSsObject(Base):
@@ -896,7 +931,14 @@ class MagStat(Base):
 
     __table_args__ = (
         PrimaryKeyConstraint("oid", "sid", "band", name="pk_magstat_oid_sid_band"),
+        {"postgresql_partition_by": "HASH (oid)"},
     )
+
+    __n_partitions__ = 16
+
+    @classmethod
+    def __partition_on__(cls, partition_idx: int):
+        return f"FOR VALUES WITH (MODULUS {cls.__n_partitions__}, REMAINDER {partition_idx})"
 
 
 class Classifier(Base):
@@ -944,7 +986,6 @@ class Probability(Base):
             "oid",
             "sid",
             "classifier_id",
-            "classifier_version",
             "class_id",
             name="pk_probability_oid_classifierid_classid",
         ),
@@ -957,24 +998,40 @@ class Probability(Base):
             postgresql_where=ranking == 1,
             postgresql_using="btree",
         ),
+        {"postgresql_partition_by": "HASH (oid)"},
     )
+
+    __n_partitions__ = 16
+
+    @classmethod
+    def __partition_on__(cls, partition_idx: int):
+        return f"FOR VALUES WITH (MODULUS {cls.__n_partitions__}, REMAINDER {partition_idx})"
 
 
 class Feature(Base):
     __tablename__ = "feature"
 
-    oid = Column(BigInteger, nullable=False, primary_key=True)
-    sid = Column(SmallInteger, nullable=False, primary_key=True)
-    feature_id = Column(SmallInteger, nullable=False, primary_key=True)
-    band = Column(SmallInteger, nullable=False, primary_key=True)
+    oid = Column(BigInteger, nullable=False)
+    sid = Column(SmallInteger, nullable=False)
+    feature_id = Column(SmallInteger, nullable=False)
+    band = Column(SmallInteger, nullable=False)
     version = Column(SmallInteger, nullable=False)
     value = Column(DOUBLE_PRECISION)
     updated_date = Column(Date, onupdate=func.now())
 
+    # Not set as pk on postgres. Necessary to define a pk-less sqlalchemy table
+    __mapper_args__ = {"primary_key": ["oid", "sid", "feature_id", "band"]}
+
     __table_args__ = (
-        Index("idx_feature_oid", "oid"),
+        Index("idx_feature_oid", "oid", postgresql_using="btree"),
         {"postgresql_partition_by": "HASH (oid)"},
     )
+
+    __n_partitions__ = 32
+
+    @classmethod
+    def __partition_on__(cls, partition_idx: int):
+        return f"FOR VALUES WITH (MODULUS {cls.__n_partitions__}, REMAINDER {partition_idx})"
 
 
 class FeatureNameLut(Base):
