@@ -49,12 +49,12 @@ def store_probability(
         return
 
     with psql_connection.session() as session:
-        data = _format_data(sid, classifier_id, classifier_version, class_taxonomy, output_dto, messages_dict)
+        data = format_probability_records(sid, classifier_id, classifier_version, class_taxonomy, output_dto, messages_dict)
         insert_stmt = insert(Probability).on_conflict_do_nothing()
         session.execute(insert_stmt, data)
         session.commit()
 
-def _format_data(
+def format_probability_records(
     sid: int,
     classifier_id: int,
     classifier_version: int,

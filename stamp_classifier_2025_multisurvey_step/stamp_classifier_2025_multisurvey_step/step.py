@@ -14,12 +14,20 @@ from pandas import DataFrame
 from sqlalchemy import create_engine
 from sqlalchemy.dialects.postgresql import insert
 from astropy.io import fits
+import json
+
 
 # Alerce and APF
 from apf.core import get_class
 from apf.consumers import KafkaConsumer
 from apf.core.step import GenericStep
-from .db.db import PSQLConnection, store_probability, get_taxonomy_by_classifier_id
+from .db.db import (
+    PSQLConnection,
+    store_probability,
+    get_taxonomy_by_classifier_id,
+    format_probability_records,
+)
+
 from .parsers.kafka_parser import KafkaParser
 import logging
 import numexpr
@@ -76,6 +84,13 @@ class MultiScaleStampClassifier(GenericStep):
         self.model = get_class(config["MODEL_CONFIG"]["CLASS"])(
             **{"mapper": self.mapper, **config["MODEL_CONFIG"]["PARAMS"]}
         )
+
+        """ SCRIBE PRODUCER TO PRODUCE TO SCRIBE-MULTISURVEY TOPIC FOR ARCHIVAL PURPOSES"""
+        scribe_cfg = config.get("SCRIBE_PRODUCER_CONFIG")
+        scribe_class = get_class(scribe_cfg["CLASS"])
+        self.scribe_producer = scribe_class(scribe_cfg)
+        self.scribe_topic_name = scribe_cfg.get("TOPIC")
+
 
         """ OBTAIN TAXONOMY FROM DB USING CLASSIFIER ID"""
         self.class_taxonomy = get_taxonomy_by_classifier_id(self.classifier_id, self.engine)
@@ -233,6 +248,38 @@ class MultiScaleStampClassifier(GenericStep):
                 .rename(columns=self._mapper_names)
             ),
         )
+    
+    def produce_to_scribe(self, output_dto: OutputDTO, messages_dict: dict) -> None:
+        """Send every probability record to the scribe topic.
+        The Kafka message key is set to the string representation of oid.
+        """
+
+        if output_dto.probabilities.shape[0] == 0:
+            return
+
+        records = format_probability_records(
+            sid=self.sid,
+            classifier_id=self.classifier_id,
+            classifier_version=self.classifier_version,
+            class_taxonomy=self.class_taxonomy,
+            output_dto=output_dto,
+            messages_dict=messages_dict,
+        )
+
+        last_idx = len(records) - 1
+        for idx, record in enumerate(records):
+            command = {
+                "step": "probability-archival-step",
+                "survey": "ztf",
+                "payload": record,
+            }
+            self.scribe_producer.producer.produce(
+                topic=self.scribe_topic_name,
+                value=json.dumps(command).encode("utf-8"),
+                key=str(record["oid"]).encode("utf-8"),
+            )
+            if idx == last_idx:
+                self.scribe_producer.producer.flush()
 
     def execute(self, messages):
         """Run the classification.
@@ -261,6 +308,7 @@ class MultiScaleStampClassifier(GenericStep):
             self.logger.info(f"input : {input_dto}")
             output_dto = self.predict(input_dto)
             self.logger.info(f" output : {output_dto}")
+            """
             store_probability(
                 self.engine,
                 sid=self.sid,
@@ -270,6 +318,11 @@ class MultiScaleStampClassifier(GenericStep):
                 output_dto=output_dto,
                 messages_dict=messages_dict,
             )
+            """
+
+            # Send data to scribe topic
+            self.produce_to_scribe(output_dto, messages_dict)
+
             oids_removed = [
                 k
                 for k in messages_dict.keys()
