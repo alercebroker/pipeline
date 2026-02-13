@@ -3,15 +3,8 @@ from sqlalchemy import (
     inspect,
 )
 
-from db_plugins.db.sql.models import (
-    Band,
-    Base,
-    CatalogIdLut,
-    Classifier,
-    FeatureNameLut,
-    SidLut,
-    Taxonomy,
-)
+from db_plugins.db.sql._initial_data import INITIAL_DATA
+from db_plugins.db.sql.models import Base
 
 
 class ConnectionTest(BaseConnectionTest):
@@ -35,18 +28,17 @@ class ConnectionTest(BaseConnectionTest):
 
     def test_initial_data(self):
         self.psql_db.create_db()
+
+        model_tables = Base.metadata.tables
         with self.psql_db.session() as session:
-            checks = [
-                {"table": Classifier, "expected_len": 1},
-                {"table": FeatureNameLut, "expected_len": 119},
-                {"table": SidLut, "expected_len": 3},
-                {"table": Taxonomy, "expected_len": 5},
-                {"table": CatalogIdLut, "expected_len": 1},
-                {"table": Band, "expected_len": 15},
-            ]
-            for check in checks:
-                count = session.query(check["table"]).count()
-                assert count == check["expected_len"]
+            for table_name, init_data in INITIAL_DATA.items():
+                if table_name not in model_tables:
+                    continue
+                expected_len = len(init_data["data"])
+                count = session.query(model_tables[table_name]).count()
+                assert count == expected_len, (
+                    f"Expected length does not match for '{table_name}', expected '{expected_len}' but got '{count}'"
+                )
 
     def test_drop_db(self):
         """Verificar que se pueden eliminar todas las tablas de la base de datos"""
