@@ -78,7 +78,7 @@ class MultiScaleStampClassifier(GenericStep):
         self.step_parser: KafkaParser = get_class(config["STEP_PARSER_CLASS"])()
 
         """ DB CONNECTION AND MODEL"""
-        self.db_config = self.config["DATABASE_CREDENTIALS"]
+        self.db_config = self.config["PSQL_CONFIG"]
         self.engine = PSQLConnection(self.db_config)
         self.mapper = get_class(config["MODEL_CONFIG"]["CLASS_MAPPER"])()
         self.model = get_class(config["MODEL_CONFIG"]["CLASS"])(
@@ -308,7 +308,6 @@ class MultiScaleStampClassifier(GenericStep):
             self.logger.info(f"input : {input_dto}")
             output_dto = self.predict(input_dto)
             self.logger.info(f" output : {output_dto}")
-            """
             store_probability(
                 self.engine,
                 sid=self.sid,
@@ -318,7 +317,6 @@ class MultiScaleStampClassifier(GenericStep):
                 output_dto=output_dto,
                 messages_dict=messages_dict,
             )
-            """
 
             # Send data to scribe topic
             self.produce_to_scribe(output_dto, messages_dict)
