@@ -47,13 +47,9 @@ def add_mag_and_flux_lsst(a: pd.DataFrame) -> pd.DataFrame:
         columns={"scienceFlux": "brightness", "scienceFluxErr": "e_brightness"},
         inplace=True,
     )
-    # astrobject, pssFlux -> magnitude
-    # magpsfcorr -> diff_flux
-
-    #ScienceFLux deberia estar en magnitude
-    #psfFLux diff_flux
+    
     a["unit"] = "magnitude"
-    a_flux["brightness"] = a_flux["psfFlux"]/1000 #njy #aqui dividia por 1000 para pasar a microjy
+    a_flux["brightness"] = a_flux["psfFlux"]/1000 #njy
     a_flux["e_brightness"] = a_flux["psfFluxErr"]/1000
     a_flux["unit"] = "diff_flux"
     a = pd.concat([a, a_flux], axis=0,ignore_index=True)

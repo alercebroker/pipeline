@@ -52,7 +52,7 @@ class FeatureStep(GenericStep):
     ):
 
         super().__init__(config=config, **step_args)
-        # Bogus detections are dropped in pre_execute
+
         scribe_class = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
         self.scribe_producer = scribe_class(self.config["SCRIBE_PRODUCER_CONFIG"])
 
@@ -89,13 +89,15 @@ class FeatureStep(GenericStep):
             
             # Get version name and resolve version_id from version_lut table
             version_name = version("feature-step")
+            sid = 1
+            tid = 1  
             self.extractor_version = get_or_create_version_id(
-                self.db_sql, self.schema, version_name, self.logger
+                self.db_sql, self.schema, version_name, sid, tid, self.logger
             )
             
             # Fetch feature name lookup table from multisurvey schema
             self.feature_name_lut = get_feature_name_lut(
-                self.db_sql, self.schema, self.logger
+                self.db_sql, self.schema, sid, tid, self.logger
             )
 
             # Initialize xmatch client
