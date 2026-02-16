@@ -359,7 +359,7 @@ def parse_ztf_objstats(raw_magstats, oid: str, sid: int) -> dict:
     return obj
 
 
-def parse_ztf_magstats(sub_magstats: dict, oid: str, sid: int):
+def parse_ztf_magstats(sub_magstats: dict, oid: str, sid: int) -> dict:
     ztf_magstats = {
         "oid": oid,
         "sid": sid,
@@ -393,7 +393,7 @@ def parse_ztf_magstats(sub_magstats: dict, oid: str, sid: int):
     return ztf_magstats
 
 
-def parse_xmatch(sub_xmatch: dict):
+def parse_xmatch(sub_xmatch: dict) -> dict:
     
     # omit sid = 2
     if sub_xmatch["sid"] == 2:
@@ -414,3 +414,15 @@ def parse_xmatch(sub_xmatch: dict):
         "oid_catalog": sub_xmatch["oid_catalog"],
     }
     return xmatch
+
+def parse_probability(raw_probability: dict) -> dict:
+    return {
+        "oid": raw_probability["oid"],
+        "sid": raw_probability["sid"],
+        "classifier_id": raw_probability["classifier_id"],
+        "classifier_version": raw_probability["classifier_version"],
+        "class_id": raw_probability["class_id"],
+        "probability": raw_probability["probability"],
+        "ranking": raw_probability.get("ranking"),
+        "lastmjd": raw_probability["lastmjd"],
+    }

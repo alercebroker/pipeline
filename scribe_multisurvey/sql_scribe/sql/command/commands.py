@@ -24,6 +24,7 @@ from db_plugins.db.sql.models import (
     ZtfPS1,
     ZtfReference,
     ZtfSS,
+    ProbabilityArchive,
 )
 from sqlalchemy import bindparam, update
 from sqlalchemy.dialects.postgresql import insert
@@ -44,6 +45,7 @@ from .parser import (
     parse_ztf_ps1,
     parse_ztf_refernece,
     parse_ztf_ss,
+    parse_probability,
 )
 
 step_version = version("scribe-multisurvey")
@@ -571,3 +573,33 @@ class XmatchCommand(Command):
                         },
                     )
                 )
+
+class ProbabilityArchivalCommand(Command):
+    type = "ProbabilityArchivalCommand"
+
+    def _format_data(self, data):
+        return parse_probability(data)
+
+    @staticmethod
+    def db_operation(session: Session, data: List):
+        if not data:
+            return
+
+        dedup = {}
+        for row in data:
+            key = (row["oid"], row["sid"], row["classifier_id"], row["classifier_version"], row["class_id"])
+            if key not in dedup or row["lastmjd"] > dedup[key]["lastmjd"]:
+                dedup[key] = row
+
+        records = list(dedup.values())
+
+        stmt = insert(ProbabilityArchive)
+        upsert = stmt.on_conflict_do_update(
+            constraint="pk_probability_archive_oid_classifierid_version_classid",
+            set_={
+                "probability": stmt.excluded.probability,
+                "ranking": stmt.excluded.ranking,
+                "lastmjd": stmt.excluded.lastmjd,
+            }
+        )
+        session.connection().execute(upsert, records)
