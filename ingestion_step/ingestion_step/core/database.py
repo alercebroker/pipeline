@@ -1,6 +1,6 @@
 from typing import Any, Hashable
 
-from db_plugins.db.sql.models import (
+from db_plugins.db.sql.models_pipeline import (
     DeclarativeBase,
 )
 from sqlalchemy.dialects.postgresql import insert

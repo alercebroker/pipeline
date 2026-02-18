@@ -17,7 +17,7 @@ from test_data import (
 )
 
 from db_plugins.db.sql._connection import PsqlDatabase
-from db_plugins.db.sql.models import (
+from db_plugins.db.sql.models_pipeline import (
     Detection,
     ForcedPhotometry,
     Object,

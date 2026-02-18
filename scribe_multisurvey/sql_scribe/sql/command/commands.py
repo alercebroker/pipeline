@@ -7,7 +7,7 @@ from typing import Dict, List
 
 ## En el import desde los models se deben traer todos los modelos que se modififiquen en los steps.
 ## Al menos desde correction hacia atras.
-from db_plugins.db.sql.models import (
+from db_plugins.db.sql.models_pipeline import (
     Detection,
     Feature,
     ForcedPhotometry,
@@ -24,9 +24,13 @@ from db_plugins.db.sql.models import (
     ZtfPS1,
     ZtfReference,
     ZtfSS,
+)
+
+from db_plugins.db.sql.models_archive_probability import (
     ProbabilityArchive,
 )
-from sqlalchemy import bindparam, update
+
+from sqlalchemy import bindparam, update, func
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
@@ -397,12 +401,17 @@ class ZTFMagstatCommand(Command):
         if len(magstat_list) > 0:
             magstats_stmt = insert(MagStat)
             magstats_result = session.connection().execute(
-                magstats_stmt.on_conflict_do_update(
-                    constraint="pk_magstat_oid_sid_band", set_=magstats_stmt.excluded
+            magstats_stmt.on_conflict_do_update(
+                constraint="pk_magstat_oid_sid_band",
+                set_={
+                    **{c.name: getattr(magstats_stmt.excluded, c.name)
+                    for c in MagStat.__table__.columns
+                    if c.name != "updated_date"},
+                    "updated_date": func.now(),
+                    },
                 ),
                 magstat_list,
-            )
-
+)
 
 class LSSTMagstatCommand(Command):
     type = "LSSTMagstatCommand"
@@ -570,6 +579,7 @@ class XmatchCommand(Command):
                         set_={
                             "oid_catalog": insert_stmt.excluded.oid_catalog,
                             "dist": insert_stmt.excluded.dist,
+                            "updated_date": func.now(),
                         },
                     )
                 )
@@ -587,7 +597,7 @@ class ProbabilityArchivalCommand(Command):
 
         dedup = {}
         for row in data:
-            key = (row["oid"], row["sid"], row["classifier_id"], row["classifier_version"], row["class_id"])
+            key = (row["oid"], row["sid"], row["classifier_version_id"], row["class_id"])
             if key not in dedup or row["lastmjd"] > dedup[key]["lastmjd"]:
                 dedup[key] = row
 
@@ -595,11 +605,11 @@ class ProbabilityArchivalCommand(Command):
 
         stmt = insert(ProbabilityArchive)
         upsert = stmt.on_conflict_do_update(
-            constraint="pk_probability_archive_oid_classifierid_version_classid",
+            constraint="pk_probability_archive",
             set_={
                 "probability": stmt.excluded.probability,
                 "ranking": stmt.excluded.ranking,
-                "lastmjd": stmt.excluded.lastmjd,
+                "update_date": func.now(),
             }
         )
         session.connection().execute(upsert, records)

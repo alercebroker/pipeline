@@ -4,7 +4,7 @@ from typing import Callable, ContextManager, List, Optional
 import pandas as pd
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker, Session
-from db_plugins.db.sql.models import Reference
+from db_plugins.db.sql.models_pipeline import Reference
 
 
 class PSQLConnection:

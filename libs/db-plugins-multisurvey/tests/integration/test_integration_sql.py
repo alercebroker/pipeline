@@ -7,7 +7,7 @@ from sqlalchemy.inspection import inspect
 from db_plugins.db.sql._connection import (
     PsqlDatabase,
 )
-from db_plugins.db.sql.models import Object
+from db_plugins.db.sql.models_pipeline import Object
 
 
 @pytest.mark.usefixtures("psql_service")

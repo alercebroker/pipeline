@@ -3,7 +3,7 @@ from typing import Dict, Union, List
 
 from sqlalchemy.dialects.postgresql import insert
 
-from db_plugins.db.sql.models import Object
+from db_plugins.db.sql.models_pipeline import Object
 from ..database import MongoConnection, PsqlConnection
 import importlib.metadata
 

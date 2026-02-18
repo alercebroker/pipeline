@@ -6,7 +6,7 @@ import logging
 from sqlalchemy import create_engine, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import sessionmaker, Session
-from db_plugins.db.sql.models import Reference, Gaia_ztf, Ss_ztf, Dataquality, Ps1_ztf
+from db_plugins.db.sql.models_pipeline import Reference, Gaia_ztf, Ss_ztf, Dataquality, Ps1_ztf
 
 
 class PSQLConnection:

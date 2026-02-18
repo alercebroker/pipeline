@@ -4,7 +4,7 @@ from typing import Dict, List
 from importlib.metadata import version
 import logging
 
-from db_plugins.db.sql.models import (
+from db_plugins.db.sql.models_pipeline import (
     Detection,
     Feature,
     ForcedPhotometry,

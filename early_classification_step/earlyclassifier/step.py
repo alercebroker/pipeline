@@ -6,7 +6,7 @@ import datetime
 import pandas as pd
 from apf.core.step import GenericStep
 from apf.producers import KafkaProducer
-from db_plugins.db.sql.models import Object, Probability, Step
+from db_plugins.db.sql.models_pipeline import Object, Probability, Step
 from db_plugins.db.sql.connection import SQLConnection
 from model.deployment import StampClassifier
 

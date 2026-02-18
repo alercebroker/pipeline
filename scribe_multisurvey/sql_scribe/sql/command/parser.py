@@ -419,8 +419,7 @@ def parse_probability(raw_probability: dict) -> dict:
     return {
         "oid": raw_probability["oid"],
         "sid": raw_probability["sid"],
-        "classifier_id": raw_probability["classifier_id"],
-        "classifier_version": raw_probability["classifier_version"],
+        "classifier_version_id": raw_probability["classifier_id"],
         "class_id": raw_probability["class_id"],
         "probability": raw_probability["probability"],
         "ranking": raw_probability.get("ranking"),

@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from db_plugins.db.sql._connection import PsqlDatabase
-from db_plugins.db.sql.models import Probability
+from db_plugins.db.sql.models_pipeline import Probability
 from sqlalchemy import select
 
 from rubin_stamp_classifier_step.step import StampClassifierStep

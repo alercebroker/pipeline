@@ -3,6 +3,7 @@ from sqlalchemy import (
     BigInteger,
     Boolean,
     Column,
+    Connection,
     Date,
     Index,
     Integer,
@@ -10,13 +11,31 @@ from sqlalchemy import (
     SmallInteger,
     String,
     func,
+    text,
 )
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, JSONB, REAL
 from sqlalchemy.orm import DeclarativeBase
 
 
 class Base(DeclarativeBase):
-    pass
+    __n_partitions__: int | None = None
+
+    @classmethod
+    def __partition_on__(cls, _partition_idx: int) -> str:
+        return ""
+
+    @classmethod
+    def __create_partitions__(cls, conn: Connection, schema: str = None):
+        schema_prefix = f"{schema}." if schema else ""
+        for i in range(cls.__n_partitions__):
+            conn.execute(
+                text(f"""
+                CREATE TABLE IF NOT EXISTS {schema_prefix}{cls.__tablename__}_part_{i} 
+                PARTITION OF {schema_prefix}{cls.__tablename__} 
+                {cls.__partition_on__(i)}
+            """)
+            )
+        conn.commit()
 
 
 class Commons:
@@ -959,6 +978,12 @@ class Probability(Base):
         ),
     )
 
+    __n_partitions__ = 16
+
+    @classmethod
+    def __partition_on__(cls, partition_idx: int):
+        return f"FOR VALUES WITH (MODULUS {cls.__n_partitions__}, REMAINDER {partition_idx})"
+
 
 class Feature(Base):
     __tablename__ = "feature"
@@ -1086,40 +1111,3 @@ class Allwise(Base):
     __table_args__ = (
         PrimaryKeyConstraint("oid_catalog", name="pk_allwise_oid_catalog"),
     )
-
-class ProbabilityArchive(Base):
-    __tablename__ = "probability_archive"
-    oid = Column(BigInteger, nullable=False)
-    sid = Column(SmallInteger, nullable=False)
-    classifier_id = Column(SmallInteger, nullable=False)
-    classifier_version = Column(SmallInteger, nullable=False)  # now part of PK
-    class_id = Column(SmallInteger, nullable=False)
-    probability = Column(REAL, nullable=False)
-    ranking = Column(SmallInteger)
-    lastmjd = Column(DOUBLE_PRECISION, nullable=False)
-    __table_args__ = (
-        PrimaryKeyConstraint(
-            "oid",
-            "sid",
-            "classifier_id",
-            "classifier_version",  # <-- added here
-            "class_id",
-            name="pk_probability_archive_oid_classifierid_version_classid",
-        ),
-        Index("ix_probability_archive_oid", "oid", postgresql_using="hash"),
-        Index("ix_probability_archive_probability", "probability", postgresql_using="btree"),
-        Index("ix_probability_archive_ranking", "ranking", postgresql_using="btree"),
-        Index("ix_probability_archive_classifier_version", "classifier_version", postgresql_using="btree"),
-        Index(
-            "ix_probability_archive_rank1",
-            "ranking",
-            postgresql_where=ranking == 1,
-            postgresql_using="btree",
-        ),
-        {"postgresql_partition_by": "HASH (oid)"},
-    )
-    __n_partitions__ = 16
-
-    @classmethod
-    def __partition_on__(cls, partition_idx: int):
-        return f"FOR VALUES WITH (MODULUS {cls.__n_partitions__}, REMAINDER {partition_idx})"

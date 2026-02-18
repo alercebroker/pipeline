@@ -1,4 +1,4 @@
-from db_plugins.db.sql.models import Object
+from db_plugins.db.sql.models_pipeline import Object
 from db_plugins.db.sql._connection import (
     PsqlDatabase,
 )

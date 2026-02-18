@@ -1,6 +1,6 @@
 from sqlalchemy import select, cast, Float
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
-from db_plugins.db.sql.models import (
+from db_plugins.db.sql.models_pipeline import (
     Detection, LsstDetection, LsstForcedPhotometry, 
     ForcedPhotometry, LsstSsDetection
 )

@@ -9,7 +9,7 @@ import json
 
 from db_plugins.db.sql._connection import PsqlDatabase
 from correction_multisurvey_step.step import CorrectionMultisurveyZTFStep
-from db_plugins.db.sql.models import (
+from db_plugins.db.sql.models_pipeline import (
     Detection,
     ZtfDetection,
     ZtfForcedPhotometry,
