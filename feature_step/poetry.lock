@@ -764,7 +764,7 @@ files = [
 
 [[package]]
 name = "db-plugins"
-version = "27.5.7a32"
+version = "1.0.0"
 description = "ALeRCE database plugins."
 optional = false
 python-versions = ">=3.10, <3.12"
@@ -775,12 +775,11 @@ develop = true
 [package.dependencies]
 alembic = "1.8.1"
 click = "8.1.3"
-pymongo = "4.4.1"
 SQLAlchemy = "2.0.19"
 
 [package.source]
 type = "directory"
-url = "../libs/db-plugins"
+url = "../libs/db-plugins-multisurvey"
 
 [[package]]
 name = "dnspython"
@@ -788,7 +787,7 @@ version = "2.7.0"
 description = "DNS toolkit"
 optional = false
 python-versions = ">=3.9"
-groups = ["main", "test"]
+groups = ["test"]
 files = [
     {file = "dnspython-2.7.0-py3-none-any.whl", hash = "sha256:b4c34b7d10b51bcc3a5071e7b8dee77939f1e878477eeecc965e9835f63c6c86"},
     {file = "dnspython-2.7.0.tar.gz", hash = "sha256:ce9c432eda0dc91cf618a5cedf1a4e142651196bbcd2c80e89ed5a907e5cfaf1"},
@@ -2113,7 +2112,7 @@ version = "4.4.1"
 description = "Python driver for MongoDB <http://www.mongodb.org>"
 optional = false
 python-versions = ">=3.7"
-groups = ["main", "test"]
+groups = ["test"]
 files = [
     {file = "pymongo-4.4.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:bbdd6c719cc2ea440d7245ba71ecdda507275071753c6ffe9c8232647246f575"},
     {file = "pymongo-4.4.1-cp310-cp310-manylinux1_i686.whl", hash = "sha256:a438508dd8007a4a724601c3790db46fe0edc3d7d172acafc5f148ceb4a07815"},
@@ -2646,7 +2645,7 @@ develop = true
 
 [package.dependencies]
 confluent_kafka = "2.12.0"
-db-plugins = ">=25.0.0"
+db-plugins = {path = "../db-plugins-multisurvey", develop = true}
 psycopg2-binary = "*"
 pymongo = "^4.4.1"
 pytest-docker = "^1.0.1"
@@ -2781,4 +2780,4 @@ url = "../libs/xmatch_client"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.11"
-content-hash = "d12b5c1008bb7cdabd5601a8319037047721219792ade1e3348d2f560b0dc3e3"
+content-hash = "5234725a1d57f9c1c49841f5d8c9f1c117388c118c3daced01f3409883d25fae"

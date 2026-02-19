@@ -22,7 +22,9 @@ DETECTION_KEYS_MAP = {
     "fid": "fid",  # ZTF 'fid' ≈ LSST 'band'
     "isdiffpos": "isdiffpos",
     "forced": "forced",
-    "pid": "pid"
+    "pid": "pid",
+    "mag_corr":"magpsf_corr",
+    "e_mag_corr_ext":"sigmapsf_corr_ext",
 }
 
 def flux_err_2_mag_err(flux_err, flux):
@@ -129,12 +131,12 @@ def detections_to_astro_object_lsst(
 
 def add_mag_and_flux_columns(a: pd.DataFrame) -> pd.DataFrame:
     """
-    Toma un DataFrame con columnas 'mag', 'e_mag', 'mag_corr', 'e_mag_corr_ext', 'isdiffpos', 'forced',
+    Toma un DataFrame con columnas 'mag', 'e_mag', 'magpsf_corr', 'sigmapsf_corr_ext', 'isdiffpos', 'forced',
     y retorna un DataFrame con columnas de magnitud y flujo, renombradas y calculadas.
     """
     a = a[(a["mag"] != 100) | (a["e_mag"] != 100)].copy()
     a.rename(
-        columns={"mag_corr": "brightness", "e_mag_corr_ext": "e_brightness"},
+        columns={"magpsf_corr": "brightness", "sigmapsf_corr_ext": "e_brightness"},
         inplace=True,
     )
     a["unit"] = "magnitude"
@@ -163,8 +165,8 @@ def get_bogus_flags_for_each_detection(detections: List[Dict]):
     for detection in detections:
         value = []
         for key in keys:
-            if key in detection["extra_fields"].keys():
-                value.append(detection["extra_fields"][key])
+            if key in detection.keys():
+                value.append(detection[key])
             else:
                 value.append(None)
         bogus_flags.append(value)
@@ -185,8 +187,8 @@ def get_reference_for_each_detection(detections: List[Dict]):
     for detection in detections:
         value = []
         for key in keys:
-            if key in detection["extra_fields"].keys():
-                value.append(detection["extra_fields"][key])
+            if key in detection.keys():
+                value.append(detection[key])
             else:
                 value.append(None)
         reference.append(value)
@@ -205,9 +207,9 @@ def get_new_references_from_message(detections: List[Dict]) -> pd.DataFrame:
 
     references = []
     for detection in detections:
-        if not set(keys).issubset(detection["extra_fields"]):
+        if not set(keys).issubset(detection):
             continue
-        reference = [detection["oid"]] + [detection["extra_fields"][k] for k in keys]
+        reference = [detection["oid"]] + [detection[k] for k in keys]
         references.append(reference)
 
     references = pd.DataFrame(references, columns=["oid"] + keys)
@@ -218,33 +220,42 @@ def get_new_references_from_message(detections: List[Dict]) -> pd.DataFrame:
 
 def detections_to_astro_object(
     detections: List[Dict],
+    forced: List[Dict],
     xmatches: Optional[Dict],
     references_db: Optional[pd.DataFrame],
 ) -> AstroObject:
     detection_keys = [
-        "oid",
-        "candid",
-        "aid",
-        "tid",
-        "sid",
-        "pid",
-        "ra",
-        "dec",
-        "mjd",
-        "mag_corr",
-        "e_mag_corr_ext",
-        "mag",
-        "e_mag",
-        "fid",
-        "isdiffpos",
-        "forced",
+        "oid", #si
+        "measurement_id", #si
+        "aid", #placeholder
+        "tid", # si
+        "sid", # si
+        "pid", #si 
+        "ra", #si
+        "dec", #si
+        "mjd", #si
+        "magpsf_corr",
+        "sigmapsf_corr_ext",
+        "mag", #si
+        "e_mag", # si
+        "band", #si
+        "isdiffpos", #si
     ]
 
     values = []
+    # Process regular detections (forced=False)
     for detection in detections:
-        values.append([detection.get(key, None) for key in detection_keys])
+        row = [detection.get(key, None) if key != 'sid' else str(detection.get(key, None)) for key in detection_keys]
+        row.append(False)  # forced = False
+        values.append(row)
+    
+    # Process forced photometry (forced=True)
+    for detection in forced:
+        row = [detection.get(key, None) if key != 'sid' else str(detection.get(key, None)) for key in detection_keys]
+        row.append(True)  # forced = True
+        values.append(row)
 
-    a = pd.DataFrame(data=values, columns=detection_keys)
+    a = pd.DataFrame(data=values, columns=detection_keys + ['forced'])
     a.fillna(value=np.nan, inplace=True)
 
     # reference_for_each_detection has distnr, rfid from dets
@@ -258,12 +269,16 @@ def detections_to_astro_object(
     )
     a = pd.concat([a, bogus_flags_for_each_detection], axis=1)
 
+    a.rename(columns=DETECTION_KEYS_MAP, inplace=True)
+
     a = add_mag_and_flux_columns(a)
 
     aid = a.index.values[0]
     oid = a["oid"].iloc[0]
-    a.rename(columns=DETECTION_KEYS_MAP, inplace=True)
 
+    band_map = {"g": 1, "r": 2, "i":3}
+    band_map_inverse = {v: k for k, v in band_map.items()}
+    a["fid"] = a["fid"].map(band_map_inverse)
 
     aid_forced = a[a["forced"]]
     aid_detections = a[~a["forced"]]
@@ -284,13 +299,13 @@ def detections_to_astro_object(
     distpsnr1 = np.nan
 
     for det in detections:
-        if "sgscore1" in det["extra_fields"].keys():
-            sgscore1 = det["extra_fields"]["sgscore1"]
-            sgmag1 = det["extra_fields"]["sgmag1"]
-            srmag1 = det["extra_fields"]["srmag1"]
-            simag1 = det["extra_fields"]["simag1"]
-            szmag1 = det["extra_fields"]["szmag1"]
-            distpsnr1 = det["extra_fields"]["distpsnr1"]
+        if "sgscore1" in det.keys():
+            sgscore1 = det["sgscore1"]
+            sgmag1 = det["sgmag1"]
+            srmag1 = det["srmag1"]
+            simag1 = det["simag1"]
+            szmag1 = det["szmag1"]
+            distpsnr1 = det["distpsnr1"]
             continue
 
     metadata = pd.DataFrame(
@@ -566,7 +581,7 @@ def parse_output(
             "candid": candid,
             "detections": message["detections"], #photometria forzada
             "non_detections": message["non_detections"],
-            "xmatches": message["xmatches"],
+            "xmatches": message.get("xmatches", None),
             "features": features_for_oid,
             "reference": reference,
         }

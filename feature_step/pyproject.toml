@@ -14,7 +14,7 @@ lc-classifier = { path = "../lc_classifier", develop = true}
 apf_base = { path = "../libs/apf", develop = true }
 psycopg2-binary = "^2.9.6"
 SQLAlchemy="2.0.19"
-db-plugins = { path = "../libs/db-plugins", develop = true }
+db-plugins = { path = "../libs/db-plugins-multisurvey", develop = true }
 xmatch-client = { path = "../libs/xmatch_client", develop = true }
 
 [tool.poetry.group.test.dependencies]

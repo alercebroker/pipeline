@@ -4,7 +4,7 @@ from typing import Callable, ContextManager, List, Optional
 import pandas as pd
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker, Session
-from db_plugins.db.sql.models import ztf_reference
+from db_plugins.db.sql.models import ZtfReference
 
 
 class PSQLConnection:
@@ -39,13 +39,16 @@ def parse_sql_reference(reference_models: list, keys) -> pd.DataFrame:
 
 
 def get_sql_references(
-    oids: List[str], db_sql: PSQLConnection, keys: List[str]
+    oids: List[str], db_sql: PSQLConnection, keys: List[str], schema: str = "public"
 ) -> Optional[pd.DataFrame]:
     if db_sql is None:
         return None
     with db_sql.session() as session:
-        stmt = select(ztf_reference).where(ztf_reference.oid.in_(oids))
-        reference = session.execute(stmt).all()
+        stmt = select(ZtfReference).where(ZtfReference.oid.in_(oids))
+        reference = session.execute(
+            stmt,
+            execution_options={"schema_translate_map": {None: schema}}
+        ).all()
         df = parse_sql_reference(reference, keys)
         return df
 

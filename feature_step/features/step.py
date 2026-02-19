@@ -66,15 +66,26 @@ class FeatureStep(GenericStep):
         self.schema = self.config.get("DB_CONFIG", {}).get("SCHEMA", "multisurvey")
 
         if self.survey == "ztf":
-            self.id_column = "candid"
+            self.id_column = "measurement_id"
             self.lightcurve_preprocessor = ZTFLightcurvePreprocessor(drop_bogus=True)
             self.feature_extractor = ZTFFeatureExtractor()
             self.extractor_group = ZTFFeatureExtractor.__name__
             self.detections_to_astro_object_fn = detections_to_astro_object
             self.parse_output_fn = parse_output
             self.parse_scribe_payload = parse_scribe_payload
-            self.extractor_version = version("feature-step")
-            self.feature_name_lut = None
+            version_name = version("feature-step")
+            sid = 0
+            tid = 0  
+            self.extractor_version = get_or_create_version_id(
+                self.db_sql, self.schema, version_name, sid, tid, self.logger
+            )            
+            self.feature_name_lut = get_feature_name_lut(
+                self.db_sql, self.schema, sid, tid, self.logger
+            )
+
+            if self.use_xmatch:
+                xmatch_config = self.config.get("XMATCH_CONFIG", {})
+                self.xmatch_client = XmatchClient(**xmatch_config)
 
 
 
@@ -145,7 +156,7 @@ class FeatureStep(GenericStep):
         
         return results
 
-    def produce_xmatch_to_scribe(self, xmatch_results: List[Dict[str, Any]], messages: List[dict]):
+    def produce_xmatch_to_scribe(self, xmatch_results: List[Dict[str, Any]], messages: List[dict],survey):
         """
         Produce xmatch results to scribe.
         
@@ -176,7 +187,7 @@ class FeatureStep(GenericStep):
             # Crear comando en el formato especificado
             xmatch_command = {
                 'step': 'xmatch',
-                'survey': 'lsst',
+                'survey': survey,
                 'payload': {
                     'oid': int(oid),
                     'sid': sid,
@@ -247,7 +258,7 @@ class FeatureStep(GenericStep):
     
     def _get_sql_references(self, oids: List[str]) -> Optional[pd.DataFrame]:
         db_references = get_sql_references(
-            oids, self.db_sql, keys=["oid", "rfid", "sharpnr", "chinr"]
+            oids, self.db_sql, keys=["oid", "rfid", "sharpnr", "chinr"], schema=self.schema
         )
         db_references = db_references[db_references["chinr"] >= 0.0].copy()
         return db_references
@@ -255,7 +266,7 @@ class FeatureStep(GenericStep):
     def pre_execute(self, messages: List[dict]):
 
         # Para LSST: obtener xmatch info para TODOS los mensajes antes de filtrar
-        if self.use_xmatch and self.survey == "lsst" and len(messages) > 0:
+        if self.use_xmatch and len(messages) > 0:
             xmatch_results = self.get_xmatch_info(messages)
             # Crear diccionario de oid -> xmatch para búsqueda rápida
             xmatch_dict = {str(match['oid']): match for match in xmatch_results}
@@ -266,7 +277,7 @@ class FeatureStep(GenericStep):
                     msg['xmatches'] = xmatch_dict[oid_str]
                 else:
                     msg['xmatches'] = None
-            self.produce_xmatch_to_scribe(xmatch_results, messages)
+            self.produce_xmatch_to_scribe(xmatch_results, messages,self.survey)
 
         filtered_messages = []
         for message in messages:
@@ -322,8 +333,9 @@ class FeatureStep(GenericStep):
             )
 
             if self.survey == "ztf":
-                xmatch_data = message["xmatches"]
-                ao = self.detections_to_astro_object_fn(list(m), xmatch_data, references_db)
+                forced = message.get("forced_photometries", None) #filtrar forced photometry
+                xmatch_data = message.get("xmatches", None)
+                ao = self.detections_to_astro_object_fn(list(m), forced ,xmatch_data, references_db)
             else:
                 forced = message.get("forced_sources", None) #si no hay detections, filtrar forced photometry
                 xmatch_data = message.get("xmatches", None)
@@ -333,8 +345,7 @@ class FeatureStep(GenericStep):
 
         self.lightcurve_preprocessor.preprocess_batch(astro_objects)
         self.feature_extractor.compute_features_batch(astro_objects, progress_bar=False)
-
-        self.produce_to_scribe(astro_objects)
+        #self.produce_to_scribe(astro_objects)
         output = self.parse_output_fn(astro_objects, messages_to_process, candids)
         return output
 
