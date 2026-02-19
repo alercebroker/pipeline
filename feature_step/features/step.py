@@ -236,7 +236,8 @@ class FeatureStep(GenericStep):
                 flush = True
 
             if self.survey == "ztf":
-                self.scribe_producer.produce({"payload": json.dumps(command)}, flush=flush)
+                pass
+                #self.scribe_producer.produce({"payload": json.dumps(command)}, flush=flush)
             
             elif self.survey=="lsst":
                 oid = command["payload"]["oid"]
@@ -345,7 +346,7 @@ class FeatureStep(GenericStep):
 
         self.lightcurve_preprocessor.preprocess_batch(astro_objects)
         self.feature_extractor.compute_features_batch(astro_objects, progress_bar=False)
-        #self.produce_to_scribe(astro_objects)
+        self.produce_to_scribe(astro_objects)
         output = self.parse_output_fn(astro_objects, messages_to_process, candids)
         return output
 
