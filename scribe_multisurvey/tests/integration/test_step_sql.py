@@ -5,7 +5,7 @@ import unittest
 
 import pytest
 from apf.producers.kafka import KafkaProducer
-from db_plugins.db.sql._connection import PsqlDatabase
+from db_plugins.db.sql._connection_pipeline import PsqlDatabase
 from sqlalchemy import text
 
 from sql_scribe.step import SqlScribe

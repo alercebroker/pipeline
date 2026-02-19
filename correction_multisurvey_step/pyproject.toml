@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "correction_multisurvey_step"
-version = "27.4.1a7.dev1"
+version = "27.4.1a8.dev1"
 description = "Correction multisurvey Step"
 authors = []
 readme = "README.md"

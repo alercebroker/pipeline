@@ -1,6 +1,6 @@
 import os
 from apf.producers import KafkaProducer
-from db_plugins.db.sql._connection import PsqlDatabase
+from db_plugins.db.sql._connection_pipeline import PsqlDatabase
 
 
 class RawKafkaProducer(KafkaProducer):

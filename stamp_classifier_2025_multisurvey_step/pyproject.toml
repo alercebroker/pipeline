@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "stamp-classifier-2025-multisurvey-step"
-version = "0.1.0.dev"
+version = "0.1.0.dev0"
 description = ""
 authors = ["Your Name <you@example.com>"]
 readme = "README.md"

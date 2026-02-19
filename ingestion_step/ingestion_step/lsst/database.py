@@ -1,5 +1,5 @@
 import pandas as pd
-from db_plugins.db.sql._connection import PsqlDatabase
+from db_plugins.db.sql._connection_pipeline import PsqlDatabase
 from db_plugins.db.sql.models_pipeline import (
     Detection,
     ForcedPhotometry,

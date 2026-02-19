@@ -4,7 +4,7 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.inspection import inspect
 
-from db_plugins.db.sql._connection import (
+from db_plugins.db.sql._connection_pipeline import (
     PsqlDatabase,
 )
 from db_plugins.db.sql.models_pipeline import Object
