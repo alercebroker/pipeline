@@ -59,7 +59,6 @@ def store_probability(
 def _format_data(
     classifier_id: int, classifier_version: str, class_taxonomy: dict[str, int], predictions: list[dict]
 ) -> list[dict]:
-    logging.warning("No clue what LSST's sid is, setting to 0")
     formated_probabilities = []
     for prediction in predictions:
         probabilities = prediction["probabilities"]
@@ -155,3 +154,4 @@ def get_taxonomy_by_classifier_id(classifier_id: int, psql_connection: PSQLConne
         logging.error(f"Error fetching taxonomy for classifier_id={classifier_id}: {e}")
     
     return mapping
+

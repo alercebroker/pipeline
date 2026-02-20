@@ -1,6 +1,7 @@
 from typing import List, Union, Iterable, Dict, Any
 
 from apf.consumers import KafkaConsumer
+from apf.core import get_class
 from apf.core.step import GenericStep
 import logging
 import numexpr
@@ -14,6 +15,7 @@ from alerce_classifiers.base._types import (
     Xmatch,
     Stamps,
 )
+import json
 from alerce_classifiers.rubin import StampClassifierModel
 import pandas as pd
 
@@ -33,7 +35,7 @@ class StampClassifierStep(GenericStep):
         self.dict_mapping_classes = self.model.dict_mapping_classes
         self.psql_connection = PSQLConnection(config["DB_CONFIG"])
         if "CLS_ID" not in config["MODEL_CONFIG"]:
-            self.classifier_id = 0
+            self.classifier_id = 1
         else:
             self.classifier_id = config["MODEL_CONFIG"]["CLS_ID"]
 
@@ -42,6 +44,14 @@ class StampClassifierStep(GenericStep):
 
         self.class_taxonomy = get_taxonomy_by_classifier_id(self.classifier_id, self.psql_connection)
         logging.info(f"Class taxonomy: {self.class_taxonomy}")
+
+        """ SCRIBE PRODUCER TO PRODUCE TO SCRIBE-MULTISURVEY TOPIC FOR ARCHIVAL PURPOSES"""
+        scribe_cfg = config.get("SCRIBE_PRODUCER_CONFIG")
+        scribe_class = get_class(scribe_cfg["CLASS"])
+        self.scribe_producer = scribe_class(scribe_cfg)
+        self.scribe_topic_name = scribe_cfg.get("TOPIC")
+
+
     def pre_execute(self, messages: List[dict]) -> List[dict]:
         # Preprocessing: parsing, formatting and validation.
 
@@ -224,6 +234,9 @@ class StampClassifierStep(GenericStep):
             class_taxonomy = self.class_taxonomy,
             predictions=messages,
         )
+
+        self.produce_to_scribe(messages)
+
         return messages
 
     def tear_down(self):
@@ -232,3 +245,58 @@ class StampClassifierStep(GenericStep):
         else:
             self.consumer.__del__()
         self.producer.__del__()
+    
+
+    def _format_scribe_records(self, predictions: list[dict]) -> list[dict]:
+        records = []
+
+        for msg in predictions:
+            probs = msg["probabilities"]
+
+            # select sid
+            ssid = msg.get("ssObjectId")
+            sid = 2 if ssid not in (None, 0) else 1
+
+            # format the message for all ranks
+            sorted_classes = sorted(probs.items(), key=lambda x: x[1], reverse=True)
+
+            for rank, (class_name, prob) in enumerate(sorted_classes, start=1):
+                records.append(
+                    {
+                        "oid": msg["diaObjectId"] or msg["ssObjectId"],
+                        "sid": sid,
+                        "classifier_id": self.classifier_id,
+                        "classifier_version": int(self.model.model_version.replace(".", "")),
+                        "class_id": self.class_taxonomy.get(class_name, -1),
+                        "probability": prob,
+                        "ranking": rank,
+                        "lastmjd": msg["midpointMjdTai"],
+                    }
+                )
+                
+
+        return records
+    
+    def produce_to_scribe(self, predictions: list[dict]):
+
+        records = self._format_scribe_records(predictions)
+        if not records:
+            return
+
+        last = len(records) - 1
+
+        for i, record in enumerate(records):
+            command = {
+                "step": "probability-archival-step",
+                "survey": "lsst",
+                "payload": record,
+            }
+
+            self.scribe_producer.producer.produce(
+                topic=self.scribe_topic_name,
+                value=json.dumps(command).encode("utf-8"),
+                key=str(record["oid"]).encode("utf-8"),
+            )
+
+            if i == last:
+                self.scribe_producer.producer.flush()
