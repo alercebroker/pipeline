@@ -435,6 +435,8 @@ class GenericStep(abc.ABC):
             preprocessed_msg = self._pre_execute(message)
             if len(preprocessed_msg) == 0:
                 logger.info("Message of len zero after pre_execute")
+                if self.commit:
+                    self.consumer.commit()
                 continue
             try:
                 result = self.execute(preprocessed_msg)
