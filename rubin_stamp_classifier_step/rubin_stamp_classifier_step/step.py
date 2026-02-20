@@ -47,9 +47,15 @@ class StampClassifierStep(GenericStep):
 
         """ SCRIBE PRODUCER TO PRODUCE TO SCRIBE-MULTISURVEY TOPIC FOR ARCHIVAL PURPOSES"""
         scribe_cfg = config.get("SCRIBE_PRODUCER_CONFIG")
-        scribe_class = get_class(scribe_cfg["CLASS"])
-        self.scribe_producer = scribe_class(scribe_cfg)
-        self.scribe_topic_name = scribe_cfg.get("TOPIC")
+        self.scribe_producer = None
+        self.scribe_topic_name = None
+        if scribe_cfg:
+            scribe_class = get_class(scribe_cfg["CLASS"])
+            self.scribe_producer = scribe_class(scribe_cfg)
+            self.scribe_topic_name = scribe_cfg.get("TOPIC")
+            logging.info("Scribe producer enabled")
+        else:
+            logging.info("Scribe producer disabled (no config for scribe producer)")
 
 
     def pre_execute(self, messages: List[dict]) -> List[dict]:
@@ -225,7 +231,7 @@ class StampClassifierStep(GenericStep):
         return output_messages
 
     def post_execute(self, messages: List[dict]) -> List[dict]:
-        #exit()
+
         # Write probabilities in the database
         store_probability(
             self.psql_connection,
@@ -235,8 +241,10 @@ class StampClassifierStep(GenericStep):
             predictions=messages,
         )
 
-        self.produce_to_scribe(messages)
-
+        # Produce to scribe
+        if self.scribe_producer is not None:
+            self.produce_to_scribe(messages)
+    
         return messages
 
     def tear_down(self):
@@ -279,6 +287,10 @@ class StampClassifierStep(GenericStep):
     
     def produce_to_scribe(self, predictions: list[dict]):
 
+        # When no scribe producer is configured, do nothing
+        if self.scribe_producer is None:
+            return
+        
         records = self._format_scribe_records(predictions)
         if not records:
             return
