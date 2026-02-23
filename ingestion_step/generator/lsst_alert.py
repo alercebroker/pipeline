@@ -278,8 +278,8 @@ class LsstAlertGenerator:
 
     def _random_datetime(self) -> datetime.datetime:
         """Return a random datetime.datetime between 2000-01-01 and 2030-12-31."""
-        start = datetime.datetime(2000, 1, 1)
-        end = datetime.datetime(2030, 12, 31)
+        start = datetime.datetime(2000, 1, 1, tzinfo=datetime.timezone.utc)
+        end = datetime.datetime(2030, 12, 31, tzinfo=datetime.timezone.utc)
         delta = end - start
         random_seconds = self.rng.randint(0, int(delta.total_seconds()))
         return start + datetime.timedelta(seconds=random_seconds)
