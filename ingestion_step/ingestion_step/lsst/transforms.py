@@ -1,5 +1,3 @@
-from typing import Literal
-
 import pandas as pd
 
 from ingestion_step.core.utils import (
@@ -53,6 +51,13 @@ def band_to_int(df: pd.DataFrame):
     df.drop(columns=["_band"], inplace=True)
 
 
+def NaT_to_None(column: str):
+    def _NaT_to_None(df: pd.DataFrame):
+        df[column] = df[column].astype("object").where(df[column].notna(), None)
+
+    return _NaT_to_None
+
+
 def get_source_transforms() -> list[Transform]:
     return [
         add_oid,
@@ -101,6 +106,9 @@ def get_mpc_orbits_transforms() -> list[Transform]:
         drop_na(["ssObjectId"]),
         deduplicate(["ssObjectId"], sort="midpointMjdTai"),
         copy_column("midpointMjdTai", "mjd"),
+        NaT_to_None("created_at"),
+        NaT_to_None("updated_at"),
+        NaT_to_None("fitting_datetime"),
     ]
 
 

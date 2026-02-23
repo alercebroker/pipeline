@@ -1,3 +1,4 @@
+import datetime
 import pickle
 from dataclasses import dataclass
 from random import Random
@@ -275,6 +276,14 @@ class LsstAlertGenerator:
 
         return id
 
+    def _random_datetime(self) -> datetime.datetime:
+        """Return a random datetime.datetime between 2000-01-01 and 2030-12-31."""
+        start = datetime.datetime(2000, 1, 1)
+        end = datetime.datetime(2030, 12, 31)
+        delta = end - start
+        random_seconds = self.rng.randint(0, int(delta.total_seconds()))
+        return start + datetime.timedelta(seconds=random_seconds)
+
     def _new_object(self) -> ObjectInfo:
         otype: ObjectTypes = self.rng.choice(["dia", "ss"])
         oid = self._new_id()
@@ -533,8 +542,8 @@ class LsstAlertGenerator:
             "packed_primary_provisional_designation": f"K{self.rng.randint(10, 99)}A{self.rng.randint(10, 99)}B",
             "unpacked_primary_provisional_designation": f"20{self.rng.randint(10, 99)} AB",
             "mpc_orb_jsonb": self._noneable("{}"),
-            "created_at": None,
-            "updated_at": None,
+            "created_at": self._noneable(self._random_datetime()),
+            "updated_at": self._noneable(self._random_datetime()),
             "orbit_type_int": self._noneable(self.rng.randint(0, 10)),
             "u_param": self._noneable(self.rng.randint(0, 9)),
             "nopp": self._noneable(self.rng.randint(0, 10)),
