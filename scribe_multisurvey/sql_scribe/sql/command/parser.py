@@ -425,3 +425,15 @@ def parse_probability(raw_probability: dict) -> dict:
         "ranking": raw_probability.get("ranking"),
         "lastmjd": raw_probability["lastmjd"],
     }
+
+
+def parse_ztf_object_feature_update(raw_ztf_update: dict) -> dict:
+    return {
+        "oid": raw_ztf_update["oid"],
+        "_oid": raw_ztf_update["oid"],
+        "mjd": raw_ztf_update["mjd"],
+        "g_r_max": raw_ztf_update["g_r_max"],
+        "g_r_mean": raw_ztf_update["g_r_mean"],
+        "g_r_max_corr": raw_ztf_update.get("g_r_max_corr"),
+        "g_r_mean_corr": raw_ztf_update["g_r_mean_corr"],
+    }

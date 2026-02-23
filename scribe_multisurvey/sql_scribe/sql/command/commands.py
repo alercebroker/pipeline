@@ -50,6 +50,7 @@ from .parser import (
     parse_ztf_refernece,
     parse_ztf_ss,
     parse_probability,
+    parse_ztf_object_feature_update,    
 )
 
 step_version = version("scribe-multisurvey")
@@ -613,3 +614,38 @@ class ProbabilityArchivalCommand(Command):
             }
         )
         session.connection().execute(upsert, records)
+
+class ZtfObjectUpdateCommand(Command):
+    type = "ZtfObjectUpdateCommand"
+
+    def _format_data(self, data):
+        return parse_ztf_object_feature_update(data)
+
+    @staticmethod
+    def db_operation(session: Session, data: List):
+        if not data:
+            return
+
+        # Deduplicate by mjd to keep the latest update for each object oid
+        dedup = {}
+        for row in data:
+            oid = row["oid"]
+            if oid not in dedup or row["mjd"] > dedup[oid]["mjd"]:
+                dedup[oid] = row
+
+        records = list(dedup.values())
+        if not records:
+            return
+
+        stmt = (
+            update(ZtfObject)
+            .where(ZtfObject.oid == bindparam("_oid"))
+            .values(
+                g_r_max=bindparam("g_r_max"),
+                g_r_mean=bindparam("g_r_mean"),
+                g_r_max_corr=bindparam("g_r_max_corr"),
+                g_r_mean_corr=bindparam("g_r_mean_corr"),
+            )
+        )
+
+        session.connection().execute(stmt, records)
