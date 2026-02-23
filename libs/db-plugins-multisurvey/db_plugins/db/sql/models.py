@@ -960,6 +960,7 @@ class Taxonomy(Base):
     __tablename__ = "taxonomy"
 
     class_id = Column(Integer, nullable=False)
+    sid = Column(SmallInteger, nullable=False)
     class_name = Column(VARCHAR, nullable=False)
     order = Column(Integer, nullable=False)
     classifier_id = Column(SmallInteger, nullable=False)
