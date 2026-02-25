@@ -460,45 +460,68 @@ class LSSTFeatureCommand(Command):
     type = "LSSTFeatureCommand"
 
     def _format_data(self, data):
-        
+
         oid = data["oid"]
         sid = data["sid"]
-        feature_version = data["features_version"].split('.')[0] if isinstance(data["features_version"], str) else data["features_version"]
-        
+        mjd = data["mjd"]
+
+        feature_version = (
+            data["features_version"].split(".")[0]
+            if isinstance(data["features_version"], str)
+            else data["features_version"]
+        )
+
         deduplication_dict = {}
 
         for feature in data["features"]:
             key = (oid, sid, feature["feature_id"], feature["band"])
-            deduplication_dict[key] = {
+
+            row = {
                 "oid": oid,
                 "sid": sid,
                 "feature_id": feature["feature_id"],
                 "band": feature["band"],
                 "version": feature_version,
                 "value": feature["value"],
+                "mjd": mjd,   # only used for dedup logic
             }
-        
+
+            # Deduplicate by keeping the feature with the latest mjd
+            if key not in deduplication_dict or row["mjd"] > deduplication_dict[key]["mjd"]:
+                deduplication_dict[key] = row
+
         return list(deduplication_dict.values())
 
     @staticmethod
     def db_operation(session: Session, data: List):
-        
-        if len(data) > 0:
-            dedup = {}
-            for row in data:
-                key = (row["oid"], row["sid"], row["feature_id"], row["band"])
-                dedup[key] = row 
 
-            
-            deduplicated_data = list(dedup.values())
+        if not data:
+            return
 
-            features_stmt = insert(Feature).on_conflict_do_update(
-                constraint="pk_feature_oid_featureid_band",
-                set_=insert(Feature).excluded, 
-            )
+        dedup = {}
 
-            session.connection().execute(features_stmt, deduplicated_data)
+        for row in data:
+            key = (row["oid"], row["sid"], row["feature_id"], row["band"])
+            if key not in dedup or row["mjd"] > dedup[key]["mjd"]:
+                dedup[key] = row
 
+        deduplicated_data = list(dedup.values())
+
+        for row in deduplicated_data:
+            row.pop("mjd", None)
+
+        stmt = insert(Feature)
+
+        upsert_stmt = stmt.on_conflict_do_update(
+            constraint="pk_feature_oid_featureid_band",
+            set_={
+                "value": stmt.excluded.value,
+                "version": stmt.excluded.version,
+                "updated_date": func.now(),
+            },
+        )
+
+        session.execute(upsert_stmt, deduplicated_data)
 
 
 class XmatchCommand(Command):
