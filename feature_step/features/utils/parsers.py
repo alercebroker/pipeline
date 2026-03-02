@@ -110,6 +110,16 @@ def detections_to_astro_object_lsst(
         w3 = xmatches['metadata']["w3mpro"]['Float64']
         w4 = xmatches['metadata']["w4mpro"]['Float64']
 
+    all_mjds = []
+    for det in detections:
+        if "mjd" in det:
+            all_mjds.append(det["mjd"])
+    for frc in forced:
+        if "mjd" in frc:
+            all_mjds.append(frc["mjd"])
+    
+    last_mjd = float(max(all_mjds)) if all_mjds else np.nan
+
 
     metadata = pd.DataFrame(
         [   ["aid","aid"],
@@ -118,6 +128,7 @@ def detections_to_astro_object_lsst(
             ["W2", w2],
             ["W3", w3],
             ["W4", w4],
+            ["last_mjd", last_mjd],
         ],
         columns=["name", "value"],)
     
@@ -557,6 +568,8 @@ def parse_scribe_payload_lsst(
     for astro_object in astro_objects:
         ao_features = prepare_ao_features_for_db_lsst(astro_object,feature_name_lut)
         oid = query_ao_table(astro_object.metadata, "oid")
+        last_mjd = query_ao_table(astro_object.metadata, "last_mjd")
+
 
         features_list = ao_features.to_dict("records")
         sid = astro_object.detections["sid"].values[0]
@@ -568,6 +581,7 @@ def parse_scribe_payload_lsst(
                 "oid": int(oid),
                 "features_version": features_version,
                 "sid": sid,
+                "mjd": last_mjd,
                 "features": features_list,
             },
         }
