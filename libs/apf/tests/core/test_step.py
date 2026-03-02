@@ -1,11 +1,13 @@
-from datetime import datetime, timezone
 import os
+from datetime import datetime, timezone
+
+import pytest
+
 from apf.core.step import (
     DefaultMetricsProducer,
-    GenericStep,
     GenericProducer,
+    GenericStep,
 )
-import pytest
 
 
 class MockStep(GenericStep):
@@ -158,10 +160,10 @@ def test_pre_execute(mocker, step):
     # mock the abstract method
     pre_execute = mocker.patch.object(MockStep, "pre_execute")
     message = {"msg": "message"}
-    assert step.metrics.get("timestamp_received") == None
+    assert step.kafka_metrics.get("timestamp_received") == None
     step._pre_execute(message)
     pre_execute.assert_called_once_with(step.message)
-    assert step.metrics.get("timestamp_received")
+    assert step.kafka_metrics.get("timestamp_received")
     assert step.message == [message]
 
 
@@ -172,15 +174,15 @@ def test_post_execute(step, mocker):
     result = {"msg": "message"}
     post_execute.return_value = result
     step.message = [result]
-    step.metrics["timestamp_received"] = datetime.now(timezone.utc)
-    assert step.metrics.get("timestamp_sent") == None
-    assert step.metrics.get("execution_time") == None
+    step.kafka_metrics["timestamp_received"] = datetime.now(timezone.utc)
+    assert step.kafka_metrics.get("timestamp_sent") == None
+    assert step.kafka_metrics.get("execution_time") == None
     os.environ["METRICS_SURVEY"] = "test"
     step._post_execute(result)
     post_execute.assert_called_once_with(result)
-    assert step.metrics.get("timestamp_sent")
-    assert step.metrics.get("source") == "MockStep"
-    assert step.metrics.get("survey") == "test"
+    assert step.kafka_metrics.get("timestamp_sent")
+    assert step.kafka_metrics.get("source") == "MockStep"
+    assert step.kafka_metrics.get("survey") == "test"
     send_metrics.assert_called()
 
 

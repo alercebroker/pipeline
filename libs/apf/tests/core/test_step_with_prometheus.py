@@ -1,8 +1,9 @@
-from prometheus_client import start_http_server
-from apf.metrics.prometheus import PrometheusMetrics
-from apf.core.step import GenericStep
 import pytest
 import requests
+from prometheus_client import start_http_server
+
+from apf.core.step import GenericStep
+from apf.metrics.prometheus import PrometheusMetrics
 
 
 @pytest.fixture
@@ -35,23 +36,23 @@ def prometheus_server():
     start_http_server(8000)
 
 
-prometheus_metrics = PrometheusMetrics()
-
-
 @pytest.fixture
 def step(basic_config, mocker, prometheus_server):
     mocker.patch.object(MockStep, "_write_success")
-    step = MockStep(config=basic_config, prometheus_metrics=prometheus_metrics)
+    step = MockStep(config=basic_config, metrics=PrometheusMetrics)
+
     yield step
+
+    step.tear_down()
 
 
 def test_init(step):
-    step._pre_consume()
+    step.start()
     result = requests.get("http://localhost:8000")
     assert "consumed_messages summary" in result.text
     assert "processed_messages summary" in result.text
     assert "execution_time summary" in result.text
-    # assert "telescope_id gauge" in result.text
+    assert "step_state enum" in result.text
 
 
 def test_consume(step):

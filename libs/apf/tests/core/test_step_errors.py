@@ -1,8 +1,10 @@
+import logging
+
+import pytest
+
 from apf.core.step import (
     GenericStep,
 )
-import pytest
-import logging
 
 
 class MockStep(GenericStep):
