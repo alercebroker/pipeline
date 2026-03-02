@@ -1,6 +1,7 @@
-from confluent_kafka.admin import AdminClient, NewTopic
-import pytest
 import os
+
+import pytest
+from confluent_kafka.admin import AdminClient, NewTopic
 
 
 @pytest.fixture(scope="session")

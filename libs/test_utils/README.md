@@ -36,14 +36,14 @@ def test_something(kafka_service, mongo_service, psql_service):
 version: "3"
 services:
   zookeeper:
-    image: 'bitnami/zookeeper:latest'
+    image: 'bitnamilegacy/zookeeper:latest'
     ports:
       - '2181:2181'
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
 
   kafka:
-    image: 'bitnami/kafka:3.3.1'
+    image: 'bitnamilegacy/kafka:3.3.1'
     ports:
       - '9092:9092'
     environment:

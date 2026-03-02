@@ -1,0 +1,10 @@
+{
+	"type": "record",
+	"name": "cutout",
+	"doc": "avro alert schema",
+	"version": "4.02",
+	"fields": [
+		{"name": "fileName", "type": "string"},
+		{"name": "stampData", "type": "bytes", "doc": "fits.gz"}
+			]
+}

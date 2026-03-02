@@ -52,8 +52,15 @@ async def git_push(dry_run: bool):
                 "/pipeline",
                 client.host().directory(
                     str(path),
-                    exclude=[".venv/", "**/.venv/", ".terraform/",
-                             "**/.terraform", "tests/", "**/tests/",]
+                    exclude=[
+                        ".venv/",
+                        "**/.venv/",
+                        ".terraform/",
+                        "**/.terraform",
+                        "tests/",
+                        "**/tests/",
+                        "training/",
+                    ],
                 ),
             )
             .with_workdir("/pipeline")
@@ -108,8 +115,15 @@ async def build(
     # get build context directory
     context_dir = client.host().directory(
         str(path),
-        exclude=[".venv/", "**/.venv/", ".terraform/",
-                 "**/.terraform", "tests/", "**/tests/"]
+        exclude=[
+            ".venv/",
+            "**/.venv/",
+            ".terraform/",
+            "**/.terraform",
+            "tests/",
+            "**/tests/",
+            "training/",
+        ],
     )
     # build using Dockerfile
     bargs = []
@@ -154,8 +168,15 @@ async def publish_lib(client: dagger.Client, package_dir, dry_run: bool):
             f"/pipeline/{package_dir}",
             client.host().directory(
                 str(path / package_dir),
-                exclude=[".venv/", "**/.venv/", ".terraform/",
-                         "**/.terraform", "tests/", "**/tests/"]
+                exclude=[
+                    ".venv/",
+                    "**/.venv/",
+                    ".terraform/",
+                    "**/.terraform",
+                    "tests/",
+                    "**/tests/",
+                    "training/",
+                ],
             ),
         )
         .with_workdir(f"/pipeline/{package_dir}")
@@ -179,8 +200,15 @@ async def get_tags(client: dagger.Client, package_dir: str) -> list:
             "/pipeline",
             client.host().directory(
                 str(path),
-                exclude=[".venv/", "**/.venv/", ".terraform/",
-                         "**/.terraform", "tests/", "**/tests/",]
+                exclude=[
+                    ".venv/",
+                    "**/.venv/",
+                    ".terraform/",
+                    "**/.terraform",
+                    "tests/",
+                    "**/tests/",
+                    "training/",
+                ],
             ),
         )
     )

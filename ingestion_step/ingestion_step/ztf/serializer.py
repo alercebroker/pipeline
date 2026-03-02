@@ -1,16 +1,10 @@
-from typing import Any
-
-import numpy as np
 import pandas as pd
 
-from ingestion_step.core.parser_interface import ParsedData
 
-
-def serialize_detections(
-    detections: pd.DataFrame, forced_photometries: pd.DataFrame
-):
-    dets = pd.concat([detections, forced_photometries])
-
+def serialize_detections(detections: pd.DataFrame):
+    # Bad fix for precision loss in kafka
+    # for bad_column in ["objectidps1", "objectidps2", "objectidps3", "tblid"]:
+    #     detections[bad_column] = detections[bad_column].astype(pd.StringDtype())
     needed_columns = [
         "message_id",
         "oid",
@@ -30,14 +24,232 @@ def serialize_detections(
         "has_stamp",
         "forced",
         "parent_candid",
-        "extra_fields",
+        "diffmaglim",
+        "pdiffimfilename",
+        "programpi",
+        "programid",
+        "tblid",
+        "nid",
+        "rcid",
+        "field",
+        "xpos",
+        "ypos",
+        "chipsf",
+        "magap",
+        "sigmagap",
+        "distnr",
+        "magnr",
+        "sigmagnr",
+        "chinr",
+        "sharpnr",
+        "sky",
+        "magdiff",
+        "fwhm",
+        "classtar",
+        "mindtoedge",
+        "magfromlim",
+        "seeratio",
+        "aimage",
+        "bimage",
+        "aimagerat",
+        "bimagerat",
+        "elong",
+        "nneg",
+        "nbad",
+        "rb",
+        "ssdistnr",
+        "ssmagnr",
+        "ssnamenr",
+        "sumrat",
+        "magapbig",
+        "sigmagapbig",
+        "ranr",
+        "decnr",
+        "sgmag1",
+        "srmag1",
+        "simag1",
+        "szmag1",
+        "sgscore1",
+        "distpsnr1",
+        "ndethist",
+        "ncovhist",
+        "jdstarthist",
+        "jdendhist",
+        "scorr",
+        "tooflag",
+        "objectidps1",
+        "objectidps2",
+        "sgmag2",
+        "srmag2",
+        "simag2",
+        "szmag2",
+        "sgscore2",
+        "distpsnr2",
+        "objectidps3",
+        "sgmag3",
+        "srmag3",
+        "simag3",
+        "szmag3",
+        "sgscore3",
+        "distpsnr3",
+        "nmtchps",
+        "rfid",
+        "jdstartref",
+        "jdendref",
+        "nframesref",
+        "rbversion",
+        "dsnrms",
+        "ssnrms",
+        "dsdiff",
+        "magzpsci",
+        "magzpsciunc",
+        "magzpscirms",
+        "nmatches",
+        "clrcoeff",
+        "clrcounc",
+        "zpclrcov",
+        "zpmed",
+        "clrmed",
+        "clrrms",
+        "neargaia",
+        "neargaiabright",
+        "maggaia",
+        "maggaiabright",
+        "exptime",
+        "drb",
+        "drbversion",
     ]
 
-    extra_fields_cols = dets.columns.difference(needed_columns)
-    dets["extra_fields"] = dets[extra_fields_cols].to_dict("records")
-    dets = dets[needed_columns]
+    dets = detections[needed_columns]
 
     return dets
+
+
+def serialize_prv_candidates(prv_candidates: pd.DataFrame):
+    needed_columns = [
+        "message_id",
+        "oid",
+        "sid",
+        "tid",
+        "pid",
+        "band",
+        "measurement_id",
+        "mjd",
+        "ra",
+        "e_ra",
+        "dec",
+        "e_dec",
+        "mag",
+        "e_mag",
+        "isdiffpos",
+        "has_stamp",
+        "forced",
+        "parent_candid",
+        "diffmaglim",
+        "pdiffimfilename",
+        "programpi",
+        "programid",
+        "tblid",
+        "nid",
+        "rcid",
+        "field",
+        "xpos",
+        "ypos",
+        "chipsf",
+        "magap",
+        "sigmagap",
+        "distnr",
+        "magnr",
+        "sigmagnr",
+        "chinr",
+        "sharpnr",
+        "sky",
+        "magdiff",
+        "fwhm",
+        "classtar",
+        "mindtoedge",
+        "magfromlim",
+        "seeratio",
+        "aimage",
+        "bimage",
+        "aimagerat",
+        "bimagerat",
+        "elong",
+        "nneg",
+        "nbad",
+        "rb",
+        "ssdistnr",
+        "ssmagnr",
+        "ssnamenr",
+        "sumrat",
+        "magapbig",
+        "sigmagapbig",
+        "ranr",
+        "decnr",
+        "scorr",
+        "magzpsci",
+        "magzpsciunc",
+        "magzpscirms",
+        "clrcoeff",
+        "clrcounc",
+        "rbversion",
+    ]
+
+    prv_cands = prv_candidates[needed_columns]
+
+    return prv_cands
+
+
+def serialize_forced_photometries(forced_phots: pd.DataFrame):
+    needed_columns = [
+        "message_id",
+        "oid",
+        "sid",
+        "tid",
+        "pid",
+        "band",
+        "measurement_id",
+        "mjd",
+        "ra",
+        "e_ra",
+        "dec",
+        "e_dec",
+        "mag",
+        "e_mag",
+        "isdiffpos",
+        "forced",
+        "parent_candid",
+        "field",
+        "rcid",
+        "rfid",
+        "sciinpseeing",
+        "scibckgnd",
+        "scisigpix",
+        "magzpsci",
+        "magzpsciunc",
+        "magzpscirms",
+        "clrcoeff",
+        "clrcounc",
+        "exptime",
+        "adpctdif1",
+        "adpctdif2",
+        "diffmaglim",
+        "programid",
+        "forcediffimflux",
+        "forcediffimfluxunc",
+        "procstatus",
+        "distnr",
+        "ranr",
+        "decnr",
+        "magnr",
+        "sigmagnr",
+        "chinr",
+        "sharpnr",
+    ]
+
+    fphots = forced_phots[needed_columns]
+
+    return fphots
 
 
 def serialize_non_detections(non_detections: pd.DataFrame):
@@ -55,42 +267,3 @@ def serialize_non_detections(non_detections: pd.DataFrame):
     non_dets = non_dets[needed_columns]
 
     return non_dets
-
-
-def groupby_messageid(df: pd.DataFrame) -> dict[int, list[dict[str, Any]]]:
-    return (
-        df.groupby("message_id")
-        .apply(lambda x: x.to_dict("records"), include_groups=False)
-        .to_dict()
-    )
-
-
-def serialize_ztf(data: ParsedData) -> list[dict[str, Any]]:
-    objects = data["objects"]
-    detections = serialize_detections(
-        data["detections"], data["forced_photometries"]
-    )
-    non_detections = serialize_non_detections(data["non_detections"])
-
-    message_objects = groupby_messageid(objects)
-    message_detections = groupby_messageid(detections)
-    message_non_detections = groupby_messageid(non_detections)
-
-    messages: list[dict[str, Any]] = []
-    for message_id, objects in message_objects.items():
-        detections = message_detections.get(message_id, [])
-        non_detections = message_non_detections.get(message_id, [])
-
-        assert len(objects) == 1
-        obj = objects[0]
-
-        messages.append(
-            {
-                "oid": obj["oid"],
-                "measurement_id": obj["measurement_id"],
-                "detections": detections,
-                "non_detections": non_detections,
-            }
-        )
-
-    return messages

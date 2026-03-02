@@ -1,6 +1,6 @@
-from abc import ABC, abstractmethod
 import logging
-from typing import Union
+from abc import ABC, abstractmethod
+from typing import Any, Callable
 
 
 class GenericProducer(ABC):
@@ -11,10 +11,19 @@ class GenericProducer(ABC):
         self.logger.info(f"Creating {self.__class__.__name__}")
         self.config = config
         self._key_field = None
+        self._key_function: Callable[[dict[str, Any]], str] | None = None
 
     @property
     def key_field(self):
         return self._key_field
+
+    @property
+    def key_function(self):
+        return self._key_function
+
+    def set_key_function(self, function: Callable[[dict[str, Any]], str]):
+        """Set function to compute a key based on the message."""
+        self._key_function = function
 
     def set_key_field(self, key):
         """Set key used when indexing produced messages."""
@@ -27,6 +36,6 @@ class GenericProducer(ABC):
         Parameters
         ----------
         message : dict-like
-            Message to be sended.
+            Message to be sent.
         """
         pass

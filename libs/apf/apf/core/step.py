@@ -70,6 +70,7 @@ class GenericStep(abc.ABC):
         if self.metrics_config:
             self.extra_metrics = self.metrics_config.get("EXTRA_METRICS", ["candid"])
         self.commit = self.config.get("COMMIT", True)
+        self.skip_producer = self.config.get("SKIP_PRODUCER", False)
         self.prometheus_metrics = prometheus_metrics
 
     @property
@@ -140,7 +141,7 @@ class GenericStep(abc.ABC):
 
             #settings.py
             STEP_CONFIG = {...
-                "METRICS_CONFIG":{ #Can be a empty dictionary
+                "METRICS_CONFIG":{ #Can be an empty dictionary
                     "CLASS": "apf.metrics.KafkaMetricsProducer",
                     "PARAMS": { # params for the apf.metrics.KafkaMetricsProducer
                         "PARAMS":{
@@ -192,11 +193,11 @@ class GenericStep(abc.ABC):
             raise error
         return preprocessed
 
-    def pre_execute(self, messages: List[dict]):
+    def pre_execute(self, messages: List[dict]) -> List[dict]:
         """
         Override this method to perform operations on each batch of messages consumed.
 
-        Typically this method is used for pre processing operations such as parsing,
+        Typically, this method is used for pre-processing operations such as parsing,
         formatting and overall preparation for the execute method that handles
         all the complex logic applied to the messages.
         """
@@ -211,8 +212,8 @@ class GenericStep(abc.ABC):
 
         Parameters
         ----------
-        message : dict, list
-            Dict-like message to be processed or list of dict-like messages
+        messages : List[dict]
+            A list of dict-like messages to be processed.
         """
         pass
 
@@ -252,7 +253,7 @@ class GenericStep(abc.ABC):
         the processed data coming from :py:func:`apf.core.step.GenericStep.execute`
         method.
 
-        Typically used to do post processing, parsing, output formatting, etc.
+        Typically used to do post-processing, parsing, output formatting, etc.
         """
         return result
 
@@ -299,7 +300,7 @@ class GenericStep(abc.ABC):
         pass
 
     def get_value(self, message, params):
-        """Get values from a massage and process it to create a new metric.
+        """Get values from a message and process it to create a new metric.
 
         Parameters
         ----------
@@ -312,7 +313,7 @@ class GenericStep(abc.ABC):
             - 'key': str
                 Must have parameter, has to be in the message.
             - 'alias': str
-                New key returned, this can be used to standarize some message keys.
+                New key returned, this can be used to standardize some message keys.
             - 'format': callable
                 Function to be call on the message value.
 
@@ -326,7 +327,7 @@ class GenericStep(abc.ABC):
             return params, message.get(params)
         elif isinstance(params, dict):
             if "key" not in params:
-                raise KeyError("'key' in parameteres not found")
+                raise KeyError("'key' in parameters not found")
 
             val = message.get(params["key"])
             if val is None or "value" in params:
@@ -335,7 +336,7 @@ class GenericStep(abc.ABC):
 
             if "format" in params:
                 if not callable(params["format"]):
-                    raise ValueError("'format' parameter must be a calleable.")
+                    raise ValueError("'format' parameter must be a callable.")
                 else:
                     val = params["format"](val)
             if "alias" in params:
@@ -434,6 +435,8 @@ class GenericStep(abc.ABC):
             preprocessed_msg = self._pre_execute(message)
             if len(preprocessed_msg) == 0:
                 logger.info("Message of len zero after pre_execute")
+                if self.commit:
+                    self.consumer.commit()
                 continue
             try:
                 result = self.execute(preprocessed_msg)
@@ -443,7 +446,10 @@ class GenericStep(abc.ABC):
                 raise error
             result = self._post_execute(result)
             result = self._pre_produce(result)
-            self.produce(result)
+            if not self.skip_producer:
+                self.produce(result)
+            else:
+                logger.info("SKIP_PRODUCER flag is set — skipping message production to topic.")
             self._post_produce()
         self._tear_down()
 

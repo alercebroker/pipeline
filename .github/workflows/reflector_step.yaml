@@ -18,7 +18,7 @@ jobs:
   reflector_step_unittest:
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
-        python-version: '3.7'
+        python-version: '3.10'
         sources-folder: 'reflector_step'
         test-folder: 'tests/unittest'
         base-folder: 'reflector_step'
@@ -30,7 +30,7 @@ jobs:
   reflector_step_integration:
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
-      python-version: '3.7'
+      python-version: '3.10'
       sources-folder: 'reflector_step'
       base-folder: 'reflector_step'
       test-folder: 'tests/integration'

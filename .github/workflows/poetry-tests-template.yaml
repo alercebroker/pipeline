@@ -73,7 +73,9 @@ on:
       CODECOV_TOKEN:
         required: false
         description: "token to upload coverage to codecov.io"
-
+      TEST_RUBIN_STAMP_CLASSIFIER_STEP_MODEL_PATH:
+        required: false
+        description: 'A URL to a zip file containing the rubin stamp classifier model'
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -90,6 +92,7 @@ jobs:
       TEST_MBAPPE_QUANTILES_PATH: ${{ secrets.TEST_MBAPPE_QUANTILES_PATH }}
       TEST_MBAPPE_CONFIG_PATH: ${{ secrets.TEST_MBAPPE_CONFIG_PATH }}
       TEST_SQUIDWARD_MODEL_PATH: ${{ secrets.TEST_SQUIDWARD_MODEL_PATH }}
+      TEST_RUBIN_STAMP_CLASSIFIER_STEP_MODEL_PATH: ${{ secrets.TEST_RUBIN_STAMP_CLASSIFIER_STEP_MODEL_PATH }}
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4

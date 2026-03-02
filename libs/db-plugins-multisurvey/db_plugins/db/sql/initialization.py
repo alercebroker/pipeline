@@ -1,6 +1,8 @@
-from ._connection import PsqlDatabase, get_db_url
-import alembic.config
 import os
+
+import alembic.config
+
+from ._connection import PsqlDatabase, get_db_url
 
 THIS_PATH = os.path.dirname(os.path.abspath(__file__))
 MIGRATIONS_PATH = os.path.abspath(os.path.join(THIS_PATH, "../sql/"))

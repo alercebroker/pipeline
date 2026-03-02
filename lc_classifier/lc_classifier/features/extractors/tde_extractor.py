@@ -43,6 +43,7 @@ class TDETailExtractor(FeatureExtractor):
             diff_fluxes["e_brightness"], diff_fluxes["brightness"]
         )
         diff_fluxes["brightness"] = flux2mag(diff_fluxes["brightness"])
+
         diff_fluxes["unit"] = "diff_magnitude"
         observations = diff_fluxes
         observations = observations[observations["e_brightness"] < 1.0]
@@ -144,7 +145,7 @@ class FleetExtractor(FeatureExtractor):
         observations = observations[observations["brightness"].notna()]
         observations = observations[
             observations["brightness"] > 1
-        ]  # at least 1uJy positive detection
+        ]  # at least 1uJy positive detection #no cae aqui
         observations = observations[observations["e_brightness"] > 0.0]
         return observations
 

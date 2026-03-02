@@ -6,7 +6,7 @@ from metadata_step.utils.database import (
 )
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
-from db_plugins.db.sql.models import Detection, Gaia_ztf, Object, Ps1_ztf, Ss_ztf
+from db_plugins.db.sql.models_pipeline import Detection, Gaia_ztf, Object, Ps1_ztf, Ss_ztf
 from tests.data.mocks import object_mocks, detection_mocks, gaia_mocks, ps1_mocks
 
 config = {

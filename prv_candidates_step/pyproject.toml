@@ -8,7 +8,6 @@ packages = [{include = "prv_candidates_step"}]
 
 [tool.poetry.dependencies]
 python = ">=3.8,<3.11"
-confluent-kafka = "2.0.2"
 apf-base = { path = "../libs/apf", develop = true }
 survey-parser-plugins = {path = "../libs/survey_parser_plugins", develop = true}
 

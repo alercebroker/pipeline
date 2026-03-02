@@ -33,7 +33,7 @@ from alerce_classifiers.base._types import (
     Xmatch,
     Stamps,
 )
-from db_plugins.db.sql.models import Probability
+from db_plugins.db.sql.models_pipeline import Probability
 
 
 class MultiScaleStampClassifier(GenericStep):

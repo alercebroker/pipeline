@@ -1,0 +1,16 @@
+__pycache__/
+__SUCCESS__
+.pytest_cache/
+.env
+.python-version
+*.egg-info
+
+.idea
+.python-version
+scribe_venv
+config.yaml
+config.yml
+
+config_ztf.yaml
+config_lsst.yaml
+config.*.yaml

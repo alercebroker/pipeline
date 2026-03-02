@@ -62,8 +62,8 @@ class ZTFLightcurvePreprocessor(LightcurvePreprocessor):
                 [
                     mag_det[
                         (
-                            (mag_det["brightness"] < 30.0)
-                            & (mag_det["brightness"] > 6.0)
+                            (mag_det["brightness"] < 30.0) #queda igual
+                            & (mag_det["brightness"] > 6.0) #queda igual
                             & (mag_det["e_brightness"] < 1.0)
                         )
                     ],
@@ -76,7 +76,7 @@ class ZTFLightcurvePreprocessor(LightcurvePreprocessor):
         astro_object.detections = drop_absurd(astro_object.detections)
         astro_object.forced_photometry = drop_absurd(astro_object.forced_photometry)
 
-    def drop_bogus_detections(self, astro_object: AstroObject):
+    def drop_bogus_detections(self, astro_object: AstroObject): #esto es placeholder para LSST
         def drop_bogus_dets(table):
             keys = table.keys()
             table = table.to_dict("records")

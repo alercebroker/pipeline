@@ -1,26 +1,27 @@
+import datetime
 import logging
-from typing import Generator, List
+import os
+import unittest
 import uuid
+from unittest import mock
 
-from apf.producers.kafka import KafkaProducer
-from .test_core import GenericConsumerTest
+import pytest
+from confluent_kafka import KafkaException
+
 from apf.consumers.kafka import (
-    KafkaJsonConsumer,
     KafkaConsumer,
+    KafkaJsonConsumer,
     KafkaSchemalessConsumer,
 )
-import unittest
-from unittest import mock
-from confluent_kafka import KafkaException
+from apf.producers.kafka import KafkaProducer
+
 from .message_mock import (
-    MessageMock,
     MessageJsonMock,
-    SchemalessMessageMock,
+    MessageMock,
     SchemalessBadMessageMock,
+    SchemalessMessageMock,
 )
-import datetime
-import os
-import pytest
+from .test_core import GenericConsumerTest
 
 
 def consume(num_messages=1):
@@ -248,7 +249,7 @@ class TestKafkaSchemalessConsumer(unittest.TestCase):
 
 @pytest.fixture
 def consumer():
-    def initialize_consumer(topic: List[str], extra_config: dict = {}):
+    def initialize_consumer(topic: list[str], extra_config: dict = {}):
         params = {
             "TOPICS": topic,
             "PARAMS": {

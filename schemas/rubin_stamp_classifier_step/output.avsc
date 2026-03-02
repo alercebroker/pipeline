@@ -1,0 +1,14 @@
+{
+  "type": "record",
+  "name": "RubinStampClassifierOutput",
+  "namespace": "alerce.rubin_stamp_classifier_step",
+  "fields": [
+    {"name": "diaObjectId", "type": "long"},
+    {"name": "ssObjectId", "type": "long"},
+    {"name": "diaSourceId", "type": "long"},
+    {"name": "probabilities", "type": {"type": "map", "values": "double"}},
+    {"name": "midpointMjdTai", "type": "double"},
+    {"name": "ra", "type": "double"},
+    {"name": "dec", "type": "double"}
+  ]
+}

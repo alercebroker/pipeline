@@ -132,6 +132,8 @@ def mag_err_2_flux_err(mag_err, mag):
 class EmptyLightcurveException(Exception):
     pass
 
+#voy a considerar psfflux y scienceflux.
+#que pasa con el explorer cuando se descarga la LC, nombre de los campos.
 
 def create_astro_object(
     data_origin: str,
@@ -382,5 +384,137 @@ def create_astro_object(
         non_detections=non_detections,
         xmatch=xmatch,
         reference=reference,
+    )
+    return astro_object
+
+
+def fluxnjy2mag(flux):
+    """Convert flux in nJy to AB magnitude"""
+    return 31.4 - 2.5 * np.log10(flux)
+
+
+def add_mag_and_flux_lsst(a: pd.DataFrame) -> pd.DataFrame:
+    """
+    Add magnitude and flux columns for LSST data.
+    Converts scienceFlux to magnitude and psfFlux to diff_flux.
+    """
+    a_flux = a.copy()
+    # Filter to keep only rows with positive scienceFlux and scienceFluxErr
+    a = a[(a['scienceFlux'] > 0) & (a['scienceFluxErr'] > 0)].copy()
+
+    a['scienceFluxErr'] = a.apply(lambda row: flux_err_2_mag_err(row['scienceFluxErr'], abs(row['scienceFluxErr'])), axis=1)
+    a['scienceFlux'] = a['scienceFlux'].apply(fluxnjy2mag)
+
+    a.rename(
+        columns={"scienceFlux": "brightness", "scienceFluxErr": "e_brightness"},
+        inplace=True,
+    )
+    a["unit"] = "magnitude"
+
+    a_flux["brightness"] = a_flux["psfFlux"]/1000  # nJy to microJy
+    a_flux["e_brightness"] = a_flux["psfFluxErr"]/1000
+    a_flux["unit"] = "diff_flux"
+    a = pd.concat([a, a_flux], axis=0, ignore_index=True)
+    for col in ["psfFlux", "psfFluxErr","scienceFlux","scienceFluxErr"]:
+        if col in a.columns:
+            a.drop(columns=[col], inplace=True)
+    return a
+
+
+def create_astro_object_lsst(
+    detections: pd.DataFrame,
+    forced_photometry: pd.DataFrame,
+    xmatch: pd.DataFrame = None,
+    reference: pd.DataFrame = None,
+    non_detections: pd.DataFrame = None,
+) -> AstroObject:
+    """
+    Create an AstroObject for LSST data with appropriate preprocessing.
+    
+    Parameters
+    ----------
+    detections : pd.DataFrame
+        DataFrame with detection data including columns:
+        oid, sid, mjd, ra, dec, psfFlux, psfFluxErr, 
+        scienceFlux, scienceFluxErr, tid, band, measurement_id
+    forced_photometry : pd.DataFrame
+        DataFrame with forced photometry data (same columns as detections)
+    xmatch : pd.DataFrame, optional
+        Cross-match data
+    reference : pd.DataFrame, optional
+        Reference data
+    non_detections : pd.DataFrame, optional
+        Non-detection data
+        
+    Returns
+    -------
+    AstroObject
+        Processed AstroObject ready for feature computation
+    """
+    detection_keys = ["oid","sid","mjd","ra","dec",
+                      "psfFlux","psfFluxErr","scienceFlux",
+                      "scienceFluxErr","tid","band","measurement_id"]
+    
+    # Ensure we have the required columns
+    detections = detections[detection_keys].copy()
+    detections["forced"] = False
+    
+    forced_photometry = forced_photometry[detection_keys].copy()
+    forced_photometry["forced"] = True
+    
+    # Combine detections and forced photometry
+    if len(forced_photometry) == 0:
+        a = detections
+    else:
+        a = pd.concat([detections, forced_photometry], ignore_index=True)
+    
+    a.fillna(value=np.nan, inplace=True)
+    
+    # Map LSST column names to standard names
+    detection_keys_map = {
+        "band": "fid",
+        "measurement_id": "candid",
+    }
+    a.rename(columns=detection_keys_map, inplace=True)
+    
+    # Map LSST bands to standard band identifiers
+    band_map_inverse = {1: "g", 2: "r", 3: "i", 4: "z", 5: "y", 6: "u"}
+    a["fid"] = a["fid"].map(band_map_inverse)
+    
+    # Add magnitude and flux columns using LSST-specific logic
+    a = add_mag_and_flux_lsst(a)
+    
+    if len(a) == 0:
+        raise EmptyLightcurveException("No valid observations after preprocessing")
+
+    oid = a["oid"].iloc[0]
+    
+    # Create aid if not present
+    if "aid" not in a.columns:
+        a["aid"] = "aid_" + a["oid"].astype(str)
+    
+    # Separate forced and regular detections
+    aid_forced = a[a["forced"]]
+    aid_detections = a[~a["forced"]]
+
+    # Create metadata
+    metadata = pd.DataFrame(
+        [
+            ["aid", "aid_" + str(oid)],
+            ["oid", oid],
+        ],
+        columns=["name", "value"],
+    ).fillna(value=np.nan)
+
+    # Handle reference data if provided
+    if reference is not None:
+        #no se que hacer aqui
+        pass
+
+    astro_object = AstroObject(
+        detections=aid_detections,
+        forced_photometry=aid_forced,
+        metadata=metadata,
+        reference=None,
     )
     return astro_object

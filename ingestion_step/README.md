@@ -48,7 +48,7 @@ poetry run pytest
 ## Step Information
 
 #### Next step:
-- [Correction Multistream ZTF Step](https://github.com/alercebroker/pipeline/tree/main/correction_multistream_ztf_step)
+- [Correction Multisurvey ZTF Step](https://github.com/alercebroker/pipeline/tree/main/correction_multisurvey_ztf_step)
 
 ## Run the Released Image
 
