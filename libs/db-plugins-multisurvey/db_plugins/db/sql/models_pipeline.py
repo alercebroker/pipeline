@@ -1018,7 +1018,7 @@ class Feature(Base):
     band = Column(SmallInteger, nullable=False)
     version = Column(SmallInteger, nullable=False)
     value = Column(DOUBLE_PRECISION)
-    updated_date = Column(Date, onupdate=func.now())
+    updated_date = Column(Date, server_default=func.now(), onupdate=func.now())
 
     __table_args__ = (
         PrimaryKeyConstraint(
