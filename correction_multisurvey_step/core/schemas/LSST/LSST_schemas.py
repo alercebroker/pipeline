@@ -1,5 +1,6 @@
 import pandas as pd
-
+from pandas import DatetimeTZDtype
+import numpy as np 
 
 DType = (
     pd.Int32Dtype
@@ -7,7 +8,8 @@ DType = (
     | pd.Float32Dtype
     | pd.Float64Dtype
     | pd.BooleanDtype
-    | pd.StringDtype
+    | np.dtype
+    | DatetimeTZDtype
 )
 
 dia_forced_source_schema: dict[str, DType] = {
@@ -641,8 +643,8 @@ mpc_orbits_schema: dict[str, DType] = {
     "unpacked_primary_provisional_designation": pd.StringDtype(),
     "mjd": pd.Float64Dtype(),
     "mpc_orb_jsonb": pd.StringDtype(),
-    "created_at": pd.Float64Dtype(),      # timestamp-micros
-    "updated_at": pd.Float64Dtype(),      # timestamp-micros
+    "created_at": np.dtype("datetime64[ns]"),
+    "updated_at": np.dtype("datetime64[ns]"),
     "orbit_type_int": pd.Int32Dtype(),
     "u_param": pd.Int32Dtype(),
     "nopp": pd.Int32Dtype(),
@@ -688,5 +690,5 @@ mpc_orbits_schema: dict[str, DType] = {
     "not_normalized_rms": pd.Float64Dtype(),
     "normalized_rms": pd.Float64Dtype(),
     "earth_moid": pd.Float64Dtype(),
-    "fitting_datetime": pd.Int64Dtype(),
+    "fitting_datetime": np.dtype("datetime64[ns]"),
 }

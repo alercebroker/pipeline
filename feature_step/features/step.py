@@ -216,7 +216,9 @@ class FeatureStep(GenericStep):
             self.extractor_group,
             self.feature_name_lut
         )
-
+        print(commands["upserting_features"])
+        print(commands.get("update_object", []))
+        
         update_object_cmds = commands.get("update_object", [])
         update_features_cmds = commands["upserting_features"]
 
@@ -226,8 +228,17 @@ class FeatureStep(GenericStep):
             count_objs += 1
             if count_objs == len(update_object_cmds):
                 flush = True
-            self.scribe_producer.produce({"payload": json.dumps(command)}, flush=flush)
+            
+            oid = command["payload"]["oid"]
+            self.scribe_producer.producer.produce(
+                topic= self.scribe_topic_name,
+                value=json.dumps(command).encode("utf-8"),
+                key=str(oid).encode("utf-8"),
+            )
 
+            if flush:
+                self.scribe_producer.producer.flush()
+        
         count_features = 0
         flush = False
         for command in update_features_cmds:
@@ -236,8 +247,15 @@ class FeatureStep(GenericStep):
                 flush = True
 
             if self.survey == "ztf":
-                pass
-                #self.scribe_producer.produce({"payload": json.dumps(command)}, flush=flush)
+                oid = command["payload"]["oid"]
+                self.scribe_producer.producer.produce(
+                    topic= self.scribe_topic_name,
+                    value=json.dumps(command).encode("utf-8"),
+                    key=str(oid).encode("utf-8"),
+                )
+
+                if flush:
+                    self.scribe_producer.producer.flush()
             
             elif self.survey=="lsst":
                 oid = command["payload"]["oid"]
@@ -249,7 +267,7 @@ class FeatureStep(GenericStep):
 
                 if flush:
                     self.scribe_producer.producer.flush()
-            
+        
 
 
 
@@ -311,7 +329,6 @@ class FeatureStep(GenericStep):
 
 
     def execute(self, messages):
-
         candids = {}
         astro_objects = []
         messages_to_process = []

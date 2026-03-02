@@ -110,6 +110,16 @@ def detections_to_astro_object_lsst(
         w3 = xmatches['metadata']["w3mpro"]['Float64']
         w4 = xmatches['metadata']["w4mpro"]['Float64']
 
+    all_mjds = []
+    for det in detections:
+        if "mjd" in det:
+            all_mjds.append(det["mjd"])
+    for frc in forced:
+        if "mjd" in frc:
+            all_mjds.append(frc["mjd"])
+    
+    last_mjd = float(max(all_mjds)) if all_mjds else np.nan
+
 
     metadata = pd.DataFrame(
         [   ["aid","aid"],
@@ -118,6 +128,7 @@ def detections_to_astro_object_lsst(
             ["W2", w2],
             ["W3", w3],
             ["W4", w4],
+            ["last_mjd", last_mjd],
         ],
         columns=["name", "value"],)
     
@@ -285,11 +296,12 @@ def detections_to_astro_object(
 
 
     w1 = w2 = w3 = w4 = np.nan
-    if xmatches is not None and "allwise" in xmatches.keys():
-        w1 = xmatches["allwise"]["W1mag"]
-        w2 = xmatches["allwise"]["W2mag"]
-        w3 = xmatches["allwise"]["W3mag"]
-        w4 = xmatches["allwise"]["W4mag"]
+    if xmatches is not None and "allwise" in xmatches.keys(): #tentativo, a revisar
+        w1 = xmatches['metadata']["w1mpro"]['Float64']
+        w2 = xmatches['metadata']["w2mpro"]['Float64']
+        w3 = xmatches['metadata']["w3mpro"]['Float64']
+        w4 = xmatches['metadata']["w4mpro"]['Float64']
+
 
     sgscore1 = np.nan
     sgmag1 = np.nan
@@ -308,6 +320,17 @@ def detections_to_astro_object(
             distpsnr1 = det["distpsnr1"]
             continue
 
+    # Get maximum mjd from all detections and forced photometry
+    all_mjds = []
+    for det in detections:
+        if "mjd" in det:
+            all_mjds.append(det["mjd"])
+    for frc in forced:
+        if "mjd" in frc:
+            all_mjds.append(frc["mjd"])
+    
+    last_mjd = float(max(all_mjds)) if all_mjds else np.nan
+
     metadata = pd.DataFrame(
         [
             ["aid", aid],
@@ -322,6 +345,7 @@ def detections_to_astro_object(
             ["simag1", simag1],
             ["szmag1", szmag1],
             ["distpsnr1", distpsnr1],
+            ["last_mjd", last_mjd],
         ],
         columns=["name", "value"],
     ).fillna(value=np.nan)
@@ -382,7 +406,9 @@ def fid_mapper_for_db_lsst(band: str) -> int:
 
 def prepare_ao_features_for_db(astro_object: AstroObject) -> pd.DataFrame: #esto tengo que verlo
     ao_features = astro_object.features[["name", "fid", "value"]].copy()
-    ao_features["fid"] = ao_features["fid"].apply(fid_mapper_for_db)
+    ao_features = ao_features[ao_features["value"].notna()]
+
+    ao_features["band"] = ao_features["fid"].apply(fid_mapper_for_db) #esto deberia cambiarlo a band
     ao_features.replace({np.nan: None, np.inf: None, -np.inf: None}, inplace=True)
 
     # backward compatibility
@@ -393,7 +419,26 @@ def prepare_ao_features_for_db(astro_object: AstroObject) -> pd.DataFrame: #esto
             "Power_rate_1_2": "Power_rate_1/2",
         }
     )
+
+    #deberia usar el feature_name_lut para mapear los nombres a ids,
+    unique_feature_names = ao_features["name"].unique()
+    name_to_id = {name: idx for idx, name in enumerate(unique_feature_names)}
+    #print(name_to_id)
+    
+    # Map feature names to their IDs using the lookup table
+    ao_features["feature_id"] = ao_features["name"].map(name_to_id)
+    
+    # Log warning for unmapped features
+    unmapped_features = ao_features[ao_features["feature_id"].isna()]["name"].unique()
+    if len(unmapped_features) > 0:
+        logging.getLogger("alerce.FeatureStep").warning(
+            f"Features not found in lookup table: {list(unmapped_features)}"
+        )
+
+    # Drop original columns, keep only the mapped data
+    ao_features.drop(columns=["fid"], inplace=True) 
     return ao_features
+
 
 
 def prepare_ao_features_for_db_lsst(astro_object: AstroObject, feature_name_lut) -> pd.DataFrame:
@@ -457,45 +502,52 @@ def parse_scribe_payload(
         # for upserting features
         ao_features = prepare_ao_features_for_db(astro_object)
         oid = query_ao_table(astro_object.metadata, "oid")
+        last_mjd = query_ao_table(astro_object.metadata, "last_mjd")
 
         features_list = ao_features.to_dict("records")
-
-        upsert_features_command = {
-            "collection": "object",
-            "type": "update_features",
-            "criteria": {"_id": oid},
-            "data": {
-                "features_version": features_version,
-                "features_group": features_group,
-                "features": features_list,
-            },
-            "options": {"upsert": True},
-        }
-        upsert_features_commands_list.append(upsert_features_command)
-
         # for updating the object
         def get_color_from_features(name, features_list):
             color = list(
-                filter(lambda x: x["name"] == name and x["fid"] == 12, features_list)
+                filter(lambda x: x["name"] == name and x["band"] == 12, features_list)
             )
             color = color[0]["value"] if len(color) == 1 else None
             return color
 
         update_object_command = {
-            "collection": "object",
-            "type": "update_object_from_stats",
-            "criteria": {"oid": oid},
-            "data": {
-                "g_r_max": get_color_from_features("g_r_max", features_list), #ZTF: antes estaban en tabla objetos.
-                "g_r_mean": get_color_from_features("g_r_mean", features_list),
-                "g_r_max_corr": get_color_from_features("g_r_max_corr", features_list),
+            "survey": "ztf",
+            "step": "update-ztf-object-features",
+            "payload": {
+                "oid": int(oid),
+                "mjd": last_mjd,
+                "g_r_max": get_color_from_features("g-r_max", features_list),
+                "g_r_mean": get_color_from_features("g-r_mean", features_list),
+                "g_r_max_corr": get_color_from_features("g-r_max_corr", features_list),
                 "g_r_mean_corr": get_color_from_features(
-                    "g_r_mean_corr", features_list
+                    "g-r_mean_corr", features_list
                 ),
             },
+            "criteria": {"oid": int(oid)},
             "options": {},
         }
         update_object_command_list.append(update_object_command)
+
+        
+        ao_features.drop(columns=["name"], inplace=True)
+        features_list = ao_features.to_dict("records")
+
+        sid = astro_object.detections["sid"].values[0]
+        # New envelope format required downstream
+        upsert_features_command = {
+            "step": "features", #cual tiene que ser el nombre aqui?
+            "survey": "ztf",
+            "payload": {
+                "oid": int(oid),
+                "features_version": features_version,
+                "sid": sid,
+                "features": features_list,
+            },
+        }
+        upsert_features_commands_list.append(upsert_features_command) #esto tengo que hacerlo
 
     return {
         "update_object": update_object_command_list,
@@ -516,6 +568,8 @@ def parse_scribe_payload_lsst(
     for astro_object in astro_objects:
         ao_features = prepare_ao_features_for_db_lsst(astro_object,feature_name_lut)
         oid = query_ao_table(astro_object.metadata, "oid")
+        last_mjd = query_ao_table(astro_object.metadata, "last_mjd")
+
 
         features_list = ao_features.to_dict("records")
         sid = astro_object.detections["sid"].values[0]
@@ -527,6 +581,7 @@ def parse_scribe_payload_lsst(
                 "oid": int(oid),
                 "features_version": features_version,
                 "sid": sid,
+                "mjd": last_mjd,
                 "features": features_list,
             },
         }

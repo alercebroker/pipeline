@@ -107,17 +107,24 @@ def get_or_create_version_id(db_sql: PSQLConnection, schema: str, version_name: 
                     logger.info(f"Found existing version_id {version_id} for version_name '{version_name}', sid={sid}, tid={tid}")
                 return version_id
             else:
-                # Insert new version_name, sid, tid and get the generated version_id
-                insert_query = text(
-                    f"INSERT INTO {schema}.feature_version_lut (version_name, sid, tid) VALUES (:version_name, :sid, :tid) RETURNING version_id"
+                # Get the maximum version_id for this sid and tid, then add 1
+                max_query = text(
+                    f"SELECT COALESCE(MAX(version_id), 0) FROM {schema}.feature_version_lut WHERE sid = :sid AND tid = :tid"
                 )
-                result = session.execute(insert_query, {"version_name": version_name, "sid": sid, "tid": tid})
-                version_id = result.fetchone()[0]
+                max_result = session.execute(max_query, {"sid": sid, "tid": tid})
+                max_version_id = max_result.fetchone()[0]
+                new_version_id = max_version_id + 1
+                
+                # Insert new version_name, sid, tid with the calculated version_id
+                insert_query = text(
+                    f"INSERT INTO {schema}.feature_version_lut (version_id, version_name, sid, tid) VALUES (:version_id, :version_name, :sid, :tid)"
+                )
+                session.execute(insert_query, {"version_id": new_version_id, "version_name": version_name, "sid": sid, "tid": tid})
                 session.commit()
                 
                 if logger:
-                    logger.info(f"Created new version_id {version_id} for version_name '{version_name}', sid={sid}, tid={tid}")
-                return version_id
+                    logger.info(f"Created new version_id {new_version_id} for version_name '{version_name}', sid={sid}, tid={tid}")
+                return new_version_id
                 
     except Exception as e:
         if logger:

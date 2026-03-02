@@ -39,10 +39,13 @@ class StampClassifierStep(GenericStep):
         else:
             self.classifier_id = config["MODEL_CONFIG"]["CLS_ID"]
 
-        #aqui deberiamos obtener la taxonomia usando el classifier id
-        #deberia haber una funcion en db.py con arg self.classifier_id
+        if "SID" not in config["MODEL_CONFIG"]:
+            self.sid = 1
+        else:
+            self.sid = config["MODEL_CONFIG"]["SID"]
+        
 
-        self.class_taxonomy = get_taxonomy_by_classifier_id(self.classifier_id, self.psql_connection)
+        self.class_taxonomy = get_taxonomy_by_classifier_id(self.classifier_id, self.sid, self.psql_connection)
         logging.info(f"Class taxonomy: {self.class_taxonomy}")
 
         """ SCRIBE PRODUCER TO PRODUCE TO SCRIBE-MULTISURVEY TOPIC FOR ARCHIVAL PURPOSES"""
