@@ -927,7 +927,7 @@ class MagStat(Base):
     lastmjd = Column(DOUBLE_PRECISION)  # float8
     saturation_rate = Column(REAL)  # float4
 
-    updated_date = Column(Date, onupdate=func.now())
+    updated_date = Column(Date, server_default=func.now(), onupdate=func.now())
 
     __table_args__ = (
         PrimaryKeyConstraint("oid", "sid", "band", name="pk_magstat_oid_sid_band"),
@@ -1102,7 +1102,7 @@ class Xmatch(Base):
     oid_catalog = Column(VARCHAR, nullable=False)
 
     created_date = Column(Date, server_default=func.now())
-    updated_date = Column(Date, onupdate=func.now())
+    updated_date = Column(Date, server_default=func.now(), onupdate=func.now())
 
     __table_args__ = (
         PrimaryKeyConstraint(
