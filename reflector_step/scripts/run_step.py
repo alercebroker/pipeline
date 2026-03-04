@@ -5,7 +5,6 @@ import sys
 from apf.core.settings import config_from_yaml_file
 from prometheus_client import start_http_server
 
-from early_classification_step.settings import STEP_CONFIG
 from reflector_step.step import CustomMirrormaker
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
