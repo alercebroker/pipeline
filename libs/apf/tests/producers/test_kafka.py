@@ -1,10 +1,12 @@
-from .test_core import GenericProducerTest
-from apf.producers import KafkaProducer, KafkaSchemalessProducer
-from unittest import mock
 import datetime
+import os
+from unittest import mock
 
 import fastavro
-import os
+
+from apf.producers import KafkaProducer, KafkaSchemalessProducer
+
+from .test_core import GenericProducerTest
 
 
 @mock.patch("apf.producers.kafka.Producer")
@@ -32,7 +34,6 @@ class KafkaProducerTest(GenericProducerTest):
         self.component = KafkaProducer(self.params)
         self.component.set_key_field("key")
         super().test_produce(use=self.component)
-        print(producer_mock().produce.call_args[1]["key"])
         assert producer_mock().produce.call_args[1]["key"] == "test"
 
     def test_produce_with_none(self, producer_mock):

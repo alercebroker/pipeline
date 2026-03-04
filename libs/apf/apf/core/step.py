@@ -3,17 +3,15 @@ import datetime
 import logging
 import os
 from abc import abstractmethod
-from typing import Any, Iterable, Type
+from typing import Type
 
 from apf.consumers import GenericConsumer
 from apf.core import get_class
+from apf.core.types import Message, MessageBatch
 from apf.metrics.generic import GenericMetricsProducer
 from apf.metrics.prometheus import PrometheusMetrics
 from apf.metrics.pyroscope import profile
 from apf.producers import GenericProducer
-
-Message = dict[str, Any]
-MessageBatch = Iterable[Message]
 
 
 class DefaultConsumer(GenericConsumer):
@@ -59,7 +57,7 @@ class GenericStep(abc.ABC):
         metrics_sender: Type[GenericMetricsProducer] = DefaultMetricsProducer,
         level: int = logging.NOTSET,
         config: dict = {},
-        metrics: Type[PrometheusMetrics] = PrometheusMetrics,
+        metrics: PrometheusMetrics = PrometheusMetrics(),
     ):
         self._set_logger(level)
 
@@ -70,7 +68,7 @@ class GenericStep(abc.ABC):
         self.metrics_sender = self._get_metrics_sender(metrics_sender)(
             self.metrics_producer_params
         )
-        self.metrics = metrics()
+        self.metrics = metrics
 
         self.kafka_metrics = {}
         self.extra_metrics = []
@@ -428,7 +426,6 @@ class GenericStep(abc.ABC):
     def start(self):
         logger = logging.getLogger(f"alerce.{self.__class__.__name__}")
 
-        self.metrics.step_state.state("pre_consume")
         self._pre_consume()
         for message in self.consumer.consume():
             if isinstance(message, dict):
@@ -438,7 +435,6 @@ class GenericStep(abc.ABC):
             self.metrics.consumed_messages.observe(n_messages)
 
             with self.metrics.execution_time.time():
-                self.metrics.step_state.state("pre_execute")
                 preprocessed_msg = self._pre_execute(message)
 
                 if len(preprocessed_msg) == 0:
@@ -446,34 +442,25 @@ class GenericStep(abc.ABC):
                     continue
 
                 try:
-                    self.metrics.step_state.state("execute")
                     result = self.execute(preprocessed_msg)
                 except Exception as error:
                     logger.debug("Error at execute")
                     logger.debug(f"The message(s) that caused the error: {message}")
                     raise error
 
-                self.metrics.step_state.state("post_execute")
                 result = self._post_execute(result)
 
-                self.metrics.step_state.state("pre_produce")
                 result = self._pre_produce(result)
 
-                self.metrics.step_state.state("produce")
                 self.produce(result)
 
-                self.metrics.step_state.state("post_produce")
                 self._post_produce()
+            self.metrics.processed_messages.observe(n_messages)
 
-                self.metrics.processed_messages.observe(n_messages)
-
-        self.metrics.step_state.state("tear_down")
         self._tear_down()
 
     def _tear_down(self):
         self.logger.info("Processing finished. No more messages. Begin tear down.")
-
-        self.metrics.tear_down()
 
         try:
             self.tear_down()

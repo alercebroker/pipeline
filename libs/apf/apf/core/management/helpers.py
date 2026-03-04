@@ -1,7 +1,9 @@
-import jinja2
 import os
-import apf
+
 import click
+import jinja2
+
+import apf
 
 HELPER_PATH = os.path.dirname(os.path.abspath(__file__))
 CORE_PATH = os.path.abspath(os.path.join(HELPER_PATH, ".."))

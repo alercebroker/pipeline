@@ -1,19 +1,16 @@
 import logging
+from unittest import mock
 
 import pytest
 
 from apf.core.step import (
     GenericStep,
 )
-
-
-class MockStep(GenericStep):
-    def execute(self, _):
-        return {}
+from tests.core.conftest import MockStep
 
 
 @pytest.fixture
-def basic_config():
+def config():
     return {
         "PROMETHEUS": False,
         "CONSUMER_CONFIG": {
@@ -32,11 +29,10 @@ def basic_config():
     }
 
 
-def test_pre_execute_error(mocker, basic_config, caplog):
+@mock.patch.object(GenericStep, "pre_execute")
+def test_pre_execute_error(pre_execute_mock, step, caplog):
     caplog.set_level(logging.DEBUG)
-    mock = mocker.patch.object(MockStep, "pre_execute")
-    mock.side_effect = Exception("errorsito")
-    step = MockStep(config=basic_config)
+    pre_execute_mock.side_effect = Exception("errorsito")
     with pytest.raises(Exception) as error:
         step.start()
     assert "errorsito" in error.value.args[0]
@@ -44,23 +40,21 @@ def test_pre_execute_error(mocker, basic_config, caplog):
     assert "The message(s) that caused the error: [{}]" in caplog.text
 
 
-def test_execute_error(mocker, basic_config, caplog):
+@mock.patch("conftest.MockStep.execute")
+def test_execute_error(execute_mock, step, caplog):
     caplog.set_level(logging.DEBUG)
-    mock = mocker.patch.object(MockStep, "execute")
-    mock.side_effect = Exception("errorsito")
-    step = MockStep(config=basic_config)
+    execute_mock.side_effect = Exception("errorsito")
     with pytest.raises(Exception) as error:
         step.start()
     assert "errorsito" in error.value.args[0]
     assert "Error at execute" in caplog.text
-    assert "The message(s) that caused the error: {}" in caplog.text
+    assert "The message(s) that caused the error: [{}]" in caplog.text
 
 
-def test_post_execute_error(mocker, basic_config, caplog):
+@mock.patch.object(GenericStep, "post_execute")
+def test_post_execute_error(post_execute_mock, step, caplog):
     caplog.set_level(logging.DEBUG)
-    mock = mocker.patch.object(MockStep, "post_execute")
-    mock.side_effect = Exception("errorsito")
-    step = MockStep(config=basic_config)
+    post_execute_mock.side_effect = Exception("errorsito")
     with pytest.raises(Exception) as error:
         step.start()
     assert "errorsito" in error.value.args[0]
@@ -68,11 +62,10 @@ def test_post_execute_error(mocker, basic_config, caplog):
     assert "The result that caused the error:" in caplog.text
 
 
-def test_pre_produce_error(mocker, basic_config, caplog):
+@mock.patch.object(GenericStep, "pre_produce")
+def test_pre_produce_error(pre_produce_mock, step, caplog):
     caplog.set_level(logging.DEBUG)
-    mock = mocker.patch.object(MockStep, "pre_produce")
-    mock.side_effect = Exception("errorsito")
-    step = MockStep(config=basic_config)
+    pre_produce_mock.side_effect = Exception("errorsito")
     with pytest.raises(Exception) as error:
         step.start()
     assert "errorsito" in error.value.args[0]
@@ -80,18 +73,18 @@ def test_pre_produce_error(mocker, basic_config, caplog):
     assert "The result that caused the error:" in caplog.text
 
 
-def test_post_produce_error(mocker, basic_config, caplog):
+@mock.patch.object(GenericStep, "post_produce")
+def test_post_produce_error(post_produce_mock, step, caplog):
     caplog.set_level(logging.DEBUG)
-    mock = mocker.patch.object(MockStep, "post_produce")
-    mock.side_effect = Exception("errorsito")
-    step = MockStep(config=basic_config)
+    post_produce_mock.side_effect = Exception("errorsito")
     with pytest.raises(Exception) as error:
         step.start()
     assert "errorsito" in error.value.args[0]
     assert "Error at post_produce" in caplog.text
 
 
-def test_nested_error(mocker, basic_config, caplog):
+@mock.patch("conftest.MockStep.execute")
+def test_nested_error(execute_mock, step, caplog):
     caplog.set_level(logging.DEBUG)
 
     def fun1(*args, **kwargs):
@@ -104,9 +97,7 @@ def test_nested_error(mocker, basic_config, caplog):
         fun2()
         return {}
 
-    mock = mocker.patch.object(MockStep, "execute")
-    mock.side_effect = fun1
-    step = MockStep(config=basic_config)
+    execute_mock.side_effect = fun1
     with pytest.raises(Exception) as error:
         step.start()
     assert "errorsito" in error.value.args[0]

@@ -1,13 +1,11 @@
 import pytest
-import requests
-from prometheus_client import start_http_server
+from prometheus_client import CollectorRegistry
 
-from apf.core.step import GenericStep
-from apf.metrics.prometheus import PrometheusMetrics
+from tests.core.conftest import MockStep
 
 
 @pytest.fixture
-def basic_config():
+def config():
     return {
         "PROMETHEUS": True,
         "CONSUMER_CONFIG": {
@@ -26,40 +24,17 @@ def basic_config():
     }
 
 
-class MockStep(GenericStep):
-    def execute(self, _):
-        return {}
+def test_init(step: MockStep, registry: CollectorRegistry):
+    assert registry.get_sample_value("consumed_messages_count") == 0
+    assert registry.get_sample_value("processed_messages_count") == 0
+    assert registry.get_sample_value("execution_time_count") == 0
 
 
-@pytest.fixture(scope="session")
-def prometheus_server():
-    start_http_server(8000)
-
-
-@pytest.fixture
-def step(basic_config, mocker, prometheus_server):
-    mocker.patch.object(MockStep, "_write_success")
-    step = MockStep(config=basic_config, metrics=PrometheusMetrics)
-
-    yield step
-
-    step.tear_down()
-
-
-def test_init(step):
+def test_consume(step: MockStep, registry: CollectorRegistry):
     step.start()
-    result = requests.get("http://localhost:8000")
-    assert "consumed_messages summary" in result.text
-    assert "processed_messages summary" in result.text
-    assert "execution_time summary" in result.text
-    assert "step_state enum" in result.text
 
-
-def test_consume(step):
-    step.start()
-    result = requests.get("http://localhost:8000")
-    assert "consumed_messages_count 1.0" in result.text
-    assert "consumed_messages_sum 1.0" in result.text
-    assert "processed_messages_count 1.0" in result.text
-    assert "processed_messages_sum 1.0" in result.text
-    assert "execution_time_count 1.0" in result.text
+    assert registry.get_sample_value("consumed_messages_count") == 1
+    assert registry.get_sample_value("consumed_messages_sum") == 1
+    assert registry.get_sample_value("processed_messages_count") == 1
+    assert registry.get_sample_value("processed_messages_sum") == 1
+    assert registry.get_sample_value("execution_time_count") == 1
