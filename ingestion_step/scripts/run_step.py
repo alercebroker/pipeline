@@ -36,7 +36,7 @@ logger.addHandler(handler)
 if bool(STEP_CONFIG["FEATURE_FLAGS"].get("USE_PROFILING", True)):
     raise NotImplemented
 
-if STEP_CONFIG["FEATURE_FLAGS"]["PROMETHEUS"]:
+if bool(STEP_CONFIG.get("FEATURE_FLAGS", {}).get("PROMETHEUS", False)):
     start_http_server(8000)
 
 step = IngestionStep(config=STEP_CONFIG)

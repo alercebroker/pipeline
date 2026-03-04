@@ -23,9 +23,9 @@ logging.basicConfig(
 )
 
 
-from apf.metrics.prometheus import PrometheusMetrics
 from sql_scribe.step import SqlScribe
 from prometheus_client import start_http_server
+from apf.metrics.prometheus import PrometheusMetrics
 
 # Pyroscope config
 use_profiling = STEP_CONFIG.pop("USE_PROFILING")
@@ -38,11 +38,8 @@ if use_profiling:
         application_name="step.ScribeStep", server_address=pyroscope_server
     )
 # PROMETHEUS
-prometheus_metrics = PrometheusMetrics()
 if STEP_CONFIG.get("FEATURE_FLAGS", {}).get("PROMETHEUS"):
     start_http_server(8000)
 
-step = SqlScribe(
-    config=STEP_CONFIG, prometheus_metrics=prometheus_metrics
-)
+step = SqlScribe(config=STEP_CONFIG)
 step.start()

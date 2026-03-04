@@ -3,6 +3,7 @@ import sys
 import logging
 from features.database import PSQLConnection
 from apf.core.settings import config_from_yaml_file
+from prometheus_client import start_http_server
 
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -40,6 +41,9 @@ if STEP_CONFIG["FEATURE_FLAGS"]["USE_PROFILING"]:
         application_name="step.Feature",
         server_address=STEP_CONFIG["PYROSCOPE_SERVER"],
     )
+
+if STEP_CONFIG.get("FEATURE_FLAGS", {}).get("PROMETHEUS"):
+    start_http_server(8000)
 
 db_sql = PSQLConnection(STEP_CONFIG["DB_CONFIG"])
 step = FeatureStep(config=STEP_CONFIG, db_sql=db_sql)
