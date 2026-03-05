@@ -186,8 +186,9 @@ class GenericStep(abc.ABC):
         try:
             preprocessed = self.pre_execute(self.message)
         except Exception as error:
-            self.logger.debug("Error at pre_execute")
-            self.logger.debug(f"The message(s) that caused the error: {message}")
+            self.logger.error("Error at pre_execute")
+            self.logger.error(f"The message(s) that caused the error: {message}")
+            self.metrics.exceptions.labels("pre_execute").inc()
             raise error
 
         return preprocessed
@@ -220,8 +221,9 @@ class GenericStep(abc.ABC):
         try:
             final_result = self.post_execute(result)
         except Exception as error:
-            self.logger.debug("Error at post_execute")
-            self.logger.debug(f"The result that caused the error: {result}")
+            self.logger.error("Error at post_execute")
+            self.logger.error(f"The result that caused the error: {result}")
+            self.metrics.exceptions.labels("post_execute").inc()
             raise error
 
         self.kafka_metrics["timestamp_sent"] = datetime.datetime.now(
@@ -264,8 +266,9 @@ class GenericStep(abc.ABC):
         try:
             message_to_produce = self.pre_produce(result)
         except Exception as error:
-            self.logger.debug("Error at pre_produce")
-            self.logger.debug(f"The result that caused the error: {result}")
+            self.logger.error("Error at pre_produce")
+            self.logger.error(f"The result that caused the error: {result}")
+            self.metrics.exceptions.labels("pre_produce").inc()
             raise error
 
         return message_to_produce
@@ -287,7 +290,8 @@ class GenericStep(abc.ABC):
             if self.commit:
                 self.consumer.commit()
         except Exception as error:
-            self.logger.debug("Error at post_produce")
+            self.logger.error("Error at post_produce")
+            self.metrics.exceptions.labels("post_produce").inc()
             raise error
 
     def post_produce(self):
@@ -432,9 +436,13 @@ class GenericStep(abc.ABC):
                 message = [message]
 
             n_messages = len(message)
-            self.metrics.consumed_messages.observe(n_messages)
+            self.metrics.messages_consumed.inc(n_messages)
+            self.metrics.batch_size_messages.observe(n_messages)
 
-            with self.metrics.execution_time.time():
+            with (
+                self.metrics.last_execution_time.time(),
+                self.metrics.batch_processing.time(),
+            ):
                 preprocessed_msg = self._pre_execute(message)
 
                 if len(preprocessed_msg) == 0:
@@ -444,8 +452,9 @@ class GenericStep(abc.ABC):
                 try:
                     result = self.execute(preprocessed_msg)
                 except Exception as error:
-                    logger.debug("Error at execute")
-                    logger.debug(f"The message(s) that caused the error: {message}")
+                    logger.error("Error at execute")
+                    logger.error(f"The message(s) that caused the error: {message}")
+                    self.metrics.exceptions.labels("execute").inc()
                     raise error
 
                 result = self._post_execute(result)
@@ -455,7 +464,9 @@ class GenericStep(abc.ABC):
                 self.produce(result)
 
                 self._post_produce()
-            self.metrics.processed_messages.observe(n_messages)
+            self.metrics.messages_processed.inc(n_messages)
+            self.metrics.batches_processed.inc()
+            self.metrics.last_batch_processed.set_to_current_time()
 
         self._tear_down()
 
