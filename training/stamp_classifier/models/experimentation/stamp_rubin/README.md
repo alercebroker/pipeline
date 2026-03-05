@@ -95,6 +95,28 @@ Este script llama a una `config.yaml` de la carpeta `configs` y llama al script 
 
 > Algunos de estos scripts pueden contener argumentos obsoletos o en desuso, por lo que se recomienda revisarlos antes de utilizarlos.
 
+--- 
+
+## Usar datos simulados SIN Multiresolución
+
+```bash
+ln -s /home/rubin_dp1/datasets/lsst/ts_stamps_v0.0.2_comm_4candmax/simulated_data /home/<quimal_user>/pipeline/training/stamp_classifier/data_acquisition/rubin/data
+```
+
+## Usar datos simulados y reales CON Multiresolución
+
+Si se quieren usar datos multiresolución de Francisco. Debes hacer el link simbolico de
+
+```bash
+ln -s /home/rubin_dp1/datasets/lsst/ts_stamps_v0.0.2_comm_4candmax/ts_stamps_v0.0.2_fforster /home/<quimal_user>/pipeline/training/stamp_classifier/data_acquisition/rubin/data/processed
+```
+
+y ademas hay que usar la particion que dejo ffroster
+
+```bash
+ln -s /home/rubin_dp1/datasets/lsst/ts_stamps_v0.0.2_comm_4candmax/partitions/partitions_mixed_fforster /home/<quimal_user>/pipeline/training/stamp_classifier/data_acquisition/rubin/data/processed/partitions
+```
+
 ---
 
 ## Cosas hardcodeadas que deberían corregirse
