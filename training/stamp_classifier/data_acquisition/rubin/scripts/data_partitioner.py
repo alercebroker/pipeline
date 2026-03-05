@@ -63,7 +63,7 @@ if __name__ == "__main__":
     oid_col = 'oid'
     candid_col = 'measurement_id'
     class_col = 'class'
-    field = None#'Rubin_SV_095_-25'
+    field = None #'Rubin_SV_095_-25'
 
     # Cargar datos y crear carpeta de salida si no existe
     output_path = "./data/processed/partitions/ts_stamps_v0.0.1_comm_4candmax_nosatellite_clean/partitions.parquet"

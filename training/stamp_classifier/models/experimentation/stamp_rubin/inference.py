@@ -46,17 +46,24 @@ def evaluate_and_log(dataset, name, model, dict_info, artifact_path):
 
 
 def eval_step(model, dataset):
-    predictions, labels_list = [], []
+    logits_list, labels_list = [], []
     for (samples, md), labels in dataset:
+        # El modelo ahora devuelve logits crudos (linear)
         logits = model((samples, md), training=False)
-        predictions.append(logits)
+        logits_list.append(logits)
         labels_list.append(labels)
 
-    predictions = tf.concat(predictions, axis=0)
+    logits_tensor = tf.concat(logits_list, axis=0)
     labels = tf.concat(labels_list, axis=0)
 
-    precision, recall, f1, _ = precision_recall_fscore_support(
-        labels.numpy(), predictions.numpy().argmax(axis=1), average='macro')
-    xentropy = balanced_xentropy(labels, predictions)
+    # El argmax funciona exactamente igual con logits que con probabilidades
+    preds_argmax = logits_tensor.numpy().argmax(axis=1)
 
-    return precision, recall, f1, xentropy, labels.numpy(), predictions.numpy().argmax(axis=1), predictions.numpy()
+    precision, recall, f1, _ = precision_recall_fscore_support(
+        labels.numpy(), preds_argmax, average='macro', zero_division=0)
+    
+    # Le pasamos los logits directos porque balanced_xentropy hace el softmax por dentro
+    xentropy = balanced_xentropy(labels, logits_tensor)
+
+    # IMPORTANTE: Devolvemos preds_argmax y los logits crudos (.numpy()) al final
+    return precision, recall, f1, xentropy, labels.numpy(), preds_argmax, logits_tensor.numpy()

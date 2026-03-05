@@ -24,7 +24,7 @@ stamp_classifier:
   #path_partition: './../../../data_acquisition/rubin/data/processed/partitions/ztf_as_rubin_v0.0/partitions.parquet'
   #dir_data: './../../../data_acquisition/rubin/data/processed/rubin_5_classes2/ts_stamps_v0.0.3_dp1/'
   #path_partition: './../../../data_acquisition/rubin/data/processed/partitions/rubin_5_classes2/partitions.parquet'
-  list_folds: [0, 1, 2]
+  list_folds: [0, 1, 2, 3, 4]
   debug: false
   is_searching_hyperparameters: false
 
@@ -48,30 +48,37 @@ stamp_classifier:
     
   arch:
     conv_config:
-      - filters: 16
-        kernel_size: [2, 2]
-        activation: relu
-        pool: true
-        pool_size: [2, 2]
-
-      - filters: 32
-        kernel_size: [2, 2]
-        activation: relu
-        pool: true
-        pool_size: [2, 2]
-
-      #- filters: 8
-      #  kernel_size: [2, 2]
-      #  activation: relu
-      #  pool: true
-      #  pool_size: [2, 2]
-        #batchnorm: true
-
+    - filters: 8
+      kernel_size:
+      - 2
+      - 2
+      activation: relu
+      pool: true
+      pool_size:
+      - 2
+      - 2
+    - filters: 16
+      kernel_size:
+      - 2
+      - 2
+      activation: relu
+      pool: true
+      pool_size:
+      - 2
+      - 2
+    - filters: 32
+      kernel_size:
+      - 2
+      - 2
+      activation: relu
+      pool: true
+      pool_size:
+      - 2
+      - 2
     dense_config:
-      - units: 16
-        activation: tanh
-
-    dropout_rate: 0.6
+    - units: 16
+      activation: tanh
+    dropout_rate: 0.4
     use_batchnorm_metadata: false
     use_metadata: false
 

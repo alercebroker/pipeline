@@ -1,0 +1,15 @@
+# Ruta al directorio que contiene los archivos del modelo (hparams.yaml, model.keras, etc.).
+model_dir_path: "alerce_models/1.0.0"
+
+# Lista de folds a evaluar. Las predicciones de train y val se generarán para cada uno.
+folds_to_evaluate: [0]
+
+# NUEVO: Lista de conjuntos de datos para los que generar predicciones.
+# Opciones válidas: "train", "val", "test"
+datasets_to_evaluate: ["train", "val", "test"] # Ejemplo: solo genera para val y test
+
+# Directorio de salida para los archivos .parquet y class_map.json
+output_dir: "inference_results/1.0.0_first_stamp"
+
+# Prefijo para los nombres de los archivos de salida
+output_filename_prefix: "predictions"

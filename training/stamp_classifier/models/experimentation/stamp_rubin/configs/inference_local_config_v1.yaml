@@ -1,0 +1,17 @@
+# configs/inference_local_config.yaml
+
+# Ruta a la carpeta que contiene el hparams.yaml y model.keras
+model_dir_path: "/home/dmoreno/pipeline_v4_final/pipeline/training/stamp_classifier/models/experimentation/stamp_rubin/alerce_models/2.0.0" 
+
+# Opcional: Nombre del archivo de salida
+output_filename: "predictions_fold0.parquet"
+
+# Opcional: Si quieres guardar en otro lado
+output_dir: "mis_predicciones/"
+
+# Opcional: Si necesitas evaluar un fold especifico (usualmente coincide con el del modelo)
+fold_to_evaluate: 0
+
+# Opcional: Si moviste los datos de lugar respecto a cuando entrenaste
+# override_data_dir: "/nueva/ruta/datos/stamps"
+# override_partitions_path: "/nueva/ruta/datos/partitions.parquet"

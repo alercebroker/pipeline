@@ -1,0 +1,99 @@
+hydra:
+  run:
+    dir: .
+  output_subdir: null 
+
+stamp_classifier:
+  results_dir: 'results_rubin_real_v1_trainSN_mixed_valSN_real_eval_firstStamp_v1_modified_NormImage'
+  exp_description: ''
+  
+  # Load pretrained model
+  load_pretrained_model: false
+  checkpoint: {
+    exp_name: classification/ztf/testing,
+    run_name: 2025-09-25_13-18-27,
+    results_dir: results_ztf
+  }
+
+  # General Configuration
+  model_name: 'stamp_full' # no usado
+  name_dataset_version: 'rubin_real'
+  dir_data: './../../../data_acquisition/rubin/data/processed/ts_stamps_v0.0.2_comm_4candmax'
+  path_partition: './../../../data_acquisition/rubin/data/processed/partitions/partitions_trainSN_mixed_valSN_real_eval_firstStamp_v1/partitions.parquet'
+  #dir_data: './../../../data_acquisition/rubin/data/processed/ztf_as_rubin_v0.0/'
+  #path_partition: './../../../data_acquisition/rubin/data/processed/partitions/ztf_as_rubin_v0.0/partitions.parquet'
+  #dir_data: './../../../data_acquisition/rubin/data/processed/rubin_5_classes2/ts_stamps_v0.0.3_dp1/'
+  #path_partition: './../../../data_acquisition/rubin/data/processed/partitions/rubin_5_classes2/partitions.parquet'
+  list_folds: [0, 1, 2, 3, 4]
+  debug: false
+  is_searching_hyperparameters: false
+  simulated_data: {
+    use: true,
+    path: './../../../data_acquisition/rubin/data/simulated_data/synthetic_total_SN.pkl'
+    }
+
+  # Loaders Configuration
+  loader:
+    id_col: 'oid'
+    candid_col: 'measurement_id'
+    ra_col: 'ra'
+    dec_col: 'dec'
+    class_col: 'class'
+    stamps_cols: ['flux_Science_data', 'flux_Difference_data', 'flux_Template_data']
+    cropping: {
+      use: false,
+      crop_size: 21
+    }
+    num_workers: 12 # No lo estoy usando
+    coord_type: 'spherical' # ['spherical', 'cartesian']
+    norm_type: 'z-score' # ['qt', 'z-score']
+    stamp_norm_type: 'image'
+    batch_size: 256
+    use_coords: false
+    
+  arch:
+    model_type: 'net_reyes_mod'
+    conv_config:
+    - filters: 8
+      kernel_size:
+      - 2
+      - 2
+      activation: relu
+      pool: true
+      pool_size:
+      - 2
+      - 2
+    - filters: 16
+      kernel_size:
+      - 2
+      - 2
+      activation: relu
+      pool: true
+      pool_size:
+      - 2
+      - 2
+    - filters: 32
+      kernel_size:
+      - 2
+      - 2
+      activation: relu
+      pool: true
+      pool_size:
+      - 2
+      - 2
+    dense_config:
+    - units: 16
+      activation: tanh
+    dropout_rate: 0.4
+    use_batchnorm_metadata: false
+    use_metadata: false
+
+  # Training Configuration
+  training:
+    lr: 0.0007
+    #7589
+    use_focal: false    
+    patience: 10
+    num_epochs: 10000
+    monitor: 'loss'
+    eval_train_at_the_epoch_end: true

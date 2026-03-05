@@ -1,0 +1,21 @@
+# Ruta al directorio que contiene los archivos del modelo (hparams.yaml, model.keras, etc.).
+model_dir_path: "alerce_models/2.0.0"
+
+# Directorio donde se guardarán los resultados de la inferencia (el archivo parquet).
+output_dir: "inference_output/2.0.0_eval"
+
+# Nombre del archivo de salida
+output_filename: "predictions_test.parquet"
+
+# (Opcional) Especifica un fold concreto para evaluar.
+fold_to_evaluate: 0
+
+# Prefijo para los archivos de salida. El script añadirá "_fold_X.parquet".
+output_filename_prefix: "predictions_val"
+
+# ¡IMPORTANTE! Lista de los folds de validación a evaluar.
+folds_to_evaluate: [0]
+
+
+
+model_filename_template: "model.keras"

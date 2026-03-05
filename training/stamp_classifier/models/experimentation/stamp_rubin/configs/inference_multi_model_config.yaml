@@ -1,0 +1,11 @@
+models_parent_dir: "alerce_models/1.0.0_first_stamp"
+model_filename_template: "model_fold_{fold}.keras"
+
+# Directorio donde se guardará el resultado final del ensemble.
+output_dir: "inference_output_ensemble/test_set"
+
+# Nombre del archivo de salida único que contendrá las predicciones del ensemble.
+output_filename: "ensemble_predictions_test.parquet"
+
+# Lista de los folds (y por tanto, modelos) que se usarán para el ensemble.
+folds_to_evaluate: [0, 1, 2, 3, 4]

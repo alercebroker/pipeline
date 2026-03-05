@@ -25,6 +25,7 @@ class DynamicStampModel(tf.keras.Model):
         self.use_batchnorm_metadata = use_batchnorm_metadata
         self.num_classes = num_classes
         self.use_metadata = use_metadata
+        #self.aug_only_sn = kwargs['aug_only_sn']
 
         # Capas convolucionales (sin batchnorm)
         self.conv_layers = []
@@ -81,13 +82,18 @@ class DynamicStampModel(tf.keras.Model):
         
     def call(self, inputs, training=False):
         x_img, x_metadata = inputs
-        rot_list = [x_img,tf.image.rot90(x_img), 
-                    tf.image.rot90(x_img, k=2), tf.image.rot90(x_img, k=3)]
+
+        rot_list = [
+            x_img, 
+            tf.image.rot90(x_img), 
+            tf.image.rot90(x_img, k=2), 
+            tf.image.rot90(x_img, k=3)
+            ]
 
         for i in range(4):
-            rot_list.append(tf.image.flip_up_down(rot_list[i]))
-        
-        #output_list = [self._embed_view(v, training=training) for v in rot_list]
+            rot_list.append(
+                tf.image.flip_up_down(rot_list[i])
+                )
 
         output_list = []
         for im in rot_list:
