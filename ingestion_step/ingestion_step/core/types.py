@@ -1,5 +1,5 @@
 from typing import Any
 
-from lsst.schemas import DType
+from ingestion_step.lsst.schemas import DType
 
 Message = dict[str, Any]
