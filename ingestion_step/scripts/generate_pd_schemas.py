@@ -1,5 +1,6 @@
 import sys
-from typing import Any, Callable, cast
+import textwrap
+from typing import Any, Callable, Literal, cast
 
 import pandas as pd
 from fastavro.schema import load_schema as _load_schema
@@ -14,6 +15,7 @@ DType = (
     | pd.Float64Dtype
     | pd.BooleanDtype
     | pd.StringDtype
+    | Literal["datetime64[ns, UTC]"]
 )
 
 type_mappings = {
@@ -23,6 +25,7 @@ type_mappings = {
     "double": "pd.Float64Dtype()",
     "boolean": "pd.BooleanDtype()",
     "string": "pd.StringDtype()",
+    "timestamp-micros": '"datetime64[ns, UTC]"',
 }
 
 
@@ -43,7 +46,7 @@ def process_schema(path: str) -> dict[str, DType]:
         if type(field_type) is dict:
             assert "logicalType" in field_type
             assert field_type["logicalType"] == "timestamp-micros"
-            field_type = field_type["type"]
+            field_type = field_type["logicalType"]
 
         assert type(field_name) is str
         assert type(field_type) is str
@@ -57,17 +60,23 @@ def process_schema(path: str) -> dict[str, DType]:
 
 def print_schemas(pd_schemas: dict[str, dict[str, DType]]):
     print(
-        """import pandas as pd
+        textwrap.dedent(
+            """
+            from typing import Literal
 
+            import pandas as pd
 
-DType = (
-    pd.Int32Dtype
-    | pd.Int64Dtype
-    | pd.Float32Dtype
-    | pd.Float64Dtype
-    | pd.BooleanDtype
-    | pd.StringDtype
-)"""
+            DType = (
+                pd.Int32Dtype
+                | pd.Int64Dtype
+                | pd.Float32Dtype
+                | pd.Float64Dtype
+                | pd.BooleanDtype
+                | pd.StringDtype
+                | Literal["datetime64[ns, UTC]"]
+            )
+            """.strip("\n")
+        )
     )
 
     for name, schema in pd_schemas.items():

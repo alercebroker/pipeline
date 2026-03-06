@@ -1008,6 +1008,7 @@ class Probability(Base):
         return f"FOR VALUES WITH (MODULUS {cls.__n_partitions__}, REMAINDER {partition_idx})"
 
 
+
 class Feature(Base):
     __tablename__ = "feature"
 
@@ -1020,10 +1021,12 @@ class Feature(Base):
     updated_date = Column(Date, onupdate=func.now())
 
     # Not set as pk on postgres. Necessary to define a pk-less sqlalchemy table
-    __mapper_args__ = {"primary_key": ["oid", "sid", "feature_id", "band"]}
+    # __mapper_args__ = {"primary_key": ["oid", "sid", "feature_id", "band"]}
 
     __table_args__ = (
-        Index("idx_feature_oid", "oid", postgresql_using="btree"),
+        PrimaryKeyConstraint(
+            "oid", "sid", "feature_id", "band", name="pk_feature_oid_featureid_band"
+        ),
         {"postgresql_partition_by": "HASH (oid)"},
     )
 
@@ -1039,6 +1042,8 @@ class FeatureNameLut(Base):
 
     feature_id = Column(SmallInteger, nullable=False, autoincrement=True)
     feature_name = Column(VARCHAR, nullable=False)
+    sid = Column(SmallInteger, nullable=False)
+    tid = Column(SmallInteger, nullable=False)
 
     created_date = Column(Date, server_default=func.now())
 
@@ -1052,7 +1057,10 @@ class FeatureVersionLut(Base):
 
     version_id = Column(SmallInteger, nullable=False, autoincrement=True)
     version_name = Column(VARCHAR, nullable=False)
+    sid = Column(SmallInteger, nullable=False)
+    tid = Column(SmallInteger, nullable=False)
 
+    
     __table_args__ = (
         PrimaryKeyConstraint("version_id", name="pk_feature_version_lut_versionid"),
     )
