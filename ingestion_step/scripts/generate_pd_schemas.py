@@ -15,7 +15,7 @@ DType = (
     | pd.Float64Dtype
     | pd.BooleanDtype
     | pd.StringDtype
-    | Literal["datetime64[ms]"]
+    | Literal["datetime64[ns, UTC]"]
 )
 
 type_mappings = {
@@ -25,7 +25,7 @@ type_mappings = {
     "double": "pd.Float64Dtype()",
     "boolean": "pd.BooleanDtype()",
     "string": "pd.StringDtype()",
-    "timestamp-micros": '"datetime64[ms, UTC]"',
+    "timestamp-micros": '"datetime64[ns, UTC]"',
 }
 
 
@@ -73,7 +73,7 @@ def print_schemas(pd_schemas: dict[str, dict[str, DType]]):
                 | pd.Float64Dtype
                 | pd.BooleanDtype
                 | pd.StringDtype
-                | Literal["datetime64[ms, UTC]"]
+                | Literal["datetime64[ns, UTC]"]
             )
             """.strip("\n")
         )

@@ -9,7 +9,7 @@ DType = (
     | pd.Float64Dtype
     | pd.BooleanDtype
     | pd.StringDtype
-    | Literal["datetime64[ms, UTC]"]
+    | Literal["datetime64[ns, UTC]"]
 )
 
 
@@ -222,8 +222,8 @@ mpc_orbits_schema: dict[str, DType] = {
     "packed_primary_provisional_designation": pd.StringDtype(),
     "unpacked_primary_provisional_designation": pd.StringDtype(),
     "mpc_orb_jsonb": pd.StringDtype(),
-    "created_at": "datetime64[ms, UTC]",
-    "updated_at": "datetime64[ms, UTC]",
+    "created_at": "datetime64[ns, UTC]",
+    "updated_at": "datetime64[ns, UTC]",
     "orbit_type_int": pd.Int32Dtype(),
     "u_param": pd.Int32Dtype(),
     "nopp": pd.Int32Dtype(),
@@ -269,7 +269,7 @@ mpc_orbits_schema: dict[str, DType] = {
     "not_normalized_rms": pd.Float64Dtype(),
     "normalized_rms": pd.Float64Dtype(),
     "earth_moid": pd.Float64Dtype(),
-    "fitting_datetime": "datetime64[ms, UTC]",
+    "fitting_datetime": "datetime64[ns, UTC]",
 }
 
 ss_object_schema: dict[str, DType] = {
