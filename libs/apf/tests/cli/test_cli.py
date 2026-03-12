@@ -1,8 +1,10 @@
-from apf.core.management import new_step
 import os
 import shutil
 import unittest
+
 from click.testing import CliRunner
+
+from apf.core.management import new_step
 
 
 class CLITest(unittest.TestCase):
@@ -16,7 +18,6 @@ class CLITest(unittest.TestCase):
 
         runner = CliRunner()
         result = runner.invoke(new_step, self.name)
-        print(result.exc_info)
         self.assertTrue(result.exit_code == 0)
         self.assertTrue(os.path.exists(output_path))
 

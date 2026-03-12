@@ -4,6 +4,8 @@ from contextlib import contextmanager
 from sqlalchemy import create_engine
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import NullPool
+
 
 from db_plugins.db.sql._initial_data_pipeline import INITIAL_DATA
 
@@ -18,18 +20,28 @@ logger = logging.getLogger(__name__)
 
 
 class PsqlDatabase:
-    def __init__(self, db_config: dict, engine=None) -> None:
+    def __init__(self, db_config: dict, engine=None, poolclass: str | None = None) -> None:
         db_url = get_db_url(db_config)
         schema = db_config.get("SCHEMA", None)
         self.schema = schema
+
+        if poolclass is None:
+            # default poolclass is QueuePool.
+            pass
+        elif poolclass == "NullPool":
+            poolclass = NullPool
+        else:
+            raise ValueError(f"Unsupported poolclass: {poolclass}")
+        
         if schema:
             self._engine = engine or create_engine(
                 db_url,
                 echo=False,
                 connect_args={"options": "-csearch_path={}".format(schema)},
+                poolclass=poolclass,
             )
         else:
-            self._engine = engine or create_engine(db_url, echo=False)
+            self._engine = engine or create_engine(db_url, echo=False, poolclass=poolclass)
 
         self._session_factory = sessionmaker(
             autocommit=False, autoflush=False, bind=self._engine
