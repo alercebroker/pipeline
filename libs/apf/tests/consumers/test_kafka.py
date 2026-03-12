@@ -398,7 +398,6 @@ def test_consumer_with_commit(consumer, kafka_service, caplog):
         messages.append(msg)
         kconsumer.commit()
 
-    print("First consumer finished")
     assert len(messages) == 4
     del kconsumer
     producer.produce({"id": 5}, timestamp=40)
@@ -416,6 +415,5 @@ def test_consumer_with_commit(consumer, kafka_service, caplog):
             "consume.timeout": 5,
         },
     )
-    print("Second consumer starting")
     messages = list(kconsumer.consume())
     assert len(messages) == 5

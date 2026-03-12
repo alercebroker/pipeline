@@ -1,7 +1,9 @@
-from apf.producers.generic import GenericProducer
-import json
-from pandas import DataFrame, read_json, concat
 import pathlib
+
+import pandas as pd
+
+from apf.core.types import Message, MessageBatch
+from apf.producers.generic import GenericProducer
 
 
 class JSONProducer(GenericProducer):
@@ -23,17 +25,18 @@ class JSONProducer(GenericProducer):
 
     def __init__(self, config):
         super().__init__(config=config)
-        self.buffer = DataFrame()
+        self.buffer = pd.DataFrame()
         self.buffer_size = config.get("buffer_size", 1)
         self.file_counter = 0
 
-    def produce(self, message=None, **kwargs):
+    def produce(self, message: Message | MessageBatch, **kwargs):
         """Produce Message to a JSON File."""
+        if isinstance(message, dict):
+            message = [message]
+
         if "FILE_PATH" in self.config and self.config["FILE_PATH"]:
-            serialized_message = read_json(
-                json.dumps([message]), orient="records", typ="frame"
-            )
-            self.buffer = concat([self.buffer, serialized_message])
+            df_message = pd.DataFrame(message)
+            self.buffer = pd.concat([self.buffer, df_message])
             output_file = (
                 pathlib.Path(self.config["FILE_PATH"])
                 / f"producer_output{self.file_counter}.json"
