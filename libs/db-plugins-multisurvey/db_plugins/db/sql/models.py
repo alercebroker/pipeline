@@ -960,13 +960,14 @@ class Taxonomy(Base):
     __tablename__ = "taxonomy"
 
     class_id = Column(Integer, nullable=False)
+    sid = Column(SmallInteger, nullable=False)
     class_name = Column(VARCHAR, nullable=False)
     order = Column(Integer, nullable=False)
     classifier_id = Column(SmallInteger, nullable=False)
 
     created_date = Column(Date, server_default=func.now())
 
-    __table_args__ = (PrimaryKeyConstraint("class_id", name="pk_taxonomy_classid"),)
+    __table_args__ = (PrimaryKeyConstraint("class_id", "sid", name="pk_taxonomy_classid_sid"),)
 
 
 class Probability(Base):
@@ -1040,7 +1041,7 @@ class Feature(Base):
 class FeatureNameLut(Base):
     __tablename__ = "feature_name_lut"
 
-    feature_id = Column(SmallInteger, nullable=False, autoincrement=True)
+    feature_id = Column(SmallInteger, nullable=False)
     feature_name = Column(VARCHAR, nullable=False)
     sid = Column(SmallInteger, nullable=False)
     tid = Column(SmallInteger, nullable=False)
@@ -1048,21 +1049,21 @@ class FeatureNameLut(Base):
     created_date = Column(Date, server_default=func.now())
 
     __table_args__ = (
-        PrimaryKeyConstraint("feature_id", name="pk_feature_name_lut_featureid"),
+        PrimaryKeyConstraint("feature_id", "sid", name="pk_feature_name_lut_featureid_sid"),
     )
 
 
 class FeatureVersionLut(Base):
     __tablename__ = "feature_version_lut"
 
-    version_id = Column(SmallInteger, nullable=False, autoincrement=True)
+    version_id = Column(SmallInteger, nullable=False)
     version_name = Column(VARCHAR, nullable=False)
     sid = Column(SmallInteger, nullable=False)
     tid = Column(SmallInteger, nullable=False)
 
     
     __table_args__ = (
-        PrimaryKeyConstraint("version_id", name="pk_feature_version_lut_versionid"),
+        PrimaryKeyConstraint("version_id", "sid", name="pk_feature_version_lut_versionid_sid"),
     )
 
 
