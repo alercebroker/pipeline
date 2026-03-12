@@ -1008,7 +1008,6 @@ class Probability(Base):
         return f"FOR VALUES WITH (MODULUS {cls.__n_partitions__}, REMAINDER {partition_idx})"
 
 
-
 class Feature(Base):
     __tablename__ = "feature"
 
@@ -1057,7 +1056,6 @@ class FeatureVersionLut(Base):
     sid = Column(SmallInteger, nullable=False)
     tid = Column(SmallInteger, nullable=False)
 
-    
     __table_args__ = (
         PrimaryKeyConstraint("version_id", name="pk_feature_version_lut_versionid"),
     )

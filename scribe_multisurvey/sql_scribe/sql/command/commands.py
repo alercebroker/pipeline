@@ -1,9 +1,9 @@
-import copy
-import logging
 from abc import ABC, abstractmethod
 from importlib.metadata import version
-from io import StringIO
-from typing import Dict, List
+
+from db_plugins.db.sql.models_archive_probability import (
+    ProbabilityArchive,
+)
 
 ## En el import desde los models se deben traer todos los modelos que se modififiquen en los steps.
 ## Al menos desde correction hacia atras.
@@ -11,8 +11,6 @@ from db_plugins.db.sql.models_pipeline import (
     Detection,
     Feature,
     ForcedPhotometry,
-    LsstDiaObject,
-    LsstMpcOrbits,
     MagStat,
     Object,
     Xmatch,
@@ -25,12 +23,7 @@ from db_plugins.db.sql.models_pipeline import (
     ZtfReference,
     ZtfSS,
 )
-
-from db_plugins.db.sql.models_archive_probability import (
-    ProbabilityArchive,
-)
-
-from sqlalchemy import bindparam, update, func
+from sqlalchemy import bindparam, func, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
@@ -38,6 +31,7 @@ from .parser import (
     parse_det,
     parse_fp,
     parse_obj_stats,
+    parse_probability,
     parse_xmatch,
     parse_ztf_det,
     parse_ztf_dq,
@@ -45,12 +39,11 @@ from .parser import (
     parse_ztf_gaia,
     parse_ztf_magstats,
     parse_ztf_object,
+    parse_ztf_object_feature_update,
     parse_ztf_objstats,
     parse_ztf_ps1,
     parse_ztf_refernece,
     parse_ztf_ss,
-    parse_probability,
-    parse_ztf_object_feature_update,    
 )
 
 step_version = version("scribe-multisurvey")
@@ -74,7 +67,7 @@ class Command(ABC):
 
     @staticmethod
     @abstractmethod
-    def db_operation(session: Session, data: List):
+    def db_operation(session: Session, data: list):
         pass
 
 
@@ -151,7 +144,7 @@ class ZTFCorrectionCommand(Command):
         }
 
     @staticmethod
-    def db_operation(session: Session, data: List):
+    def db_operation(session: Session, data: list):
         detections = []
         ztf_detections = []
         forced_photometries = []
@@ -341,7 +334,7 @@ class ZTFMagstatCommand(Command):
         return {"object_stats": object_stats, "magstats": magstats_list}
 
     @staticmethod
-    def db_operation(session: Session, data: List):
+    def db_operation(session: Session, data: list):
         objectstat_list = []
         dedup_magstats = {}  # We must deduplicate magstats and since none of its keys is good we will use  objstats stuff
 
@@ -402,17 +395,20 @@ class ZTFMagstatCommand(Command):
         if len(magstat_list) > 0:
             magstats_stmt = insert(MagStat)
             magstats_result = session.connection().execute(
-            magstats_stmt.on_conflict_do_update(
-                constraint="pk_magstat_oid_sid_band",
-                set_={
-                    **{c.name: getattr(magstats_stmt.excluded, c.name)
-                    for c in MagStat.__table__.columns
-                    if c.name != "updated_date"},
-                    "updated_date": func.now(),
+                magstats_stmt.on_conflict_do_update(
+                    constraint="pk_magstat_oid_sid_band",
+                    set_={
+                        **{
+                            c.name: getattr(magstats_stmt.excluded, c.name)
+                            for c in MagStat.__table__.columns
+                            if c.name != "updated_date"
+                        },
+                        "updated_date": func.now(),
                     },
                 ),
                 magstat_list,
-)
+            )
+
 
 class LSSTMagstatCommand(Command):
     type = "LSSTMagstatCommand"
@@ -426,7 +422,7 @@ class LSSTMagstatCommand(Command):
         return {"object_stats": object_stats, "magstats": magstats_list}
 
     @staticmethod
-    def db_operation(session: Session, data: List):
+    def db_operation(session: Session, data: list):
         objectstat_list = []
         magstat_list = []
 
@@ -460,7 +456,6 @@ class LSSTFeatureCommand(Command):
     type = "LSSTFeatureCommand"
 
     def _format_data(self, data):
-
         oid = data["oid"]
         sid = data["sid"]
         mjd = data["mjd"]
@@ -483,18 +478,20 @@ class LSSTFeatureCommand(Command):
                 "band": feature["band"],
                 "version": feature_version,
                 "value": feature["value"],
-                "mjd": mjd,   # only used for dedup logic
+                "mjd": mjd,  # only used for dedup logic
             }
 
             # Deduplicate by keeping the feature with the latest mjd
-            if key not in deduplication_dict or row["mjd"] > deduplication_dict[key]["mjd"]:
+            if (
+                key not in deduplication_dict
+                or row["mjd"] > deduplication_dict[key]["mjd"]
+            ):
                 deduplication_dict[key] = row
 
         return list(deduplication_dict.values())
 
     @staticmethod
-    def db_operation(session: Session, data: List):
-
+    def db_operation(session: Session, data: list):
         if not data:
             return
 
@@ -534,9 +531,9 @@ class XmatchCommand(Command):
             return None
 
         return {"xmatches": parsed_xmatch}
-    
+
     @staticmethod
-    def db_operation(session: Session, data: List):
+    def db_operation(session: Session, data: list):
         if len(data) > 0:
             dedup_dict = {}
 
@@ -558,16 +555,16 @@ class XmatchCommand(Command):
 
             if deduplicated_data:
                 insert_stmt = insert(Xmatch).values(deduplicated_data)
-                upsert_stmt = session.connection().execute(
-                    insert_stmt.on_conflict_do_update(
-                        index_elements=["oid", "sid", "catid"],
-                        set_={
-                            "oid_catalog": insert_stmt.excluded.oid_catalog,
-                            "dist": insert_stmt.excluded.dist,
-                            "updated_date": func.now(),
-                        },
-                    )
+                upsert_stmt = insert_stmt.on_conflict_do_update(
+                    index_elements=["oid", "sid", "catid"],
+                    set_={
+                        "oid_catalog": insert_stmt.excluded.oid_catalog,
+                        "dist": insert_stmt.excluded.dist,
+                        "updated_date": func.now(),
+                    },
                 )
+                session.connection().execute(upsert_stmt)
+
 
 class ProbabilityArchivalCommand(Command):
     type = "ProbabilityArchivalCommand"
@@ -576,13 +573,18 @@ class ProbabilityArchivalCommand(Command):
         return parse_probability(data)
 
     @staticmethod
-    def db_operation(session: Session, data: List):
+    def db_operation(session: Session, data: list):
         if not data:
             return
 
         dedup = {}
         for row in data:
-            key = (row["oid"], row["sid"], row["classifier_version_id"], row["class_id"])
+            key = (
+                row["oid"],
+                row["sid"],
+                row["classifier_version_id"],
+                row["class_id"],
+            )
             if key not in dedup or row["lastmjd"] > dedup[key]["lastmjd"]:
                 dedup[key] = row
 
@@ -595,9 +597,10 @@ class ProbabilityArchivalCommand(Command):
                 "probability": stmt.excluded.probability,
                 "ranking": stmt.excluded.ranking,
                 "update_date": func.now(),
-            }
+            },
         )
         session.connection().execute(upsert, records)
+
 
 class ZtfObjectUpdateCommand(Command):
     type = "ZtfObjectUpdateCommand"
@@ -606,7 +609,7 @@ class ZtfObjectUpdateCommand(Command):
         return parse_ztf_object_feature_update(data)
 
     @staticmethod
-    def db_operation(session: Session, data: List):
+    def db_operation(session: Session, data: list):
         if not data:
             return
 
@@ -633,3 +636,4 @@ class ZtfObjectUpdateCommand(Command):
         )
 
         session.connection().execute(stmt, records)
+
