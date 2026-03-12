@@ -2,7 +2,7 @@ from base import BaseDbTest
 from data import DETECTION_DATA, OBJECT_DATA, ZTF_DETECTION_DATA
 from sqlalchemy.dialects.postgresql.base import select
 
-from db_plugins.db.sql.models import Detection, Object, ZtfDetection
+from db_plugins.db.sql.models_pipeline import Detection, Object, ZtfDetection
 
 
 class DetectionModelTest(BaseDbTest):

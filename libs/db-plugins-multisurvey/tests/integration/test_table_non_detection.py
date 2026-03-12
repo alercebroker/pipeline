@@ -2,7 +2,7 @@ from base import BaseDbTest
 from data import NON_DETECTION_DATA, OBJECT_DATA
 from sqlalchemy.dialects.postgresql.base import select
 
-from db_plugins.db.sql.models import Object, ZtfNonDetection
+from db_plugins.db.sql.models_pipeline import Object, ZtfNonDetection
 
 
 class NonDetectionModelTest(BaseDbTest):
