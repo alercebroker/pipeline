@@ -25,7 +25,7 @@ INITIAL_DATA: dict[str, InitData] = {
         ],
     },
     "feature_name_lut": {
-        "index_elements": ["feature_id"],
+        "index_elements": ["feature_id", "sid"],
         "data": [
             {"feature_id": 0, "feature_name": "u-g_mean", "sid": 1, "tid": 1},
             {"feature_id": 1, "feature_name": "u-g_max", "sid": 1, "tid": 1},
@@ -184,7 +184,7 @@ INITIAL_DATA: dict[str, InitData] = {
         ],
     },
     "taxonomy": {
-        "index_elements": ["class_id"],
+        "index_elements": ["class_id", "sid"],
         "data": [
             {
                 "class_id": 0,
