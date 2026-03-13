@@ -369,7 +369,6 @@ class FeatureStep(GenericStep):
 
     def post_execute(self, result):
         
-        self.metrics["sid"] = get_sid(result)
 
         for message in result:
             if "reference" in message:
