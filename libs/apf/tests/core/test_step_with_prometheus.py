@@ -1,12 +1,11 @@
-from prometheus_client import start_http_server
-from apf.metrics.prometheus import PrometheusMetrics
-from apf.core.step import GenericStep
 import pytest
-import requests
+from prometheus_client import CollectorRegistry
+
+from tests.core.conftest import MockStep
 
 
 @pytest.fixture
-def basic_config():
+def config():
     return {
         "PROMETHEUS": True,
         "CONSUMER_CONFIG": {
@@ -25,40 +24,34 @@ def basic_config():
     }
 
 
-class MockStep(GenericStep):
-    def execute(self, _):
-        return {}
+def test_init(step: MockStep, registry: CollectorRegistry):
+    for metric in registry.collect():
+        print(metric)
+
+    metrics = [
+        "messages_consumed_total",
+        "messages_processed_total",
+        "batches_processed_total",
+        "last_batch_processed_seconds",
+        "last_execution_time_seconds",
+    ]
+    for metric in metrics:
+        metric_value = registry.get_sample_value(metric)
+        assert metric_value == 0, (
+            f"Expected '{metric}' to start at '0'. Sampled '{metric_value}' instead."
+        )
 
 
-@pytest.fixture(scope="session")
-def prometheus_server():
-    start_http_server(8000)
-
-
-prometheus_metrics = PrometheusMetrics()
-
-
-@pytest.fixture
-def step(basic_config, mocker, prometheus_server):
-    mocker.patch.object(MockStep, "_write_success")
-    step = MockStep(config=basic_config, prometheus_metrics=prometheus_metrics)
-    yield step
-
-
-def test_init(step):
-    step._pre_consume()
-    result = requests.get("http://localhost:8000")
-    assert "consumed_messages summary" in result.text
-    assert "processed_messages summary" in result.text
-    assert "execution_time summary" in result.text
-    # assert "telescope_id gauge" in result.text
-
-
-def test_consume(step):
+def test_consume(step: MockStep, registry: CollectorRegistry):
     step.start()
-    result = requests.get("http://localhost:8000")
-    assert "consumed_messages_count 1.0" in result.text
-    assert "consumed_messages_sum 1.0" in result.text
-    assert "processed_messages_count 1.0" in result.text
-    assert "processed_messages_sum 1.0" in result.text
-    assert "execution_time_count 1.0" in result.text
+
+    assert registry.get_sample_value("messages_consumed_total") == 1
+    assert registry.get_sample_value("messages_processed_total") == 1
+    assert registry.get_sample_value("batches_processed_total") == 1
+    assert registry.get_sample_value("last_batch_processed_seconds") > 0
+    assert registry.get_sample_value("last_execution_time_seconds") > 0
+    assert registry.get_sample_value("exceptions_total", {"method": "pre_execute"}) == 0
+    assert registry.get_sample_value("exceptions_total", {"method": "execute"}) == 0
+    assert (
+        registry.get_sample_value("exceptions_total", {"method": "post_execute"}) == 0
+    )

@@ -3,6 +3,7 @@ import os
 import sys
 
 from apf.core.settings import config_from_yaml_file
+from prometheus_client import start_http_server
 
 from reflector_step.step import CustomMirrormaker
 
@@ -20,6 +21,9 @@ logging.basicConfig(
 )
 
 step_config = settings["STEP_CONFIG"]
+
+if step_config["FEATURE_FLAGS"]["PROMETHEUS"]:
+    start_http_server(8000)
 
 keep_original_timestamp = step_config.pop("keep_original_timestamp", False)
 use_message_topic = step_config.pop("use_message_topic", False)

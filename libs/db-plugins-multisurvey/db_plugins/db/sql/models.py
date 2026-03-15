@@ -1008,6 +1008,7 @@ class Probability(Base):
         return f"FOR VALUES WITH (MODULUS {cls.__n_partitions__}, REMAINDER {partition_idx})"
 
 
+
 class Feature(Base):
     __tablename__ = "feature"
 
@@ -1020,10 +1021,12 @@ class Feature(Base):
     updated_date = Column(Date, onupdate=func.now())
 
     # Not set as pk on postgres. Necessary to define a pk-less sqlalchemy table
-    __mapper_args__ = {"primary_key": ["oid", "sid", "feature_id", "band"]}
+    # __mapper_args__ = {"primary_key": ["oid", "sid", "feature_id", "band"]}
 
     __table_args__ = (
-        Index("idx_feature_oid", "oid", postgresql_using="btree"),
+        PrimaryKeyConstraint(
+            "oid", "sid", "feature_id", "band", name="pk_feature_oid_featureid_band"
+        ),
         {"postgresql_partition_by": "HASH (oid)"},
     )
 

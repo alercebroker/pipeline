@@ -3,6 +3,7 @@ import os
 import sys
 
 from apf.core.settings import config_from_yaml_file
+from prometheus_client import start_http_server
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 PACKAGE_PATH = os.path.abspath(os.path.join(SCRIPT_PATH, ".."))
@@ -36,6 +37,9 @@ def step_factory():
         from settings import settings_factory
 
         step_config = settings_factory()
+    
+    if step_config["FEATURE_FLAGS"]["PROMETHEUS"]:
+        start_http_server(8000)
 
     set_logger(step_config)
     return MagstatsStep_Multisurvey(config=step_config)

@@ -2,9 +2,7 @@ import logging
 import os
 import sys
 
-import pyroscope
 from apf.core.settings import config_from_yaml_file
-from apf.metrics.prometheus import PrometheusMetrics
 from prometheus_client import start_http_server
 
 from ingestion_step.step import IngestionStep
@@ -18,9 +16,7 @@ sys.path.append(PACKAGE_PATH)
 STEP_CONFIG = config_from_yaml_file(
     os.getenv("CONFIG_YAML_PATH", "/config/config.yaml")
 )
-STEP_CONFIG["METRICS_CONFIG"]["EXTRA_METRICS"] = [
-    {"key": "candid", "format": str}
-]
+STEP_CONFIG["METRICS_CONFIG"]["EXTRA_METRICS"] = [{"key": "candid", "format": str}]
 
 level = logging.INFO
 if STEP_CONFIG.get("LOGGING_DEBUG"):
@@ -38,19 +34,11 @@ logger.addHandler(handler)
 
 
 if bool(STEP_CONFIG["FEATURE_FLAGS"].get("USE_PROFILING", True)):
-    logger.info("Configuring Pyroscope profiling...")
-    pyroscope.configure(  # pyright: ignore
-        application_name="steps.Ingestion",
-        server_address=STEP_CONFIG.get("PYROSCOPE_SERVER", ""),
-    )
+    raise NotImplemented
 
-prometheus_metrics = PrometheusMetrics()
-if STEP_CONFIG["FEATURE_FLAGS"]["PROMETHEUS"]:
+if bool(STEP_CONFIG.get("FEATURE_FLAGS", {}).get("PROMETHEUS", False)):
     start_http_server(8000)
 
-step = IngestionStep(
-    config=STEP_CONFIG,
-    prometheus_metrics=prometheus_metrics,
-)
+step = IngestionStep(config=STEP_CONFIG)
 
 step.start()

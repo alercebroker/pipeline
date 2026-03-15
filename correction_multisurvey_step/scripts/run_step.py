@@ -1,6 +1,5 @@
 import logging
 import os
-from apf.metrics.prometheus import PrometheusMetrics
 from apf.core.settings import config_from_yaml_file
 from credentials import get_credentials
 from prometheus_client import start_http_server
@@ -44,7 +43,6 @@ def step_creator():
     step_params = {"config": settings, "db_sql": db_sql}
 
     if settings["FEATURE_FLAGS"]["PROMETHEUS"]:
-        step_params["prometheus_metrics"] = PrometheusMetrics()
         start_http_server(8000)
 
     if settings["FEATURE_FLAGS"]["USE_PROFILING"]:

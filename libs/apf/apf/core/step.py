@@ -1,14 +1,15 @@
 import abc
 import datetime
 import logging
-from abc import abstractmethod
-from typing import Any, Dict, Iterable, List, Type, Union
 import os
+from abc import abstractmethod
+from typing import Type
 
 from apf.consumers import GenericConsumer
 from apf.core import get_class
+from apf.core.types import Message, MessageBatch
 from apf.metrics.generic import GenericMetricsProducer
-from apf.metrics.prometheus import DefaultPrometheusMetrics, PrometheusMetrics
+from apf.metrics.prometheus import PrometheusMetrics
 from apf.metrics.pyroscope import profile
 from apf.producers import GenericProducer
 
@@ -56,21 +57,24 @@ class GenericStep(abc.ABC):
         metrics_sender: Type[GenericMetricsProducer] = DefaultMetricsProducer,
         level: int = logging.NOTSET,
         config: dict = {},
-        prometheus_metrics: PrometheusMetrics = DefaultPrometheusMetrics(),
+        metrics: PrometheusMetrics = PrometheusMetrics(),
     ):
         self._set_logger(level)
+
         self.config = config
+
         self.consumer = self._get_consumer(consumer)(self.consumer_config)
         self.producer = self._get_producer(producer)(self.producer_config)
         self.metrics_sender = self._get_metrics_sender(metrics_sender)(
             self.metrics_producer_params
         )
-        self.metrics = {}
+        self.metrics = metrics
+
+        self.kafka_metrics = {}
         self.extra_metrics = []
         if self.metrics_config:
             self.extra_metrics = self.metrics_config.get("EXTRA_METRICS", ["candid"])
         self.commit = self.config.get("COMMIT", True)
-        self.prometheus_metrics = prometheus_metrics
 
     @property
     def consumer_config(self):
@@ -119,7 +123,7 @@ class GenericStep(abc.ABC):
                 Metrics = get_class(self.config["METRICS_CONFIG"].get("CLASS"))
         return Metrics
 
-    def send_metrics(self, **metrics):
+    def send_metrics(self, metrics):
         """Send Metrics with a metrics producer.
 
         For this method to work the `METRICS_CONFIG` variable has to be set in the `STEP_CONFIG`
@@ -172,27 +176,24 @@ class GenericStep(abc.ABC):
         """
         pass
 
-    def _pre_execute(self, message: Union[dict, List[dict]]):
+    def _pre_execute(self, message: MessageBatch) -> MessageBatch:
         self.logger.info("Received message. Begin preprocessing")
-        self.metrics["timestamp_received"] = datetime.datetime.now(
+        self.kafka_metrics["timestamp_received"] = datetime.datetime.now(
             datetime.timezone.utc
         )
-        if isinstance(message, dict):
-            message = [message]
         self.message = message
-        if isinstance(self.message, dict):
-            self.prometheus_metrics.consumed_messages.observe(1)
-        if isinstance(self.message, list):
-            self.prometheus_metrics.consumed_messages.observe(len(self.message))
+
         try:
             preprocessed = self.pre_execute(self.message)
         except Exception as error:
-            self.logger.debug("Error at pre_execute")
-            self.logger.debug(f"The message(s) that caused the error: {message}")
+            self.logger.error("Error at pre_execute")
+            self.logger.error(f"The message(s) that caused the error: {message}")
+            self.metrics.exceptions.labels("pre_execute").inc()
             raise error
+
         return preprocessed
 
-    def pre_execute(self, messages: List[dict]) -> List[dict]:
+    def pre_execute(self, messages: MessageBatch) -> MessageBatch:
         """
         Override this method to perform operations on each batch of messages consumed.
 
@@ -203,9 +204,7 @@ class GenericStep(abc.ABC):
         return messages
 
     @abstractmethod
-    def execute(
-        self, messages: List[dict]
-    ) -> Union[Iterable[Dict[str, Any]], Dict[str, Any]]:
+    def execute(self, messages: MessageBatch) -> Message | MessageBatch:
         """Execute the logic of the step. This method has to be implemented by
         the instanced class.
 
@@ -216,37 +215,42 @@ class GenericStep(abc.ABC):
         """
         pass
 
-    def _post_execute(self, result: Union[Iterable[Dict[str, Any]], Dict[str, Any]]):
+    def _post_execute(self, result: Message | MessageBatch) -> Message | MessageBatch:
         self.logger.info("Processed message. Begin post processing")
+
         try:
             final_result = self.post_execute(result)
         except Exception as error:
-            self.logger.debug("Error at post_execute")
-            self.logger.debug(f"The result that caused the error: {result}")
+            self.logger.error("Error at post_execute")
+            self.logger.error(f"The result that caused the error: {result}")
+            self.metrics.exceptions.labels("post_execute").inc()
             raise error
-        self.metrics["timestamp_sent"] = datetime.datetime.now(datetime.timezone.utc)
-        time_difference = (
-            self.metrics["timestamp_sent"] - self.metrics["timestamp_received"]
+
+        self.kafka_metrics["timestamp_sent"] = datetime.datetime.now(
+            datetime.timezone.utc
         )
-        self.metrics["execution_time"] = time_difference.total_seconds()
+        time_difference = (
+            self.kafka_metrics["timestamp_sent"]
+            - self.kafka_metrics["timestamp_received"]
+        )
+
+        self.kafka_metrics["execution_time"] = time_difference.total_seconds()
+
         if self.extra_metrics:
             extra_metrics = self.get_extra_metrics(self.message)
-            self.metrics.update(extra_metrics)
-        if "source" not in self.metrics:
-            self.metrics["source"] = os.getenv(
+            self.kafka_metrics.update(extra_metrics)
+        if "source" not in self.kafka_metrics:
+            self.kafka_metrics["source"] = os.getenv(
                 "METRICS_SOURCE", f"{self.__class__.__name__}"
             )
-        if "survey" not in self.metrics:
-            self.metrics["survey"] = os.getenv("METRICS_SURVEY")
-        self.send_metrics(**self.metrics)
-        if isinstance(self.message, dict):
-            self.prometheus_metrics.processed_messages.observe(1)
-        if isinstance(self.message, list):
-            self.prometheus_metrics.processed_messages.observe(len(self.message))
-        self.prometheus_metrics.execution_time.observe(time_difference.total_seconds())
+        if "survey" not in self.kafka_metrics:
+            self.kafka_metrics["survey"] = os.getenv("METRICS_SURVEY")
+
+        self.send_metrics(self.kafka_metrics)
+
         return final_result
 
-    def post_execute(self, result: Union[Iterable[Dict[str, Any]], Dict[str, Any]]):
+    def post_execute(self, result: Message | MessageBatch) -> Message | MessageBatch:
         """
         Override this method to perform additional operations on
         the processed data coming from :py:func:`apf.core.step.GenericStep.execute`
@@ -256,19 +260,20 @@ class GenericStep(abc.ABC):
         """
         return result
 
-    def _pre_produce(
-        self, result: Union[Iterable[Dict[str, Any]], Dict[str, Any]]
-    ) -> Union[Iterable[Dict[str, Any]], Dict[str, Any]]:
+    def _pre_produce(self, result: Message | MessageBatch) -> Message | MessageBatch:
         self.logger.info("Finished all processing. Begin message production")
+
         try:
             message_to_produce = self.pre_produce(result)
         except Exception as error:
-            self.logger.debug("Error at pre_produce")
-            self.logger.debug(f"The result that caused the error: {result}")
+            self.logger.error("Error at pre_produce")
+            self.logger.error(f"The result that caused the error: {result}")
+            self.metrics.exceptions.labels("pre_produce").inc()
             raise error
+
         return message_to_produce
 
-    def pre_produce(self, result: Union[Iterable[Dict[str, Any]], Dict[str, Any]]):
+    def pre_produce(self, result: Message | MessageBatch) -> Message | MessageBatch:
         """
         Override this method to perform additional operations on
         the processed data coming from :py:func:`apf.core.step.GenericStep.post_execute`
@@ -285,7 +290,8 @@ class GenericStep(abc.ABC):
             if self.commit:
                 self.consumer.commit()
         except Exception as error:
-            self.logger.debug("Error at post_produce")
+            self.logger.error("Error at post_produce")
+            self.metrics.exceptions.labels("post_produce").inc()
             raise error
 
     def post_produce(self):
@@ -362,9 +368,13 @@ class GenericStep(abc.ABC):
             Dictionary with extra metrics from the messages.
 
         """
-        # Is the message is a list then the metrics are
-        # added to an array of values.
-        if isinstance(message, list):
+        if isinstance(message, dict):
+            extra_metrics = {}
+            for metric in self.extra_metrics:
+                aliased_metric, value = self.get_value(message, metric)
+                extra_metrics[aliased_metric] = value
+            extra_metrics["n_messages"] = 1
+        else:
             extra_metrics = {}
             for msj in message:
                 for metric in self.extra_metrics:
@@ -377,17 +387,9 @@ class GenericStep(abc.ABC):
                     else:
                         extra_metrics[aliased_metric].append(value)
             extra_metrics["n_messages"] = len(message)
-
-        # If not they are only added as a single value.
-        else:
-            extra_metrics = {}
-            for metric in self.extra_metrics:
-                aliased_metric, value = self.get_value(message, metric)
-                extra_metrics[aliased_metric] = value
-            extra_metrics["n_messages"] = 1
         return extra_metrics
 
-    def produce(self, result: Union[Iterable[Dict[str, Any]], Dict[str, Any]]):
+    def produce(self, result: Message | MessageBatch):
         """
         Produces messages using the configured producer class.
 
@@ -401,7 +403,6 @@ class GenericStep(abc.ABC):
         NOTE: If you want to produce with a key, use the set_producer_key_field(key_field)
         method somewhere in the lifecycle of the step prior to the produce state.
         """
-        n_messages = 0
         if isinstance(result, dict):
             to_produce = [result]
         else:
@@ -428,29 +429,52 @@ class GenericStep(abc.ABC):
     @profile
     def start(self):
         logger = logging.getLogger(f"alerce.{self.__class__.__name__}")
-        """Start running the step."""
+
         self._pre_consume()
         for message in self.consumer.consume():
-            preprocessed_msg = self._pre_execute(message)
-            if len(preprocessed_msg) == 0:
-                logger.info("Message of len zero after pre_execute")
-                if self.commit:
-                    self.consumer.commit()
-                continue
-            try:
-                result = self.execute(preprocessed_msg)
-            except Exception as error:
-                logger.debug("Error at execute")
-                logger.debug(f"The message(s) that caused the error: {message}")
-                raise error
-            result = self._post_execute(result)
-            result = self._pre_produce(result)
-            self.produce(result)
-            self._post_produce()
+            if isinstance(message, dict):
+                message = [message]
+
+            n_messages = len(message)
+            self.metrics.messages_consumed.inc(n_messages)
+            self.metrics.batch_size_messages.observe(n_messages)
+
+            with (
+                self.metrics.last_execution_time.time(),
+                self.metrics.batch_processing.time(),
+            ):
+                preprocessed_msg = self._pre_execute(message)
+
+                if len(preprocessed_msg) == 0:
+                    logger.info("Message of len zero after pre_execute")
+                    if self.commit:
+                        self.consumer.commit()
+                    continue
+
+                try:
+                    result = self.execute(preprocessed_msg)
+                except Exception as error:
+                    logger.error("Error at execute")
+                    logger.error(f"The message(s) that caused the error: {message}")
+                    self.metrics.exceptions.labels("execute").inc()
+                    raise error
+
+                result = self._post_execute(result)
+
+                result = self._pre_produce(result)
+
+                self.produce(result)
+
+                self._post_produce()
+            self.metrics.messages_processed.inc(n_messages)
+            self.metrics.batches_processed.inc()
+            self.metrics.last_batch_processed.set_to_current_time()
+
         self._tear_down()
 
     def _tear_down(self):
         self.logger.info("Processing finished. No more messages. Begin tear down.")
+
         try:
             self.tear_down()
         except Exception as error:

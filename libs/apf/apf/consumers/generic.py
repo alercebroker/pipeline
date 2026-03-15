@@ -1,5 +1,5 @@
-from abc import ABC, abstractmethod
 import logging
+from abc import ABC, abstractmethod
 from typing import Generator, Union
 
 
@@ -15,7 +15,7 @@ class GenericConsumer(ABC):
         self.config = config
 
     @abstractmethod
-    def consume(self) -> Generator[Union[list, dict], None, None]:
+    def consume(self) -> Generator[Union[list[dict], dict], None, None]:
         """Get a message from a data source
 
         Yields
