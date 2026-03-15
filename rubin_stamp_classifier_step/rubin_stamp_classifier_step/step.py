@@ -32,25 +32,23 @@ class StampClassifierStep(GenericStep):
         )
         self.dict_mapping_classes = self.model.dict_mapping_classes
         self.psql_connection = PSQLConnection(config["DB_CONFIG"])
+        self.survey = self.config.get("SURVEY")
+        if self.survey == 'lsst':
+            sid = 1
+        elif self.survey == 'ztf':
+            sid = 0
+        else:
+            raise ValueError(f"Unknown survey: {self.survey}. Expected 'lsst' or 'ztf'")
+
         if "CLS_ID" not in config["MODEL_CONFIG"]:
             self.classifier_id = 0
         else:
             self.classifier_id = config["MODEL_CONFIG"]["CLS_ID"]
 
-        #aqui deberiamos obtener la taxonomia usando el classifier id
-        #deberia haber una funcion en db.py con arg self.classifier_id
-
-        self.class_taxonomy = get_taxonomy_by_classifier_id(self.classifier_id, self.psql_connection)
+        self.class_taxonomy = get_taxonomy_by_classifier_id(self.classifier_id, sid, self.psql_connection)
         logging.info(f"Class taxonomy: {self.class_taxonomy}")
     def pre_execute(self, messages: List[dict]) -> List[dict]:
-        # Preprocessing: parsing, formatting and validation.
-
-        # Extract required fields from messages
-        # Metadata to provide:
-        # ['airmass', 'magLim', 'psfFlux', 'psfFluxErr', 'scienceFlux',
-        #  'scienceFluxErr', 'seeing', 'snr', 'ra', dec']
-
-        # stamps: ['visit_image', 'difference_image', 'reference_image']
+        
 
         logging.warning("Airmass is not available in schema v7.4, setting to 1.0")
         logging.warning("MagLim is not available in schema v7.4, setting to 25")

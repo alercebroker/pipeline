@@ -102,8 +102,6 @@ def classifier_version_str_to_small_integer(version: str) -> int:
 
 
 # TODO: The following function is a placeholder and should be replaced with the actual implementation
-CLASS_DICT = {"SN":0, "AGN":1,"VS":2, "asteroid":3, "bogus":4, "satellite":5}
-# CLASS_DICT = {"SN":0, "AGN":1, "VS":2, "asteroid":3, "bogus":4}
 # Hay que agregar las multisuvery credentials a la config env
 
 def class_name_to_id(class_name: str, class_taxonomy: dict[str, int]) -> int:
@@ -126,10 +124,10 @@ def class_id_to_name(class_id: int, class_taxonomy: dict[str, int]) -> str:
     return class_dict.get(class_id, "unknown")
 
 
-def get_taxonomy_by_classifier_id(classifier_id: int, psql_connection: PSQLConnection) -> dict[str, int]:
-    """Fetch taxonomy from DB for a given classifier and return {class_name: class_id}.
+def get_taxonomy_by_classifier_id(classifier_id: int, sid: int, psql_connection: PSQLConnection) -> dict[str, int]:
+    """Fetch taxonomy from DB for a given classifier and sid, return {class_name: class_id}.
 
-    Expects a table with columns: class_id, class_name, "order", classifier_id, created_date
+    Expects a table with columns: class_id, class_name, "order", classifier_id, sid, created_date
     available under the configured schema.
     """
     mapping: dict[str, int] = {}
@@ -139,19 +137,19 @@ def get_taxonomy_by_classifier_id(classifier_id: int, psql_connection: PSQLConne
                 """
                 SELECT class_id, class_name
                 FROM taxonomy
-                WHERE classifier_id = :classifier_id
+                WHERE classifier_id = :classifier_id AND sid = :sid
                 ORDER BY "order" ASC
                 """
             )
-            result = session.execute(query, {"classifier_id": classifier_id})
+            result = session.execute(query, {"classifier_id": classifier_id, "sid": sid})
             rows = result.mappings().all()
             if rows:
                 mapping = {row["class_name"]: int(row["class_id"]) for row in rows}
             else:
                 logging.warning(
-                    f"No taxonomy rows found for classifier_id={classifier_id}."
+                    f"No taxonomy rows found for classifier_id={classifier_id} and sid={sid}."
                 )
     except Exception as e:
-        logging.error(f"Error fetching taxonomy for classifier_id={classifier_id}: {e}")
+        logging.error(f"Error fetching taxonomy for classifier_id={classifier_id} and sid={sid}: {e}")
     
     return mapping
