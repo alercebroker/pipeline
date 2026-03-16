@@ -89,6 +89,43 @@ Before running, configure the dataset name inside the script. This name must mat
 
 ---
 
+## Calibration
+ 
+Once all folds have been trained and evaluated, the model checkpoint that achieved the best results during hyperparameter search is selected for production deployment. Before deploying, the model is calibrated using temperature scaling to improve the reliability of its predicted probabilities.
+ 
+Calibration is performed on the **validation set** using a grid search over temperature values that minimizes a combined loss of NLL and ECE (Expected Calibration Error):
+ 
+```bash
+python calibration.py
+```
+ 
+Edit the `config` block at the bottom of the script to point to the desired MLflow experiment, run, and fold:
+ 
+```python
+config = {
+    'mlflow_dir': 'ml-runs',
+    'checkpoint': {
+        'exp_name': 'classification/ztf_ff_20folds/testing',  # MLflow experiment name
+        'run_name': '2025-05-15_04-36-03',                    # MLflow run name
+        'results_dir': 'results',
+    },
+    'loader': {
+        'fold': 9                                              # Fold to calibrate
+    }
+}
+```
+ 
+The script searches for the optimal temperature `T` and generates two diagnostic plots saved under `results/images/calibration/`:
+ 
+| Output file | Description |
+|---|---|
+| `reliability_diagrams.png` | Side-by-side reliability diagrams before and after calibration |
+| `histograms_pred_probs.png` | Distribution of predicted confidence scores before and after calibration |
+ 
+The optimal temperature and calibration losses (NLL, ECE, combined) are logged to stdout.
+ 
+---
+
 ## Experiment Tracking (MLflow)
 
 All training runs are tracked with MLflow. To launch the MLflow UI and browse experiments, models, and metrics:
