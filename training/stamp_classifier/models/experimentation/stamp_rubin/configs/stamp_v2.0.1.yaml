@@ -1,0 +1,99 @@
+hydra:
+  run:
+    dir: .
+  output_subdir: null 
+
+stamp_classifier:
+  results_dir: results_stamp_v2.0.1 ## Tuve que cambiar manualmente esto
+  exp_description: rubin_gridsearch_quick
+  load_pretrained_model: false
+  checkpoint:
+    exp_name: classification/ztf/testing
+    run_name: 2025-09-25_13-18-27
+    results_dir: results_ztf
+  model_name: stamp_full
+  name_dataset_version: rubin_real
+  dir_data: ./../../../data_acquisition/rubin/data/processed/ts_stamps_v0.0.2_comm_4candmax
+  path_partition: ./../../../data_acquisition/rubin/data/processed/partitions/partitions_trainSN_mixed_valSN_real_eval_firstStamp_v1/partitions.parquet
+  list_folds: [0] # , 1, 2, 3, 4 Tuve que agregar manualmente esto
+  debug: false
+  is_searching_hyperparameters: false ## Tuve que cambiar manualmente esto
+  simulated_data:
+    use: true
+    path: ./../../../data_acquisition/rubin/data/simulated_data/synthetic_total_SN.pkl
+  loader:
+    id_col: oid ## Tuve que cambiar manualmente esto
+    candid_col: measurement_id ## Tuve que cambiar manualmente esto
+    ra_col: ra
+    dec_col: dec
+    class_col: class
+    band_col: 'band' ## Tuve que cambiar manualmente esto
+    stamps_cols:
+    - flux_Science_data ## Tuve que cambiar manualmente esto
+    - flux_Difference_data ## Tuve que cambiar manualmente esto
+    - flux_Template_data ## Tuve que cambiar manualmente esto
+    cropping:
+      use: false
+      crop_size: 21
+    num_workers: 12
+    coord_type: spherical
+    norm_type: z-score
+    stamp_norm_type: legacy
+    batch_size: 256
+    use_coords: true ## Tuve que cambiar manualmente esto false --> true
+    #fold: 0 ## Tuve que cambiar manualmente esto
+  
+  arch:
+    model_type: net_reyes_mod
+    conv_config:
+    - filters: 8
+      kernel_size:
+      - 2
+      - 2
+      activation: relu
+      pool: true
+      pool_size:
+      - 2
+      - 2
+    - filters: 16
+      kernel_size:
+      - 2
+      - 2
+      activation: relu
+      pool: true
+      pool_size:
+      - 2
+      - 2
+    - filters: 32
+      kernel_size:
+      - 2
+      - 2
+      activation: relu
+      pool: true
+      pool_size:
+      - 2
+      - 2
+    dense_config:
+    - units: 16
+      activation: tanh
+    dropout_rate: 0.4
+    use_batchnorm_metadata: false
+    use_metadata: false
+  training:
+    lr: 0.001
+    use_focal: false
+    patience: 10
+    num_epochs: 10000
+    monitor: loss
+    eval_train_at_the_epoch_end: true
+  artifact_path: /home/dmoreno/pipeline_v4_final/pipeline/training/stamp_classifier/models/experimentation/stamp_rubin/results_rubin_real_v1_trainSN_mixed_valSN_real_eval_firstStamp_v1_modified_NormIgnacio/ml-runs/902529099573487421/3fb0fda8508a4ad1a702b90e773ed3ab/artifacts
+  order_features:
+  - dec
+  - ra
+  dict_mapping_classes:
+    0: AGN
+    1: SN
+    2: VS
+    3: asteroid
+    4: bogus
+  temperature_scaling: 1.0703407697143843
