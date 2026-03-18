@@ -57,8 +57,8 @@ class Object(Base):
     lastmjd = Column(DOUBLE_PRECISION, nullable=False)
     deltamjd = Column(DOUBLE_PRECISION, nullable=False, default=0.0)
     n_det = Column(Integer, nullable=False, default=1)
-    n_forced = Column(Integer, nullable=False, default=1)
-    n_non_det = Column(Integer, nullable=False, default=1)
+    n_forced = Column(Integer, nullable=False, default=0)
+    n_non_det = Column(Integer, nullable=False, default=0)
 
     created_date = Column(Date, server_default=func.now())
     updated_date = Column(Date, onupdate=func.now())
