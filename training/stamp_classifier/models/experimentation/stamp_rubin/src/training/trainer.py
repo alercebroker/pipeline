@@ -56,26 +56,14 @@ class ModelTemperature:
 
 class Trainer:
     def __init__(
-            self, 
-            model, 
-            loss_object, 
-            optimizer, 
-            args, 
-            train_ds, 
-            train_ds_for_eval, 
-            val_ds, 
-            test_ds,
-            oids_train,
-            oids_val,
-            oids_test,
-            candid_train,
-            candid_val,
-            candid_test,
-            test_ds_sim,
-            oid_test_sim,
-            test_files_ids,
-            artifact_path, 
-            dict_info
+            self, model, loss_object, optimizer, args, 
+            train_ds, train_ds_for_eval, val_ds, test_ds,
+            oids_train, oids_val, oids_test,
+            candid_train, candid_val, candid_test,
+            ra_train, dec_train, ra_val, dec_val, 
+            ra_test, dec_test, ra_test_sim, dec_test_sim,
+            test_ds_sim, oid_test_sim, test_files_ids,
+            artifact_path, dict_info
             ):
         
         self.model = model
@@ -92,6 +80,16 @@ class Trainer:
         self.candid_train = candid_train
         self.candid_val = candid_val
         self.candid_test = candid_test
+
+        self.ra_train = ra_train
+        self.dec_train = dec_train
+        self.ra_val = ra_val
+        self.dec_val = dec_val
+        self.ra_test = ra_test
+        self.dec_test = dec_test
+        self.ra_test_sim = ra_test_sim
+        self.dec_test_sim = dec_test_sim
+
         self.test_ds_sim = test_ds_sim
         self.oid_test_sim = oid_test_sim
         self.test_files_ids = test_files_ids
@@ -316,7 +314,7 @@ class Trainer:
             
         return temp_scaler
     
-    def _predict_and_save_dataframe(self, dataset, oids, candid, dataset_name, temp_scaler=None):
+    def _predict_and_save_dataframe(self, dataset, oids, candid, ra, dec, dataset_name, temp_scaler=None):
         print(f"\n[Evaluator] Generating predictions for '{dataset_name}' set...")
         if dataset is None or oids is None:
             print(f"[Warning] Dataset or OIDs for '{dataset_name}' not provided. Skipping.")
@@ -341,7 +339,9 @@ class Trainer:
         # 3. Construir DataFrame
         df = pd.DataFrame({
             'oid': oids, 
-            'measurement_id': candid, 
+            'measurement_id': candid,
+            'ra': ra,   
+            'dec': dec,  
             'true_label_int': labels_int, 
             'predicted_label_int_raw': predictions_int_raw,
             'predicted_label_int_cal': predictions_int_cal
@@ -388,11 +388,14 @@ class Trainer:
         
         # 2. Configuración
         HISTOGRAM_BINS_1D = 25
+        SKY_GRID_BINS_RA = 64   
+        SKY_GRID_BINS_DEC = 32  
+
         reference_summary = {
             "class_summary": {}, 
             "class_statistics": {}, 
             "hist_data": {}, 
-            "heatmap_data": {} # Opcional si tienes RA/DEC, aquí no los tenemos en el DF de predicciones directo
+            "heatmap_data": {}
         }
         
         # 3. Resumen de Clases Reales (Prior Distribution)
@@ -446,6 +449,25 @@ class Trainer:
                 'counts': prob_counts.tolist(), 'bins': prob_bins.tolist()
             }
 
+        if 'ra' in reference_df_wide.columns and not reference_df_wide['ra'].isnull().all():
+            print("[Monitoring] Calculating heatmaps for the reference set...")
+            
+            # Filtramos nulos de ra/dec y agrupamos por la clase predicha calibrada
+            grouped_sky = reference_df_wide.dropna(subset=['ra', 'dec']).groupby('predicted_label_cal')
+            
+            ra_bins = np.linspace(0, 360, SKY_GRID_BINS_RA + 1)
+            dec_bins = np.linspace(-90, 90, SKY_GRID_BINS_DEC + 1)
+            
+            for class_name, group_df in grouped_sky:
+                heatmap_counts, _, _ = np.histogram2d(group_df['ra'], group_df['dec'], bins=[ra_bins, dec_bins])
+                
+                # Convertimos a listas nativas de python con .tolist() para compatibilidad directa con JSON
+                reference_summary['heatmap_data'][class_name] = {
+                    'counts': heatmap_counts.tolist(), 
+                    'ra_bins': ra_bins.tolist(), 
+                    'dec_bins': dec_bins.tolist()
+                }
+
         # 6. Guardar JSON
         mlflow.log_dict(reference_summary, "monitoring/reference_summary.json")
 
@@ -461,18 +483,17 @@ class Trainer:
         
         # 2. Generar predicciones para todos los sets (pasando el temp_scaler)
         _, _, _, df_train = self._predict_and_save_dataframe(
-            self.train_ds_for_eval, self.oids_train, self.candid_train, "train", temp_scaler=None
-            )
-        _, _, _, df_val = self._predict_and_save_dataframe(
-            self.val_ds, self.oids_val, self.candid_val, "val", temp_scaler=None
-            )        
-        test_labels_int, test_predictions_int, test_probs, df_test = self._predict_and_save_dataframe(
-            self.test_ds, self.oids_test, self.candid_test, "test", temp_scaler
+            self.train_ds_for_eval, self.oids_train, self.candid_train, self.ra_train, self.dec_train, "train", temp_scaler=None
         )
-
+        _, _, _, df_val = self._predict_and_save_dataframe(
+            self.val_ds, self.oids_val, self.candid_val, self.ra_val, self.dec_val, "val", temp_scaler=None
+        )        
+        test_labels_int, test_predictions_int, test_probs, df_test = self._predict_and_save_dataframe(
+            self.test_ds, self.oids_test, self.candid_test, self.ra_test, self.dec_test, "test", temp_scaler
+        )
         _, _, _, _ = self._predict_and_save_dataframe(
-            self.test_ds_sim, self.oid_test_sim, self.test_files_ids, "test_sim", temp_scaler=None
-            )
+            self.test_ds_sim, self.oid_test_sim, self.test_files_ids, self.ra_test_sim, self.dec_test_sim, "test_sim", temp_scaler=None
+        )
 
         if test_labels_int is None:
             print("[Error] Could not evaluate test set. Final metrics will not be available.")

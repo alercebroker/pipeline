@@ -315,7 +315,6 @@ def get_tf_datasets(batch_size: int, args: dict, load_pretrained_model: bool = F
     data_test.head(10).to_pickle(data_name)
     mlflow.log_artifact(data_name, artifact_path="deployment_checks")
 
-
     #data_test.head(10).to_pickle(f"{args['artifact_path']}/deployment_checks/data_sample_test.pkl")
 
     # 6. Handle Simulated Data
@@ -414,6 +413,16 @@ def get_tf_datasets(batch_size: int, args: dict, load_pretrained_model: bool = F
     candid_train = data_train[args_loader['candid_col']].tolist()
     candid_val = data_val[args_loader['candid_col']].tolist()
     candid_test = data_test[args_loader['candid_col']].tolist()
+
+    ra_train = data_train['ra'].tolist()
+    ra_val = data_val['ra'].tolist()
+    ra_test = data_test['ra'].tolist()
+    ra_test_sim = data_test_sim['ra'].tolist()
+
+    dec_train = data_train['dec'].tolist()
+    dec_val = data_val['dec'].tolist()
+    dec_test = data_test['dec'].tolist()
+    dec_test_sim = data_test_sim['dec'].tolist()
 
     class_col = args_loader['class_col']
     def split_data_labels(df):
@@ -573,6 +582,20 @@ def get_tf_datasets(batch_size: int, args: dict, load_pretrained_model: bool = F
                 'val': candid_val,
                 'test': candid_test
             },
+
+            'ra': {
+                'train': ra_train,
+                'val': ra_val,
+                'test': ra_test,
+                'test_sim': ra_test_sim
+            },
+            'dec': {
+                'train': dec_train,
+                'val': dec_val,
+                'test': dec_test,
+                'test_sim': dec_test_sim
+            },
+
             'files': {
                 'test_sim': test_files_ids
             }

@@ -43,7 +43,7 @@ def flatten_dict(d, parent_key='', sep='.'):
     """Flattens a nested dictionary for MLflow logging."""
     items = []
     for k, v in d.items():
-        new_key = parent_key + sep + k if parent_key else k
+        new_key = parent_key + sep + str(k) if parent_key else str(k)
         if isinstance(v, dict):
             items.extend(flatten_dict(v, new_key, sep=sep).items())
         elif isinstance(v, list):
@@ -205,6 +205,15 @@ def perform_training(run, args, experiment_name):
         candid_val=ids['candid']['val'],
         candid_test=ids['candid']['test'],
         
+        ra_train=ids['ra']['train'],
+        dec_train=ids['dec']['train'],
+        ra_val=ids['ra']['val'],
+        dec_val=ids['dec']['val'],
+        ra_test=ids['ra']['test'],
+        dec_test=ids['dec']['test'],
+        ra_test_sim=ids['ra']['test_sim'],
+        dec_test_sim=ids['dec']['test_sim'],
+
         test_files_ids=ids['files']['test_sim'],
         
         artifact_path=artifact_path,
@@ -220,7 +229,7 @@ def perform_training(run, args, experiment_name):
 
 @hydra.main(
     config_path=os.getenv("HYDRA_CONFIG_PATH", "./configs"),
-    config_name=os.getenv("HYDRA_CONFIG_NAME", "cnn_config_v1_real_rubin_allstamps_trainSN_mixed_valSN_real_modified_normIgnacio.yaml"), 
+    config_name=os.getenv("HYDRA_CONFIG_NAME", "stamp_v2.0.1.yaml"), 
     version_base=None
 )
 def run(config: DictConfig) -> None:
