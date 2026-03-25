@@ -19,10 +19,10 @@ def docker_compose_command():
     return "docker compose" if version == "v2" else "docker-compose"
 
 
-def is_psql_responsive(ip, port):
+def is_psql_responsive(host, port):
     try:
         conn = psycopg2.connect(
-            "dbname='postgres' user='postgres' host=localhost password='postgres'"
+            f"dbname='postgres' user='postgres' host={host} port={port} password='postgres'"
         )
         conn.close()
         return True
@@ -34,11 +34,30 @@ def is_psql_responsive(ip, port):
 @pytest.fixture(scope="session")
 def psql_service(docker_ip, docker_services):
     port = docker_services.port_for("postgres", 5432)
-    server = f"{docker_ip}:{port}"
     docker_services.wait_until_responsive(
-        timeout=30.0, pause=0.1, check=lambda: is_psql_responsive(server, port)
+        timeout=30.0, pause=0.1, check=lambda: is_psql_responsive(docker_ip, port)
     )
-    return server
+    return f"{docker_ip}:{port}"
+
+
+@pytest.fixture(scope="session")
+def pgbouncer_service(psql_service, docker_ip, docker_services):
+    """Ensure PgBouncer is up, then set the role's search_path so it survives transaction-mode pooling."""
+    port = docker_services.port_for("pgbouncer", 5432)
+    docker_services.wait_until_responsive(
+        timeout=60.0,
+        pause=0.5,
+        check=lambda: is_psql_responsive(docker_ip, port),
+    )
+    conn = psycopg2.connect(
+        "dbname='postgres' user='postgres' host=localhost port=5432 password='postgres'"
+    )
+    conn.autocommit = True
+    cur = conn.cursor()
+    cur.execute("ALTER ROLE postgres SET search_path = public")
+    cur.close()
+    conn.close()
+
 
 
 def create_topics(client: AdminClient):

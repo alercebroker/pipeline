@@ -14,7 +14,7 @@ from rubin_stamp_classifier_step.db.db import class_id_to_name
 from .data.load_msgs_sample import load_sample_messages
 
 
-psql_config = {
+psql_config_direct = {
     "ENGINE": "postgresql",
     "HOST": "localhost",
     "USER": "postgres",
@@ -23,15 +23,26 @@ psql_config = {
     "DB_NAME": "postgres",
 }
 
+psql_config_pgbouncer = {
+    "ENGINE": "postgresql",
+    "HOST": "localhost",
+    "USER": "postgres",
+    "PASSWORD": "postgres",
+    "PORT": 5433,
+    "DB_NAME": "postgres",
+    "POOLCLASS": "NullPool",
+}
+
 step_config = {
     "LOGGING_LEVEL": "DEBUG",
     "DB_CONFIG": {
-        "USER": psql_config["USER"],
-        "PASSWORD": psql_config["PASSWORD"],
-        "HOST": psql_config["HOST"],
-        "PORT": psql_config["PORT"],
-        "DB_NAME": psql_config["DB_NAME"],
+        "USER": psql_config_pgbouncer["USER"],
+        "PASSWORD": psql_config_pgbouncer["PASSWORD"],
+        "HOST": psql_config_pgbouncer["HOST"],
+        "PORT": psql_config_pgbouncer["PORT"],
+        "DB_NAME": psql_config_pgbouncer["DB_NAME"],
         "SCHEMA": "public",
+        "POOLCLASS": "NullPool",
     },
     "CONSUMER_CONFIG": {"CLASS": "apf.core.step.DefaultConsumer"},
     "PRODUCER_CONFIG": {"CLASS": "apf.core.step.DefaultProducer"},
@@ -42,19 +53,22 @@ step_config = {
 }
 
 
-@pytest.mark.usefixtures("psql_service")
+@pytest.mark.usefixtures("pgbouncer_service")
 class TestRubinStampClassifierStep(unittest.TestCase):
     """Test class for Rubin Stamp Classifier Step."""
 
     @classmethod
     def setUpClass(cls):
         """Set up the test environment once for all test methods."""
-        cls.db_sql = PsqlDatabase(psql_config)
+        cls.db_sql = PsqlDatabase(psql_config_pgbouncer)
 
     def setUp(self):
-        # create db
-        self.db_sql = PsqlDatabase(psql_config)
-        self.db_sql.create_db()
+        # DDL via direct connection.
+        self.db_sql_direct = PsqlDatabase(psql_config_direct)
+        self.db_sql_direct.create_db()
+
+        # Queries and step use pgbouncer.
+        self.db_sql = PsqlDatabase(psql_config_pgbouncer)
         self.step = StampClassifierStep(
             config=step_config,
             level=step_config["LOGGING_LEVEL"],
@@ -66,7 +80,7 @@ class TestRubinStampClassifierStep(unittest.TestCase):
 
     def tearDown(self):
         """Clean up after each test."""
-        self.db_sql.drop_db()
+        self.db_sql_direct.drop_db()
 
     @classmethod
     def _set_logger(cls, settings):

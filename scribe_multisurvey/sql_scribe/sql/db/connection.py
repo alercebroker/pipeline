@@ -3,23 +3,15 @@ from typing import Callable, ContextManager
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.pool import NullPool
 
 
 class PSQLConnection:
     def __init__(self, config: dict) -> None:
         url = self.__format_db_url(config)
-        schema = config.get("SCHEMA", None)
-        if schema:
-            self._engine = create_engine(url,
-                echo=False,
-                connect_args={
-                    "options": "-csearch_path={}".format(
-                        schema
-                    )
-                },
-            )
-        else:
-            self._engine = create_engine(url, echo=False)
+        poolclass_name = config.get("POOLCLASS", None)
+        poolclass = NullPool if poolclass_name == "NullPool" else None
+        self._engine = create_engine(url, echo=False, poolclass=poolclass)
         self._session_factory = sessionmaker(
             self._engine,
         )

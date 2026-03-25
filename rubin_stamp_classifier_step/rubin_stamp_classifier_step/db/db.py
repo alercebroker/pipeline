@@ -5,24 +5,22 @@ from typing import Callable, ContextManager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy import text
+from sqlalchemy.pool import NullPool
 import logging
 
 
 class PSQLConnection:
     def __init__(self, config: dict) -> None:
         url = self.__format_db_url(config)
-        args = self.__format_connection_args(config)
-
-        self._engine = create_engine(url, connect_args=args, echo=False)
+        poolclass_name = config.get("POOLCLASS", None)
+        poolclass = NullPool if poolclass_name == "NullPool" else None
+        self._engine = create_engine(url, echo=False, poolclass=poolclass)
         self._session_factory = sessionmaker(
             self._engine,
         )
 
     def __format_db_url(self, config):
         return f"postgresql://{config['USER']}:{config['PASSWORD']}@{config['HOST']}:{config['PORT']}/{config['DB_NAME']}"
-
-    def __format_connection_args(self, config):
-        return {"options": "-csearch_path={}".format(config["SCHEMA"])}
 
     @contextmanager
     def session(self) -> Callable[..., ContextManager[Session]]:

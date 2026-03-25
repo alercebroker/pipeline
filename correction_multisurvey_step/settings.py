@@ -180,6 +180,7 @@ STEP_CONFIG: StepConfig = {
         "PORT": int(os.getenv("PSQL_PORT", 5432)),
         "DB_NAME": os.getenv("PSQL_DATABASE"),
         "SCHEMA": os.getenv("PSQL_SCHEMA"),
+        "POOLCLASS": os.getenv("PSQL_POOLCLASS", "NullPool"),
     },
     "SURVEY_STRATEGY": None,
     "CONSUMER_CONFIG": CONSUMER_CONFIG,

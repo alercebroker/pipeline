@@ -4,6 +4,7 @@ import logging
 
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.pool import NullPool
 
 logger = logging.getLogger(__name__)
 
@@ -15,15 +16,9 @@ def get_db_url(config: dict):
 class PSQLConnection:
     def __init__(self, db_config: dict, engine=None) -> None:
         db_url = get_db_url(db_config)
-        schema = db_config.get("SCHEMA", None)
-        if schema:
-            self._engine = engine or create_engine(
-                db_url,
-                echo=False,
-                connect_args={"options": "-csearch_path={}".format(schema)},
-            )
-        else:
-            self._engine = engine or create_engine(db_url, echo=False)
+        poolclass_name = db_config.get("POOLCLASS", None)
+        poolclass = NullPool if poolclass_name == "NullPool" else None
+        self._engine = engine or create_engine(db_url, echo=False, poolclass=poolclass)
 
         self._session_factory = sessionmaker(autocommit=False, autoflush=False, bind=self._engine)
 

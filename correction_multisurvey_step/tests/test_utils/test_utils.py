@@ -2,7 +2,7 @@ import logging
 from apf.core.settings import config_from_yaml_file
 
 from core.DB.database_connection import PSQLConnection
-from correction_multisurvey_step.step import CorrectionMultisurveyZTFStep
+from correction_multisurvey_step.step import CorrectionMultisurveyStep
 
 
 def set_logger(settings):
@@ -39,7 +39,7 @@ def step_creator():
             Keep this in mind when using for ELAsTiCC"
         )
 
-    return CorrectionMultisurveyZTFStep(**step_params)
+    return CorrectionMultisurveyStep(**step_params)
 
 
 def validate_alert_fields_message(data):

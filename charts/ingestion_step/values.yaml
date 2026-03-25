@@ -97,3 +97,4 @@ configYaml:
     PORT: ""
     DB_NAME: ""
     SCHEMA: ""
+    POOLCLASS: "NullPool"

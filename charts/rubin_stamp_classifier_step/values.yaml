@@ -108,6 +108,15 @@ imageCredentials:
   password: ""
   email: ""
 
+  DB_CONFIG:
+    USER: ""
+    PASSWORD: ""
+    HOST: ""
+    PORT: 5432
+    DB_NAME: ""
+    SCHEMA: ""
+    POOLCLASS: "NullPool"
+
 envVariables:
   - name: CONFIG_YAML_PATH
     value: "/config/config.yaml"

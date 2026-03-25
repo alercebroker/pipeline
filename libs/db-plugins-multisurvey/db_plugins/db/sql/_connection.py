@@ -25,23 +25,20 @@ class PsqlDatabase:
         schema = db_config.get("SCHEMA", None)
         self.schema = schema
 
-        if poolclass is None:
+        configured_poolclass = db_config.get("POOLCLASS", poolclass)
+        if configured_poolclass is None:
             # default poolclass is QueuePool.
-            pass
-        elif poolclass == "NullPool":
-            poolclass = NullPool
+            resolved_poolclass = None
+        elif configured_poolclass == "NullPool":
+            resolved_poolclass = NullPool
         else:
-            raise ValueError(f"Unsupported poolclass: {poolclass}")
-        
-        if schema:
-            self._engine = engine or create_engine(
-                db_url,
-                echo=False,
-                connect_args={"options": "-csearch_path={}".format(schema)},
-                poolclass=poolclass,
-            )
-        else:
-            self._engine = engine or create_engine(db_url, echo=False, poolclass=poolclass)
+            raise ValueError(f"Unsupported poolclass: {configured_poolclass}")
+
+        self._engine = engine or create_engine(
+            db_url,
+            echo=False,
+            poolclass=resolved_poolclass,
+        )
 
         self._session_factory = sessionmaker(
             autocommit=False, autoflush=False, bind=self._engine

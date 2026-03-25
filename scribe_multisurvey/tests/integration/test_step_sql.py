@@ -21,6 +21,15 @@ DB_CONFIG = {
     }
 }
 
+PSQL_CONFIG_PGBOUNCER = {
+    "HOST": "localhost",
+    "USER": "postgres",
+    "PASSWORD": "postgres",
+    "PORT": 5433,
+    "DB_NAME": "postgres",
+    "POOLCLASS": "NullPool",
+}
+
 CONSUMER_CONFIG = {
     "CLASS": "apf.consumers.KafkaConsumer",
     "TOPICS": ["test_topic_sql"],
@@ -41,14 +50,14 @@ PRODUCER_CONFIG = {
 }
 
 
-@pytest.mark.usefixtures("psql_service")
+@pytest.mark.usefixtures("pgbouncer_service")
 @pytest.mark.usefixtures("kafka_service")
 class PsqlIntegrationTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.db = PsqlDatabase(DB_CONFIG["PSQL"])
         step_config = {
-            "DB_CONFIG": DB_CONFIG,
+            "PSQL_CONFIG": PSQL_CONFIG_PGBOUNCER,
             "CONSUMER_CONFIG": CONSUMER_CONFIG,
         }
         cls.db.create_db()

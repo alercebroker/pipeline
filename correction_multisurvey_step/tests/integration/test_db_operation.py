@@ -8,7 +8,7 @@ from apf.core.settings import config_from_yaml_file
 import json
 
 from db_plugins.db.sql._connection import PsqlDatabase
-from correction_multisurvey_step.step import CorrectionMultisurveyZTFStep
+from correction_multisurvey_step.step import CorrectionMultisurveyStep
 from db_plugins.db.sql.models import (
     Detection,
     ZtfDetection,
@@ -29,7 +29,7 @@ from sqlalchemy import insert
 from apf.core import get_class
 from core.parsers.scribe_parser import scribe_parser
 
-psql_config = {
+psql_config_direct = {
     "ENGINE": "postgresql",
     "HOST": "localhost",
     "USER": "postgres",
@@ -38,11 +38,21 @@ psql_config = {
     "DB_NAME": "postgres",
 }
 
+psql_config_pgbouncer = {
+    "ENGINE": "postgresql",
+    "HOST": "localhost",
+    "USER": "postgres",
+    "PASSWORD": "postgres",
+    "PORT": 5433,
+    "DB_NAME": "postgres",
+    "POOLCLASS": "NullPool",
+}
+
 with open("tests/integration/data/data_input_prv_candidates_staging.json", "r") as file:
     data_consumer = json.load(file)
 
 
-@pytest.mark.usefixtures("psql_service")
+@pytest.mark.usefixtures("pgbouncer_service")
 class TestCorrectionMultisurveyZTF(unittest.TestCase):
     """Test class for Correction Multisurvey ZTF Step."""
 
@@ -51,23 +61,26 @@ class TestCorrectionMultisurveyZTF(unittest.TestCase):
         """Set up the test environment once for all test methods."""
         cls.settings = config_from_yaml_file("tests/test_utils/config_w_scribe.yaml")
         cls.logger = cls._set_logger(cls.settings)
-        cls.db_sql = PsqlDatabase(psql_config)
+        cls.db_sql = PsqlDatabase(psql_config_pgbouncer)
         cls.step_params = {"config": cls.settings, "db_sql": cls.db_sql}
 
     def setUp(self):
-        # crear db
         self.settings = config_from_yaml_file("tests/test_utils/config_w_scribe.yaml")
         self.scribe_enabled = self.settings.get("SCRIBE_ENABLED", False)
 
-        self.db_sql = PsqlDatabase(psql_config)
-        self.db_sql.create_db()
+        # DDL + seeding via direct connection.
+        self.db_sql_direct = PsqlDatabase(psql_config_direct)
+        self.db_sql_direct.create_db()
         self.insert_test_data()
 
+        # Step uses pgbouncer.
+        self.db_sql = PsqlDatabase(psql_config_pgbouncer)
+        self.step_params = {"config": self.settings, "db_sql": self.db_sql}
         self.step = self._step_creator()
 
     def insert_test_data(self):
         """Insert test data using the InsertData class pattern."""
-        with self.db_sql.session() as session:
+        with self.db_sql_direct.session() as session:
             # Insert objects first
             for obj_data in objects:
                 obj = Object(**obj_data)
@@ -117,8 +130,7 @@ class TestCorrectionMultisurveyZTF(unittest.TestCase):
 
     def tearDown(self):
         """Clean up after each test."""
-        # Limpiar la base de datos
-        self.db_sql.drop_db()
+        self.db_sql_direct.drop_db()
 
     @classmethod
     def _set_logger(cls, settings):
@@ -142,8 +154,8 @@ class TestCorrectionMultisurveyZTF(unittest.TestCase):
         return logger
 
     def _step_creator(self):
-        """Create an instance of the CorrectionMultisurveyZTFStep."""
-        step = CorrectionMultisurveyZTFStep(**self.step_params)
+        """Create an instance of the CorrectionMultisurveyStep."""
+        step = CorrectionMultisurveyStep(**self.step_params)
 
         if self.settings["FEATURE_FLAGS"]["SKIP_MJD_FILTER"]:
             self.logger.info(

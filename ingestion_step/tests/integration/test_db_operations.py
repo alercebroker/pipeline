@@ -23,7 +23,8 @@ from ingestion_step.ztf.database import (
 )
 from tests.integration.data import ztf_messages as msgs
 
-psql_config = {
+# Direct connection — for DDL (create_db / drop_db) and test-data seeding.
+psql_config_direct = {
     "ENGINE": "postgresql",
     "HOST": "localhost",
     "USER": "postgres",
@@ -32,8 +33,19 @@ psql_config = {
     "DB_NAME": "postgres",
 }
 
+# PgBouncer connection — for the functions under test.
+psql_config_pgbouncer = {
+    "ENGINE": "postgresql",
+    "HOST": "localhost",
+    "USER": "postgres",
+    "PASSWORD": "postgres",
+    "PORT": 5433,
+    "DB_NAME": "postgres",
+    "POOLCLASS": "NullPool",
+}
 
-@pytest.mark.usefixtures("psql_service")
+
+@pytest.mark.usefixtures("pgbouncer_service")
 class BaseDbTests(unittest.TestCase):
     def assertDictAlmostEqual(
         self,
@@ -48,13 +60,10 @@ class BaseDbTests(unittest.TestCase):
             assert pytest.approx(v1, rel=rel_tol, abs=abs_tol) == v2
 
     def setUp(self):
-        # crear db
-        self.psql_db = PsqlDatabase(psql_config)
-        self.psql_db.create_db()
-
-        # insertar datos existente
-
-        with self.psql_db.session() as session:
+        # DDL + seeding: direct connection.
+        self.psql_db_direct = PsqlDatabase(psql_config_direct)
+        self.psql_db_direct.create_db()
+        with self.psql_db_direct.session() as session:
             session.execute(insert(Object).values(msgs.existing_object_dict))
             session.execute(insert(Detection).values(msgs.existing_detections_dict))
             session.execute(
@@ -69,9 +78,12 @@ class BaseDbTests(unittest.TestCase):
             )
             session.commit()
 
+        # Test operations: through pgbouncer.
+        self.psql_db = PsqlDatabase(psql_config_pgbouncer)
+
     def tearDown(self):
-        # limpiar la db
-        self.psql_db.drop_db()
+        # Teardown: direct connection.
+        self.psql_db_direct.drop_db()
 
     def query_data(self, model: type[DeclarativeBase]):
         with self.psql_db.session() as session:
