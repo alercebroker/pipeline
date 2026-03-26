@@ -1,69 +1,62 @@
-# ALeRCE Scribe for MongoDB
+# ALeRCE Scribe Multisurvey
 
-This step will process the commands published in the consumer topics and perform DB operations according to their types:
+This step consumes Kafka messages produced by upstream pipeline steps (correction, magstats, features, xmatch) and writes processed data into a PostgreSQL database via SQLAlchemy.
 
-## Command Format
+## Overview
 
-This step expects the message to come with a single field named `payload`, whose content must be a
-stringified JSON containing a single command.
+`SqlScribe` extends `GenericStep` and on each batch:
+1. **`pre_execute`** — deduplicates magstat messages, keeping the most up-to-date record per object (by `n_det`/`n_fphot`/`ndubious` counts for ZTF, by `lastmjd` for LSST).
+2. **`execute`** — decodes each message's `payload` field into a typed `Command` object, then bulk-executes all valid commands against the database. Invalid messages are logged and skipped.
 
-The command must be formatted as follows:
+## Message Format
+
+Each Kafka message must have a `payload` field containing a stringified JSON with the following structure:
 
 ```json
 {
-    "collection": "name",
-    "type": "insert",
-    "criteria": {"field": "value", ...},
-    "data": {"field": "value", ...},
-    "options": {"upsert": true}
+    "survey": "ztf",
+    "step": "correction",
+    "payload": { ... }
 }
 ```
-- Accepted `type` for operations are one of the following:
-  * `"insert"`: The data will be inserted as a new document in the collection
-  * `"update"`: The first document matching the criteria will have the data added/modified in the collection 
-  * `"update_probabilities"`: Updates an existing probability, otherwise adds it. Data structure, e.g.,
-    ```json
-    {
-        "classifier_name": "stamp_classifier",
-        "classifier_version": "1.0.0",
-        "SN": 0.12,
-        "AGN": 0.34,
-        ...
-    }
-    ```
-  * `"update_features"`: Updates an existing feature, otherwise adds it. Data structure, e.g.,
-    ```json
-    {
-        "features_version": "lc_classifier_1.2.1-P",
-        "features_group": "ztf_features"
-        "features": [
-            {
-                "name": "Amplitude",
-                "value": 0.6939550000000008,
-                "fid": 0
-            },
-            {
-                "name": "positive_fraction",
-                "value": 1,
-                "fid": 2
-            }, 
-            ...
-        ]
-    }
-    ```
-- The command *must* include a collection to work with. Currently, the supported collections are:
-  * `"object"`
-  * `"detections"`
-  * `"non_detections"`
-  * `"score"`
-- Except for `"insert"`, all other types require a non-empty `"criteria"` to match documents in the respective collection.
-- The supported options are `"upsert"` and `"set_on_insert"`. These are ignored by the `"insert"` type.
-  * `"upsert"` will add a new document with the updated data if one doesn't exist
-  * `"set_on_insert"` will only add the new document (or new set of probabilities) if it doesn't exist, without modifying the existing one
 
-## Suggested schema
+The `survey` and `step` fields together determine which `Command` subclass handles the message.
 
-For steps that sand data to the scribe, the following producer configuration is recommended, specially for the schema:
+## Supported Commands
+
+| `survey` | `step`       | Command class           | Tables written                                                                                                          |
+|----------|--------------|-------------------------|-------------------------------------------------------------------------------------------------------------------------|
+| `ztf`    | `correction` | `ZTFCorrectionCommand`  | `detection`, `ztf_detection`, `forced_photometry`, `ztf_forced_photometry`, `ztf_ps1`, `ztf_ss`, `ztf_gaia`, `ztf_dataquality`, `ztf_reference`, `ztf_object` |
+| `ztf`    | `magstat`    | `ZTFMagstatCommand`     | `object` (update), `ztf_object` (update), `magstat` (upsert)                                                            |
+| `lsst`   | `magstat`    | `LSSTMagstatCommand`    | `object` (update)                                                                                                       |
+| `lsst`   | `features`   | `LSSTFeatureCommand`    | `feature` (upsert)                                                                                                      |
+| `ztf`/`lsst` | `xmatch` | `XmatchCommand`         | `xmatch` (upsert); sid=2 (SS Object) is skipped                                                                        |
+
+## Configuration
+
+The step requires a `PSQL_CONFIG` key in its config dict:
+
+```python
+config = {
+    "PSQL_CONFIG": {
+        "USER": "...",
+        "PASSWORD": "...",
+        "HOST": "...",
+        "PORT": 5432,
+        "DB_NAME": "...",
+        "SCHEMA": "public",      # optional
+        "POOLCLASS": "NullPool", # recommended for pgbouncer
+    },
+    "CONSUMER_CONFIG": { ... },
+    "PRODUCER_CONFIG": { ... },
+}
+```
+
+See [settings.py](settings.py) for a full example using environment variables.
+
+## Suggested Producer Schema
+
+For upstream steps sending data to the scribe, use:
 
 ```python
 SCRIBE_PRODUCER_CONFIG = {
@@ -81,3 +74,26 @@ SCRIBE_PRODUCER_CONFIG = {
     },
 }
 ```
+
+## Internal Structure
+
+```
+sql_scribe/
+  step.py                    # SqlScribe step (pre_execute, execute)
+  sql/
+    command/
+      decode.py              # decode_message(), command_factory()
+      commands.py            # Command base class + all Command subclasses
+      parser.py              # Field-level data transformation helpers
+      exceptions.py          # Custom exceptions
+    db/
+      connection.py          # PsqlDatabase wrapper
+      executor.py            # SQLCommandExecutor (bulk_execute)
+```
+
+## Running
+
+```bash
+python scripts/run_step.py
+```
+

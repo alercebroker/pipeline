@@ -22,6 +22,8 @@ def multisurvey_detection_to_ztf(command: dict):
         "pid",
         "e_ra",
         "e_dec",
+        "sid",
+        "extra_fields",
     ]
 
     new_command = {k: v for k, v in command.items() if k not in exclude}

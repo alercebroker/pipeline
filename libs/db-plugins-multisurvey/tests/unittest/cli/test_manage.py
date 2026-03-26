@@ -39,6 +39,8 @@ class TestManage(unittest.TestCase):
                 }
                 f.write(str(DB_CONFIG))
 
+            with open("settings.py", "r") as f:
+                print(f.read())
             result = self.runner.invoke(
                 manage.initdb,
                 ["--settings_path", td],

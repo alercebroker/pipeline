@@ -14,7 +14,7 @@ from db_plugins.db.sql.models import (
     ZtfDetection,
     ZtfForcedPhotometry,
     ForcedPhotometry,
-    NonDetection,
+    ZtfNonDetection,
     Object,
 )
 from tests.integration.data.ztf_messages import (
@@ -27,7 +27,7 @@ from tests.integration.data.ztf_messages import (
 )
 from sqlalchemy import insert
 from apf.core import get_class
-from core.parsers.scribe_parser import scribe_parser
+from core.parsers.output_message_parsing.scribe_parser import scribe_parser_survey
 
 psql_config_direct = {
     "ENGINE": "postgresql",
@@ -102,7 +102,7 @@ class TestCorrectionMultisurveyZTF(unittest.TestCase):
 
             # Insertar no-detecciones
             for non_detection_data in non_detections:
-                non_detection = NonDetection(**non_detection_data)
+                non_detection = ZtfNonDetection(**non_detection_data)
                 session.add(non_detection)
             print("NonDetection listo!")
 
@@ -292,11 +292,11 @@ class TestCorrectionMultisurveyZTF(unittest.TestCase):
     @staticmethod
     def structure_comp(result: list[dict]):
 
-        result = scribe_parser(result)
+        result = scribe_parser_survey(result, "ztf")
 
         KEYS_RESULT = ["step", "survey", "payload"]
 
-        KEYS_PAYLOAD = ["oid", "measurement_id", "detections"]
+        KEYS_PAYLOAD = ["oid", "measurement_id", "detections", "previous_detections", "forced_photometries", "non_detections"]
         for oid_dict in result:
             for key in list(oid_dict.keys()):
 

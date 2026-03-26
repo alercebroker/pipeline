@@ -19,7 +19,8 @@ def cli():
 def initdb(settings_path, db=None):
     if not os.path.exists(settings_path):
         raise Exception("Settings file not found")
-    sys.path.append(os.path.dirname(os.path.expanduser(settings_path + "/")))
+    sys.path.insert(0, os.path.dirname(os.path.expanduser(settings_path + "/")))
+    sys.modules.pop("settings", None)
     settings = importlib.import_module("settings")
     DB_CONFIG = settings.DB_CONFIG
     if "SQL" in DB_CONFIG:
@@ -27,7 +28,7 @@ def initdb(settings_path, db=None):
         click.echo("Database created with credentials from {}".format(settings_path))
     else:
         raise Exception("Invalid settings file")
-    sys.path.pop(-1)
+    sys.path.pop(0)
     del sys.modules["settings"]
 
 
@@ -36,11 +37,12 @@ def initdb(settings_path, db=None):
 def make_migrations(settings_path):
     if not os.path.exists(settings_path):
         raise Exception("Settings file not found")
-    sys.path.append(os.path.dirname(os.path.expanduser(settings_path + "/")))
+    sys.path.insert(0, os.path.dirname(os.path.expanduser(settings_path + "/")))
+    sys.modules.pop("settings", None)
     settings = importlib.import_module("settings")
     DB_CONFIG = settings.DB_CONFIG
     del sys.modules["settings"]
-    sys.path.pop(-1)
+    sys.path.pop(0)
     if "SQL" in DB_CONFIG:
         make_sql_migrations()
         click.echo("Migrations made with config from {}".format(settings_path))
@@ -54,11 +56,12 @@ def make_migrations(settings_path):
 def migrate(settings_path):
     if not os.path.exists(os.path.abspath(settings_path)):
         raise Exception("Settings file not found")
-    sys.path.append(os.path.dirname(os.path.expanduser(settings_path + "/")))
+    sys.path.insert(0, os.path.dirname(os.path.expanduser(settings_path + "/")))
+    sys.modules.pop("settings", None)
     settings = importlib.import_module("settings")
     DB_CONFIG = settings.DB_CONFIG
     del sys.modules["settings"]
-    sys.path.pop(-1)
+    sys.path.pop(0)
     if "SQL" in DB_CONFIG:
         migrate_sql()
         click.echo("Migrated database with config from {}".format(settings_path))

@@ -159,3 +159,5 @@ terraform.tfvars
 **/.direnv/
 **/nix/
 **/config.yaml
+
+.ruff_cache/

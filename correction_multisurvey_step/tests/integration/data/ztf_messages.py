@@ -13,8 +13,6 @@ objects = [
         "n_det": 1,
         "n_forced": 0,
         "n_non_det": 1480,
-        "corrected": False,
-        "stellar": False,
     },
     {
         "oid": 1111111111,
@@ -30,8 +28,6 @@ objects = [
         "n_det": 1,
         "n_forced": 0,
         "n_non_det": 1480,
-        "corrected": False,
-        "stellar": False,
     },
     {
         "oid": 2222222222,
@@ -47,14 +43,13 @@ objects = [
         "n_det": 1,
         "n_forced": 0,
         "n_non_det": 1480,
-        "corrected": False,
-        "stellar": False,
     },
 ]
 
 detections = [
     {
         "oid": 1234567890,
+        "sid": 2,
         "measurement_id": 1,
         "mjd": 0.4124512,
         "ra": 152.3524,
@@ -63,6 +58,7 @@ detections = [
     },
     {
         "oid": 2222222222,
+        "sid": 2,
         "measurement_id": 2,
         "mjd": 0.4124512,
         "ra": 152.3524,
@@ -71,6 +67,7 @@ detections = [
     },
     {
         "oid": 1111111111,
+        "sid": 2,
         "measurement_id": 0,
         "mjd": 0.5124513,
         "ra": 152.3524,
@@ -79,6 +76,7 @@ detections = [
     },
     {
         "oid": 1111111111,
+        "sid": 2,
         "measurement_id": 1,
         "mjd": 0.4124512,
         "ra": 152.3524,
@@ -91,6 +89,7 @@ detections = [
 ztf_detections = [
     {
         "oid": 1234567890,
+        "sid": 2,
         "measurement_id": 1,
         "pid": 6677889,
         "diffmaglim": 19.8,
@@ -118,6 +117,7 @@ ztf_detections = [
     },
     {
         "oid": 2222222222,
+        "sid": 2,
         "measurement_id": 2,
         "pid": 6677889,
         "diffmaglim": 19.8,
@@ -145,6 +145,7 @@ ztf_detections = [
     },
     {
         "oid": 1111111111,
+        "sid": 2,
         "measurement_id": 0,
         "pid": 6677889,
         "diffmaglim": 19.8,
@@ -172,6 +173,7 @@ ztf_detections = [
     },
     {
         "oid": 1111111111,
+        "sid": 2,
         "measurement_id": 1,
         "pid": 6677889,
         "diffmaglim": 19.8,
@@ -200,35 +202,36 @@ ztf_detections = [
 ]
 
 non_detection = [
-    {"oid": 1234567890, "band": 1, "mjd": 60655.155775499996, "diffmaglim": 17.6075},
-    {"oid": 1234567890, "band": 2, "mjd": 60658.11518519977, "diffmaglim": 18.2779},
-    {"oid": 1234567890, "band": 1, "mjd": 60658.19327550009, "diffmaglim": 19.0953},
-    {"oid": 1234567890, "band": 2, "mjd": 60660.149386600126, "diffmaglim": 19.4483},
-    {"oid": 1234567890, "band": 1, "mjd": 60660.2327430998, "diffmaglim": 18.7138},
-    {"oid": 1234567890, "band": 2, "mjd": 60663.106655099895, "diffmaglim": 19.9582},
-    {"oid": 1234567890, "band": 1, "mjd": 60663.22942129988, "diffmaglim": 18.8907},
-    {"oid": 1234567890, "band": 1, "mjd": 60664.11018519988, "diffmaglim": 20.1121},
-    {"oid": 1234567890, "band": 2, "mjd": 60664.14053239999, "diffmaglim": 20.2564},
-    {"oid": 1234567890, "band": 1, "mjd": 60666.120231499895, "diffmaglim": 19.9874},
-    {"oid": 1234567890, "band": 2, "mjd": 60666.12964119995, "diffmaglim": 20.0196},
-    {"oid": 1234567890, "band": 1, "mjd": 60668.110752299894, "diffmaglim": 18.8554},
-    {"oid": 1234567890, "band": 2, "mjd": 60668.180081000086, "diffmaglim": 17.0589},
-    {"oid": 1234567890, "band": 2, "mjd": 60672.10907409992, "diffmaglim": 19.6796},
-    {"oid": 1234567890, "band": 1, "mjd": 60672.1296064998, "diffmaglim": 19.6858},
-    {"oid": 1234567890, "band": 1, "mjd": 60674.09282410005, "diffmaglim": 20.1046},
-    {"oid": 1234567890, "band": 2, "mjd": 60674.155729200225, "diffmaglim": 19.8949},
-    {"oid": 1234567890, "band": 1, "mjd": 60677.194907399826, "diffmaglim": 19.6374},
-    {"oid": 1234567890, "band": 1, "mjd": 60679.10571759986, "diffmaglim": 19.8679},
-    {"oid": 1234567890, "band": 2, "mjd": 60679.185705999844, "diffmaglim": 19.6428},
-    {"oid": 2222222222, "band": 2, "mjd": 60679.185705999844, "diffmaglim": 19.6428},
-    {"oid": 2222222222, "band": 1, "mjd": 60679.285705999844, "diffmaglim": 20.4587},
-    {"oid": 1111111111, "band": 1, "mjd": 60726.0, "diffmaglim": 20.403099060058594},
-    {"oid": 1111111111, "band": 2, "mjd": 60728.0, "diffmaglim": 19.596900939941406},
+    {"oid": 1234567890, "sid": 2, "band": 1, "mjd": 60655.155775499996, "diffmaglim": 17.6075},
+    {"oid": 1234567890, "sid": 2, "band": 2, "mjd": 60658.11518519977, "diffmaglim": 18.2779},
+    {"oid": 1234567890, "sid": 2, "band": 1, "mjd": 60658.19327550009, "diffmaglim": 19.0953},
+    {"oid": 1234567890, "sid": 2, "band": 2, "mjd": 60660.149386600126, "diffmaglim": 19.4483},
+    {"oid": 1234567890, "sid": 2, "band": 1, "mjd": 60660.2327430998, "diffmaglim": 18.7138},
+    {"oid": 1234567890, "sid": 2, "band": 2, "mjd": 60663.106655099895, "diffmaglim": 19.9582},
+    {"oid": 1234567890, "sid": 2, "band": 1, "mjd": 60663.22942129988, "diffmaglim": 18.8907},
+    {"oid": 1234567890, "sid": 2, "band": 1, "mjd": 60664.11018519988, "diffmaglim": 20.1121},
+    {"oid": 1234567890, "sid": 2, "band": 2, "mjd": 60664.14053239999, "diffmaglim": 20.2564},
+    {"oid": 1234567890, "sid": 2, "band": 1, "mjd": 60666.120231499895, "diffmaglim": 19.9874},
+    {"oid": 1234567890, "sid": 2, "band": 2, "mjd": 60666.12964119995, "diffmaglim": 20.0196},
+    {"oid": 1234567890, "sid": 2, "band": 1, "mjd": 60668.110752299894, "diffmaglim": 18.8554},
+    {"oid": 1234567890, "sid": 2, "band": 2, "mjd": 60668.180081000086, "diffmaglim": 17.0589},
+    {"oid": 1234567890, "sid": 2, "band": 2, "mjd": 60672.10907409992, "diffmaglim": 19.6796},
+    {"oid": 1234567890, "sid": 2, "band": 1, "mjd": 60672.1296064998, "diffmaglim": 19.6858},
+    {"oid": 1234567890, "sid": 2, "band": 1, "mjd": 60674.09282410005, "diffmaglim": 20.1046},
+    {"oid": 1234567890, "sid": 2, "band": 2, "mjd": 60674.155729200225, "diffmaglim": 19.8949},
+    {"oid": 1234567890, "sid": 2, "band": 1, "mjd": 60677.194907399826, "diffmaglim": 19.6374},
+    {"oid": 1234567890, "sid": 2, "band": 1, "mjd": 60679.10571759986, "diffmaglim": 19.8679},
+    {"oid": 1234567890, "sid": 2, "band": 2, "mjd": 60679.185705999844, "diffmaglim": 19.6428},
+    {"oid": 2222222222, "sid": 2, "band": 2, "mjd": 60679.185705999844, "diffmaglim": 19.6428},
+    {"oid": 2222222222, "sid": 2, "band": 1, "mjd": 60679.285705999844, "diffmaglim": 20.4587},
+    {"oid": 1111111111, "sid": 2, "band": 1, "mjd": 60726.0, "diffmaglim": 20.403099060058594},
+    {"oid": 1111111111, "sid": 2, "band": 2, "mjd": 60728.0, "diffmaglim": 19.596900939941406},
 ]
 
 ztf_forced_photometry = [
     {
         "oid": 1234567890,
+        "sid": 2,
         "measurement_id": 1,
         "mag": 18.45,
         "e_mag": 0.12,
@@ -239,7 +242,6 @@ ztf_forced_photometry = [
         "corrected": True,
         "dubious": False,
         "parent_candid": 4444444444,
-        "has_stamp": True,
         "field": 456,
         "rcid": 3,
         "rfid": 2,
@@ -267,6 +269,7 @@ ztf_forced_photometry = [
     },
     {
         "oid": 2222222222,
+        "sid": 2,
         "measurement_id": 10,
         "mag": 18.45,
         "e_mag": 0.12,
@@ -277,7 +280,6 @@ ztf_forced_photometry = [
         "corrected": True,
         "dubious": False,
         "parent_candid": 4444444444,
-        "has_stamp": True,
         "field": 456,
         "rcid": 3,
         "rfid": 2,
@@ -305,6 +307,7 @@ ztf_forced_photometry = [
     },
     {
         "oid": 1111111111,
+        "sid": 2,
         "measurement_id": 2,
         "mag": 10.45,
         "e_mag": 0.12,
@@ -315,7 +318,6 @@ ztf_forced_photometry = [
         "corrected": True,
         "dubious": False,
         "parent_candid": 4444444444,
-        "has_stamp": True,
         "field": 456,
         "rcid": 3,
         "rfid": 2,
@@ -343,6 +345,7 @@ ztf_forced_photometry = [
     },
     {
         "oid": 1111111111,
+        "sid": 2,
         "measurement_id": 1,
         "mag": 10.45,
         "e_mag": 0.12,
@@ -353,7 +356,6 @@ ztf_forced_photometry = [
         "corrected": True,
         "dubious": False,
         "parent_candid": 4444444444,
-        "has_stamp": True,
         "field": 456,
         "rcid": 3,
         "rfid": 2,
@@ -384,6 +386,7 @@ ztf_forced_photometry = [
 forced_photometry = [
     {
         "oid": 1234567890,
+        "sid": 2,
         "measurement_id": 1,
         "mjd": 60671.155729200225,
         "ra": 150.3524,
@@ -392,6 +395,7 @@ forced_photometry = [
     },
     {
         "oid": 2222222222,
+        "sid": 2,
         "measurement_id": 10,
         "mjd": 60671.155729200225,
         "ra": 150.3524,
@@ -400,6 +404,7 @@ forced_photometry = [
     },
     {
         "oid": 1111111111,
+        "sid": 2,
         "measurement_id": 2,
         "mjd": 60571.155729200225,
         "ra": 154.3524,
@@ -408,6 +413,7 @@ forced_photometry = [
     },
     {
         "oid": 1111111111,
+        "sid": 2,
         "measurement_id": 1,
         "mjd": 60571.155729200225,
         "ra": 154.3524,

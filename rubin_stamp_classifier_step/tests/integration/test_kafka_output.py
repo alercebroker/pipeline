@@ -9,7 +9,6 @@ from io import BytesIO
 
 sys.path.append(os.path.dirname(__file__))
 from raw_kafka_producer import RawKafkaProducer
-from apf.metrics.prometheus import DefaultPrometheusMetrics
 import logging
 
 
@@ -100,7 +99,6 @@ class TestKafkaOutput(unittest.TestCase):
         step = StampClassifierStep(
             config=step_config,
             level=step_config["LOGGING_LEVEL"],
-            prometheus_metrics=DefaultPrometheusMetrics(),
         )
 
         step._pre_consume()

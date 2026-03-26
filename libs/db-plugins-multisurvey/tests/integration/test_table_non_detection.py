@@ -28,11 +28,12 @@ class NonDetectionModelTest(BaseDbTest):
 
         # Crear una nueva entrada de no-detección
         test_non_detection = ZtfNonDetection(
-            oid=object_oid, band=1, mjd=60030.12345, diffmaglim=19.5
+            oid=object_oid, sid=1, band=1, mjd=60030.12345, diffmaglim=19.5
         )
 
         with self.psql_db.session() as session:
             session.add(test_non_detection)
+            session.commit()
 
         # Verificar que la no-detección se ha guardado
         with self.psql_db.session() as session:
@@ -59,6 +60,7 @@ class NonDetectionModelTest(BaseDbTest):
         with self.psql_db.session() as session:
             for nd in non_detections:
                 session.add(nd)
+            session.commit()
 
         # Verificar que se han guardado todas las no-detecciones
         with self.psql_db.session() as session:
@@ -85,6 +87,7 @@ class NonDetectionModelTest(BaseDbTest):
         with self.psql_db.session() as session:
             for nd in non_detections:
                 session.add(nd)
+            session.commit()
 
         # Probar diferentes filtros
         with self.psql_db.session() as session:

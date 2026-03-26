@@ -48,7 +48,8 @@ step_config = {
     "PRODUCER_CONFIG": {"CLASS": "apf.core.step.DefaultProducer"},
     "MODEL_VERSION": "",
     "MODEL_CONFIG": {
-        "MODEL_PATH": os.environ["TEST_RUBIN_STAMP_CLASSIFIER_STEP_MODEL_PATH"]
+        "MODEL_PATH": os.environ["TEST_RUBIN_STAMP_CLASSIFIER_STEP_MODEL_PATH"],
+        "CLS_ID": 1,
     },
 }
 
@@ -68,11 +69,11 @@ class TestRubinStampClassifierStep(unittest.TestCase):
         self.db_sql_direct.create_db()
 
         # Queries and step use pgbouncer.
+        # create_db() seeds taxonomy via _initial_data.py (CLS_ID=1 = rubin).
         self.db_sql = PsqlDatabase(psql_config_pgbouncer)
         self.step = StampClassifierStep(
             config=step_config,
             level=step_config["LOGGING_LEVEL"],
-            prometheus_metrics=None,
         )
 
         self.sample_messages = load_sample_messages()

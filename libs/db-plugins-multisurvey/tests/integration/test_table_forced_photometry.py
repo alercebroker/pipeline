@@ -28,6 +28,7 @@ class ForcedPhotometryModelTest(BaseDbTest):
         # Crear una nueva entrada de fotometría forzada
         test_forced_photometry = ForcedPhotometry(
             oid=object_oid,
+            sid=1,
             measurement_id=987654321,
             mjd=58765.4321,
             ra=150.123,
@@ -37,6 +38,7 @@ class ForcedPhotometryModelTest(BaseDbTest):
 
         with self.psql_db.session() as session:
             session.add(test_forced_photometry)
+            session.commit()
 
         # Verificar que la medición se ha guardado
         with self.psql_db.session() as session:
@@ -65,6 +67,7 @@ class ForcedPhotometryModelTest(BaseDbTest):
         with self.psql_db.session() as session:
             for m in measurements:
                 session.add(m)
+            session.commit()
 
         # Verificar que se han guardado todas las mediciones
         with self.psql_db.session() as session:
@@ -91,7 +94,7 @@ class ForcedPhotometryModelTest(BaseDbTest):
         with self.psql_db.session() as session:
             for m in measurements:
                 session.add(m)
-
+            session.commit()
         # Probar diferentes filtros
         with self.psql_db.session() as session:
             # Filtrar por mjd > 58766
@@ -171,6 +174,7 @@ class ZtfForcedPhotometryModelTest(BaseDbTest):
 
         with self.psql_db.session() as session:
             session.add(test_ztf_photometry)
+            session.commit()
 
         # Verificar que la medición se ha guardado
         with self.psql_db.session() as session:
@@ -197,6 +201,7 @@ class ZtfForcedPhotometryModelTest(BaseDbTest):
         with self.psql_db.session() as session:
             for m in measurements:
                 session.add(m)
+            session.commit()
 
         # Verificar que se han guardado todas las mediciones
         with self.psql_db.session() as session:
@@ -216,13 +221,23 @@ class ZtfForcedPhotometryModelTest(BaseDbTest):
                 session.add(obj)
                 session.commit()
 
-        # Crear y agregar múltiples mediciones a la base de datos
+        # Crear y agregar múltiples mediciones a la base de datos:
+        # ForcedPhotometry con los datos de FORCED_PHOTOMETRY_DATA y ZtfForcedPhotometry con los datos de ZTF_FORCED_PHOTOMETRY_DATA
         measurements = [
             ZtfForcedPhotometry(**data) for data in ZTF_FORCED_PHOTOMETRY_DATA["filter"]
         ]
         with self.psql_db.session() as session:
             for m in measurements:
                 session.add(m)
+            session.commit()
+
+        measurements = [
+            ForcedPhotometry(**data) for data in FORCED_PHOTOMETRY_DATA["filter"]
+        ]
+        with self.psql_db.session() as session:
+            for m in measurements:
+                session.add(m)
+            session.commit()
 
         # Probar diferentes filtros
         with self.psql_db.session() as session:
@@ -233,8 +248,9 @@ class ZtfForcedPhotometryModelTest(BaseDbTest):
                 len(bright_measurements), 3
             )  # Debería encontrar 3 mediciones
 
-            # Filtrar por rband = 1
-            query2 = select(ZtfForcedPhotometry).where(ZtfForcedPhotometry.rband == 1)
+            # Filtrar por band = 1
+            # band es una propiedad de ForcedPhotometry
+            query2 = select(ForcedPhotometry).where((ForcedPhotometry.band == 1) & (ForcedPhotometry.sid == 0))
             band1_measurements = list(session.execute(query2).scalars())
             self.assertEqual(
                 len(band1_measurements), 2
@@ -251,7 +267,7 @@ class ZtfForcedPhotometryModelTest(BaseDbTest):
 
             # Filtrar por corrected = True
             query4 = select(ZtfForcedPhotometry).where(
-                ZtfForcedPhotometry.corrected is True
+                ZtfForcedPhotometry.corrected == True
             )
             corrected_measurements = list(session.execute(query4).scalars())
             self.assertEqual(
@@ -269,7 +285,7 @@ class ZtfForcedPhotometryModelTest(BaseDbTest):
 
             # Filtrar por múltiples condiciones
             query6 = select(ZtfForcedPhotometry).where(
-                ZtfForcedPhotometry.mag < 19.0, ZtfForcedPhotometry.corrected is True
+                ZtfForcedPhotometry.mag < 19.0, ZtfForcedPhotometry.corrected == True
             )
             combined_filter_measurements = list(session.execute(query6).scalars())
             self.assertEqual(

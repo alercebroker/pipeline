@@ -23,6 +23,7 @@ class ZtfObjectModelTest(BaseDbTest):
 
         with self.psql_db.session() as session:
             session.add(test_object)
+            session.commit()
 
         # Verificar que el objeto se ha guardado
         with self.psql_db.session() as session:
@@ -40,6 +41,7 @@ class ZtfObjectModelTest(BaseDbTest):
         with self.psql_db.session() as session:
             for obj in objects:
                 session.add(obj)
+            session.commit()
 
         # Verificar que se han guardado todos los objetos
         with self.psql_db.session() as session:
@@ -56,6 +58,7 @@ class ZtfObjectModelTest(BaseDbTest):
         with self.psql_db.session() as session:
             for obj in objects:
                 session.add(obj)
+            session.commit()
 
         # Probar diferentes filtros
         with self.psql_db.session() as session:

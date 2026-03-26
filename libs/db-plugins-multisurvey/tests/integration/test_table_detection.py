@@ -24,12 +24,14 @@ class DetectionModelTest(BaseDbTest):
         # Guardar el objeto padre
         with self.psql_db.session() as session:
             session.add(parent_object)
+            session.commit()
 
         # Crear un nuevo objeto de detección
         test_object = Detection(**DETECTION_DATA["filter"][0])
 
         with self.psql_db.session() as session:
             session.add(test_object)
+            session.commit()
 
         # Verificar que el objeto se ha guardado
         with self.psql_db.session() as session:
@@ -46,6 +48,7 @@ class DetectionModelTest(BaseDbTest):
         # Guardar el objeto padre
         with self.psql_db.session() as session:
             session.add(parent_object)
+            session.commit()
 
         # Crear instancias de Detection para cada conjunto de datos
         objects = [Detection(**data) for data in DETECTION_DATA["filter"]]
@@ -54,6 +57,7 @@ class DetectionModelTest(BaseDbTest):
         with self.psql_db.session() as session:
             for obj in objects:
                 session.add(obj)
+            session.commit()
 
         # Verificar que se han guardado todos los objetos
         with self.psql_db.session() as session:
@@ -71,12 +75,14 @@ class DetectionModelTest(BaseDbTest):
         # Guardar el objeto padre
         with self.psql_db.session() as session:
             session.add(parent_object)
+            session.commit()
 
         # Crear y agregar múltiples objetos a la DB
         objects = [Detection(**data) for data in DETECTION_DATA["filter"]]
         with self.psql_db.session() as session:
             for obj in objects:
                 session.add(obj)
+            session.commit()
 
         # Probar diferentes filtros
         with self.psql_db.session() as session:
@@ -152,6 +158,7 @@ class ZtfDetectionModelTest(BaseDbTest):
 
         with self.psql_db.session() as session:
             session.add(test_detection)
+            session.commit()
 
         # Verificar que la detección se ha guardado
         with self.psql_db.session() as session:
@@ -177,6 +184,7 @@ class ZtfDetectionModelTest(BaseDbTest):
         with self.psql_db.session() as session:
             for det in detections:
                 session.add(det)
+            session.commit()
 
         # Verificar que se han guardado todas las detecciones
         with self.psql_db.session() as session:
@@ -201,6 +209,7 @@ class ZtfDetectionModelTest(BaseDbTest):
         with self.psql_db.session() as session:
             for det in detections:
                 session.add(det)
+            session.commit()
 
         # Probar diferentes filtros
         with self.psql_db.session() as session:
@@ -212,7 +221,7 @@ class ZtfDetectionModelTest(BaseDbTest):
             )  # Debería encontrar 3 detecciones
 
             # Filtrar por isdiffpos = True
-            query2 = select(ZtfDetection).where(ZtfDetection.isdiffpos is True)
+            query2 = select(ZtfDetection).where(ZtfDetection.isdiffpos == 1)
             positive_diff_detections = list(session.execute(query2).scalars())
             self.assertEqual(
                 len(positive_diff_detections), 2
@@ -227,7 +236,7 @@ class ZtfDetectionModelTest(BaseDbTest):
 
             # Filtrar por múltiples condiciones
             query4 = select(ZtfDetection).where(
-                ZtfDetection.magpsf > 18.0, ZtfDetection.isdiffpos is False
+                ZtfDetection.magpsf > 18.0, ZtfDetection.isdiffpos == -1
             )
             combined_filter_detections = list(session.execute(query4).scalars())
             self.assertEqual(
