@@ -160,4 +160,7 @@ terraform.tfvars
 **/nix/
 **/config.yaml
 
+# Real staging values files (contain secrets — never commit)
+**/values.*.staging.yaml
+
 .ruff_cache/

@@ -4,9 +4,11 @@
 
 replicaCount: 1
 
-stepName: ingestion-step 
+stepName: ingestion-step
 
 namespace: ingestion-step
+
+createNamespace: true
 
 fullnameOverride: ""
 

@@ -37,7 +37,7 @@ class IngestionStep(GenericStep):
         parsed_data = self.Strategy.parse(messages)
 
         for key in parsed_data:
-            self.logger.info(f"Parsed {len(parsed_data[key])} objects form {key}")
+            self.logger.info(f"Parsed {len(parsed_data[key])} objects from {key}")
 
         self.Strategy.insert_into_db(
             self.psql_driver, parsed_data, chunk_size=self.insert_batch_size
