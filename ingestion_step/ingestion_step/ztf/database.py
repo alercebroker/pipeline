@@ -90,7 +90,6 @@ def insert_detections(
     detections_ztf_df_parsed = detections_df[
         [
             "oid",
-            "sid",
             "measurement_id",
             "pid",
             "diffmaglim",
@@ -170,7 +169,6 @@ def insert_forced_photometry(
     forced_photometry_ztf_df_parsed = forced_photometry_df[
         [
             "oid",
-            "sid",
             "measurement_id",
             "pid",
             "mag",
@@ -237,7 +235,6 @@ def insert_non_detections(
     non_detections_dict = non_detections_df[
         [
             "oid",
-            "sid",
             "band",
             "mjd",
             "diffmaglim",
