@@ -3,7 +3,7 @@ from typing import Callable, ContextManager
 
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker, Session
-from db_plugins.db.sql.models import Detection, NonDetection, ForcedPhotometry
+from db_plugins.db.sql.models_pipeline import Detection, NonDetection, ForcedPhotometry
 
 
 class PSQLConnection:

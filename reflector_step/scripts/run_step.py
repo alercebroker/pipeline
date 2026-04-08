@@ -4,6 +4,8 @@ import sys
 
 from apf.core.settings import config_from_yaml_file
 from prometheus_client import start_http_server
+from apf.metrics.prometheus import PrometheusMetrics
+
 
 from reflector_step.step import CustomMirrormaker
 
@@ -12,7 +14,11 @@ PACKAGE_PATH = os.path.abspath(os.path.join(SCRIPT_PATH, ".."))
 
 sys.path.append(PACKAGE_PATH)
 
-settings = config_from_yaml_file(os.getenv("CONFIG_YAML_PATH"))
+if os.getenv("CONFIG_FROM_YAML", False):
+    settings = config_from_yaml_file("/config/config.yaml")
+else:
+    from settings import settings_creator
+    settings = settings_creator()
 
 logging.basicConfig(
     level=settings["LOGGING_LEVEL"],
@@ -20,9 +26,11 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 
+step_params = {"config": settings}
 step_config = settings["STEP_CONFIG"]
 
-if step_config["FEATURE_FLAGS"]["PROMETHEUS"]:
+
+if settings["STEP_CONFIG"]["FEATURE_FLAGS"]["PROMETHEUS"]:
     start_http_server(8000)
 
 keep_original_timestamp = step_config.pop("keep_original_timestamp", False)

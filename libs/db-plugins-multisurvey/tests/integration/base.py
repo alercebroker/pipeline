@@ -2,7 +2,7 @@ import unittest
 
 import pytest
 
-from db_plugins.db.sql._connection import PsqlDatabase
+from db_plugins.db.sql._connection_pipeline import PsqlDatabase
 
 
 @pytest.mark.usefixtures("psql_service", "psql_db")

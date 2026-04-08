@@ -1,5 +1,5 @@
 from sqlalchemy.dialects.postgresql import insert
-from db_plugins.db.sql.models import Probability
+from db_plugins.db.sql.models_pipeline import Probability
 from contextlib import contextmanager
 from typing import Callable, ContextManager
 from sqlalchemy import create_engine
@@ -59,7 +59,6 @@ def store_probability(
 def _format_data(
     classifier_id: int, classifier_version: str, class_taxonomy: dict[str, int], predictions: list[dict]
 ) -> list[dict]:
-    logging.warning("No clue what LSST's sid is, setting to 0")
     formated_probabilities = []
     for prediction in predictions:
         probabilities = prediction["probabilities"]
@@ -155,3 +154,4 @@ def get_taxonomy_by_classifier_id(classifier_id: int, sid: int, psql_connection:
         logging.error(f"Error fetching taxonomy for classifier_id={classifier_id} and sid={sid}: {e}")
     
     return mapping
+

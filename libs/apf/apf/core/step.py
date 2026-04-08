@@ -3,7 +3,7 @@ import datetime
 import logging
 import os
 from abc import abstractmethod
-from typing import Type
+from typing import Any, Type
 
 from apf.consumers import GenericConsumer
 from apf.core import get_class
@@ -56,7 +56,7 @@ class GenericStep(abc.ABC):
         producer: Type[GenericProducer] = DefaultProducer,
         metrics_sender: Type[GenericMetricsProducer] = DefaultMetricsProducer,
         level: int = logging.NOTSET,
-        config: dict = {},
+        config: dict[str, Any] = {},
         metrics: PrometheusMetrics = PrometheusMetrics(),
     ):
         self._set_logger(level)
@@ -74,7 +74,8 @@ class GenericStep(abc.ABC):
         self.extra_metrics = []
         if self.metrics_config:
             self.extra_metrics = self.metrics_config.get("EXTRA_METRICS", ["candid"])
-        self.commit = self.config.get("COMMIT", True)
+        self.commit = bool(self.config.get("COMMIT", True))
+        self.skip_producer = bool(self.config.get("SKIP_PRODUCER", False))
 
     @property
     def consumer_config(self):
@@ -463,7 +464,13 @@ class GenericStep(abc.ABC):
 
                 result = self._pre_produce(result)
 
-                self.produce(result)
+                if not self.skip_producer:
+                    self.produce(result)
+                else:
+                    logger.info(
+                        "SKIP_PRODUCER flag is set",
+                        "— skipping message production to topic.",
+                    )
 
                 self._post_produce()
             self.metrics.messages_processed.inc(n_messages)

@@ -2,7 +2,7 @@ from base import BaseDbTest
 from data import ZTF_OBJECT_DATA
 from sqlalchemy.dialects.postgresql.base import select
 
-from db_plugins.db.sql.models import ZtfObject
+from db_plugins.db.sql.models_pipeline import ZtfObject
 
 
 class ZtfObjectModelTest(BaseDbTest):

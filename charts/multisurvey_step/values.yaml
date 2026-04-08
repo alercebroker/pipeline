@@ -21,6 +21,8 @@ imagePullSecrets:
 
 podAnnotations: {}
 
+podLabels: {}
+
 resources:
   requests:
     cpu: 100m

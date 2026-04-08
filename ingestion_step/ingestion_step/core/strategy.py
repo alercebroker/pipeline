@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Generic, TypedDict, TypeVar
 
-from db_plugins.db.sql._connection import PsqlDatabase
+from db_plugins.db.sql._connection_pipeline import PsqlDatabase
 
 from ingestion_step.core.types import Message
 

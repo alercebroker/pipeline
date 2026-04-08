@@ -216,8 +216,8 @@ class FeatureStep(GenericStep):
             self.extractor_group,
             self.feature_name_lut
         )
-        print(commands["upserting_features"])
-        print(commands.get("update_object", []))
+        #print(commands["upserting_features"])
+        #print(commands.get("update_object", []))
         
         """update_object_cmds = commands.get("update_object", [])
         update_features_cmds = commands["upserting_features"]
@@ -369,7 +369,6 @@ class FeatureStep(GenericStep):
 
     def post_execute(self, result):
         
-        self.metrics["sid"] = get_sid(result)
 
         for message in result:
             if "reference" in message:

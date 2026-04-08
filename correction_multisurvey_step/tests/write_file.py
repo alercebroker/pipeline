@@ -11,7 +11,7 @@ from data2 import (
     objects,
     ztf_detections,
 )
-from db_plugins.db.sql.models import (
+from db_plugins.db.sql.models_pipeline import (
     Base,
     Object,
     ZtfDetection,

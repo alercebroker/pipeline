@@ -69,6 +69,8 @@ class CorrectionMultisurveyStep(GenericStep):
         return result
 
     def produce_scribe(self, scribe_payloads):
+        if not self.scribe_enabled:
+            return
         for scribe_data in scribe_payloads:
             payload = {"payload": scribe_data}
             oid = scribe_data["payload"]["oid"]

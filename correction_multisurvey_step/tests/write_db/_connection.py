@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
-from db_plugins.db.sql.models import Base
+from db_plugins.db.sql.models_pipeline import Base
 from contextlib import contextmanager
 import logging
 

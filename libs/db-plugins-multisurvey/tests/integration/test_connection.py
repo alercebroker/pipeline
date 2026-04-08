@@ -4,7 +4,7 @@ from sqlalchemy import (
 )
 
 from db_plugins.db.sql._initial_data import INITIAL_DATA
-from db_plugins.db.sql.models import Base
+from db_plugins.db.sql.models_pipeline import Base
 
 
 class ConnectionTest(BaseConnectionTest):
