@@ -219,7 +219,7 @@ class FeatureStep(GenericStep):
         print(commands["upserting_features"])
         print(commands.get("update_object", []))
         
-        update_object_cmds = commands.get("update_object", [])
+        """update_object_cmds = commands.get("update_object", [])
         update_features_cmds = commands["upserting_features"]
 
         count_objs = 0
@@ -266,7 +266,7 @@ class FeatureStep(GenericStep):
                 )
 
                 if flush:
-                    self.scribe_producer.producer.flush()
+                    self.scribe_producer.producer.flush()"""
         
 
 
