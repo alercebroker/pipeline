@@ -192,6 +192,7 @@ INITIAL_DATA: dict[str, InitData] = {
                 "order": 0,
                 "classifier_id": 1,
                 "sid": 1,
+                "tid": 1,
             },
             {
                 "class_id": 1,
@@ -199,6 +200,7 @@ INITIAL_DATA: dict[str, InitData] = {
                 "order": 1,
                 "classifier_id": 1,
                 "sid": 1,
+                "tid": 1,
             },
             {
                 "class_id": 2,
@@ -206,6 +208,7 @@ INITIAL_DATA: dict[str, InitData] = {
                 "order": 2,
                 "classifier_id": 1,
                 "sid": 1,
+                "tid": 1,
             },
             {
                 "class_id": 3,
@@ -213,6 +216,7 @@ INITIAL_DATA: dict[str, InitData] = {
                 "order": 3,
                 "classifier_id": 1,
                 "sid": 1,
+                "tid": 1,
             },
             {
                 "class_id": 4,
@@ -220,6 +224,48 @@ INITIAL_DATA: dict[str, InitData] = {
                 "order": 4,
                 "classifier_id": 1,
                 "sid": 1,
+                "tid": 1,
+
+            },
+            {
+                "class_id": 0,
+                "class_name": "SN",
+                "order": 0,
+                "classifier_id": 1,
+                "sid": 2,
+                "tid": 1,
+            },
+            {
+                "class_id": 1,
+                "class_name": "AGN",
+                "order": 1,
+                "classifier_id": 1,
+                "sid": 2,
+                "tid": 1,
+            },
+            {
+                "class_id": 2,
+                "class_name": "VS",
+                "order": 2,
+                "classifier_id": 1,
+                "sid": 2,
+                "tid": 1,
+            },
+            {
+                "class_id": 3,
+                "class_name": "asteroid",
+                "order": 3,
+                "classifier_id": 1,
+                "sid": 2,
+                "tid": 1,
+            },
+            {
+                "class_id": 4,
+                "class_name": "bogus",
+                "order": 4,
+                "classifier_id": 1,
+                "sid": 2,
+                "tid": 1,
             },
             {
                 "class_id": 0,
@@ -227,6 +273,7 @@ INITIAL_DATA: dict[str, InitData] = {
                 "order": 0,
                 "classifier_id": 2,
                 "sid": 0,
+                "tid": 0,
             },
             {
                 "class_id": 1,
@@ -234,6 +281,7 @@ INITIAL_DATA: dict[str, InitData] = {
                 "order": 1,
                 "classifier_id": 2,
                 "sid": 0,
+                "tid": 0,
             },
             {
                 "class_id": 2,
@@ -241,6 +289,8 @@ INITIAL_DATA: dict[str, InitData] = {
                 "order": 2,
                 "classifier_id": 2,
                 "sid": 0,
+                "tid": 0,
+
             },
             {
                 "class_id": 3,
@@ -248,6 +298,7 @@ INITIAL_DATA: dict[str, InitData] = {
                 "order": 3,
                 "classifier_id": 2,
                 "sid": 0,
+                "tid": 0,
             },
             {
                 "class_id": 4,
@@ -255,6 +306,7 @@ INITIAL_DATA: dict[str, InitData] = {
                 "order": 4,
                 "classifier_id": 2,
                 "sid": 0,
+                "tid": 0,
             },
             {
                 "class_id": 5,
@@ -262,6 +314,7 @@ INITIAL_DATA: dict[str, InitData] = {
                 "order": 5,
                 "classifier_id": 2,
                 "sid": 0,
+                "tid": 0,
             },
         ],
     },

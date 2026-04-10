@@ -83,7 +83,6 @@ def parse_fp(raw_detection: dict, oid: str) -> dict:
 def parse_ztf_fp(raw_detection: dict, oid: str) -> dict:
     forced_photometry = {
         "oid": oid,
-        "sid": raw_detection["sid"],
         "measurement_id": raw_detection["measurement_id"],
         "pid": raw_detection["pid"],
         "mag": raw_detection["mag"],
@@ -141,7 +140,6 @@ def parse_det(raw_detection: dict, oid: str) -> dict:
 def parse_ztf_det(raw_detection: dict, oid: str) -> dict:
     detection = {
         "oid": oid,
-        "sid": raw_detection["sid"],
         "measurement_id": raw_detection["measurement_id"],
         "pid": raw_detection["pid"],
         "diffmaglim": raw_detection["diffmaglim"],

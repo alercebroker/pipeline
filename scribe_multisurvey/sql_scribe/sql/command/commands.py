@@ -112,7 +112,7 @@ class ZTFCorrectionCommand(Command):
                 fp = parse_fp(forced, oid)
                 ztf_fp = parse_ztf_fp(forced, oid)
 
-                key = (fp["oid"], fp["measurement_id"], fp["sid"])
+                key = (fp["oid"], fp["measurement_id"])
                 ztf_key = (ztf_fp["oid"], ztf_fp["measurement_id"])
 
                 if key not in fp_dict or fp["mjd"] > fp_dict[key]["mjd"]:
@@ -170,7 +170,7 @@ class ZTFCorrectionCommand(Command):
 
         fp_dedup_dict = {}
         for fp, ztf_fp in zip(forced_photometries, ztf_forced_photometries):
-            key = (fp["oid"], fp["measurement_id"], fp["sid"])
+            key = (fp["oid"], fp["measurement_id"])
             if key not in fp_dedup_dict or fp["mjd"] > fp_dedup_dict[key]["fp"]["mjd"]:
                 fp_dedup_dict[key] = {"fp": fp, "ztf_fp": ztf_fp}
 
@@ -179,7 +179,7 @@ class ZTFCorrectionCommand(Command):
 
         det_dedup_dict = {}
         for det, ztf_det in zip(detections, ztf_detections):
-            key = (det["oid"], det["measurement_id"], det["sid"])
+            key = (det["oid"], det["measurement_id"])
             if (
                 key not in det_dedup_dict
                 or det["mjd"] > det_dedup_dict[key]["det"]["mjd"]

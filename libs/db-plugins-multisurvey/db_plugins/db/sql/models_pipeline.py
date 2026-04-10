@@ -413,7 +413,6 @@ class ZtfDetection(Base):
     __tablename__ = "ztf_detection"
 
     oid = Column(BigInteger, nullable=False)  # int8,
-    sid = Column(SmallInteger, nullable=False)  # int2,
     measurement_id = Column(BigInteger, nullable=False)  # int8,
     pid = Column(BigInteger)  # int8,
     diffmaglim = Column(REAL)  # float4,
@@ -650,7 +649,6 @@ class ZtfForcedPhotometry(Base):
     __tablename__ = "ztf_forced_photometry"
 
     oid = Column(BigInteger, nullable=False)  # int8,
-    sid = Column(SmallInteger, nullable=False)  # int2,
     measurement_id = Column(BigInteger, nullable=False)  # int8,
     pid = Column(BigInteger)  # int8
     mag = Column(REAL, nullable=False)  # float4,
@@ -727,7 +725,6 @@ class ZtfNonDetection(Base):
     __tablename__ = "ztf_non_detection"
 
     oid = Column(BigInteger, nullable=False)  # int8,
-    sid = Column(SmallInteger, nullable=False)
     band = Column(SmallInteger, nullable=False)  # int2,
     mjd = Column(DOUBLE_PRECISION, nullable=False)  # float8,
     diffmaglim = Column(REAL, nullable=False)  # float4,
@@ -964,6 +961,7 @@ class Taxonomy(Base):
     order = Column(Integer, nullable=False)
     classifier_id = Column(SmallInteger, nullable=False)
     sid = Column(SmallInteger, nullable=False)
+    tid = Column(SmallInteger, nullable=False)
     created_date = Column(Date, server_default=func.now())
 
     __table_args__ = (PrimaryKeyConstraint("class_id", "sid", name="pk_taxonomy_classid_sid"),)
