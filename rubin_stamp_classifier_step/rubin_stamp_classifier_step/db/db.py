@@ -133,15 +133,36 @@ def get_taxonomy_by_classifier_id(classifier_id: int, sid: int, psql_connection:
     mapping: dict[str, int] = {}
     try:
         with psql_connection.session() as session:
-            query = text(
+            # Check if 'sid' column exists in taxonomy table
+            col_check = text(
                 """
-                SELECT class_id, class_name
-                FROM taxonomy
-                WHERE classifier_id = :classifier_id AND sid = :sid
-                ORDER BY "order" ASC
+                SELECT column_name FROM information_schema.columns
+                WHERE table_name = 'taxonomy' AND column_name = 'sid'
                 """
             )
-            result = session.execute(query, {"classifier_id": classifier_id, "sid": sid})
+            has_sid = session.execute(col_check).fetchone() is not None
+
+            if has_sid:
+                query = text(
+                    """
+                    SELECT class_id, class_name
+                    FROM taxonomy
+                    WHERE classifier_id = :classifier_id AND sid = :sid
+                    ORDER BY "order" ASC
+                    """
+                )
+                result = session.execute(query, {"classifier_id": classifier_id, "sid": sid})
+            else:
+                query = text(
+                    """
+                    SELECT class_id, class_name
+                    FROM taxonomy
+                    WHERE classifier_id = :classifier_id
+                    ORDER BY "order" ASC
+                    """
+                )
+                result = session.execute(query, {"classifier_id": classifier_id})
+
             rows = result.mappings().all()
             if rows:
                 mapping = {row["class_name"]: int(row["class_id"]) for row in rows}

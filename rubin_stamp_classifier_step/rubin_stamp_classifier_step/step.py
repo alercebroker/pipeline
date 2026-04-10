@@ -45,7 +45,11 @@ class StampClassifierStep(GenericStep):
         else:
             self.classifier_id = config["MODEL_CONFIG"]["CLS_ID"]
 
-        self.class_taxonomy = get_taxonomy_by_classifier_id(self.classifier_id, sid, self.psql_connection)
+        taxonomy_id = config["MODEL_CONFIG"].get("TAXONOMY_ID", None)
+        if taxonomy_id is None:
+            taxonomy_id = self.classifier_id
+
+        self.class_taxonomy = get_taxonomy_by_classifier_id(taxonomy_id, sid, self.psql_connection)
         logging.info(f"Class taxonomy: {self.class_taxonomy}")
     def pre_execute(self, messages: List[dict]) -> List[dict]:
         
@@ -158,7 +162,11 @@ class StampClassifierStep(GenericStep):
                         "difference_image",
                         "reference_image",
                     ]
-                ]
+                ].rename(columns={
+                    "visit_image": "flux_Science_data",
+                    "difference_image": "flux_Difference_data",
+                    "reference_image": "flux_Template_data",
+                })
             ),
         )
         return input_dto
