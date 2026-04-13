@@ -960,12 +960,10 @@ class Taxonomy(Base):
     class_name = Column(VARCHAR, nullable=False)
     order = Column(Integer, nullable=False)
     classifier_id = Column(SmallInteger, nullable=False)
-    sid = Column(SmallInteger, nullable=False)
-    tid = Column(SmallInteger, nullable=False)
     created_date = Column(Date, server_default=func.now())
 
-    __table_args__ = (PrimaryKeyConstraint("class_id", "sid", name="pk_taxonomy_classid_sid"),)
-
+    __table_args__ = (
+        PrimaryKeyConstraint("class_id", "classifier_id", name="pk_taxonomy_classid_classifierid"),)
 
 class Probability(Base):
     __tablename__ = "probability"
