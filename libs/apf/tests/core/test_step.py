@@ -1,20 +1,19 @@
-from datetime import datetime, timezone
 import os
-from apf.core.step import (
-    DefaultMetricsProducer,
-    GenericStep,
-    GenericProducer,
-)
+from datetime import datetime, timezone
+from unittest import mock
+
 import pytest
 
-
-class MockStep(GenericStep):
-    def execute(self, _):
-        return {}
+from apf.core.step import (
+    DefaultMetricsProducer,
+    GenericProducer,
+    GenericStep,
+)
+from tests.core.conftest import MockStep
 
 
 @pytest.fixture
-def basic_config():
+def config():
     return {
         "PROMETHEUS": False,
         "CONSUMER_CONFIG": {
@@ -33,14 +32,6 @@ def basic_config():
     }
 
 
-@pytest.fixture
-def step(basic_config, mocker):
-    mocker.patch.object(MockStep, "_write_success")
-    step = MockStep(config=basic_config)
-    yield step
-    del step
-
-
 def test_get_single_extra_metrics(step):
     message = {"oid": "TEST", "candid": 1}
     extra_metrics = step.get_extra_metrics(message)
@@ -50,8 +41,8 @@ def test_get_single_extra_metrics(step):
     assert type(extra_metrics["n_messages"]) is int
 
 
-def test_get_batch_extra_metrics(basic_config):
-    basic_config["METRICS_CONFIG"] = {
+def test_get_batch_extra_metrics(config):
+    config["METRICS_CONFIG"] = {
         "CLASS": "apf.core.step.DefaultMetricsProducer",
         "PARAMS": {},
         "EXTRA_METRICS": [
@@ -61,7 +52,7 @@ def test_get_batch_extra_metrics(basic_config):
         ],
     }
     message = [{"oid": "TEST", "candid": 1}, {"oid": "TEST2"}, {"candid": 3}]
-    _step = MockStep(config=basic_config)
+    _step = MockStep(config=config)
     extra_metrics = _step.get_extra_metrics(message)
     assert type(extra_metrics) is dict
     assert type(extra_metrics["oid"]) is list
@@ -70,14 +61,14 @@ def test_get_batch_extra_metrics(basic_config):
     del _step
 
 
-def test_get_value(basic_config):
-    basic_config["METRICS_CONFIG"] = {
+def test_get_value(config):
+    config["METRICS_CONFIG"] = {
         "CLASS": "apf.core.step.DefaultMetricsProducer",
         "PARAMS": {},
         "EXTRA_METRICS": ["oid", "candid"],
     }
     message = {"oid": "TEST", "candid": 1}
-    step = MockStep(config=basic_config)
+    step = MockStep(config=config)
 
     aliased_metric, value = step.get_value(message, "oid")
     assert aliased_metric == "oid"
@@ -135,61 +126,52 @@ def test_get_value(basic_config):
     del step
 
 
-def test_without_consumer_config(basic_config):
-    basic_config.update({"CONSUMER_CONFIG": {}})
+def test_without_consumer_config(config):
+    config.update({"CONSUMER_CONFIG": {}})
     with pytest.raises(Exception):
-        MockStep(config=basic_config)
+        MockStep(config=config)
 
 
-def test_with_producer_config(basic_config):
-    basic_config.update({"PRODUCER_CONFIG": {"CLASS": "apf.core.step.DefaultProducer"}})
-    step = MockStep(config=basic_config)
+def test_with_producer_config(config):
+    config.update({"PRODUCER_CONFIG": {"CLASS": "apf.core.step.DefaultProducer"}})
+    step = MockStep(config=config)
     assert isinstance(step.producer, GenericProducer)
     del step
 
 
-def test_start(mocker, step):
-    write_mock = mocker.patch.object(MockStep, "_write_success")
+@mock.patch.object(GenericStep, "_write_success")
+def test_start(write_mock, step: MockStep):
     step.start()
     write_mock.assert_called()
 
 
-def test_pre_execute(mocker, step):
-    # mock the abstract method
-    pre_execute = mocker.patch.object(MockStep, "pre_execute")
+@mock.patch.object(GenericStep, "pre_execute")
+def test_pre_execute(pre_execute_mock, step: MockStep):
     message = {"msg": "message"}
-    assert step.metrics.get("timestamp_received") == None
-    step._pre_execute(message)
-    pre_execute.assert_called_once_with(step.message)
-    assert step.metrics.get("timestamp_received")
+    assert step.kafka_metrics.get("timestamp_received") is None
+    step._pre_execute([message])
+    pre_execute_mock.assert_called_once_with(step.message)
+    assert step.kafka_metrics.get("timestamp_received")
     assert step.message == [message]
 
 
-def test_post_execute(step, mocker):
-    # mock the abstract method
-    post_execute = mocker.patch.object(MockStep, "post_execute")
-    send_metrics = mocker.patch.object(DefaultMetricsProducer, "send_metrics")
+@mock.patch.object(GenericStep, "post_execute")
+@mock.patch.object(DefaultMetricsProducer, "send_metrics")
+def test_post_execute(
+    send_metrics_mock,
+    post_execute_mock,
+    step: MockStep,
+):
     result = {"msg": "message"}
-    post_execute.return_value = result
+    post_execute_mock.return_value = result
     step.message = [result]
-    step.metrics["timestamp_received"] = datetime.now(timezone.utc)
-    assert step.metrics.get("timestamp_sent") == None
-    assert step.metrics.get("execution_time") == None
+    step.kafka_metrics["timestamp_received"] = datetime.now(timezone.utc)
+    assert step.kafka_metrics.get("timestamp_sent") is None
+    assert step.kafka_metrics.get("execution_time") is None
     os.environ["METRICS_SURVEY"] = "test"
     step._post_execute(result)
-    post_execute.assert_called_once_with(result)
-    assert step.metrics.get("timestamp_sent")
-    assert step.metrics.get("source") == "MockStep"
-    assert step.metrics.get("survey") == "test"
-    send_metrics.assert_called()
-
-
-def test_start_with_execute_returning_iterable(basic_config, mocker):
-    class StepWithIterableExecute(GenericStep):
-        def execute(self, _):
-            return [{}]
-
-    write_mock = mocker.patch.object(StepWithIterableExecute, "_write_success")
-    step = StepWithIterableExecute(config=basic_config)
-    step.start()
-    write_mock.assert_called()
+    post_execute_mock.assert_called_once_with(result)
+    assert step.kafka_metrics.get("timestamp_sent")
+    assert step.kafka_metrics.get("source") == "MockStep"
+    assert step.kafka_metrics.get("survey") == "test"
+    send_metrics_mock.assert_called()

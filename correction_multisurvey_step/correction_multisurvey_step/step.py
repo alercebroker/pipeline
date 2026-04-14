@@ -21,7 +21,7 @@ class CorrectionMultisurveyStep(GenericStep):
         **kwargs,
     ):
         super().__init__(config=config, **kwargs)
-        self.db_sql = db_sql
+        self.db_sql = PSQLConnection(config["PSQL_CONFIG"], poolclass="NullPool")
         self.logger = logging.getLogger("alerce.CorrectionMultisurveyStep")
         self.scribe_enabled = config.get("SCRIBE_ENABLED", True)
         
@@ -69,6 +69,8 @@ class CorrectionMultisurveyStep(GenericStep):
         return result
 
     def produce_scribe(self, scribe_payloads):
+        if not self.scribe_enabled:
+            return
         for scribe_data in scribe_payloads:
             payload = {"payload": scribe_data}
             oid = scribe_data["payload"]["oid"]

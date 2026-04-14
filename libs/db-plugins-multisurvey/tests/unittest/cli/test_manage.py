@@ -11,7 +11,7 @@ class TestManage(unittest.TestCase):
         self.runner = CliRunner()
         self.settings_path = "/tmp"
 
-    @mock.patch("db_plugins.db.sql._connection.PsqlDatabase", autospec=True)
+    @mock.patch("db_plugins.db.sql._connection_pipeline.PsqlDatabase", autospec=True)
     @mock.patch("os.makedirs")
     @mock.patch("db_plugins.db.sql.initialization.alembic.config.main")
     def test_init_sql(self, main_mock, mock_makedirs, mock_connection):

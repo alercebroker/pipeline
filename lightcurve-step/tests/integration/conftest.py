@@ -7,7 +7,7 @@ from fastavro.schema import load_schema
 from sqlalchemy.dialects.postgresql import insert
 from db_plugins.db.sql._connection import PsqlDatabase
 from db_plugins.db.mongo._connection import MongoConnection
-from db_plugins.db.sql.models import (
+from db_plugins.db.sql.models_pipeline import (
     Object,
     Detection,
     NonDetection,

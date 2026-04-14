@@ -57,8 +57,8 @@ class Object(Base):
     lastmjd = Column(DOUBLE_PRECISION, nullable=False)
     deltamjd = Column(DOUBLE_PRECISION, nullable=False, default=0.0)
     n_det = Column(Integer, nullable=False, default=1)
-    n_forced = Column(Integer, nullable=False, default=1)
-    n_non_det = Column(Integer, nullable=False, default=1)
+    n_forced = Column(Integer, nullable=False, default=0)
+    n_non_det = Column(Integer, nullable=False, default=0)
 
     created_date = Column(Date, server_default=func.now())
     updated_date = Column(Date, onupdate=func.now())
@@ -413,7 +413,6 @@ class ZtfDetection(Base):
     __tablename__ = "ztf_detection"
 
     oid = Column(BigInteger, nullable=False)  # int8,
-    sid = Column(SmallInteger, nullable=False)  # int2,
     measurement_id = Column(BigInteger, nullable=False)  # int8,
     pid = Column(BigInteger)  # int8,
     diffmaglim = Column(REAL)  # float4,
@@ -650,7 +649,6 @@ class ZtfForcedPhotometry(Base):
     __tablename__ = "ztf_forced_photometry"
 
     oid = Column(BigInteger, nullable=False)  # int8,
-    sid = Column(SmallInteger, nullable=False)  # int2,
     measurement_id = Column(BigInteger, nullable=False)  # int8,
     pid = Column(BigInteger)  # int8
     mag = Column(REAL, nullable=False)  # float4,
@@ -727,7 +725,6 @@ class ZtfNonDetection(Base):
     __tablename__ = "ztf_non_detection"
 
     oid = Column(BigInteger, nullable=False)  # int8,
-    sid = Column(SmallInteger, nullable=False)
     band = Column(SmallInteger, nullable=False)  # int2,
     mjd = Column(DOUBLE_PRECISION, nullable=False)  # float8,
     diffmaglim = Column(REAL, nullable=False)  # float4,
@@ -927,7 +924,7 @@ class MagStat(Base):
     lastmjd = Column(DOUBLE_PRECISION)  # float8
     saturation_rate = Column(REAL)  # float4
 
-    updated_date = Column(Date, onupdate=func.now())
+    updated_date = Column(Date, server_default=func.now(), onupdate=func.now())
 
     __table_args__ = (
         PrimaryKeyConstraint("oid", "sid", "band", name="pk_magstat_oid_sid_band"),
@@ -963,11 +960,10 @@ class Taxonomy(Base):
     class_name = Column(VARCHAR, nullable=False)
     order = Column(Integer, nullable=False)
     classifier_id = Column(SmallInteger, nullable=False)
-
     created_date = Column(Date, server_default=func.now())
 
-    __table_args__ = (PrimaryKeyConstraint("class_id", name="pk_taxonomy_classid"),)
-
+    __table_args__ = (
+        PrimaryKeyConstraint("class_id", "classifier_id", name="pk_taxonomy_classid_classifierid"),)
 
 class Probability(Base):
     __tablename__ = "probability"
@@ -1008,7 +1004,6 @@ class Probability(Base):
         return f"FOR VALUES WITH (MODULUS {cls.__n_partitions__}, REMAINDER {partition_idx})"
 
 
-
 class Feature(Base):
     __tablename__ = "feature"
 
@@ -1018,10 +1013,7 @@ class Feature(Base):
     band = Column(SmallInteger, nullable=False)
     version = Column(SmallInteger, nullable=False)
     value = Column(DOUBLE_PRECISION)
-    updated_date = Column(Date, onupdate=func.now())
-
-    # Not set as pk on postgres. Necessary to define a pk-less sqlalchemy table
-    # __mapper_args__ = {"primary_key": ["oid", "sid", "feature_id", "band"]}
+    updated_date = Column(Date, server_default=func.now(), onupdate=func.now())
 
     __table_args__ = (
         PrimaryKeyConstraint(
@@ -1040,7 +1032,7 @@ class Feature(Base):
 class FeatureNameLut(Base):
     __tablename__ = "feature_name_lut"
 
-    feature_id = Column(SmallInteger, nullable=False, autoincrement=True)
+    feature_id = Column(SmallInteger, nullable=False)
     feature_name = Column(VARCHAR, nullable=False)
     sid = Column(SmallInteger, nullable=False)
     tid = Column(SmallInteger, nullable=False)
@@ -1048,21 +1040,20 @@ class FeatureNameLut(Base):
     created_date = Column(Date, server_default=func.now())
 
     __table_args__ = (
-        PrimaryKeyConstraint("feature_id", name="pk_feature_name_lut_featureid"),
+        PrimaryKeyConstraint("feature_id", "sid", name="pk_feature_name_lut_featureid_sid"),
     )
 
 
 class FeatureVersionLut(Base):
     __tablename__ = "feature_version_lut"
 
-    version_id = Column(SmallInteger, nullable=False, autoincrement=True)
+    version_id = Column(SmallInteger, nullable=False)
     version_name = Column(VARCHAR, nullable=False)
     sid = Column(SmallInteger, nullable=False)
     tid = Column(SmallInteger, nullable=False)
 
-    
     __table_args__ = (
-        PrimaryKeyConstraint("version_id", name="pk_feature_version_lut_versionid"),
+        PrimaryKeyConstraint("version_id", "sid", name="pk_feature_version_lut_versionid_sid"),
     )
 
 
@@ -1105,7 +1096,7 @@ class Xmatch(Base):
     oid_catalog = Column(VARCHAR, nullable=False)
 
     created_date = Column(Date, server_default=func.now())
-    updated_date = Column(Date, onupdate=func.now())
+    updated_date = Column(Date, server_default=func.now(), onupdate=func.now())
 
     __table_args__ = (
         PrimaryKeyConstraint(

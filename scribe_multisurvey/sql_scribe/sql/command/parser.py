@@ -83,7 +83,6 @@ def parse_fp(raw_detection: dict, oid: str) -> dict:
 def parse_ztf_fp(raw_detection: dict, oid: str) -> dict:
     forced_photometry = {
         "oid": oid,
-        "sid": raw_detection["sid"],
         "measurement_id": raw_detection["measurement_id"],
         "pid": raw_detection["pid"],
         "mag": raw_detection["mag"],
@@ -141,7 +140,6 @@ def parse_det(raw_detection: dict, oid: str) -> dict:
 def parse_ztf_det(raw_detection: dict, oid: str) -> dict:
     detection = {
         "oid": oid,
-        "sid": raw_detection["sid"],
         "measurement_id": raw_detection["measurement_id"],
         "pid": raw_detection["pid"],
         "diffmaglim": raw_detection["diffmaglim"],
@@ -359,7 +357,7 @@ def parse_ztf_objstats(raw_magstats, oid: str, sid: int) -> dict:
     return obj
 
 
-def parse_ztf_magstats(sub_magstats: dict, oid: str, sid: int):
+def parse_ztf_magstats(sub_magstats: dict, oid: str, sid: int) -> dict:
     ztf_magstats = {
         "oid": oid,
         "sid": sid,
@@ -393,7 +391,7 @@ def parse_ztf_magstats(sub_magstats: dict, oid: str, sid: int):
     return ztf_magstats
 
 
-def parse_xmatch(sub_xmatch: dict):
+def parse_xmatch(sub_xmatch: dict) -> dict:
     
     # omit sid = 2
     if sub_xmatch["sid"] == 2:
@@ -414,3 +412,26 @@ def parse_xmatch(sub_xmatch: dict):
         "oid_catalog": sub_xmatch["oid_catalog"],
     }
     return xmatch
+
+def parse_probability(raw_probability: dict) -> dict:
+    return {
+        "oid": raw_probability["oid"],
+        "sid": raw_probability["sid"],
+        "classifier_version_id": raw_probability["classifier_id"],
+        "class_id": raw_probability["class_id"],
+        "probability": raw_probability["probability"],
+        "ranking": raw_probability.get("ranking"),
+        "lastmjd": raw_probability["lastmjd"],
+    }
+
+
+def parse_ztf_object_feature_update(raw_ztf_update: dict) -> dict:
+    return {
+        "oid": raw_ztf_update["oid"],
+        "_oid": raw_ztf_update["oid"],
+        "mjd": raw_ztf_update["mjd"],
+        "g_r_max": raw_ztf_update["g_r_max"],
+        "g_r_mean": raw_ztf_update["g_r_mean"],
+        "g_r_max_corr": raw_ztf_update.get("g_r_max_corr"),
+        "g_r_mean_corr": raw_ztf_update["g_r_mean_corr"],
+    }

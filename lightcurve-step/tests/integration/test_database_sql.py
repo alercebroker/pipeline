@@ -1,6 +1,6 @@
 from lightcurve_step.database_sql import _get_sql_detections
 from db_plugins.db.sql._connection import PsqlDatabase
-from db_plugins.db.sql.models import Detection, Object
+from db_plugins.db.sql.models_pipeline import Detection, Object
 
 
 def test_get_detections(psql_conn: PsqlDatabase):

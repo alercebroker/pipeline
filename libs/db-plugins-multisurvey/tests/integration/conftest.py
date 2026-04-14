@@ -1,10 +1,9 @@
 import os
-import unittest
 
 import psycopg2
 import pytest
 
-from db_plugins.db.sql._connection import PsqlDatabase
+from db_plugins.db.sql._connection_pipeline import PsqlDatabase
 
 psql_config = {
     "HOST": "localhost",

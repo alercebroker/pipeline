@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "feature-step"
-version = "27.5.7a30"
+version = "27.5.7a31"
 description = "Feature step"
 authors = ["Ignacio Reyes"]
 readme = "README.md"
@@ -14,7 +14,7 @@ lc-classifier = { path = "../lc_classifier", develop = true}
 apf_base = { path = "../libs/apf", develop = true }
 psycopg2-binary = "^2.9.6"
 SQLAlchemy="2.0.19"
-db-plugins = "^25.0.0"
+db-plugins = { path = "../libs/db-plugins-multisurvey", develop = true }
 xmatch-client = { path = "../libs/xmatch_client", develop = true }
 
 [tool.poetry.group.test.dependencies]

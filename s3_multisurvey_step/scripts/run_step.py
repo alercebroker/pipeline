@@ -35,7 +35,6 @@ def step_creator():
     step_params = {"config": settings}
 
     if settings["FEATURE_FLAGS"]["PROMETHEUS"]:
-        step_params["prometheus_metrics"] = PrometheusMetrics()
         start_http_server(8000)
 
     if settings["FEATURE_FLAGS"]["USE_PROFILING"]:

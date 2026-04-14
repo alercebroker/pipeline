@@ -2,8 +2,8 @@ import unittest
 from typing import Any
 
 import pytest
-from db_plugins.db.sql._connection import PsqlDatabase
-from db_plugins.db.sql.models import (
+from db_plugins.db.sql._connection_pipeline import PsqlDatabase
+from db_plugins.db.sql.models_pipeline import (
     DeclarativeBase,
     Detection,
     ForcedPhotometry,

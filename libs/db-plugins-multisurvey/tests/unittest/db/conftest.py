@@ -3,7 +3,7 @@ from unittest import mock
 import pytest
 from sqlalchemy import Engine
 
-from db_plugins.db.sql._connection import PsqlDatabase
+from db_plugins.db.sql._connection_pipeline import PsqlDatabase
 
 config = {
     "USER": "nada",

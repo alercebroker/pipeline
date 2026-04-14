@@ -1,18 +1,16 @@
-import copy
-import logging
 from abc import ABC, abstractmethod
 from importlib.metadata import version
-from io import StringIO
-from typing import Dict, List
+
+from db_plugins.db.sql.models_archive_probability import (
+    ProbabilityArchive,
+)
 
 ## En el import desde los models se deben traer todos los modelos que se modififiquen en los steps.
 ## Al menos desde correction hacia atras.
-from db_plugins.db.sql.models import (
+from db_plugins.db.sql.models_pipeline import (
     Detection,
     Feature,
     ForcedPhotometry,
-    LsstDiaObject,
-    LsstMpcOrbits,
     MagStat,
     Object,
     Xmatch,
@@ -25,7 +23,7 @@ from db_plugins.db.sql.models import (
     ZtfReference,
     ZtfSS,
 )
-from sqlalchemy import bindparam, update
+from sqlalchemy import bindparam, func, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
@@ -33,6 +31,7 @@ from .parser import (
     parse_det,
     parse_fp,
     parse_obj_stats,
+    parse_probability,
     parse_xmatch,
     parse_ztf_det,
     parse_ztf_dq,
@@ -40,6 +39,7 @@ from .parser import (
     parse_ztf_gaia,
     parse_ztf_magstats,
     parse_ztf_object,
+    parse_ztf_object_feature_update,
     parse_ztf_objstats,
     parse_ztf_ps1,
     parse_ztf_refernece,
@@ -67,7 +67,7 @@ class Command(ABC):
 
     @staticmethod
     @abstractmethod
-    def db_operation(session: Session, data: List):
+    def db_operation(session: Session, data: list):
         pass
 
 
@@ -112,7 +112,7 @@ class ZTFCorrectionCommand(Command):
                 fp = parse_fp(forced, oid)
                 ztf_fp = parse_ztf_fp(forced, oid)
 
-                key = (fp["oid"], fp["measurement_id"], fp["sid"])
+                key = (fp["oid"], fp["measurement_id"])
                 ztf_key = (ztf_fp["oid"], ztf_fp["measurement_id"])
 
                 if key not in fp_dict or fp["mjd"] > fp_dict[key]["mjd"]:
@@ -144,7 +144,7 @@ class ZTFCorrectionCommand(Command):
         }
 
     @staticmethod
-    def db_operation(session: Session, data: List):
+    def db_operation(session: Session, data: list):
         detections = []
         ztf_detections = []
         forced_photometries = []
@@ -170,7 +170,7 @@ class ZTFCorrectionCommand(Command):
 
         fp_dedup_dict = {}
         for fp, ztf_fp in zip(forced_photometries, ztf_forced_photometries):
-            key = (fp["oid"], fp["measurement_id"], fp["sid"])
+            key = (fp["oid"], fp["measurement_id"])
             if key not in fp_dedup_dict or fp["mjd"] > fp_dedup_dict[key]["fp"]["mjd"]:
                 fp_dedup_dict[key] = {"fp": fp, "ztf_fp": ztf_fp}
 
@@ -179,7 +179,7 @@ class ZTFCorrectionCommand(Command):
 
         det_dedup_dict = {}
         for det, ztf_det in zip(detections, ztf_detections):
-            key = (det["oid"], det["measurement_id"], det["sid"])
+            key = (det["oid"], det["measurement_id"])
             if (
                 key not in det_dedup_dict
                 or det["mjd"] > det_dedup_dict[key]["det"]["mjd"]
@@ -334,7 +334,7 @@ class ZTFMagstatCommand(Command):
         return {"object_stats": object_stats, "magstats": magstats_list}
 
     @staticmethod
-    def db_operation(session: Session, data: List):
+    def db_operation(session: Session, data: list):
         objectstat_list = []
         dedup_magstats = {}  # We must deduplicate magstats and since none of its keys is good we will use  objstats stuff
 
@@ -396,7 +396,15 @@ class ZTFMagstatCommand(Command):
             magstats_stmt = insert(MagStat)
             magstats_result = session.connection().execute(
                 magstats_stmt.on_conflict_do_update(
-                    constraint="pk_magstat_oid_sid_band", set_=magstats_stmt.excluded
+                    constraint="pk_magstat_oid_sid_band",
+                    set_={
+                        **{
+                            c.name: getattr(magstats_stmt.excluded, c.name)
+                            for c in MagStat.__table__.columns
+                            if c.name != "updated_date"
+                        },
+                        "updated_date": func.now(),
+                    },
                 ),
                 magstat_list,
             )
@@ -414,7 +422,7 @@ class LSSTMagstatCommand(Command):
         return {"object_stats": object_stats, "magstats": magstats_list}
 
     @staticmethod
-    def db_operation(session: Session, data: List):
+    def db_operation(session: Session, data: list):
         objectstat_list = []
         magstat_list = []
 
@@ -444,50 +452,73 @@ class LSSTMagstatCommand(Command):
             )
 
 
-
 class LSSTFeatureCommand(Command):
     type = "LSSTFeatureCommand"
 
     def _format_data(self, data):
-        
         oid = data["oid"]
         sid = data["sid"]
-        feature_version = data["features_version"].split('.')[0] if isinstance(data["features_version"], str) else data["features_version"]
-        
+        mjd = data["mjd"]
+
+        feature_version = (
+            data["features_version"].split(".")[0]
+            if isinstance(data["features_version"], str)
+            else data["features_version"]
+        )
+
         deduplication_dict = {}
 
         for feature in data["features"]:
             key = (oid, sid, feature["feature_id"], feature["band"])
-            deduplication_dict[key] = {
+
+            row = {
                 "oid": oid,
                 "sid": sid,
                 "feature_id": feature["feature_id"],
                 "band": feature["band"],
                 "version": feature_version,
                 "value": feature["value"],
+                "mjd": mjd,  # only used for dedup logic
             }
-        
+
+            # Deduplicate by keeping the feature with the latest mjd
+            if (
+                key not in deduplication_dict
+                or row["mjd"] > deduplication_dict[key]["mjd"]
+            ):
+                deduplication_dict[key] = row
+
         return list(deduplication_dict.values())
 
     @staticmethod
-    def db_operation(session: Session, data: List):
-        
-        if len(data) > 0:
-            dedup = {}
-            for row in data:
-                key = (row["oid"], row["sid"], row["feature_id"], row["band"])
-                dedup[key] = row 
+    def db_operation(session: Session, data: list):
+        if not data:
+            return
 
-            
-            deduplicated_data = list(dedup.values())
+        dedup = {}
 
-            features_stmt = insert(Feature).on_conflict_do_update(
-                constraint="pk_feature_oid_featureid_band",
-                set_=insert(Feature).excluded, 
-            )
+        for row in data:
+            key = (row["oid"], row["sid"], row["feature_id"], row["band"])
+            if key not in dedup or row["mjd"] > dedup[key]["mjd"]:
+                dedup[key] = row
 
-            session.connection().execute(features_stmt, deduplicated_data)
+        deduplicated_data = list(dedup.values())
 
+        for row in deduplicated_data:
+            row.pop("mjd", None)
+
+        stmt = insert(Feature)
+
+        upsert_stmt = stmt.on_conflict_do_update(
+            constraint="pk_feature_oid_featureid_band",
+            set_={
+                "value": stmt.excluded.value,
+                "version": stmt.excluded.version,
+                "updated_date": func.now(),
+            },
+        )
+
+        session.execute(upsert_stmt, deduplicated_data)
 
 
 class XmatchCommand(Command):
@@ -500,9 +531,9 @@ class XmatchCommand(Command):
             return None
 
         return {"xmatches": parsed_xmatch}
-    
+
     @staticmethod
-    def db_operation(session: Session, data: List):
+    def db_operation(session: Session, data: list):
         if len(data) > 0:
             dedup_dict = {}
 
@@ -524,12 +555,85 @@ class XmatchCommand(Command):
 
             if deduplicated_data:
                 insert_stmt = insert(Xmatch).values(deduplicated_data)
-                upsert_stmt = session.connection().execute(
-                    insert_stmt.on_conflict_do_update(
-                        index_elements=["oid", "sid", "catid"],
-                        set_={
-                            "oid_catalog": insert_stmt.excluded.oid_catalog,
-                            "dist": insert_stmt.excluded.dist,
-                        },
-                    )
+                upsert_stmt = insert_stmt.on_conflict_do_update(
+                    index_elements=["oid", "sid", "catid"],
+                    set_={
+                        "oid_catalog": insert_stmt.excluded.oid_catalog,
+                        "dist": insert_stmt.excluded.dist,
+                        "updated_date": func.now(),
+                    },
                 )
+                session.connection().execute(upsert_stmt)
+
+
+class ProbabilityArchivalCommand(Command):
+    type = "ProbabilityArchivalCommand"
+
+    def _format_data(self, data):
+        return parse_probability(data)
+
+    @staticmethod
+    def db_operation(session: Session, data: list):
+        if not data:
+            return
+
+        dedup = {}
+        for row in data:
+            key = (
+                row["oid"],
+                row["sid"],
+                row["classifier_version_id"],
+                row["class_id"],
+            )
+            if key not in dedup or row["lastmjd"] > dedup[key]["lastmjd"]:
+                dedup[key] = row
+
+        records = list(dedup.values())
+
+        stmt = insert(ProbabilityArchive)
+        upsert = stmt.on_conflict_do_update(
+            constraint="pk_probability_archive",
+            set_={
+                "probability": stmt.excluded.probability,
+                "ranking": stmt.excluded.ranking,
+                "update_date": func.now(),
+            },
+        )
+        session.connection().execute(upsert, records)
+
+
+class ZtfObjectUpdateCommand(Command):
+    type = "ZtfObjectUpdateCommand"
+
+    def _format_data(self, data):
+        return parse_ztf_object_feature_update(data)
+
+    @staticmethod
+    def db_operation(session: Session, data: list):
+        if not data:
+            return
+
+        # Deduplicate by mjd to keep the latest update for each object oid
+        dedup = {}
+        for row in data:
+            oid = row["oid"]
+            if oid not in dedup or row["mjd"] > dedup[oid]["mjd"]:
+                dedup[oid] = row
+
+        records = list(dedup.values())
+        if not records:
+            return
+
+        stmt = (
+            update(ZtfObject)
+            .where(ZtfObject.oid == bindparam("_oid"))
+            .values(
+                g_r_max=bindparam("g_r_max"),
+                g_r_mean=bindparam("g_r_mean"),
+                g_r_max_corr=bindparam("g_r_max_corr"),
+                g_r_mean_corr=bindparam("g_r_mean_corr"),
+            )
+        )
+
+        session.connection().execute(stmt, records)
+
