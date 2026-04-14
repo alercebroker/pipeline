@@ -126,7 +126,7 @@ def class_id_to_name(class_id: int, class_taxonomy: dict[str, int]) -> str:
 def get_taxonomy_by_classifier_id(classifier_id: int, psql_connection: PSQLConnection) -> dict[str, int]:
     """Fetch taxonomy from DB for a given classifier, return {class_name: class_id}.
 
-    Expects a table with columns: class_id, class_name, "order", classifier_id, sid, created_date
+    Expects a table with columns: class_id, class_name, "order", classifier_id, created_date
     available under the configured schema.
     """
     mapping: dict[str, int] = {}
@@ -136,7 +136,7 @@ def get_taxonomy_by_classifier_id(classifier_id: int, psql_connection: PSQLConne
                 """
                 SELECT class_id, class_name
                 FROM taxonomy
-                WHERE classifier_id = :classifier_id AND sid = :sid
+                WHERE classifier_id = :classifier_id
                 ORDER BY "order" ASC
                 """
             )
@@ -147,10 +147,10 @@ def get_taxonomy_by_classifier_id(classifier_id: int, psql_connection: PSQLConne
                 mapping = {row["class_name"]: int(row["class_id"]) for row in rows}
             else:
                 logging.warning(
-                    f"No taxonomy rows found for classifier_id={classifier_id} and sid={sid}."
+                    f"No taxonomy rows found for classifier_id={classifier_id}."
                 )
     except Exception as e:
-        logging.error(f"Error fetching taxonomy for classifier_id={classifier_id} and sid={sid}: {e}")
+        logging.error(f"Error fetching taxonomy for classifier_id={classifier_id}: {e}")
     
     return mapping
 

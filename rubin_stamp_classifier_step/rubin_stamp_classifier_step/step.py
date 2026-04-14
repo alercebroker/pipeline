@@ -40,7 +40,7 @@ class StampClassifierStep(GenericStep):
             raise KeyError("MODEL_CONFIG.CLS_ID is required")
         self.classifier_id = config["MODEL_CONFIG"]["CLS_ID"]
 
-        self.class_taxonomy = get_taxonomy_by_classifier_id(self.classifier_id, self.sid, self.psql_connection)
+        self.class_taxonomy = get_taxonomy_by_classifier_id(self.classifier_id, self.psql_connection)
         logging.info(f"Class taxonomy: {self.class_taxonomy}")
 
         """ SCRIBE PRODUCER TO PRODUCE TO SCRIBE-MULTISURVEY TOPIC FOR ARCHIVAL PURPOSES"""
