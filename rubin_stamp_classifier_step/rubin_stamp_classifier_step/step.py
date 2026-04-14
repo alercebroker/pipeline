@@ -33,23 +33,12 @@ class StampClassifierStep(GenericStep):
         self.dict_mapping_classes = self.model.dict_mapping_classes
         self.psql_connection = PSQLConnection(config["DB_CONFIG"])
         self.survey = self.config.get("SURVEY")
-        if self.survey == 'lsst':
-            sid = 1
-        elif self.survey == 'ztf':
-            sid = 0
-        else:
-            raise ValueError(f"Unknown survey: {self.survey}. Expected 'lsst' or 'ztf'")
 
         if "CLS_ID" not in config["MODEL_CONFIG"]:
-            self.classifier_id = 0
-        else:
-            self.classifier_id = config["MODEL_CONFIG"]["CLS_ID"]
+            raise KeyError("MODEL_CONFIG.CLS_ID is required")
+        self.classifier_id = config["MODEL_CONFIG"]["CLS_ID"]
 
-        taxonomy_id = config["MODEL_CONFIG"].get("TAXONOMY_ID", None)
-        if taxonomy_id is None:
-            taxonomy_id = self.classifier_id
-
-        self.class_taxonomy = get_taxonomy_by_classifier_id(taxonomy_id, sid, self.psql_connection)
+        self.class_taxonomy = get_taxonomy_by_classifier_id(self.classifier_id, self.psql_connection)
         logging.info(f"Class taxonomy: {self.class_taxonomy}")
     def pre_execute(self, messages: List[dict]) -> List[dict]:
         

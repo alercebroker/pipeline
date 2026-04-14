@@ -124,53 +124,33 @@ def class_id_to_name(class_id: int, class_taxonomy: dict[str, int]) -> str:
     return class_dict.get(class_id, "unknown")
 
 
-def get_taxonomy_by_classifier_id(classifier_id: int, sid: int, psql_connection: PSQLConnection) -> dict[str, int]:
-    """Fetch taxonomy from DB for a given classifier and sid, return {class_name: class_id}.
+def get_taxonomy_by_classifier_id(classifier_id: int, psql_connection: PSQLConnection) -> dict[str, int]:
+    """Fetch taxonomy from DB for a given classifier, return {class_name: class_id}.
 
-    Expects a table with columns: class_id, class_name, "order", classifier_id, sid, created_date
+    Expects a table with columns: class_id, class_name, "order", classifier_id, created_date
     available under the configured schema.
     """
     mapping: dict[str, int] = {}
     try:
         with psql_connection.session() as session:
-            # Check if 'sid' column exists in taxonomy table
-            col_check = text(
+            query = text(
                 """
-                SELECT column_name FROM information_schema.columns
-                WHERE table_name = 'taxonomy' AND column_name = 'sid'
+                SELECT class_id, class_name
+                FROM taxonomy
+                WHERE classifier_id = :classifier_id
+                ORDER BY "order" ASC
                 """
             )
-            has_sid = session.execute(col_check).fetchone() is not None
-
-            if has_sid:
-                query = text(
-                    """
-                    SELECT class_id, class_name
-                    FROM taxonomy
-                    WHERE classifier_id = :classifier_id AND sid = :sid
-                    ORDER BY "order" ASC
-                    """
-                )
-                result = session.execute(query, {"classifier_id": classifier_id, "sid": sid})
-            else:
-                query = text(
-                    """
-                    SELECT class_id, class_name
-                    FROM taxonomy
-                    WHERE classifier_id = :classifier_id
-                    ORDER BY "order" ASC
-                    """
-                )
-                result = session.execute(query, {"classifier_id": classifier_id})
+            result = session.execute(query, {"classifier_id": classifier_id})
 
             rows = result.mappings().all()
             if rows:
                 mapping = {row["class_name"]: int(row["class_id"]) for row in rows}
             else:
                 logging.warning(
-                    f"No taxonomy rows found for classifier_id={classifier_id} and sid={sid}."
+                    f"No taxonomy rows found for classifier_id={classifier_id}."
                 )
     except Exception as e:
-        logging.error(f"Error fetching taxonomy for classifier_id={classifier_id} and sid={sid}: {e}")
+        logging.error(f"Error fetching taxonomy for classifier_id={classifier_id}: {e}")
     
     return mapping
