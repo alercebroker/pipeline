@@ -45,6 +45,6 @@ if STEP_CONFIG["FEATURE_FLAGS"]["USE_PROFILING"]:
 if STEP_CONFIG.get("FEATURE_FLAGS", {}).get("PROMETHEUS"):
     start_http_server(8000)
 
-db_sql = PSQLConnection(STEP_CONFIG["DB_CONFIG"])
+db_sql = PSQLConnection(STEP_CONFIG["DB_CONFIG"],poolclass="NullPool")
 step = FeatureStep(config=STEP_CONFIG, db_sql=db_sql)
 step.start()
