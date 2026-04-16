@@ -33,7 +33,7 @@ class StampClassifierStep(GenericStep):
             model_path=config["MODEL_CONFIG"]["MODEL_PATH"]
         )
         self.dict_mapping_classes = self.model.dict_mapping_classes
-        self.psql_connection = PSQLConnection(config["DB_CONFIG"])
+        self.psql_connection = PSQLConnection(config["DB_CONFIG"], poolclass="NullPool")
         self.survey = self.config.get("SURVEY")
 
         if "CLS_ID" not in config["MODEL_CONFIG"]:

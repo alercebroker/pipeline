@@ -4,16 +4,22 @@ from contextlib import contextmanager
 from typing import Callable, ContextManager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.pool import NullPool
 from sqlalchemy import text
 import logging
 
 
 class PSQLConnection:
-    def __init__(self, config: dict) -> None:
+    def __init__(self, config: dict, poolclass: str | None = None) -> None:
         url = self.__format_db_url(config)
         args = self.__format_connection_args(config)
 
-        self._engine = create_engine(url, connect_args=args, echo=False)
+        if poolclass == "NullPool":
+            poolclass = NullPool
+        else:
+            poolclass = None
+
+        self._engine = create_engine(url, connect_args=args, echo=False, poolclass=poolclass)
         self._session_factory = sessionmaker(
             self._engine,
         )
