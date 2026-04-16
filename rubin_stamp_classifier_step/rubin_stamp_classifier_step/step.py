@@ -39,9 +39,11 @@ class StampClassifierStep(GenericStep):
         if "CLS_ID" not in config["MODEL_CONFIG"]:
             raise KeyError("MODEL_CONFIG.CLS_ID is required")
         self.classifier_id = config["MODEL_CONFIG"]["CLS_ID"]
+        self.rename_stamp_columns = config.get("RENAME_STAMP_COLUMNS", False)
 
         self.class_taxonomy = get_taxonomy_by_classifier_id(self.classifier_id, self.psql_connection)
         logging.info(f"Class taxonomy: {self.class_taxonomy}")
+        logging.info(f"RENAME_STAMP_COLUMNS: {self.rename_stamp_columns}")
 
         """ SCRIBE PRODUCER TO PRODUCE TO SCRIBE-MULTISURVEY TOPIC FOR ARCHIVAL PURPOSES"""
         scribe_cfg = config.get("SCRIBE_PRODUCER_CONFIG")
@@ -139,6 +141,22 @@ class StampClassifierStep(GenericStep):
         if not df.index.is_unique:
             raise ValueError("diaObjectId must be unique in the input messages")
 
+        stamps_df = df[
+            [
+                "visit_image",
+                "difference_image",
+                "reference_image",
+            ]
+        ]
+        if self.rename_stamp_columns:
+            stamps_df = stamps_df.rename(
+                columns={
+                    "visit_image": "flux_Science_data",
+                    "difference_image": "flux_Difference_data",
+                    "reference_image": "flux_Template_data",
+                }
+            )
+
         # Create the InputDTO
         input_dto = InputDTO(
             Detections(pd.DataFrame()),
@@ -160,19 +178,7 @@ class StampClassifierStep(GenericStep):
                 ]
             ),
             Xmatch(pd.DataFrame()),
-            Stamps(
-                df[
-                    [
-                        "visit_image",
-                        "difference_image",
-                        "reference_image",
-                    ]
-                ].rename(columns={
-                    "visit_image": "flux_Science_data",
-                    "difference_image": "flux_Difference_data",
-                    "reference_image": "flux_Template_data",
-                })
-            ),
+            Stamps(stamps_df),
         )
         return input_dto
 
