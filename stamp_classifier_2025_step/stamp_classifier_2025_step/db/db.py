@@ -1,6 +1,6 @@
 from alerce_classifiers.base.dto import OutputDTO
 from sqlalchemy.dialects.postgresql import insert
-from db_plugins.db.sql.models import Probability
+from db_plugins.db.sql.models_pipeline import Probability
 from contextlib import contextmanager
 from typing import Callable, ContextManager
 from sqlalchemy import create_engine

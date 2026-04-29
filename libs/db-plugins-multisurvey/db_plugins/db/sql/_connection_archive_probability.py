@@ -7,9 +7,9 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import NullPool
 
 
-from db_plugins.db.sql._initial_data import INITIAL_DATA
+from db_plugins.db.sql._initial_data_archive import INITIAL_DATA
 
-from .models import Band, Base, CatalogIdLut, Classifier, FeatureNameLut, Taxonomy
+from .models_archive_probability import Base, Taxonomy
 
 
 def get_db_url(config: dict):
@@ -53,7 +53,7 @@ class PsqlDatabase:
         with self._engine.connect() as conn:
             for mapper in Base.registry.mappers:
                 table_class = mapper.class_
-                if table_class.__n_partitions__ is not None:
+                if getattr(table_class, "__n_partitions__", None):
                     table_class.__create_partitions__(conn, self.schema)
 
         self.insert_initial_data()

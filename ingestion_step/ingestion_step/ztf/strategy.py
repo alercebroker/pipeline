@@ -1,5 +1,5 @@
 import pandas as pd
-from db_plugins.db.sql._connection import PsqlDatabase
+from db_plugins.db.sql._connection_pipeline import PsqlDatabase
 
 from ingestion_step.core.strategy import ParsedData, StrategyInterface
 from ingestion_step.core.types import Message

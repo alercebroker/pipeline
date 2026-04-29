@@ -7,6 +7,8 @@ from .commands import (
     XmatchCommand,
     ZTFCorrectionCommand,
     ZTFMagstatCommand,
+    ProbabilityArchivalCommand,
+    ZtfObjectUpdateCommand,
 )
 from .exceptions import WrongFormatCommandException
 
@@ -84,5 +86,11 @@ def command_factory(msg: str) -> Command:
 
     if step == "xmatch" and survey in {"lsst", "ztf"}:
         return XmatchCommand(**message)
+    
+    if step == "probability-archival-step" and survey in {"lsst", "ztf"}:
+        return ProbabilityArchivalCommand(**message)
+    
+    if step == "update-ztf-object-features" and survey == "ztf":
+        return ZtfObjectUpdateCommand(**message)
 
     raise ValueError(f"Unrecognized command type {survey} in table {step}.")

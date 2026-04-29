@@ -2,7 +2,11 @@ from base import BaseDbTest
 from data import FORCED_PHOTOMETRY_DATA, OBJECT_DATA, ZTF_FORCED_PHOTOMETRY_DATA
 from sqlalchemy.dialects.postgresql.base import select
 
-from db_plugins.db.sql.models import ForcedPhotometry, Object, ZtfForcedPhotometry
+from db_plugins.db.sql.models_pipeline import (
+    ForcedPhotometry,
+    Object,
+    ZtfForcedPhotometry,
+)
 
 
 class ForcedPhotometryModelTest(BaseDbTest):

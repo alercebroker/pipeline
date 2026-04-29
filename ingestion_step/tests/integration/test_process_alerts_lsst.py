@@ -1,5 +1,5 @@
 import pytest
-from db_plugins.db.sql._connection import PsqlDatabase
+from db_plugins.db.sql._connection_pipeline import PsqlDatabase
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 

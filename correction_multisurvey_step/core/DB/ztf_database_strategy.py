@@ -1,6 +1,6 @@
 from sqlalchemy import select, cast, Float
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
-from db_plugins.db.sql.models import (
+from db_plugins.db.sql.models_pipeline import (
     Detection, ZtfDetection, ZtfForcedPhotometry, 
     ForcedPhotometry, ZtfNonDetection
 )
@@ -72,7 +72,6 @@ class ZTFDatabaseStrategy(DatabaseStrategy):
             # Query ZTF-specific detection data with casting
             ztf_stmt = select(
                 ZtfDetection.oid,
-                ZtfDetection.sid,
                 ZtfDetection.measurement_id,
                 ZtfDetection.pid,
                 cast(ZtfDetection.diffmaglim, DOUBLE_PRECISION).label('diffmaglim'),
@@ -121,7 +120,6 @@ class ZTFDatabaseStrategy(DatabaseStrategy):
             # Query ZTF-specific forced photometry with casting
             ztf_stmt = select(
                 ZtfForcedPhotometry.oid,
-                ZtfForcedPhotometry.sid,
                 ZtfForcedPhotometry.measurement_id,
                 ZtfForcedPhotometry.pid,
                 ZtfForcedPhotometry.mag,
@@ -181,7 +179,6 @@ class ZTFDatabaseStrategy(DatabaseStrategy):
             # Query with casting for precision fields
             stmt = select(
                 ZtfNonDetection.oid,
-                ZtfNonDetection.sid,
                 ZtfNonDetection.band,
                 ZtfNonDetection.mjd,
                 cast(ZtfNonDetection.diffmaglim, DOUBLE_PRECISION).label('diffmaglim')
@@ -235,6 +232,7 @@ class ZTFDatabaseStrategy(DatabaseStrategy):
                 combined_dict["new"] = False
                 combined_dict["forced"] = False
                 combined_dict["tid"] = 0
+                combined_dict["sid"] = 0 
 
                 # Calculate e_ra and e_dec. If not possible, set to float('nan') so it keeps the float type
                 e_ra = _e_ra(combined_dict["dec"], combined_dict["band"])
@@ -290,6 +288,7 @@ class ZTFDatabaseStrategy(DatabaseStrategy):
                 combined_dict["new"] = False
                 combined_dict["forced"] = True
                 combined_dict["tid"] = 0
+                combined_dict["sid"] = 0 
                 
                 # Calculate e_ra and e_dec. If not possible, set to float('nan') so it keeps the float type
                 e_ra = _e_ra(combined_dict["dec"], combined_dict["band"])
@@ -314,6 +313,7 @@ class ZTFDatabaseStrategy(DatabaseStrategy):
             for key, value in row._mapping.items():
                 parsed_non_det[key] = value
                 parsed_non_det["tid"] = 0
+                parsed_non_det["sid"] = 0
             non_dets.append(parsed_non_det)
 
 

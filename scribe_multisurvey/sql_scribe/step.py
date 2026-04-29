@@ -22,7 +22,8 @@ class SqlScribe(GenericStep):
         super().__init__(consumer, config=config, **step_args)
 
         self.db_client = SQLCommandExecutor(config["PSQL_CONFIG"])
-
+        self.allowed_commands = config.get("ALLOWED_COMMANDS", None) 
+        
     def pre_execute(self, messages: List[dict]) -> dict:
         magstat_messages = {}
         magstat_objects_messages = {}
@@ -82,20 +83,28 @@ class SqlScribe(GenericStep):
         DB Commands and executes them when they're valid.
         """
         logging.info("Processing messages...")
-        valid_commands, n_invalid_commands = [], 0
+        valid_commands, n_invalid_commands, n_skipped_commands = [], 0, 0
+
         for message in messages:
             try:
                 new_command = command_factory(message["payload"])
-                valid_commands.append(new_command)
+                if self.allowed_commands is None or new_command.type in self.allowed_commands:
+                    valid_commands.append(new_command)
+                else:
+                    self.logger.debug(
+                        f"Skipping command of type '{new_command.type}' (not in ALLOWED_COMMANDS)"
+                    )
+                    n_skipped_commands += 1
             except ValueError as e:
                 self.logger.debug(e)
                 n_invalid_commands += 1
 
         logging.info(
-            f"Processed {len(valid_commands)} messages successfully. Found {n_invalid_commands} invalid messages."
+            f"Processed {len(valid_commands)} messages successfully. "
+            f"Found {n_invalid_commands} invalid and {n_skipped_commands} skipped messages."
         )
 
-        if len(valid_commands) > 0:
+        if valid_commands:
             logging.info("Writing commands into database")
             self.db_client.bulk_execute(valid_commands)
 
