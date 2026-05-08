@@ -1143,8 +1143,8 @@ class Allwise(Base):
         PrimaryKeyConstraint("oid_catalog", name="pk_allwise_oid_catalog"),
     )
 
-class Gaia(Base):                                                                                                                                               
-      __tablename__ = "gaia"                                                                                                                                      
+class GaiaDR3_source(Base):                                                                                                                                               
+      __tablename__ = " gaiadr3_source"                                                                                                                                      
    
       oid_catalog = Column(BigInteger, primary_key=True)                                                                                                          
       ra = Column(DOUBLE_PRECISION, nullable=False)
@@ -1200,5 +1200,5 @@ class Gaia(Base):
       distance_gspphot_upper = Column(REAL)
                                                                                                                                                                   
       __table_args__ = (
-          PrimaryKeyConstraint("oid_catalog", name="pk_gaia_oid_catalog"),
+          PrimaryKeyConstraint("oid_catalog", name="pk_gaiadr3_source_oid_catalog"),
       )                                                                     
