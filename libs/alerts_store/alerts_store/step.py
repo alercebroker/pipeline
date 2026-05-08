@@ -23,7 +23,12 @@ class AlertStore(GenericStep):
 
     def execute(self, messages: list[Message]):
         self.logger.info(f"Start processing {len(messages)} messages.")
-        for i, message in enumerate(messages):
+
+        # Collect filenames per folder so we do one index write per MJD per batch,
+        # not one per alert (batches are up to 1000 messages).
+        index_entries: dict[Path, list[str]] = {}
+
+        for message in messages:
             dia_source_id: int = message["diaSourceId"]
 
             dia_source: dict[str, Any] = message["diaSource"]
@@ -36,6 +41,12 @@ class AlertStore(GenericStep):
 
             with open(file_path, "wb") as f:
                 fastavro.schemaless_writer(f, self.schema, message)
+
+            index_entries.setdefault(folder_path, []).append(file_path.name)
+
+        for folder_path, names in index_entries.items():
+            with open(folder_path / "index.txt", "a") as idx:
+                idx.write("\n".join(names) + "\n")
 
         self.logger.info(f"Saved {len(messages)} messages.")
 

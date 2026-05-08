@@ -21,4 +21,8 @@
 		{"name": "cutoutScience", "type": ["null", "bytes"], "default": null},
 		{"name": "cutoutTemplate", "type": ["null", "bytes"], "default": null}
      ]
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 514834f12 (feat+chore: change fileserver and update to schema v11)

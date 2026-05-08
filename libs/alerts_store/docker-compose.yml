@@ -3,6 +3,56 @@ services:
     build:
       context: ../..
       dockerfile: ./libs/alerts_store/Dockerfile
+    restart: unless-stopped
     volumes:
       - ./config.yaml:/config/config.yaml
-      - ./data:/data
+      - /rulers/alerts-data-schema-v11:/data
+
+  # FastAPI app — search, pagination, night listing.
+  web:
+    build: ./app
+    restart: unless-stopped
+    volumes:
+      - /rulers/alerts-data-schema-v11:/data-v11:ro
+      - /rulers/alerts-data:/data-v10:ro
+    environment:
+      DATA_DIRS: /data-v11,/data-v10
+      PER_PAGE: 500
+
+  # nginx — IP whitelisting, proxies UI to `web`, serves .avro + index.txt directly.
+  file_server:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "3546:80"
+    volumes:
+      - /rulers/alerts-data-schema-v11:/data-v11:ro
+      - /rulers/alerts-data:/data-v10:ro
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - web
+
+  # One-time backfill + hourly safety check for MJD dirs missing index.txt.
+  # The alerts_store service maintains index.txt for new alerts;
+  # this handles existing data and any edge cases.
+  indexer_v11:
+    image: python:3.12-slim
+    restart: unless-stopped
+    volumes:
+      - /rulers/alerts-data-schema-v11:/data
+      - ./scripts/generate_index.py:/generate_index.py:ro
+    command: python /generate_index.py
+    environment:
+      DATA_DIR: /data
+      CHECK_INTERVAL: "3600"
+
+  indexer_v10:
+    image: python:3.12-slim
+    restart: unless-stopped
+    volumes:
+      - /rulers/alerts-data:/data
+      - ./scripts/generate_index.py:/generate_index.py:ro
+    command: python /generate_index.py
+    environment:
+      DATA_DIR: /data
+      CHECK_INTERVAL: "3600"

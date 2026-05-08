@@ -699,4 +699,8 @@
     }
   ],
   "confluent:version": 1100
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 514834f12 (feat+chore: change fileserver and update to schema v11)
