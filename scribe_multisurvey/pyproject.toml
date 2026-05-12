@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "scribe-multisurvey"
-version = "27.5.7a22"
+version = "27.6.0"
 description = "SQL scribe for multisurvey pipeline"
 authors = []
 readme = "README.md"
