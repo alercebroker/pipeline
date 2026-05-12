@@ -15,6 +15,16 @@
 
 <!-- markdown-toc end -->
 
+## Local Build
+
+To run a build locally, use `ci/` as the working directory and run:
+
+```sh
+GHCR_TOKEN=your_token python main.py build direct ingestion_step --package-dir ingestion_step
+```
+
+Replace `ingestion_step` with the target step and adjust `--package-dir` accordingly.
+
 ## Staging
 The CI/CD pipeline for the staging environment is triggered by commits to the `main` branch.
 

@@ -21,7 +21,7 @@ class CorrectionMultisurveyStep(GenericStep):
         **kwargs,
     ):
         super().__init__(config=config, **kwargs)
-        self.db_sql = db_sql
+        self.db_sql = PSQLConnection(config["PSQL_CONFIG"], poolclass="NullPool")
         self.logger = logging.getLogger("alerce.CorrectionMultisurveyStep")
         self.scribe_enabled = config.get("SCRIBE_ENABLED", True)
         
