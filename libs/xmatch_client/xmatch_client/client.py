@@ -87,7 +87,7 @@ class XmatchClient:
                 oid=oid,
                 query_ra=query_ra,
                 query_dec=query_dec,
-                match_id=match["id"],
+                match_id=str(match["id"]),
                 catalog=catalog_name,
                 match_ra=match["ra"],
                 match_dec=match["dec"],
@@ -176,7 +176,7 @@ class XmatchClient:
         for id, catalog in zip(ids, catalogs):
             ids_by_cat[catalog].append(id)
 
-        metadata_by_cat_by_id = {}
+        metadata_by_cat_by_id: dict[str, dict[str, Metadata]] = defaultdict(dict)
         for catalog, ids in ids_by_cat.items():
             for id_batch in batched(ids, self.batch_size):
                 payload = {"ids": id_batch, "catalog": catalog}
@@ -185,9 +185,9 @@ class XmatchClient:
                 resp.raise_for_status()
 
                 metadatas = resp.json()
-                metadata_by_cat_by_id[catalog] = {
-                    metadata["id"]: metadata for metadata in metadatas
-                }
+                metadata_by_cat_by_id[catalog].update(
+                    {str(metadata["id"]): metadata for metadata in metadatas}
+                )
 
         return metadata_by_cat_by_id
 

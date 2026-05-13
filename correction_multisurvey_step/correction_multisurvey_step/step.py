@@ -28,6 +28,7 @@ class CorrectionMultisurveyStep(GenericStep):
         if self.scribe_enabled:
             cls = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
             self.scribe_producer = cls(self.config["SCRIBE_PRODUCER_CONFIG"])
+            self.scribe_topic = self.config["SCRIBE_PRODUCER_CONFIG"]["TOPIC"]
         
         self.survey = self.config.get("SURVEY")
         if not self.survey:
@@ -75,9 +76,9 @@ class CorrectionMultisurveyStep(GenericStep):
             payload = {"payload": scribe_data}
             oid = scribe_data["payload"]["oid"]
             self.scribe_producer.producer.produce(
-                topic="scribe-multisurvey",
-                key=str(oid).encode("utf-8"),               
-                value=json.dumps(payload, cls=NumpyEncoder).encode("utf-8"), 
+                topic=self.scribe_topic,
+                key=str(oid).encode("utf-8"),
+                value=json.dumps(payload, cls=NumpyEncoder).encode("utf-8"),
             )
             self.scribe_producer.producer.poll(0)
 

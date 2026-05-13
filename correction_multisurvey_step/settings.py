@@ -19,6 +19,15 @@ scribe_schema_path = pathlib.Path(
     pathlib.Path(__file__).parent.parent, "schemas/scribe_step", "scribe.avsc"
 )
 
+SCRIBE_PRODUCER_CONFIG = {
+    "CLASS": os.getenv("SCRIBE_PRODUCER_CLASS", "apf.producers.KafkaProducer"),
+    "PARAMS": {
+        "bootstrap.servers": os.environ["SCRIBE_PRODUCER_SERVER"],
+    },
+    "TOPIC": os.environ["SCRIBE_PRODUCER_TOPIC"],
+    "SCHEMA_PATH": os.getenv("SCRIBE_SCHEMA_PATH", str(scribe_schema_path)),
+}
+
 # Set the global logging level to debug
 LOGGING_DEBUG = bool(os.getenv("LOGGING_DEBUG", False))
 
@@ -136,6 +145,11 @@ METRICS_CONFIG: MetricConfig = {
     },
 }
 
+if os.getenv("SCRIBE_KAFKA_USERNAME") and os.getenv("SCRIBE_KAFKA_PASSWORD"):
+    SCRIBE_PRODUCER_CONFIG["PARAMS"]["security.protocol"] = "SASL_SSL"
+    SCRIBE_PRODUCER_CONFIG["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
+    SCRIBE_PRODUCER_CONFIG["PARAMS"]["sasl.username"] = os.getenv("SCRIBE_KAFKA_USERNAME")
+    SCRIBE_PRODUCER_CONFIG["PARAMS"]["sasl.password"] = os.getenv("SCRIBE_KAFKA_PASSWORD")
 if os.getenv("CONSUMER_KAFKA_USERNAME") and os.getenv("CONSUMER_KAFKA_PASSWORD"):
     CONSUMER_CONFIG["PARAMS"]["security.protocol"] = "SASL_SSL"
     CONSUMER_CONFIG["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
@@ -185,6 +199,7 @@ STEP_CONFIG: StepConfig = {
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
     "METRICS_CONFIG": METRICS_CONFIG,
+    "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
     "LOGGING_DEBUG": LOGGING_DEBUG,
     "PYROSCOPE_SERVER": os.getenv("PYROSCOPE_SERVER", ""),
 }

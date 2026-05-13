@@ -17,7 +17,7 @@ class MagstatsStep_Multisurvey(GenericStep):
         
         cls = get_class(config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
         self.scribe_producer = cls(config["SCRIBE_PRODUCER_CONFIG"])
-        
+        self.scribe_topic = config["SCRIBE_PRODUCER_CONFIG"]["TOPIC"]
         self.survey = config["SURVEY"]
         self.survey_handler = SurveyRegistry.get_handler(self.survey, self.excluded)
         
@@ -84,7 +84,7 @@ class MagstatsStep_Multisurvey(GenericStep):
         for scribe_data in scribe_payloads:
             oid = scribe_data["oid"]
             self.scribe_producer.producer.produce(
-                topic="scribe-multisurvey",
+                topic=self.scribe_topic,
                 key=str(oid).encode("utf-8"),
                 value=json.dumps(scribe_data).encode("utf-8"),
             )
