@@ -240,12 +240,8 @@
     },
     {
       "doc": "The number of data points (pixels) used to fit the point source model.",
-      "default": null,
       "name": "psfNdata",
-      "type": [
-        "null",
-        "int"
-      ]
+      "type": "int"
     },
     {
       "doc": "Failure to derive linear least-squares fit of psf model. Another psfFlux flag field should also be set to provide more information.",
@@ -375,12 +371,8 @@
     },
     {
       "doc": "The number of data points (pixels) used to fit the trailed source model.",
-      "default": null,
       "name": "trailNdata",
-      "type": [
-        "null",
-        "int"
-      ]
+      "type": "int"
     },
     {
       "doc": "This flag is set if a trailed source extends onto or past edge pixels.",
@@ -456,12 +448,8 @@
     },
     {
       "doc": "The number of data points (pixels) used to fit the model.",
-      "default": null,
       "name": "dipoleNdata",
-      "type": [
-        "null",
-        "int"
-      ]
+      "type": "int"
     },
     {
       "doc": "Forced photometry flux for a point source model measured on the visit image centered at DiaSource position [nJy].",
@@ -668,12 +656,8 @@
     },
     {
       "doc": "Size of the square bounding box that fully contains the detection footprint [pixel].",
-      "default": null,
       "name": "bboxSize",
-      "type": [
-        "null",
-        "int"
-      ]
+      "type": "int"
     },
     {
       "doc": "General pixel flags failure; set if anything went wrong when setting pixels flags from this footprint's mask. This implies that some pixelFlags for this source may be incorrectly set to False.",

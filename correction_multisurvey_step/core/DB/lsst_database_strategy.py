@@ -46,7 +46,7 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
     
     def get_non_detection_schema(self) -> Dict[str, Any]:
         """Return the schema for LSST non-detections."""
-        return {}  # Non-detection schema omitted in LSST v10.0
+        return {}  # not yet implemented
     
     def get_ss_detection_schema(self) -> Dict[str, Any]:
         """Return the schema for LSST ss source schema."""
@@ -313,7 +313,7 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
                 )
 
     def get_non_detections(self, oids: List[str], sids: List[int]) -> List[Dict[str, Any]]:
-        """Non-detection handling omitted in LSST v10.0"""
+        """Non-detection handling not yet implemented."""
         return []
     
     def _parse_lsst_detections(self, lsst_models: list, models: list, 

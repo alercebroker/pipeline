@@ -54,7 +54,7 @@ dia_forced_sources_lsst_db: dict[str, DType] = {
 
 
 """
-# Ommited in schema v10.0
+# not yet implemented
 dia_non_detection_limit_schema: dict[str, DType] = {
     "ccdVisitId": pd.Int64Dtype(),
     "midpointMjdTai": pd.Float64Dtype(),
