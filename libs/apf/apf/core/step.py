@@ -476,6 +476,7 @@ class GenericStep(abc.ABC):
             self.metrics.messages_processed.inc(n_messages)
             self.metrics.batches_processed.inc()
             self.metrics.last_batch_processed.set_to_current_time()
+
         self._tear_down()
 
     def _tear_down(self):
