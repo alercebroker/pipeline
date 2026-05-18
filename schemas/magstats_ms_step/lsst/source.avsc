@@ -237,13 +237,9 @@
       ]
     },
     {
-      "default": null,
       "doc": "The number of data points (pixels) used to fit the point source model.",
       "name": "psfNdata",
-      "type": [
-        "null",
-        "int"
-      ]
+      "type": "int"
     },
     {
       "default": null,
@@ -372,13 +368,9 @@
       ]
     },
     {
-      "default": null,
       "doc": "The number of data points (pixels) used to fit the trailed source model.",
       "name": "trailNdata",
-      "type": [
-        "null",
-        "int"
-      ]
+      "type": "int"
     },
     {
       "default": null,
@@ -453,13 +445,9 @@
       ]
     },
     {
-      "default": null,
       "doc": "The number of data points (pixels) used to fit the model.",
       "name": "dipoleNdata",
-      "type": [
-        "null",
-        "int"
-      ]
+      "type": "int"
     },
     {
       "default": null,
@@ -665,13 +653,9 @@
       ]
     },
     {
-      "default": null,
       "doc": "Size of the square bounding box that fully contains the detection footprint [pixel].",
       "name": "bboxSize",
-      "type": [
-        "null",
-        "int"
-      ]
+      "type": "int"
     },
     {
       "default": null,

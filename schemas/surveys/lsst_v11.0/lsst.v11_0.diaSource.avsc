@@ -1,34 +1,13 @@
+
 {
   "type": "record",
+  "namespace": "lsst.v11_0",
   "name": "diaSource",
   "fields": [
-    { "name": "new", 
-      "type": "boolean"
-    },
     {
-      "name": "oid",
+      "doc": "Unique identifier of this DiaSource.",
+      "name": "diaSourceId",
       "type": "long"
-    },
-    {
-      "name": "sid",
-      "type": "int"
-    },
-    {
-      "name": "measurement_id",
-      "type": "long"
-    },
-    {
-      "name": "mjd",
-      "type": "double"
-    },
-    {
-      "default": null,
-      "doc": "Filter band this source was observed with.",
-      "name": "band",
-      "type": [
-        "null",
-        "int"
-      ]
     },
     {
       "doc": "Id of the visit where this diaSource was measured.",
@@ -41,8 +20,8 @@
       "type": "int"
     },
     {
-      "doc": "Id of the diaObject this source was associated with, if any. If not, it is set to NULL (each diaSource will be associated with either a diaObject or ssObject).",
       "default": null,
+      "doc": "Id of the diaObject this source was associated with, if any. If not, it is set to NULL (each diaSource will be associated with either a diaObject or ssObject).",
       "name": "diaObjectId",
       "type": [
         "null",
@@ -50,8 +29,8 @@
       ]
     },
     {
-      "doc": "Id of the ssObject this source was associated with, if any. If not, it is set to NULL (each diaSource will be associated with either a diaObject or ssObject).",
       "default": null,
+      "doc": "Id of the ssObject this source was associated with, if any. If not, it is set to NULL (each diaSource will be associated with either a diaObject or ssObject).",
       "name": "ssObjectId",
       "type": [
         "null",
@@ -59,8 +38,8 @@
       ]
     },
     {
-      "doc": "Id of the parent diaSource this diaSource has been deblended from, if any.",
       "default": null,
+      "doc": "Id of the parent diaSource this diaSource has been deblended from, if any.",
       "name": "parentDiaSourceId",
       "type": [
         "null",
@@ -78,8 +57,8 @@
       "type": "double"
     },
     {
-      "doc": "Uncertainty of ra [deg].",
       "default": null,
+      "doc": "Uncertainty of ra [deg].",
       "name": "raErr",
       "type": [
         "null",
@@ -92,8 +71,8 @@
       "type": "double"
     },
     {
-      "doc": "Uncertainty of dec [deg].",
       "default": null,
+      "doc": "Uncertainty of dec [deg].",
       "name": "decErr",
       "type": [
         "null",
@@ -101,8 +80,8 @@
       ]
     },
     {
-      "doc": "Covariance between ra and dec [deg**2].",
       "default": null,
+      "doc": "Covariance between ra and dec [deg**2].",
       "name": "ra_dec_Cov",
       "type": [
         "null",
@@ -115,8 +94,8 @@
       "type": "float"
     },
     {
-      "doc": "Uncertainty of x [pixel].",
       "default": null,
+      "doc": "Uncertainty of x [pixel].",
       "name": "xErr",
       "type": [
         "null",
@@ -129,8 +108,8 @@
       "type": "float"
     },
     {
-      "doc": "Uncertainty of y [pixel].",
       "default": null,
+      "doc": "Uncertainty of y [pixel].",
       "name": "yErr",
       "type": [
         "null",
@@ -138,8 +117,8 @@
       ]
     },
     {
-      "doc": "General centroid algorithm failure flag; set if anything went wrong when fitting the centroid. Another centroid flag field should also be set to provide more information.",
       "default": null,
+      "doc": "General centroid algorithm failure flag; set if anything went wrong when fitting the centroid. Another centroid flag field should also be set to provide more information.",
       "name": "centroid_flag",
       "type": [
         "null",
@@ -147,8 +126,8 @@
       ]
     },
     {
-      "doc": "Flux in a 12 pixel radius aperture on the difference image [nJy].",
       "default": null,
+      "doc": "Flux in a 12 pixel radius aperture on the difference image [nJy].",
       "name": "apFlux",
       "type": [
         "null",
@@ -156,8 +135,8 @@
       ]
     },
     {
-      "doc": "Estimated uncertainty of apFlux [nJy].",
       "default": null,
+      "doc": "Estimated uncertainty of apFlux [nJy].",
       "name": "apFluxErr",
       "type": [
         "null",
@@ -165,8 +144,8 @@
       ]
     },
     {
-      "doc": "General aperture flux algorithm failure flag; set if anything went wrong when measuring aperture fluxes. Another apFlux flag field should also be set to provide more information.",
       "default": null,
+      "doc": "General aperture flux algorithm failure flag; set if anything went wrong when measuring aperture fluxes. Another apFlux flag field should also be set to provide more information.",
       "name": "apFlux_flag",
       "type": [
         "null",
@@ -174,8 +153,8 @@
       ]
     },
     {
-      "doc": "Aperture did not fit within measurement image.",
       "default": null,
+      "doc": "Aperture did not fit within measurement image.",
       "name": "apFlux_flag_apertureTruncated",
       "type": [
         "null",
@@ -183,8 +162,8 @@
       ]
     },
     {
-      "doc": "Source was detected as significantly negative.",
       "default": null,
+      "doc": "Source was detected as significantly negative.",
       "name": "isNegative",
       "type": [
         "null",
@@ -192,8 +171,8 @@
       ]
     },
     {
-      "doc": "The signal-to-noise ratio at which this source was detected in the difference image.",
       "default": null,
+      "doc": "The signal-to-noise ratio at which this source was detected in the difference image.",
       "name": "snr",
       "type": [
         "null",
@@ -201,8 +180,8 @@
       ]
     },
     {
-      "doc": "Flux for Point Source model. Note this actually measures the flux difference between the template and the visit image [nJy].",
       "default": null,
+      "doc": "Flux for Point Source model. Note this actually measures the flux difference between the template and the visit image [nJy].",
       "name": "psfFlux",
       "type": [
         "null",
@@ -210,8 +189,8 @@
       ]
     },
     {
-      "doc": "Uncertainty of psfFlux [nJy].",
       "default": null,
+      "doc": "Uncertainty of psfFlux [nJy].",
       "name": "psfFluxErr",
       "type": [
         "null",
@@ -219,8 +198,8 @@
       ]
     },
     {
-      "doc": "Natural log likelihood of the observed data given the point source model.",
       "default": null,
+      "doc": "Natural log likelihood of the observed data given the point source model.",
       "name": "psfLnL",
       "type": [
         "null",
@@ -228,8 +207,8 @@
       ]
     },
     {
-      "doc": "Chi^2 statistic of the point source model fit.",
       "default": null,
+      "doc": "Chi^2 statistic of the point source model fit.",
       "name": "psfChi2",
       "type": [
         "null",
@@ -242,8 +221,8 @@
       "type": "int"
     },
     {
-      "doc": "Failure to derive linear least-squares fit of psf model. Another psfFlux flag field should also be set to provide more information.",
       "default": null,
+      "doc": "Failure to derive linear least-squares fit of psf model. Another psfFlux flag field should also be set to provide more information.",
       "name": "psfFlux_flag",
       "type": [
         "null",
@@ -251,8 +230,8 @@
       ]
     },
     {
-      "doc": "Object was too close to the edge of the image to use the full PSF model.",
       "default": null,
+      "doc": "Object was too close to the edge of the image to use the full PSF model.",
       "name": "psfFlux_flag_edge",
       "type": [
         "null",
@@ -260,8 +239,8 @@
       ]
     },
     {
-      "doc": "Not enough non-rejected pixels in data to attempt the fit.",
       "default": null,
+      "doc": "Not enough non-rejected pixels in data to attempt the fit.",
       "name": "psfFlux_flag_noGoodPixels",
       "type": [
         "null",
@@ -269,8 +248,8 @@
       ]
     },
     {
-      "doc": "Flux for a trailed source model. Note this actually measures the flux difference between the template and the visit image [nJy].",
       "default": null,
+      "doc": "Flux for a trailed source model. Note this actually measures the flux difference between the template and the visit image [nJy].",
       "name": "trailFlux",
       "type": [
         "null",
@@ -278,8 +257,8 @@
       ]
     },
     {
-      "doc": "Uncertainty of trailFlux [nJy].",
       "default": null,
+      "doc": "Uncertainty of trailFlux [nJy].",
       "name": "trailFluxErr",
       "type": [
         "null",
@@ -287,8 +266,8 @@
       ]
     },
     {
-      "doc": "Right ascension coordinate of centroid for trailed source model [deg].",
       "default": null,
+      "doc": "Right ascension coordinate of centroid for trailed source model [deg].",
       "name": "trailRa",
       "type": [
         "null",
@@ -296,8 +275,8 @@
       ]
     },
     {
-      "doc": "Uncertainty of trailRa [deg].",
       "default": null,
+      "doc": "Uncertainty of trailRa [deg].",
       "name": "trailRaErr",
       "type": [
         "null",
@@ -305,8 +284,8 @@
       ]
     },
     {
-      "doc": "Declination coordinate of centroid for trailed source model [deg].",
       "default": null,
+      "doc": "Declination coordinate of centroid for trailed source model [deg].",
       "name": "trailDec",
       "type": [
         "null",
@@ -314,8 +293,8 @@
       ]
     },
     {
-      "doc": "Uncertainty of trailDec [deg].",
       "default": null,
+      "doc": "Uncertainty of trailDec [deg].",
       "name": "trailDecErr",
       "type": [
         "null",
@@ -323,8 +302,8 @@
       ]
     },
     {
-      "doc": "Maximum likelihood fit of trail length [arcsec].",
       "default": null,
+      "doc": "Maximum likelihood fit of trail length [arcsec].",
       "name": "trailLength",
       "type": [
         "null",
@@ -332,8 +311,8 @@
       ]
     },
     {
-      "doc": "Uncertainty of trailLength [nJy].",
       "default": null,
+      "doc": "Uncertainty of trailLength [nJy].",
       "name": "trailLengthErr",
       "type": [
         "null",
@@ -341,8 +320,8 @@
       ]
     },
     {
-      "doc": "Maximum likelihood fit of the angle between the meridian through the centroid and the trail direction (bearing) [deg].",
       "default": null,
+      "doc": "Maximum likelihood fit of the angle between the meridian through the centroid and the trail direction (bearing) [deg].",
       "name": "trailAngle",
       "type": [
         "null",
@@ -350,8 +329,8 @@
       ]
     },
     {
-      "doc": "Uncertainty of trailAngle [nJy].",
       "default": null,
+      "doc": "Uncertainty of trailAngle [nJy].",
       "name": "trailAngleErr",
       "type": [
         "null",
@@ -359,8 +338,8 @@
       ]
     },
     {
-      "doc": "Chi^2 statistic of the trailed source model fit.",
       "default": null,
+      "doc": "Chi^2 statistic of the trailed source model fit.",
       "name": "trailChi2",
       "type": [
         "null",
@@ -373,8 +352,8 @@
       "type": "int"
     },
     {
-      "doc": "This flag is set if a trailed source extends onto or past edge pixels.",
       "default": null,
+      "doc": "This flag is set if a trailed source extends onto or past edge pixels.",
       "name": "trail_flag_edge",
       "type": [
         "null",
@@ -382,8 +361,8 @@
       ]
     },
     {
-      "doc": "Maximum likelihood value for the mean absolute flux of the two lobes for a dipole model [nJy].",
       "default": null,
+      "doc": "Maximum likelihood value for the mean absolute flux of the two lobes for a dipole model [nJy].",
       "name": "dipoleMeanFlux",
       "type": [
         "null",
@@ -391,8 +370,8 @@
       ]
     },
     {
-      "doc": "Uncertainty of dipoleMeanFlux [nJy].",
       "default": null,
+      "doc": "Uncertainty of dipoleMeanFlux [nJy].",
       "name": "dipoleMeanFluxErr",
       "type": [
         "null",
@@ -400,8 +379,8 @@
       ]
     },
     {
-      "doc": "Maximum likelihood value for the difference of absolute fluxes of the two lobes for a dipole model [nJy].",
       "default": null,
+      "doc": "Maximum likelihood value for the difference of absolute fluxes of the two lobes for a dipole model [nJy].",
       "name": "dipoleFluxDiff",
       "type": [
         "null",
@@ -409,8 +388,8 @@
       ]
     },
     {
-      "doc": "Uncertainty of dipoleFluxDiff [nJy].",
       "default": null,
+      "doc": "Uncertainty of dipoleFluxDiff [nJy].",
       "name": "dipoleFluxDiffErr",
       "type": [
         "null",
@@ -418,8 +397,8 @@
       ]
     },
     {
-      "doc": "Maximum likelihood value for the lobe separation in dipole model [arcsec].",
       "default": null,
+      "doc": "Maximum likelihood value for the lobe separation in dipole model [arcsec].",
       "name": "dipoleLength",
       "type": [
         "null",
@@ -427,8 +406,8 @@
       ]
     },
     {
-      "doc": "Maximum likelihood fit of the angle between the meridian through the centroid and the dipole direction (bearing, from negative to positive lobe) [deg].",
       "default": null,
+      "doc": "Maximum likelihood fit of the angle between the meridian through the centroid and the dipole direction (bearing, from negative to positive lobe) [deg].",
       "name": "dipoleAngle",
       "type": [
         "null",
@@ -436,8 +415,8 @@
       ]
     },
     {
-      "doc": "Chi^2 statistic of the model fit.",
       "default": null,
+      "doc": "Chi^2 statistic of the model fit.",
       "name": "dipoleChi2",
       "type": [
         "null",
@@ -450,8 +429,8 @@
       "type": "int"
     },
     {
-      "doc": "Forced photometry flux for a point source model measured on the visit image centered at DiaSource position [nJy].",
       "default": null,
+      "doc": "Forced photometry flux for a point source model measured on the visit image centered at DiaSource position [nJy].",
       "name": "scienceFlux",
       "type": [
         "null",
@@ -459,8 +438,8 @@
       ]
     },
     {
-      "doc": "Estimated uncertainty of scienceFlux [nJy].",
       "default": null,
+      "doc": "Estimated uncertainty of scienceFlux [nJy].",
       "name": "scienceFluxErr",
       "type": [
         "null",
@@ -468,8 +447,8 @@
       ]
     },
     {
-      "doc": "Forced PSF photometry on science image failed. Another forced_PsfFlux flag field should also be set to provide more information.",
       "default": null,
+      "doc": "Forced PSF photometry on science image failed. Another forced_PsfFlux flag field should also be set to provide more information.",
       "name": "forced_PsfFlux_flag",
       "type": [
         "null",
@@ -477,8 +456,8 @@
       ]
     },
     {
-      "doc": "Forced PSF flux on science image was too close to the edge of the image to use the full PSF model.",
       "default": null,
+      "doc": "Forced PSF flux on science image was too close to the edge of the image to use the full PSF model.",
       "name": "forced_PsfFlux_flag_edge",
       "type": [
         "null",
@@ -486,8 +465,8 @@
       ]
     },
     {
-      "doc": "Forced PSF flux not enough non-rejected pixels in data to attempt the fit.",
       "default": null,
+      "doc": "Forced PSF flux not enough non-rejected pixels in data to attempt the fit.",
       "name": "forced_PsfFlux_flag_noGoodPixels",
       "type": [
         "null",
@@ -495,8 +474,8 @@
       ]
     },
     {
-      "doc": "Forced photometry flux for a point source model measured on the template image centered at the DiaObject position [nJy].",
       "default": null,
+      "doc": "Forced photometry flux for a point source model measured on the template image centered at the DiaObject position [nJy].",
       "name": "templateFlux",
       "type": [
         "null",
@@ -504,8 +483,8 @@
       ]
     },
     {
-      "doc": "Uncertainty of templateFlux [nJy].",
       "default": null,
+      "doc": "Uncertainty of templateFlux [nJy].",
       "name": "templateFluxErr",
       "type": [
         "null",
@@ -513,8 +492,8 @@
       ]
     },
     {
-      "doc": "Adaptive second moment of the source intensity [nJy.arcsec**2].",
       "default": null,
+      "doc": "Adaptive second moment of the source intensity [nJy.arcsec**2].",
       "name": "ixx",
       "type": [
         "null",
@@ -522,8 +501,8 @@
       ]
     },
     {
-      "doc": "Adaptive second moment of the source intensity [nJy.arcsec**2].",
       "default": null,
+      "doc": "Adaptive second moment of the source intensity [nJy.arcsec**2].",
       "name": "iyy",
       "type": [
         "null",
@@ -531,8 +510,8 @@
       ]
     },
     {
-      "doc": "Adaptive second moment of the source intensity [nJy.arcsec**2].",
       "default": null,
+      "doc": "Adaptive second moment of the source intensity [nJy.arcsec**2].",
       "name": "ixy",
       "type": [
         "null",
@@ -540,8 +519,8 @@
       ]
     },
     {
-      "doc": "Adaptive second moment for the PSF [nJy.arcsec**2].",
       "default": null,
+      "doc": "Adaptive second moment for the PSF [nJy.arcsec**2].",
       "name": "ixxPSF",
       "type": [
         "null",
@@ -549,8 +528,8 @@
       ]
     },
     {
-      "doc": "Adaptive second moment for the PSF [nJy.arcsec**2].",
       "default": null,
+      "doc": "Adaptive second moment for the PSF [nJy.arcsec**2].",
       "name": "iyyPSF",
       "type": [
         "null",
@@ -558,8 +537,8 @@
       ]
     },
     {
-      "doc": "Adaptive second moment for the PSF [nJy.arcsec**2].",
       "default": null,
+      "doc": "Adaptive second moment for the PSF [nJy.arcsec**2].",
       "name": "ixyPSF",
       "type": [
         "null",
@@ -567,8 +546,8 @@
       ]
     },
     {
-      "doc": "General source shape algorithm failure flag; set if anything went wrong when measuring the shape. Another shape flag field should also be set to provide more information.",
       "default": null,
+      "doc": "General source shape algorithm failure flag; set if anything went wrong when measuring the shape. Another shape flag field should also be set to provide more information.",
       "name": "shape_flag",
       "type": [
         "null",
@@ -576,8 +555,8 @@
       ]
     },
     {
-      "doc": "No pixels to measure shape.",
       "default": null,
+      "doc": "No pixels to measure shape.",
       "name": "shape_flag_no_pixels",
       "type": [
         "null",
@@ -585,8 +564,8 @@
       ]
     },
     {
-      "doc": "Center not contained in footprint bounding box.",
       "default": null,
+      "doc": "Center not contained in footprint bounding box.",
       "name": "shape_flag_not_contained",
       "type": [
         "null",
@@ -594,8 +573,8 @@
       ]
     },
     {
-      "doc": "This source is a parent source; we should only be measuring on deblended children in difference imaging.",
       "default": null,
+      "doc": "This source is a parent source; we should only be measuring on deblended children in difference imaging.",
       "name": "shape_flag_parent_source",
       "type": [
         "null",
@@ -603,8 +582,8 @@
       ]
     },
     {
-      "doc": "A measure of extendedness, computed by comparing an object's moment-based traced radius to the PSF moments. extendedness = 1 implies a high degree of confidence that the source is extended. extendedness = 0 implies a high degree of confidence that the source is point-like.",
       "default": null,
+      "doc": "A measure of extendedness, computed by comparing an object's moment-based traced radius to the PSF moments. extendedness = 1 implies a high degree of confidence that the source is extended. extendedness = 0 implies a high degree of confidence that the source is point-like.",
       "name": "extendedness",
       "type": [
         "null",
@@ -612,8 +591,8 @@
       ]
     },
     {
-      "doc": "Probability (0-1) that the diaSource is astrophysical, derived from a machine learning model.",
       "default": null,
+      "doc": "Probability (0-1) that the diaSource is astrophysical, derived from a machine learning model.",
       "name": "reliability",
       "type": [
         "null",
@@ -621,8 +600,17 @@
       ]
     },
     {
-      "doc": "Source well fit by a dipole.",
       "default": null,
+      "doc": "Filter band this source was observed with.",
+      "name": "band",
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    {
+      "default": null,
+      "doc": "Source well fit by a dipole.",
       "name": "isDipole",
       "type": [
         "null",
@@ -630,8 +618,8 @@
       ]
     },
     {
-      "doc": "Attempted to fit a dipole model to this source.",
       "default": null,
+      "doc": "Attempted to fit a dipole model to this source.",
       "name": "dipoleFitAttempted",
       "type": [
         "null",
@@ -644,8 +632,8 @@
       "type": "double"
     },
     {
-      "doc": "Time when this record was marked invalid, expressed as Modified Julian Date, International Atomic Time.",
       "default": null,
+      "doc": "Time when this record was marked invalid, expressed as Modified Julian Date, International Atomic Time.",
       "name": "timeWithdrawnMjdTai",
       "type": [
         "null",
@@ -658,8 +646,8 @@
       "type": "int"
     },
     {
-      "doc": "General pixel flags failure; set if anything went wrong when setting pixels flags from this footprint's mask. This implies that some pixelFlags for this source may be incorrectly set to False.",
       "default": null,
+      "doc": "General pixel flags failure; set if anything went wrong when setting pixels flags from this footprint's mask. This implies that some pixelFlags for this source may be incorrectly set to False.",
       "name": "pixelFlags",
       "type": [
         "null",
@@ -667,8 +655,8 @@
       ]
     },
     {
-      "doc": "Bad pixel in the DiaSource footprint.",
       "default": null,
+      "doc": "Bad pixel in the DiaSource footprint.",
       "name": "pixelFlags_bad",
       "type": [
         "null",
@@ -676,8 +664,8 @@
       ]
     },
     {
-      "doc": "Cosmic ray in the DiaSource footprint.",
       "default": null,
+      "doc": "Cosmic ray in the DiaSource footprint.",
       "name": "pixelFlags_cr",
       "type": [
         "null",
@@ -685,8 +673,8 @@
       ]
     },
     {
-      "doc": "Cosmic ray in the 3x3 region around the centroid.",
       "default": null,
+      "doc": "Cosmic ray in the 3x3 region around the centroid.",
       "name": "pixelFlags_crCenter",
       "type": [
         "null",
@@ -694,8 +682,8 @@
       ]
     },
     {
-      "doc": "Some of the source footprint is outside usable exposure region (masked EDGE or centroid off image).",
       "default": null,
+      "doc": "Some of the source footprint is outside usable exposure region (masked EDGE or centroid off image).",
       "name": "pixelFlags_edge",
       "type": [
         "null",
@@ -703,8 +691,8 @@
       ]
     },
     {
-      "doc": "NO_DATA pixel in the source footprint.",
       "default": null,
+      "doc": "NO_DATA pixel in the source footprint.",
       "name": "pixelFlags_nodata",
       "type": [
         "null",
@@ -712,8 +700,8 @@
       ]
     },
     {
-      "doc": "NO_DATA pixel in the 3x3 region around the centroid.",
       "default": null,
+      "doc": "NO_DATA pixel in the 3x3 region around the centroid.",
       "name": "pixelFlags_nodataCenter",
       "type": [
         "null",
@@ -721,8 +709,8 @@
       ]
     },
     {
-      "doc": "Interpolated pixel in the DiaSource footprint.",
       "default": null,
+      "doc": "Interpolated pixel in the DiaSource footprint.",
       "name": "pixelFlags_interpolated",
       "type": [
         "null",
@@ -730,8 +718,8 @@
       ]
     },
     {
-      "doc": "Interpolated pixel in the 3x3 region around the centroid.",
       "default": null,
+      "doc": "Interpolated pixel in the 3x3 region around the centroid.",
       "name": "pixelFlags_interpolatedCenter",
       "type": [
         "null",
@@ -739,8 +727,8 @@
       ]
     },
     {
-      "doc": "DiaSource center is off image.",
       "default": null,
+      "doc": "DiaSource center is off image.",
       "name": "pixelFlags_offimage",
       "type": [
         "null",
@@ -748,8 +736,8 @@
       ]
     },
     {
-      "doc": "Saturated pixel in the DiaSource footprint.",
       "default": null,
+      "doc": "Saturated pixel in the DiaSource footprint.",
       "name": "pixelFlags_saturated",
       "type": [
         "null",
@@ -757,8 +745,8 @@
       ]
     },
     {
-      "doc": "Saturated pixel in the 3x3 region around the centroid.",
       "default": null,
+      "doc": "Saturated pixel in the 3x3 region around the centroid.",
       "name": "pixelFlags_saturatedCenter",
       "type": [
         "null",
@@ -766,8 +754,8 @@
       ]
     },
     {
-      "doc": "DiaSource's footprint includes suspect pixels.",
       "default": null,
+      "doc": "DiaSource's footprint includes suspect pixels.",
       "name": "pixelFlags_suspect",
       "type": [
         "null",
@@ -775,8 +763,8 @@
       ]
     },
     {
-      "doc": "Suspect pixel in the 3x3 region around the centroid.",
       "default": null,
+      "doc": "Suspect pixel in the 3x3 region around the centroid.",
       "name": "pixelFlags_suspectCenter",
       "type": [
         "null",
@@ -784,8 +772,8 @@
       ]
     },
     {
-      "doc": "Streak in the DiaSource footprint.",
       "default": null,
+      "doc": "Streak in the DiaSource footprint.",
       "name": "pixelFlags_streak",
       "type": [
         "null",
@@ -793,8 +781,8 @@
       ]
     },
     {
-      "doc": "Streak in the 3x3 region around the centroid.",
       "default": null,
+      "doc": "Streak in the 3x3 region around the centroid.",
       "name": "pixelFlags_streakCenter",
       "type": [
         "null",
@@ -802,8 +790,8 @@
       ]
     },
     {
-      "doc": "Injection in the DiaSource footprint.",
       "default": null,
+      "doc": "Injection in the DiaSource footprint.",
       "name": "pixelFlags_injected",
       "type": [
         "null",
@@ -811,8 +799,8 @@
       ]
     },
     {
-      "doc": "Injection in the 3x3 region around the centroid.",
       "default": null,
+      "doc": "Injection in the 3x3 region around the centroid.",
       "name": "pixelFlags_injectedCenter",
       "type": [
         "null",
@@ -820,8 +808,8 @@
       ]
     },
     {
-      "doc": "Template injection in the DiaSource footprint.",
       "default": null,
+      "doc": "Template injection in the DiaSource footprint.",
       "name": "pixelFlags_injected_template",
       "type": [
         "null",
@@ -829,8 +817,8 @@
       ]
     },
     {
-      "doc": "Template injection in the 3x3 region around the centroid.",
       "default": null,
+      "doc": "Template injection in the 3x3 region around the centroid.",
       "name": "pixelFlags_injected_templateCenter",
       "type": [
         "null",
@@ -838,13 +826,14 @@
       ]
     },
     {
-      "doc": "This flag is set if the source is part of a glint trail.",
       "default": null,
+      "doc": "This flag is set if the source is part of a glint trail.",
       "name": "glint_trail",
       "type": [
         "null",
         "boolean"
       ]
     }
-  ]
+  ],
+  "confluent:version": 1100
 }

@@ -36,7 +36,7 @@ class LSSTDataJoiner(SurveyDataJoiner):
             "ss_detections", pd.DataFrame()
         )
 
-        # processed['db_sql_non_detections_df'] = historical_data.get('non_detections', pd.DataFrame()) # Ommited for now, as we are not using non detections in schema v10.0
+        # processed['db_sql_non_detections_df'] = historical_data.get('non_detections', pd.DataFrame()) # not yet implemented
         # Not using the ss_objects and dia_objects from the database for now, and instead keeping only the ones from the message
         # processed['db_sql_ss_objects_df'] = historical_data.get('ss_objects', pd.DataFrame())
         # processed['db_sql_dia_objects_df'] = historical_data.get('dia_objects', pd.DataFrame())
@@ -88,16 +88,16 @@ class LSSTDataJoiner(SurveyDataJoiner):
         ], ignore_index=True)      
 
         """
-        # Ommited for now, as we are not receiving ss objects in schema v.10 yet
+        # not yet implemented
         ss_objects = pd.concat([
             msg_data.get('ss_objects_df', pd.DataFrame()),
-            historical_data.get('db_sql_ss_objects_df', pd.DataFrame())  
+            historical_data.get('db_sql_ss_objects_df', pd.DataFrame())
         ], ignore_index=True)
 
         result['ss_object'] = ss_objects.drop_duplicates()
 
-        
-        # Ommited for now, as we are not using non detections in schema v.10
+
+        # not yet implemented
         result['non_detections'] = pd.concat([
             msg_data.get('non_detections_df', pd.DataFrame()),
             historical_data.get('db_sql_non_detections_df', pd.DataFrame())
@@ -148,7 +148,7 @@ class LSSTDataJoiner(SurveyDataJoiner):
             result[key] = df
 
         """
-        # Ommited for now, as we are not using non detections in schema v10.0
+        # not yet implemented
         # For non_detections, drop duplicates based on oid, band, mjd, and if empty, add an empty DataFrame
         # with expected columns for LSST
         non_detections_df = combined_data.get('non_detections', pd.DataFrame())

@@ -14,7 +14,7 @@ def load_sample_messages() -> list[dict]:
     # Go up four levels to reach the project root
     project_root = os.path.abspath(os.path.join(script_dir, "../../../.."))
     schema_path = os.path.join(
-        project_root, "schemas", "surveys", "lsst", "v7_4_alert.avsc"
+        project_root, "schemas", "surveys", "lsst_v11.0", "lsst.v11_0.alert.avsc"
     )
     schema = load_schema(schema_path)
 
@@ -25,8 +25,7 @@ def load_sample_messages() -> list[dict]:
         if filename.endswith(".avro"):
             with open(os.path.join(avro_dir, filename), "rb") as f:
                 bytes_io = io.BytesIO(f.read())
-                magic, schema_id = unpack(">bI", bytes_io.read(5))
-                assert schema_id == 704
+                _magic, _schema_id = unpack(">bI", bytes_io.read(5))
 
                 content = schemaless_reader(bytes_io, schema)
                 sample_messages.append(content)

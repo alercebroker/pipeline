@@ -140,15 +140,15 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
         )
 
         """
-        # Omitting non-detections and ssobject for now in schema v10.0
+        # ss_objects and non_detections not yet implemented
         ss_objects_df = self._apply_schema_or_empty(
-            raw_data['ss_objects'], 
+            raw_data['ss_objects'],
             schemas['ss_objects']
         )
 
-        
+
         non_detections_df = self._apply_schema_or_empty(
-            raw_data['non_detections'], 
+            raw_data['non_detections'],
             schemas['non_detections_schema']
         )
         """
@@ -164,7 +164,7 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
                     'SS Sources': len(ss_sources_df),
                     'MPC Orbits': len(mpc_orbits_df)}
                     #'SS Objects': len(ss_objects_df)
-                    #'Non-Detections': len(non_detections_df), # Omitting in schema v10.0
+                    #'Non-Detections': len(non_detections_df), # not yet implemented
 
                 }
 
@@ -181,7 +181,7 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
                 'ss_sources_df': ss_sources_df,
                 'mpc_orbits_df': mpc_orbits_df,
                 #'ss_objects_df': ss_objects_df,
-                #'non_detections_df': non_detections_df, # Omitting in schema v10.0
+                #'non_detections_df': non_detections_df, # not yet implemented
             },
             'oids': list(oids),
             }
@@ -197,8 +197,8 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
         all_dia_objects = []     
         all_ss_sources = []
         all_mpc_orbits = []
-        #all_ss_objects = []       # Ommiting in schema v10.0
-        #all_non_detections = []   # Ommiting in schema v10.0       
+        #all_ss_objects = []       # not yet implemented
+        #all_non_detections = []   # not yet implemented
         msg_data = []              
         
         for msg in messages:  
@@ -239,13 +239,13 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
                 })
                 
             """
-            # Ommiting in schema v10.0
+            # not yet implemented
             # Parse ss objects
             ss_object = msg["ss_object"]
             if ss_object is not None:
                 all_ss_objects.append({**ss_object})
-            
-            
+
+
             # Parse non-detections
             for non_detection in msg["non_detections"]:
                 parsed_non_detection = {**non_detection}
@@ -265,8 +265,8 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
             'ss_sources': all_ss_sources,
             'dia_objects': all_dia_objects,
             'mpc_orbit': all_mpc_orbits
-            #'ss_objects': all_ss_objects,          # Ommiting in schema v10.0  
-            #'non_detections': all_non_detections,  # Ommiting in schema v10.0
+            #'ss_objects': all_ss_objects,          # not yet implemented
+            #'non_detections': all_non_detections,  # not yet implemented
         }
     
     def _apply_schema_or_empty(self, data: List[dict], schema: Dict) -> pd.DataFrame:
@@ -284,8 +284,8 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
             ss_source_schema,                  
             dia_object_schema,
             mpc_orbits_schema,       
-            #ss_object_schema,                 # Omitting in schema v10.0
-            #dia_non_detection_limit_schema,   # Omitting non-detections in schema v10.0
+            #ss_object_schema,                 # not yet implemented
+            #dia_non_detection_limit_schema,   # not yet implemented
       
         )
         
@@ -296,7 +296,7 @@ class LSSTInputMessageParser(InputMessageParsingStrategy):
             'ss_sources_schema': ss_source_schema,
             'dia_objects': dia_object_schema,
             'mpc_orbits_schema': mpc_orbits_schema
-            #'ss_objects_schema': ss_object_schema,             # Omitting in schema v10.0 
-            #'non_detections_schema': dia_non_detection_limit_schema,   # Omitting in schema v10.0
+            #'ss_objects_schema': ss_object_schema,             # not yet implemented
+            #'non_detections_schema': dia_non_detection_limit_schema,   # not yet implemented
             
         }
