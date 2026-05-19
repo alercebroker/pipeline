@@ -82,7 +82,9 @@ def sigmadec_to_e_dec(df: pd.DataFrame):
         - `e_dec`
     """
     df["e_dec"] = df.apply(
-        lambda x: x["sigmadec"] if "sigmadec" in x else ERRORS[x["fid"]],
+        lambda x: x["sigmadec"]
+        if "sigmadec" in x and not pd.isna(x["sigmadec"])
+        else ERRORS[x["fid"]],
         axis=1,
     )
 
