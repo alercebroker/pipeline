@@ -175,13 +175,8 @@ def get_bogus_flags_for_each_detection(detections: List[Dict]):
 
     bogus_flags = []
     for detection in detections:
-        value = []
-        for key in keys:
-            if key in detection.keys():
-                value.append(detection[key])
-            else:
-                value.append(None)
-        bogus_flags.append(value)
+        ef = detection.get("extra_fields", {}) or {}
+        bogus_flags.append([ef[key] if key in ef else None for key in keys])
 
     bogus_flags = pd.DataFrame(bogus_flags, columns=keys)
     bogus_flags["procstatus"] = bogus_flags["procstatus"].astype(str)
@@ -197,13 +192,8 @@ def get_reference_for_each_detection(detections: List[Dict]):
 
     reference = []
     for detection in detections:
-        value = []
-        for key in keys:
-            if key in detection.keys():
-                value.append(detection[key])
-            else:
-                value.append(None)
-        reference.append(value)
+        ef = detection.get("extra_fields", {}) or {}
+        reference.append([ef[key] if key in ef else None for key in keys])
 
     reference = pd.DataFrame(reference, columns=keys)
 
@@ -219,9 +209,10 @@ def get_new_references_from_message(detections: List[Dict]) -> pd.DataFrame:
 
     references = []
     for detection in detections:
-        if not set(keys).issubset(detection):
+        ef = detection.get("extra_fields", {}) or {}
+        if not set(keys).issubset(ef):
             continue
-        reference = [detection["oid"]] + [detection[k] for k in keys]
+        reference = [detection["oid"]] + [ef[k] for k in keys]
         references.append(reference)
 
     references = pd.DataFrame(references, columns=["oid"] + keys)
@@ -246,28 +237,32 @@ def detections_to_astro_object(
         "ra", #si
         "dec", #si
         "mjd", #si
-        "magpsf_corr",
-        "sigmapsf_corr_ext",
+        "mag_corr",  # message carries mag_corr; DETECTION_KEYS_MAP renames -> magpsf_corr
+        "e_mag_corr_ext",  # -> sigmapsf_corr_ext
         "mag", #si
         "e_mag", # si
         "band", #si
         "isdiffpos", #si
+        "forced",  # ZTF message carries forced epochs inline; per-row flag routes them
     ]
 
+    # The ZTF correction message carries forced-photometry epochs inline in
+    # `detections` (per-row `forced` flag), with no separate forced array, so the
+    # `forced` arg must be empty. A non-empty `forced` would misalign the
+    # column-wise concat of the reference/bogus frames (computed over `detections`).
+    forced = forced or []
+    if forced:
+        raise NotImplementedError(
+            "detections_to_astro_object: `forced` must be empty for ZTF; forced "
+            "epochs flow inline via the per-row `forced` flag in `detections`."
+        )
+
     values = []
-    # Process regular detections (forced=False)
     for detection in detections:
         row = [detection.get(key, None) if key != 'sid' else str(detection.get(key, None)) for key in detection_keys]
-        row.append(False)  # forced = False
-        values.append(row)
-    
-    # Process forced photometry (forced=True)
-    for detection in forced:
-        row = [detection.get(key, None) if key != 'sid' else str(detection.get(key, None)) for key in detection_keys]
-        row.append(True)  # forced = True
         values.append(row)
 
-    a = pd.DataFrame(data=values, columns=detection_keys + ['forced'])
+    a = pd.DataFrame(data=values, columns=detection_keys)
     a.fillna(value=np.nan, inplace=True)
 
     # reference_for_each_detection has distnr, rfid from dets
@@ -312,13 +307,14 @@ def detections_to_astro_object(
     distpsnr1 = np.nan
 
     for det in detections:
-        if "sgscore1" in det.keys():
-            sgscore1 = det["sgscore1"]
-            sgmag1 = det["sgmag1"]
-            srmag1 = det["srmag1"]
-            simag1 = det["simag1"]
-            szmag1 = det["szmag1"]
-            distpsnr1 = det["distpsnr1"]
+        ef = det.get("extra_fields", {}) or {}
+        if "sgscore1" in ef:
+            sgscore1 = ef["sgscore1"]
+            sgmag1 = ef["sgmag1"]
+            srmag1 = ef["srmag1"]
+            simag1 = ef["simag1"]
+            szmag1 = ef["szmag1"]
+            distpsnr1 = ef["distpsnr1"]
             continue
 
     # Get maximum mjd from all detections and forced photometry
