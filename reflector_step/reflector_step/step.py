@@ -47,7 +47,7 @@ class CustomMirrormaker(GenericStep):
         self.use_message_topic = use_message_topic
         self.survey = survey
 
-        isRawKafkaConsumer = type(self.consumer) is RawKafkaConsumerBytes
+        isRawKafkaConsumer = isinstance(self.consumer, RawKafkaConsumerBytes)
 
         if self.survey == "lsst" and not isRawKafkaConsumer:
             self.producer.set_key_function(lsst_partition)
@@ -59,7 +59,7 @@ class CustomMirrormaker(GenericStep):
             count += 1
             producer_kwargs = {"flush": count == len(to_produce)}
 
-            isRawKafkaConsumer = type(self.consumer) is RawKafkaConsumerBytes
+            isRawKafkaConsumer = isinstance(self.consumer, RawKafkaConsumerBytes)
 
             if isRawKafkaConsumer:
                 if self.survey == "ztf":
