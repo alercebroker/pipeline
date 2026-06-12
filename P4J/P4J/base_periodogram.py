@@ -56,7 +56,7 @@ class BasePeriodogram(abc.ABC):
             freqs = freqs[::-1]
         else:
             freqs = np.arange(start=np.amax([fmin, fresolution]), stop=fmax,
-                              step=fresolution, dtype=np.float32)
+                              step=fresolution, dtype=np.float64)
         self.per, self.per_single_band = self._compute_periodogram(freqs)
         self.freq = freqs
 
@@ -74,7 +74,7 @@ class BasePeriodogram(abc.ABC):
             smallest_frequency,
             largest_frequency,
             grid_size,
-            dtype=np.float32
+            dtype=np.float64
         )
         self.per, self.per_single_band = self._compute_periodogram(frequency_grid)
         self.freq = frequency_grid
