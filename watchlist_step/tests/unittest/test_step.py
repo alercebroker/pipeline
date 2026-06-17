@@ -66,7 +66,10 @@ def test_should_create_matches(connect_mock: mock.MagicMock, wl_step: WatchlistS
         [("ra1", "dec1", "oid1", "candid1"), ("ra2", "dec2", "oid2", "candid2")]
     )
 
-    execute_mock.assert_called_once()
+    # match_user_targets disables JIT before running the q3c query, so execute
+    # is called twice: the SET, then the parameterized query.
+    assert execute_mock.call_count == 2
+    assert execute_mock.call_args_list[0].args[0] == "SET jit = off"
     assert (
         len(execute_mock.call_args.args[1]) == 8
     ), "execute should be called with a flattened list"
