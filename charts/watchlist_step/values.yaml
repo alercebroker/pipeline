@@ -38,6 +38,10 @@ affinity:
               ## Override this value with the NodeGroup tag accordingly
               values: []
 
+# When true the chart creates the target Namespace. Set false to deploy into a
+# namespace that already exists (so helm doesn't try to adopt/own it).
+createNamespace: true
+
 # When true the chart creates the `image-pull-access` Secret from
 # imageCredentials below. Set false to reuse a pull Secret already in the
 # namespace (imagePullSecrets still references it by name).
