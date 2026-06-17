@@ -1,6 +1,6 @@
 from watchlist_step.strategies.base import BaseStrategy
 
-id_to_char = {"g": 1, "r": 2}
+id_to_char = {"g": 1, "r": 2, "i": 3}
 
 
 class SortingHatStrategy(BaseStrategy):
