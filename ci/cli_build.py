@@ -68,7 +68,7 @@ def direct(
     """
     build_args_names = []
     build_args_values = []
-    for a in build_args:
+    for a in build_args or []:
         name, value = a.split(":")
         build_args_names.append(name)
         build_args_values.append(value)
