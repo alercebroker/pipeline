@@ -46,4 +46,17 @@ COPY metadata_step/README.md \
 WORKDIR /app
 RUN poetry install --only-root
 
+# Optional image-build overlay: override confluent-kafka in the in-project venv.
+# No-op when the build-arg is empty, so default (AWS) builds are unchanged. Needed
+# for the quimal SCRAM-SHA-512 broker: the lock pins confluent-kafka ~2.0.2, whose
+# librdkafka 2.0.2 has a SCRAM bug surfacing as a bogus "invalid credentials"
+# (same blocker as the watchlist-step -cfk2.14.2 overlay). This is an image-layer
+# bump, NOT a poetry re-lock (re-locking conflicts with apf multisurvey; see
+# aws_cost_analysis/docs/metadata-step-revival-plan.md §7).
+ARG CONFLUENT_KAFKA_VERSION=
+RUN if [ -n "$CONFLUENT_KAFKA_VERSION" ]; then \
+      /app/.venv/bin/pip install --no-cache-dir --upgrade "confluent-kafka==$CONFLUENT_KAFKA_VERSION" && \
+      /app/.venv/bin/python -c "import confluent_kafka as k; print('cfk overlay:', k.__version__, 'librdkafka', k.libversion())"; \
+    fi
+
 CMD ["poetry", "run", "python", "scripts/run_step.py"]

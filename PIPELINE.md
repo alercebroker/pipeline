@@ -271,7 +271,7 @@ ML model that classifies alerts based on their stamps. One instance per survey (
 ### Other legacy steps
 
 - **early_classification_step** — Pre-feature classifier. **TODO:** input/output topics not enumerated here; check chart values.
-- **metadata_step** — ZTF-specific. Consumes `sorting-hat-ztf`, parses ZTF `extra_fields` (PS1, Gaia cross-match data), and writes detection metadata to PSQL. No Kafka output.
+- **metadata_step** — ZTF-specific. Consumes `sorting-hat` (production consumes `sorting-hat`; the chart default `values.yaml` still lists `sorting-hat-ztf`), parses ZTF `extra_fields` (PS1, Gaia cross-match data), and writes the crossmatch metadata tables (`reference`, `ss_ztf`, `ps1_ztf`, `dataquality`, `gaia_ztf`) **directly** to PSQL via on-conflict upsert — not through scribe. No Kafka data output (metrics only).
 - **watchlist_step** — Crossmatches alerts against user-defined watchlists; notifies users on hits.
 - **alert_archiving_step** — Archives raw Avro alerts to S3 in daily-partitioned paths (`avro_YYYYMMDD/`, snappy codec). Configured for ZTF and ATLAS buckets.
 - **s3_step** — Uploads Avro files to an AWS S3 bucket (legacy archival).

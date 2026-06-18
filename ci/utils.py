@@ -110,6 +110,7 @@ async def build(
     build_args: list,
     output_package_name,
     dry_run: bool,
+    tag_override: str = None,
 ):
     path = pathlib.Path().cwd().parent.absolute()
     # get build context directory
@@ -136,7 +137,7 @@ async def build(
         dockerfile=f"{package_dir}/Dockerfile",
         build_args=bargs,
     )
-    tags = await get_tags(client, package_dir)
+    tags = [tag_override] if tag_override else await get_tags(client, package_dir)
     print(f"Built image with tag: {tags}")
 
     if not dry_run:
