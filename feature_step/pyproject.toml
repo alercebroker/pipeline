@@ -11,6 +11,7 @@ python = ">=3.10,<3.11"
 numpy = "^1.16"
 pandas = "^2.0.1"
 lc-classifier = { path = "../lc_classifier", develop = true}
+alerce_classifiers = { path = "../alerce_classifiers", develop = true, extras = ["ztf"] }
 apf_base = { path = "../libs/apf", develop = true }
 psycopg2-binary = "^2.9.6"
 SQLAlchemy="2.0.19"
