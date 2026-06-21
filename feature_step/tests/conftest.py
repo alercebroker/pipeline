@@ -7,7 +7,7 @@ without requiring a full pip install of the pipeline dependencies.
 import sys
 from pathlib import Path
 
-_PIPE = Path(__file__).resolve().parents[3]   # .../pipeline
+_PIPE = Path(__file__).resolve().parents[2]   # .../pipeline
 for _p in (
     _PIPE / "lc_classifier",
     _PIPE / "libs" / "idmapper",
