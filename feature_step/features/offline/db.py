@@ -250,3 +250,15 @@ def list_alerce_feature_versions(credentials_json: str, ztf_oid: str) -> list[st
     with engine.connect() as conn:
         df = pd.read_sql_query(query, conn, params={"oid": ztf_oid})
     return df["version"].tolist()
+
+
+def fetch_stored_probabilities(credentials, oids):
+    """Read stored BHRF probabilities, for compare-vs-offline. DEFERRED.
+
+    The stored-probability table (schema/name and the classifier_name/version
+    filter) is not yet pinned down. Wire this up once it is; see the offline
+    classification design doc."""
+    raise NotImplementedError(
+        "pending: stored-probability table TBD "
+        "(see docs/superpowers/specs/2026-06-21-offline-ztf-classification-design.md)"
+    )
