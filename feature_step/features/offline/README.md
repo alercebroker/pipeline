@@ -49,6 +49,7 @@ xmatch field); they're fetched separately from the DB and passed alongside.
 | `message.py` | `build_message(oid, detections, forced, ps1)` → the `correction-ztf` message dict (conforms to the magstats_ms_step ZTF output schema, `ztf_correction.avsc`). Forced epochs are emitted **inline** in `detections` with `forced=True`; per-epoch aux (rb / procstatus / reference / PS1) go in `extra_fields`. |
 | `lc_features.py` | The assembly layer. `compute_features(message, references_db, allwise, min_detections=1, preprocessor=None, extractor=None)` → features DataFrame, or `None` if too few real detections. Helpers: `_prepare_detections` (drop bogus, enforce min, add `aid`/`index_column`), `_xmatches` (AllWISE → the shape the parser reads), `message_to_astro_object`. |
 | `feature_compare.py` | Pure diff utilities. `compare_feature_frames(ours, theirs, rtol, atol)` → `(merged, summary)` classifying each (name, fid) as match / differ / only_ours / only_theirs. `latest_feature_version(versions)` picks the newest modern version string. |
+| `classify.py` | Classification bridge. `load_squidward_model()` builds the BHRF `SquidwardFeaturesClassifier` from env vars (`MODEL_PATH`, `MAPPER_CLASS`); `classify_astro_object(ao, message, model)` names features via the real `parse_output`, builds a **features-only** `InputDTO` (`input_dto_factory`), and runs `can_predict`+`predict`; `classify_oid(...)` is the DB->probabilities convenience path. The Squidward model reads only `features`, so detections are passed empty (no `lc_classification` dependency). |
 
 ## Scripts (`feature_step/scripts/`)
 
@@ -57,6 +58,8 @@ xmatch field); they're fetched separately from the DB and passed alongside.
 | `offline_compute_features.py --oid <bigint> [--credentials PATH]` | DB → message → features for one oid; prints a populated long frame. |
 | `offline_benchmark_features.py [--n N] [--warmup K] [--min-det M] [--credentials PATH]` | Times `compute_features` over N real oids (extractor built once, warm-up excluded). |
 | `offline_compare_vs_alerce.py --oid <bigint|ZTFstr> [--version V] [--rtol] [--atol]` | Runs our pipeline on a multisurvey oid, maps it to its ZTF string oid via `idmapper`, fetches `alerce.feature` for that object, and diffs. |
+| `offline_classify.py --oid <bigint> [--credentials PATH] [--min-det M]` | DB -> message -> features -> BHRF probabilities for one oid. Requires `MODEL_PATH` env (the S3 BHRF url). |
+| `offline_compare_probabilities.py` | **Deferred** — predicted vs. stored probabilities. Pending the stored-probability table. |
 
 ## Running
 
@@ -71,6 +74,23 @@ poetry run python scripts/offline_compute_features.py --oid 36028941624528297 --
 ```
 
 `--credentials` is a JSON with the DB connection (same shape the other steps use).
+
+## Classification (BHRF)
+
+`classify.py` runs the deployed **BHRF** model (`SquidwardFeaturesClassifier`,
+`lc_classifier_BHRF_forced_phot`, v2.1.0) on offline-computed features. Model
+config comes from the same env vars the step uses (`MODEL_PATH`, `MAPPER_CLASS`).
+
+```bash
+cd feature_step
+MODEL_PATH=https://alerce-models.s3.amazonaws.com/squidward/2.1.0/hierarchical_random_forest_model.pkl \
+    poetry run python scripts/offline_classify.py --oid 36028941624528297 --credentials /path/to/credentials.json
+```
+
+The model is **features-only**: it reads only `InputDTO.features`, so the bridge
+builds the DTO with empty detections via the real `alerce_classifiers` factory and
+does not depend on `lc_classification` (whose local schema is candid-based and
+incompatible with v11 messages).
 
 ## Fixes this relies on
 
