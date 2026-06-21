@@ -56,13 +56,13 @@ def message_to_astro_object(message: dict, references_db, allwise, min_detection
     return detections_to_astro_object(dets, [], _xmatches(allwise), references_db)
 
 
-def compute_features(message: dict, references_db, allwise, min_detections: int = 1,
-                     preprocessor=None, extractor=None):
-    """Per-oid path: message -> AstroObject -> preprocess -> extract -> features.
+def compute_astro_object(message: dict, references_db, allwise, min_detections: int = 1,
+                         preprocessor=None, extractor=None):
+    """Per-oid path: message -> AstroObject -> preprocess -> extract -> AstroObject.
 
     `preprocessor`/`extractor` are injectable for tests; defaults are the production
-    stack, constructed lazily (the extractor is heavy). Returns the long features
-    frame, or None if the message has too few real detections."""
+    stack, constructed lazily (the extractor is heavy). Returns the post-extract
+    AstroObject, or None if the message has too few real detections."""
     if preprocessor is None:
         preprocessor = ZTFLightcurvePreprocessor(drop_bogus=True)
     if extractor is None:
@@ -73,4 +73,17 @@ def compute_features(message: dict, references_db, allwise, min_detections: int 
         return None
     preprocessor.preprocess_single_object(ao)
     extractor.compute_features_single_object(ao)
+    return ao
+
+
+def compute_features(message: dict, references_db, allwise, min_detections: int = 1,
+                     preprocessor=None, extractor=None):
+    """Per-oid path: message -> AstroObject -> preprocess -> extract -> features.
+
+    Returns the long features frame, or None if the message has too few real
+    detections."""
+    ao = compute_astro_object(message, references_db, allwise, min_detections,
+                              preprocessor=preprocessor, extractor=extractor)
+    if ao is None:
+        return None
     return ao.features
