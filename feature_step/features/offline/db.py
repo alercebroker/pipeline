@@ -252,7 +252,7 @@ def list_alerce_feature_versions(credentials_json: str, ztf_oid: str) -> list[st
     return df["version"].tolist()
 
 
-def fetch_stored_probabilities(credentials, oids):
+def fetch_stored_probabilities(credentials_json: str, oids: list) -> pd.DataFrame:
     """Read stored BHRF probabilities, for compare-vs-offline. DEFERRED.
 
     The stored-probability table (schema/name and the classifier_name/version
