@@ -19,7 +19,7 @@ import argparse
 from features.offline import db, lc_features
 from features.offline.message import build_message
 
-DEFAULT_CREDENTIALS = "/home/fandrades/desktop/repos/training/features_ztf/data/credentials.json"
+DEFAULT_CREDENTIALS = str(PIPE / "feature_step" / "features" / "offline" / "credentials.json")
 
 
 def main():
@@ -30,6 +30,10 @@ def main():
                     help="Multisurvey bigint oid (e.g. 36028941624528297).")
     ap.add_argument("--credentials", default=DEFAULT_CREDENTIALS,
                     help="Path to DB credentials JSON (override for non-default envs).")
+    ap.add_argument("--feature-version", default=None, dest="feature_version",
+                    help="Feature-step version string (e.g. 27.5.7a31). "
+                         "Defaults to importlib.metadata version('feature-step'); "
+                         "supply this if the package is not installed in the active env.")
     args = ap.parse_args()
 
     oid = args.oid
@@ -48,14 +52,14 @@ def main():
     message = build_message(oid, dets, forced, ps1)
     print(f"message: {len(message['detections'])} detections")
 
-    features = lc_features.compute_features(message, refs, allwise)
-    if features is None or len(features) == 0 or features["value"].notna().sum() == 0:
-        print("\nFAIL: empty / all-NaN features frame")
+    features = lc_features.compute_db_features(message, refs, allwise,
+                                               version_name=args.feature_version)
+    if features is None or len(features) == 0:
+        print("\nFAIL: empty DB-ready features frame")
         sys.exit(1)
-    print(f"\nfeatures: {features.shape}; "
-          f"non-null values: {features['value'].notna().sum()}/{len(features)}")
+    print(f"\nDB-ready features: {features.shape}; columns={list(features.columns)}")
     print(features.head(20).to_string())
-    print("\nOK: populated features frame produced.")
+    print("\nOK: DB-ready feature rows produced.")
 
 
 if __name__ == "__main__":
