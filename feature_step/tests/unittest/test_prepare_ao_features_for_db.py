@@ -3,6 +3,7 @@
 Uses a lightweight stand-in object (prepare only reads `.features`), so no
 real AstroObject/DB is needed.
 """
+import logging
 import types
 
 import numpy as np
@@ -41,7 +42,10 @@ def test_maps_ids_from_lut_drops_nan_and_bands():
     assert set(out.columns) == {"name", "value", "band", "feature_id"}
 
 
-def test_unmapped_name_yields_nan_id():
+def test_unmapped_name_yields_nan_id(caplog):
     df = pd.DataFrame({"name": ["Unknown"], "fid": ["g"], "value": [1.0]})
-    out = prepare_ao_features_for_db(_ao(df), {0: "Amplitude"})
+    with caplog.at_level(logging.WARNING, logger="alerce.FeatureStep"):
+        out = prepare_ao_features_for_db(_ao(df), {0: "Amplitude"})
     assert out["feature_id"].isna().all()
+    # the warning is the only runtime signal that id-mapping silently failed
+    assert any("Unknown" in r.message for r in caplog.records)
