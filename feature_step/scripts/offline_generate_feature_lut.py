@@ -18,6 +18,7 @@ for p in (PIPE / "feature_step", PIPE / "lc_classifier", PIPE / "libs" / "idmapp
     sys.path.insert(0, str(p))
 
 import argparse
+from importlib.metadata import version as _pkg_version
 
 from features.offline import db, lc_features
 from features.offline.message import build_message
@@ -32,7 +33,7 @@ DEFAULT_CREDENTIALS = str(PIPE / "feature_step" / "features" / "offline" / "cred
 
 
 def collect(credentials, oids):
-    names, versions = set(), set()
+    names = set()
     for oid in oids:
         dets = db.fetch_detections(credentials, [oid])
         forced = db.fetch_forced_photometry(credentials, [oid])
@@ -46,8 +47,7 @@ def collect(credentials, oids):
             continue
         feats = ao.features  # NOT NaN-filtered
         names.update(feats["name"].replace(_NAME_FIXES))
-        versions.update(feats["version"].dropna().unique())
-    return sorted(names), sorted(versions)
+    return sorted(names)
 
 
 def main():
@@ -57,7 +57,8 @@ def main():
     ap.add_argument("--credentials", default=DEFAULT_CREDENTIALS)
     args = ap.parse_args()
 
-    names, versions = collect(args.credentials, args.oid)
+    names = collect(args.credentials, args.oid)
+    versions = [_pkg_version("feature-step")]
     print(f"# {len(names)} feature names; versions={versions}")
     print("FEATURE_NAME_LUT = {")
     for i, n in enumerate(names):
