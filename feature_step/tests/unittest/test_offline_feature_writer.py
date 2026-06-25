@@ -84,3 +84,12 @@ def test_nan_feature_id_rows_dropped(monkeypatch, caplog):
         result = feature_writer.write_features(df, "ignored", execute=False)
     assert result == {"executed": False, "would_write": 1}
     assert any("feature_id" in r.message for r in caplog.records)
+
+
+def test_version_minus_one_warns(caplog):
+    import logging
+    df = _df([(36028941624528297, 0, 0, 1, -1, 0.5)])
+    with caplog.at_level(logging.WARNING, logger="features.offline.feature_writer"):
+        result = feature_writer.write_features(df, "ignored", execute=False)
+    assert result == {"executed": False, "would_write": 1}
+    assert any("version=-1" in r.getMessage() for r in caplog.records)

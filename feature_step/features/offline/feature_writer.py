@@ -5,6 +5,7 @@ produced by lc_features.compute_db_features and upserts it one row at a time
 via ON CONFLICT (oid, sid, feature_id, band) DO UPDATE.
 """
 import logging
+from typing import Optional
 
 import pandas as pd
 from sqlalchemy import text
@@ -46,7 +47,7 @@ def _records(rows: pd.DataFrame) -> list:
     return records
 
 
-def write_features(rows: pd.DataFrame, credentials: str, schema: str = None,
+def write_features(rows: pd.DataFrame, credentials: str, schema: Optional[str] = None,
                    execute: bool = False) -> dict:
     """Upsert DB-ready feature rows into <schema>.feature.
 
@@ -61,6 +62,8 @@ def write_features(rows: pd.DataFrame, credentials: str, schema: str = None,
     if not execute:
         return {"executed": False, "would_write": n}
 
+    # schema is a trusted operator-supplied identifier (db.SCHEMA env / CLI), not
+    # user input — same f-string convention as db.py's read queries.
     sql = text(
         f"INSERT INTO {schema}.feature (oid, sid, feature_id, band, version, value) "
         "VALUES (:oid, :sid, :feature_id, :band, :version, :value) "
