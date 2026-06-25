@@ -86,6 +86,16 @@ def test_nan_feature_id_rows_dropped(monkeypatch, caplog):
     assert any("feature_id" in r.message for r in caplog.records)
 
 
+def test_default_schema_is_db_schema(monkeypatch):
+    """No schema arg -> writes target db.SCHEMA (the offline default), not a literal."""
+    fake = _FakeEngine()
+    monkeypatch.setattr(feature_writer.db, "_make_engine", lambda _c: fake)
+    df = _df([(36028941624528297, 0, 0, 1, 0, 0.5)])
+    feature_writer.write_features(df, "creds", execute=True)  # no schema=
+    sql_str = str(fake.conn.calls[0][0])
+    assert f"{feature_writer.db.SCHEMA}.feature" in sql_str
+
+
 def test_version_minus_one_warns(caplog):
     import logging
     df = _df([(36028941624528297, 0, 0, 1, -1, 0.5)])
