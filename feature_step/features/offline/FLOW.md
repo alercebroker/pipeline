@@ -218,20 +218,23 @@ must be edited — in the schema-authority library, not by the offline tooling:
   are *absent* from this checkout's seed file (which stops at id 2 / taxonomy
   classifier_id 3). The live DB is ahead of this checkout. **Rebase on the latest
   db-plugins and reconcile before editing**, or you'll renumber over real ids.
+- **Back-port pending:** the ZTF **feature** LUT rows below were seeded
+  **directly** into the live DB via `ztf_feature_luts_seed.sql`, *not* through
+  `_initial_data_pipeline.py`. They must be back-ported into `INITIAL_DATA` so
+  fresh deploys / other environments match — until then the live DB is ahead of
+  the authority file for ZTF features as well.
 
-| LUT | PK (`index_elements`) | Current state | What to add (manual) |
+| LUT | PK (`index_elements`) | Current state | What's left |
 |---|---|---|---|
-| `feature_name_lut` | `(feature_id, sid)` | 146 rows, **all `sid = 1` (LSST)**; zero ZTF | ZTF rows with `sid = 0, tid = 0`. `feature_id` is namespaced by `sid`, so it can restart at 0. `feature_name` is the **band-less** name (band lives in `feature.band`). |
-| `classifier` | `(classifier_id)` | ids 1–4, all **stamp** | The BHRF LC classifier: `classifier_id` = next free (live max is 4 → **5**), `classifier_name = lc_classifier_BHRF_forced_phot` (deployment tag, see §6), `classifier_version = "2.1.0"`, `tid = 0`. |
-| `taxonomy` | `(class_id, classifier_id)` | flat stamp taxonomy only | The BHRF class rows for the new `classifier_id`: `(class_id, class_name, order)`. The table has **no hierarchy column** — BHRF's hierarchical taxonomy must be flattened; decide how top vs. leaf classes are represented. |
+| `feature_name_lut` | `(feature_id, sid)` | **123 ZTF rows seeded** (`sid = 0, tid = 0`, `feature_id` 0–122) alongside the prior 146 LSST `sid = 1` rows | **Done** — seeded via `ztf_feature_luts_seed.sql`. Band-less names (`feature_id` namespaced by `sid`, restarts at 0; band lives in `feature.band`). Back-port to authority file pending. |
+| `feature_version_lut` | `(version_id, sid)` | **1 ZTF row seeded** (`version_id = 0`, `version_name = 27.5.7a31`, `sid = 0, tid = 0`) | **Done** — same seed file. `version_id = 0` matches the fixture; production's `get_or_create` starts at 1 — adopting that means changing **both** the SQL and `FEATURE_VERSION_LUT`. |
+| `classifier` | `(classifier_id)` | ids 1–4, all **stamp** | **Pending** — the BHRF LC classifier: `classifier_id` = next free (live max is 4 → **5**), `classifier_name = lc_classifier_BHRF_forced_phot` (deployment tag, see §6), `classifier_version = "2.1.0"`, `tid = 0`. |
+| `taxonomy` | `(class_id, classifier_id)` | flat stamp taxonomy only | **Pending** — the BHRF class rows for the new `classifier_id`: `(class_id, class_name, order)`. The table has **no hierarchy column** — BHRF's hierarchical taxonomy must be flattened; decide how top vs. leaf classes are represented. |
 
-Also note: **`feature_version_lut` is empty (0 rows).** `feature.version` is a
-smallint FK into it, so a ZTF feature-version row is needed before any ZTF
-`feature` rows can be written.
-
-> The exact **ZTF feature-name list** is not enumerated here: derive it from the
-> distinct `name` values of a real `compute_features(...)` run (§5) — the LSST
-> `feature_name_lut` set is *not* reusable as-is.
+> The **ZTF feature-name list** is captured in `offline/feature_lut.py` (the
+> 123-name fixture) and in `ztf_feature_luts_seed.sql` — both generated from a real
+> `compute_features(...)` run (§5). The LSST `feature_name_lut` set is *not*
+> reusable as-is.
 
 ---
 
@@ -348,6 +351,10 @@ flowchart TD
 - DB → features → BHRF probabilities end-to-end (`offline_classify.py`, needs `MODEL_PATH`).
 - Feature diff tooling vs `alerce.feature` (`offline_compare_vs_alerce.py`).
 - Benchmark harness over a sample of oids (`offline_benchmark_features.py`).
+- **ZTF feature LUTs seeded** (`feature_name_lut` 123 rows + `feature_version_lut`
+  1 row) via `ztf_feature_luts_seed.sql`, and **feature persistence** into
+  `multisurvey_ztf.feature` (`feature_writer` / `offline_compute_features.py --save`).
+  ⚠ seeded directly, not yet back-ported to the db-plugins authority file (§3d).
 
 **Pending / deferred:**
 - **Value-level equality vs `alerce.feature`** — the truncated-LC blocker is now
@@ -359,10 +366,36 @@ flowchart TD
   BHRF lightcurve classifier (§3c). There are **no stored LC probabilities** to
   diff against, so `fetch_stored_probabilities` / `offline_compare_probabilities.py`
   stay stubs by design rather than "pending a table name."
-- **Populate the ZTF LUTs** — `feature_name_lut` (ZTF feature names),
-  `classifier` (the BHRF LC classifier), and `taxonomy` (its classes) have **no
-  ZTF/BHRF rows yet**. Filled manually in db-plugins `_initial_data_pipeline.py`
-  (§3d). Prerequisite for persisting ZTF features / BHRF probabilities.
+- **Seed the BHRF `classifier` + `taxonomy` LUTs** — still **no ZTF/BHRF rows**.
+  (The ZTF `feature_name_lut` / `feature_version_lut` are now seeded — see Done.)
+  Prerequisite for persisting BHRF probabilities (§3d). Add to db-plugins
+  `_initial_data_pipeline.py`.
+- **Back-port the ZTF feature LUTs to the authority file** — they were seeded
+  directly via `ztf_feature_luts_seed.sql`, so `_initial_data_pipeline.py` does not
+  yet carry the ZTF `feature_name_lut` / `feature_version_lut` rows (§3d).
+- **Persist BHRF probabilities to `multisurvey_ztf.probability`** — *not built.*
+  The classify path stops at the printed `OutputDTO` (§6); there is no probability
+  writer analogous to `feature_writer` (§5). This is distinct from the (negative)
+  *compare* result above — that's about diffing against stored rows; this is about
+  **writing our own predictions in**. It's also a bigger lift than the feature
+  writer, because of an asymmetry: the feature parser already emits DB-ready rows,
+  but the lc_classification step's `ScribeParser`
+  (`lc_classification_step/.../parsers/scribe_parser.py`) only emits **name-keyed**
+  scribe commands (`classifier_name`/`classifier_version` as *strings*, class
+  columns by name), whereas `probability` needs **smallint** `classifier_id` /
+  `classifier_version` / `class_id` plus `ranking` and `lastmjd`. That name→id
+  mapping, ranking, and smallint-version conversion happen in a **downstream scribe
+  consumer**, not in the step we wrap. Replicating production's exact save rules
+  therefore needs, in order:
+  1. **locate that consumer** — the first real unknown; replicate its rules, don't
+     invent them;
+  2. seed the `classifier` + `taxonomy` ZTF/BHRF LUTs (§3d) and a
+     `classifier_version` smallint convention (cf. the `feature_version_lut`
+     decision);
+  3. compute `ranking` (per-classifier argmax → rank) and `lastmjd` (from the LC);
+  4. add a `probability_writer.py` mirroring `feature_writer` —
+     `ON CONFLICT (oid, sid, classifier_id, class_id) DO UPDATE`, dry-run by default,
+     `--execute` to write — and wire `offline_classify.py --save`.
 
 ---
 
@@ -378,4 +411,5 @@ flowchart TD
 | `feature_lut.py` | Local ZTF feature_name/version LUT fixture + loaders (`load_feature_name_lut`, `version_name_to_id`, `default_version_name`). |
 | `feature_writer.py` | Upsert DB-ready feature rows into `<schema>.feature` (`write_features`). §5 |
 | `scripts/offline_generate_feature_lut.py` | One-off generator that prints the fixture from a real run. |
+| `ztf_feature_luts_seed.sql` | Idempotent SQL seeding the ZTF `feature_name_lut` + `feature_version_lut` (`sid = 0`). §3d |
 | `scripts/offline_*.py` | CLI entry points (in `feature_step/scripts/`). §2 |
