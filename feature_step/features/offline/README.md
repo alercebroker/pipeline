@@ -2,8 +2,8 @@
 
 Batch / standalone reproduction of the ZTF **feature_step**, computed directly
 from the database instead of from a Kafka stream. It builds the same
-`correction-ztf` message the magstats step emits, then runs the **real**
-feature_step parser + `lc_classifier` extractor on it.
+**magstats_ms_step ZTF output message** the magstats step emits, then runs the
+**real** feature_step parser + `lc_classifier` extractor on it.
 
 Use it to (re)compute ZTF light-curve features for arbitrary objects offline —
 e.g. to generate a feature dataset, backfill, or validate against stored
@@ -25,7 +25,7 @@ consume message → discard_bogus_detections → detections_to_astro_object
 This package keeps the **pure computation** and drops the streaming plumbing:
 
 ```
-multisurvey DB ──db.fetch_*──▶ build_message  (correction-ztf message)
+multisurvey_ztf DB ──db.fetch_*──▶ build_message  (magstats_ms_step ZTF output message)
                                      │
    fetch_references ─┐               ▼
    fetch_allwise ────┴──▶ compute_features
@@ -45,9 +45,10 @@ xmatch field); they're fetched separately from the DB and passed alongside.
 
 | File | What it does |
 |------|--------------|
-| `db.py` | DB readers (SQLAlchemy). `fetch_detections`, `fetch_forced_photometry`, `fetch_ps1`, `fetch_allwise`, `fetch_references`; plus `fetch_alerce_features` / `list_alerce_feature_versions` for the legacy `alerce.feature` reference. Constants: `SCHEMA="multisurvey"`, `SID=0` (ZTF), `ALLWISE_CATID=0`, `ALERCE_SCHEMA="alerce"`. |
-| `message.py` | `build_message(oid, detections, forced, ps1)` → the `correction-ztf` message dict (conforms to the magstats_ms_step ZTF output schema, `ztf_correction.avsc`). Forced epochs are emitted **inline** in `detections` with `forced=True`; per-epoch aux (rb / procstatus / reference / PS1) go in `extra_fields`. |
-| `lc_features.py` | The assembly layer. `compute_features(message, references_db, allwise, min_detections=1, preprocessor=None, extractor=None)` → features DataFrame, or `None` if too few real detections. Helpers: `_prepare_detections` (drop bogus, enforce min, add `aid`/`index_column`), `_xmatches` (AllWISE → the shape the parser reads), `message_to_astro_object`. |
+| `db.py` | DB readers (SQLAlchemy). `fetch_detections`, `fetch_forced_photometry`, `fetch_ps1`, `fetch_allwise`, `fetch_references`; plus `fetch_alerce_features` / `list_alerce_feature_versions` for the legacy `alerce.feature` reference. Constants: `SCHEMA="multisurvey_ztf"` (env-overridable via `OFFLINE_DB_SCHEMA`), `SID=0` (ZTF), `ALLWISE_CATID=0`, `ALERCE_SCHEMA="alerce"`. |
+| `message.py` | `build_message(oid, detections, forced, ps1)` → the magstats_ms_step ZTF output message dict (schema `schemas/magstats_ms_step/ztf/output.avsc`, the `magstats_ms_ztf` record). Forced epochs are emitted **inline** in `detections` with `forced=True`; per-epoch aux (rb / procstatus / reference / PS1) go in `extra_fields`. |
+| `lc_features.py` | The assembly layer. `compute_features(message, references_db, allwise, min_detections=1, preprocessor=None, extractor=None)` → features DataFrame, or `None` if too few real detections. Helpers: `_prepare_detections` (drop bogus, enforce min, add `aid`/`index_column`), `_xmatches` (AllWISE → the shape the parser reads), `message_to_astro_object`. Also `compute_db_features(...)` → DB-ready rows `[oid, sid, feature_id, band, version, value]` (drop NaN + `fid→band` + `name→feature_id` via the fixture LUT), following the production save rules. |
+| `feature_lut.py` | Local ZTF `feature_name_lut`/`feature_version_lut` fixture (the DB ones are empty) + loaders: `load_feature_name_lut`, `version_name_to_id`, `default_version_name`. |
 | `feature_compare.py` | Pure diff utilities. `compare_feature_frames(ours, theirs, rtol, atol)` → `(merged, summary)` classifying each (name, fid) as match / differ / only_ours / only_theirs. `latest_feature_version(versions)` picks the newest modern version string. |
 | `classify.py` | Classification bridge. `load_squidward_model()` builds the BHRF `SquidwardFeaturesClassifier` from env vars (`MODEL_PATH`, `MAPPER_CLASS`); `classify_astro_object(ao, message, model)` names features via the real `parse_output`, builds a **features-only** `InputDTO` (`input_dto_factory`), and runs `can_predict`+`predict`; `classify_oid(...)` is the DB->probabilities convenience path. The Squidward model reads only `features`, so detections are passed empty (no `lc_classification` dependency). |
 
@@ -95,7 +96,7 @@ incompatible with v11 messages).
 ## Fixes this relies on
 
 The ZTF feature path in `features.utils.parsers` and `lc_classifier` had to be made
-consistent with the `correction-ztf` message contract (these are committed on the
+consistent with the magstats_ms_step ZTF output message contract (these are committed on the
 same branch as this package):
 
 - **`features/utils/parsers.py`** — `detections_to_astro_object` reads `mag_corr` /
@@ -115,10 +116,9 @@ holds **no** ZTF rows (LSST only). The multisurvey↔alerce oid relation is the
 deterministic `idmapper` encoding (ZTF string ↔ bigint), so `offline_compare_vs_alerce.py`
 maps between them automatically.
 
-**Status:** the pipeline produces correct, populated features on real objects.
-A true value-level equality check against `alerce.feature` is pending a
-multisurvey backfill — the multisurvey DB is currently a recent ~3-month slice,
-so its light curves are far shorter than the legacy full-history ones, and a
-comparison today reflects the input-LC difference rather than the computation.
-Pass `--version` matching the deployed `lc_classifier` for an apples-to-apples
-comparison once the data is backfilled.
+**Status:** the pipeline produces correct, populated features on real objects,
+now reading the full **`multisurvey_ztf`** dataset (the earlier ~3-month
+`multisurvey` slice is no longer used). The truncated-light-curve blocker on a
+value-level equality check vs `alerce.feature` is therefore lifted; pass
+`--version` matching the deployed `lc_classifier` for an apples-to-apples
+comparison (not yet confirmed on the new data).

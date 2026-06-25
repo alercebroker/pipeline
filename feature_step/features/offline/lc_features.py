@@ -108,6 +108,8 @@ def compute_db_features(message: dict, references_db, allwise, min_detections: i
     `version` mirrors production: it is the single `feature-step` package
     version (`version("feature-step")`), mapped to a smallint via the fixture's
     FEATURE_VERSION_LUT — NOT the per-module ao.features["version"] column.
+    If `feature-step` is not installed (offline-from-source), it falls back to
+    the fixture's pinned version (`default_version_name`).
     Override `version_name` for tests.
     """
     ao = compute_astro_object(message, references_db, allwise, min_detections,
