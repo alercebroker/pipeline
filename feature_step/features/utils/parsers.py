@@ -401,11 +401,11 @@ def fid_mapper_for_db_lsst(band: str) -> int:
     return band_to_fid.get(band, 0)
 
 
-def prepare_ao_features_for_db(astro_object: AstroObject) -> pd.DataFrame: #esto tengo que verlo
+def prepare_ao_features_for_db(astro_object: AstroObject, feature_name_lut) -> pd.DataFrame:
     ao_features = astro_object.features[["name", "fid", "value"]].copy()
     ao_features = ao_features[ao_features["value"].notna()]
 
-    ao_features["band"] = ao_features["fid"].apply(fid_mapper_for_db) #esto deberia cambiarlo a band
+    ao_features["band"] = ao_features["fid"].apply(fid_mapper_for_db)
     ao_features.replace({np.nan: None, np.inf: None, -np.inf: None}, inplace=True)
 
     # backward compatibility
@@ -417,14 +417,10 @@ def prepare_ao_features_for_db(astro_object: AstroObject) -> pd.DataFrame: #esto
         }
     )
 
-    #deberia usar el feature_name_lut para mapear los nombres a ids,
-    unique_feature_names = ao_features["name"].unique()
-    name_to_id = {name: idx for idx, name in enumerate(unique_feature_names)}
-    #print(name_to_id)
-    
-    # Map feature names to their IDs using the lookup table
+    # Map feature names to ids using the feature_name_lut ({feature_id: feature_name}).
+    name_to_id = {name: feature_id for feature_id, name in feature_name_lut.items()}
     ao_features["feature_id"] = ao_features["name"].map(name_to_id)
-    
+
     # Log warning for unmapped features
     unmapped_features = ao_features[ao_features["feature_id"].isna()]["name"].unique()
     if len(unmapped_features) > 0:
@@ -433,7 +429,7 @@ def prepare_ao_features_for_db(astro_object: AstroObject) -> pd.DataFrame: #esto
         )
 
     # Drop original columns, keep only the mapped data
-    ao_features.drop(columns=["fid"], inplace=True) 
+    ao_features.drop(columns=["fid"], inplace=True)
     return ao_features
 
 
@@ -497,7 +493,7 @@ def parse_scribe_payload(
 
     for astro_object in astro_objects:
         # for upserting features
-        ao_features = prepare_ao_features_for_db(astro_object)
+        ao_features = prepare_ao_features_for_db(astro_object, feature_name_lut)
         oid = query_ao_table(astro_object.metadata, "oid")
         last_mjd = query_ao_table(astro_object.metadata, "last_mjd")
 
