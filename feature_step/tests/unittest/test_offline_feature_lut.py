@@ -6,6 +6,7 @@ the tests don't hard-code the feature-name list.
 from features.offline.feature_lut import (
     FEATURE_NAME_LUT,
     FEATURE_VERSION_LUT,
+    default_version_name,
     load_feature_name_lut,
     version_name_to_id,
 )
@@ -38,3 +39,13 @@ def test_version_round_trips():
 
 def test_unknown_version_warns_and_returns_negative_one():
     assert version_name_to_id("__definitely_not_a_version__") == -1
+
+
+def test_default_version_name_is_latest_entry():
+    # default is the version_name of the highest version_id in the LUT
+    expected = FEATURE_VERSION_LUT[max(FEATURE_VERSION_LUT)]
+    assert default_version_name() == expected
+
+
+def test_default_version_name_round_trips_to_an_id():
+    assert version_name_to_id(default_version_name()) == max(FEATURE_VERSION_LUT)

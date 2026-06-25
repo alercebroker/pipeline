@@ -4,10 +4,10 @@ Implements the pure message->features logic of the production feature_step
 (`feature_step/features/step.py`) without its Kafka/scribe plumbing. Uses
 the real pipeline parser and lc_classifier modules directly (no vendoring).
 """
-from importlib.metadata import version as _pkg_version
+from importlib.metadata import version as _pkg_version, PackageNotFoundError
 
 from features.utils.parsers import detections_to_astro_object, prepare_ao_features_for_db
-from features.offline.feature_lut import load_feature_name_lut, version_name_to_id
+from features.offline.feature_lut import load_feature_name_lut, version_name_to_id, default_version_name
 from lc_classifier.features.core.base import discard_bogus_detections
 from lc_classifier.features.composites.ztf import ZTFFeatureExtractor
 from lc_classifier.features.preprocess.ztf import ZTFLightcurvePreprocessor
@@ -119,7 +119,12 @@ def compute_db_features(message: dict, references_db, allwise, min_detections: i
     rows = prepare_ao_features_for_db(ao, lut)  # [name, value, band, feature_id]
 
     if version_name is None:
-        version_name = _pkg_version("feature-step")
+        try:
+            version_name = _pkg_version("feature-step")
+        except PackageNotFoundError:
+            # Offline runs from source (package not installed) -> use the pinned
+            # fixture version instead of crashing.
+            version_name = default_version_name()
 
     rows = rows.copy()
     rows["oid"] = int(message["oid"])

@@ -157,3 +157,12 @@ def version_name_to_id(version_name) -> int:
         log.warning("Unknown feature version %r; not in FEATURE_VERSION_LUT", version_name)
         return -1
     return rev[version_name]
+
+
+def default_version_name() -> str:
+    """Canonical offline feature version: the latest entry in FEATURE_VERSION_LUT.
+
+    Used as the fallback when `feature-step` is not pip-installed (offline runs
+    from source), so version stamping never depends on importlib metadata.
+    """
+    return FEATURE_VERSION_LUT[max(FEATURE_VERSION_LUT)]
