@@ -16,7 +16,7 @@ for p in (PIPE / "feature_step", PIPE / "lc_classifier", PIPE / "libs" / "idmapp
 
 import argparse
 
-from features.offline import db, lc_features
+from features.offline import db, lc_features, feature_writer
 from features.offline.message import build_message
 
 DEFAULT_CREDENTIALS = str(PIPE / "feature_step" / "features" / "offline" / "credentials.json")
@@ -34,7 +34,20 @@ def main():
                     help="Feature-step version string (e.g. 27.5.7a31). "
                          "Defaults to importlib.metadata version('feature-step'); "
                          "supply this if the package is not installed in the active env.")
+    ap.add_argument("--save", action="store_true",
+                    help="Persist the DB-ready features into <schema>.feature.")
+    ap.add_argument("--execute", action="store_true",
+                    help="With --save, actually write (otherwise dry-run). "
+                         "Requires --write-credentials.")
+    ap.add_argument("--write-credentials", default=None, dest="write_credentials",
+                    help="Credentials JSON with INSERT privileges; required when --execute "
+                         "(the default credentials are read-only).")
     args = ap.parse_args()
+
+    if args.execute and not args.save:
+        ap.error("--execute only applies together with --save")
+    if args.save and args.execute and not args.write_credentials:
+        ap.error("--execute requires --write-credentials (the default credentials are read-only)")
 
     oid = args.oid
     credentials = args.credentials
@@ -60,6 +73,15 @@ def main():
     print(f"\nDB-ready features: {features.shape}; columns={list(features.columns)}")
     print(features.head(20).to_string())
     print("\nOK: DB-ready feature rows produced.")
+
+    if args.save:
+        write_creds = args.write_credentials or credentials
+        result = feature_writer.write_features(features, write_creds, execute=args.execute)
+        if result["executed"]:
+            print(f"\nSAVED: {result['written']} rows upserted into feature.")
+        else:
+            print(f"\nDRY RUN: would write {result['would_write']} rows "
+                  f"(pass --execute with --write-credentials to write).")
 
 
 if __name__ == "__main__":
