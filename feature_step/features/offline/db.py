@@ -1,4 +1,4 @@
-"""SQL readers against the multisurvey.* schema for ZTF (sid = 0).
+"""SQL readers against the multisurvey_ztf.* schema for ZTF (sid = 0).
 
 All readers take a credentials path + oid list and return DataFrames whose
 columns already carry the production parser field names — the DB→parser
@@ -7,17 +7,20 @@ docs/superpowers/specs/2026-06-04-features-ztf-design.md).
 """
 import json
 import logging
+import os
 
 import numpy as np
 import pandas as pd
 import sqlalchemy as sa
 from sqlalchemy import text
 
-SCHEMA = "multisurvey"
+# multisurvey_ztf is the real/backfilled ZTF dataset; plain `multisurvey` was a
+# short ~3-month slice. Override via OFFLINE_DB_SCHEMA if needed.
+SCHEMA = os.getenv("OFFLINE_DB_SCHEMA", "multisurvey_ztf")
 ALERCE_SCHEMA = "alerce"
-SID = 0  # ZTF, per multisurvey.sid_lut
+SID = 0  # ZTF, per multisurvey_ztf.sid_lut (verified 2026-06-23)
 ZTF_BAND_MAP = {1: "g", 2: "r", 3: "i"}
-# From multisurvey.catalog_id_lut (recon 2026-06-05): catid of the AllWISE catalog.
+# From multisurvey_ztf.catalog_id_lut (verified 2026-06-23): catid of AllWISE.
 ALLWISE_CATID = 0
 
 log = logging.getLogger(__name__)
