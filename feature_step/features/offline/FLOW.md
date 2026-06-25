@@ -293,6 +293,13 @@ flowchart LR
   `feature-step` package version, falling back to the fixture's pinned version
   when the package isn't installed (offline-from-source runs). `compute_features`
   keeps the named, NaN-inclusive frame for `classify.py` / `compare_vs_alerce`.
+- `feature_writer.write_features(rows, credentials, schema=db.SCHEMA, execute=False)`
+  persists those DB-ready rows into `<schema>.feature` via
+  `ON CONFLICT (oid, sid, feature_id, band) DO UPDATE` (refresh value/version/
+  updated_date — matches production's scribe upsert). Dry-run by default; it opens
+  no DB connection unless `execute=True`. Exposed as
+  `offline_compute_features.py --save` (`--execute` + `--write-credentials` to
+  actually write; the default credentials are read-only).
 - The extractor/preprocessor are injectable and built lazily (the extractor is
   heavy — build once, reuse across oids in batch).
 
@@ -369,5 +376,6 @@ flowchart TD
 | `classify.py` | features → BHRF probabilities. §6 |
 | `feature_compare.py` | pure feature-diff utilities (used by compare script). |
 | `feature_lut.py` | Local ZTF feature_name/version LUT fixture + loaders (`load_feature_name_lut`, `version_name_to_id`, `default_version_name`). |
+| `feature_writer.py` | Upsert DB-ready feature rows into `<schema>.feature` (`write_features`). §5 |
 | `scripts/offline_generate_feature_lut.py` | One-off generator that prints the fixture from a real run. |
 | `scripts/offline_*.py` | CLI entry points (in `feature_step/scripts/`). §2 |
