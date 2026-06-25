@@ -1,13 +1,18 @@
-"""Assembly layer: turn one correction-ztf message into a features frame.
+"""Assembly layer: turn one magstats_ms_step ZTF output message into a features frame.
 
 Implements the pure message->features logic of the production feature_step
 (`feature_step/features/step.py`) without its Kafka/scribe plumbing. Uses
 the real pipeline parser and lc_classifier modules directly (no vendoring).
 """
-from features.utils.parsers import detections_to_astro_object
+from importlib.metadata import version as _pkg_version
+
+from features.utils.parsers import detections_to_astro_object, prepare_ao_features_for_db
+from features.offline.feature_lut import load_feature_name_lut, version_name_to_id
 from lc_classifier.features.core.base import discard_bogus_detections
 from lc_classifier.features.composites.ztf import ZTFFeatureExtractor
 from lc_classifier.features.preprocess.ztf import ZTFLightcurvePreprocessor
+
+SID_ZTF = 0
 
 
 def _prepare_detections(message: dict, min_detections: int = 1):
@@ -46,7 +51,7 @@ def _xmatches(allwise):
 
 
 def message_to_astro_object(message: dict, references_db, allwise, min_detections: int = 1):
-    """Correction-ztf message -> AstroObject via the real pipeline parser. All epochs
+    """magstats_ms_step ZTF output message -> AstroObject via the real pipeline parser. All epochs
     enter through the `detections` arg with `forced=[]`; the per-row `forced` flag
     routes forced epochs to `forced_photometry`. Returns None if the message has too
     few real detections."""
@@ -87,3 +92,38 @@ def compute_features(message: dict, references_db, allwise, min_detections: int 
     if ao is None:
         return None
     return ao.features
+
+
+def compute_db_features(message: dict, references_db, allwise, min_detections: int = 1,
+                        preprocessor=None, extractor=None, feature_name_lut=None,
+                        version_name=None):
+    """Per-oid path -> DB-ready feature rows, following the production save rules.
+
+    Returns a DataFrame with exactly the `feature` table columns
+    [oid, sid, feature_id, band, version, value] (NaN values dropped,
+    fid->band code, name->feature_id via the LUT), or None if too few real
+    detections. `compute_features`/`compute_astro_object` keep the named,
+    NaN-inclusive frame for classification.
+
+    `version` mirrors production: it is the single `feature-step` package
+    version (`version("feature-step")`), mapped to a smallint via the fixture's
+    FEATURE_VERSION_LUT — NOT the per-module ao.features["version"] column.
+    Override `version_name` for tests.
+    """
+    ao = compute_astro_object(message, references_db, allwise, min_detections,
+                              preprocessor=preprocessor, extractor=extractor)
+    if ao is None:
+        return None
+
+    lut = feature_name_lut if feature_name_lut is not None else load_feature_name_lut()
+    rows = prepare_ao_features_for_db(ao, lut)  # [name, value, band, feature_id]
+
+    if version_name is None:
+        version_name = _pkg_version("feature-step")
+
+    rows = rows.copy()
+    rows["oid"] = int(message["oid"])
+    rows["sid"] = SID_ZTF
+    rows["version"] = version_name_to_id(version_name)
+    rows = rows.drop(columns=["name"])
+    return rows[["oid", "sid", "feature_id", "band", "version", "value"]]
