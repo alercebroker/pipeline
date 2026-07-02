@@ -96,7 +96,42 @@ def run_name_diff(oids, credentials, min_det) -> int:
 
 
 def run_smoke(oids, credentials, min_det) -> int:
-    raise SystemExit("run_smoke not implemented yet (Task 5)")
+    """Load the real model once and confirm predict() runs without KeyError,
+    and that the loaded feature_list matches the pinned constant."""
+    from features.offline.classify import load_squidward_model, classify_astro_object
+
+    model, name, version = load_squidward_model()
+    print(f"\n[smoke] model {name} version={version}")
+
+    # Drift guard: the pinned 199 must equal the live model's feature_list.
+    loaded = list(model.model.feature_list)
+    if loaded != MODEL_FEATURE_LIST:
+        only_model = sorted(set(loaded) - set(MODEL_FEATURE_LIST))
+        only_pin = sorted(set(MODEL_FEATURE_LIST) - set(loaded))
+        print(f"[smoke] FAIL: feature_list drift "
+              f"(model-only={only_model}, pin-only={only_pin})")
+        return 1
+
+    failures = 0
+    for oid in oids:
+        ao, message = _astro_object_for(oid, credentials, min_det)
+        if ao is None:
+            print(f"[smoke] oid {oid}: SKIP (too few real detections)")
+            continue
+        try:
+            out = classify_astro_object(ao, message, model)
+        except KeyError as e:
+            print(f"[smoke] oid {oid}: FAIL KeyError {e}")
+            failures += 1
+            continue
+        n = 0 if out.probabilities is None else len(out.probabilities)
+        print(f"[smoke] oid {oid}: OK ({n} prob row(s))")
+
+    if failures:
+        print(f"[smoke] FAIL: {failures} oid(s) raised KeyError")
+        return 1
+    print("[smoke] PASS: predict ran without KeyError on all checked oids")
+    return 0
 
 
 def main():
@@ -113,7 +148,8 @@ def main():
     code = run_name_diff(oids, args.credentials, args.min_det)
 
     if args.smoke:
-        code |= run_smoke(oids, args.credentials, args.min_det)   # replaced in Task 5
+        # run_name_diff and run_smoke each return 0 (pass) or 1 (fail); OR-combine.
+        code |= run_smoke(oids, args.credentials, args.min_det)
 
     sys.exit(code)
 
