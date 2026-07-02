@@ -26,7 +26,7 @@ differently:
 | | Legacy `alerce.taxonomy` | New `multisurvey_ztf` |
 |---|---|---|
 | `classifier` shape | `classifier_name` (str), `classifier_version` (str), `classes` (text[]) | `classifier_id` (int), `classifier_name` (str), `classifier_version` (str), `tid` (smallint), `created_date` |
-| `taxonomy` shape | (embedded as the `classes` array above) | `class_id` (int), `class_name` (str), `order` (int), `classifier_id` (smallint), `created_date` |
+| `taxonomy` shape | just `classifier_name`, `classifier_version`, `classes` (text[]) — **no `class_id`, no `order` column** (class order is the array position) | `class_id` (int), `class_name` (str), `order` (int), `classifier_id` (smallint), `created_date`; **PK = `(class_id, classifier_id)`** |
 | Hierarchy encoding | **multiple named classifier rows** — one per branch + top + a flat combined | same idea, keyed by integer `classifier_id`; **no hierarchy column** |
 | `probability.classifier_version` | — | **smallint** (`2.1.0` → `210`) — separate from `classifier.classifier_version` (string) |
 
@@ -68,8 +68,28 @@ combined — each with its own `taxonomy` rows. Probabilities will later be stor
 ### `taxonomy` — 45 rows (21+3+6+6+9)
 
 For each classifier: `class_id` is **per-classifier, 0-indexed**, in the model's
-output-column order for that branch (matches how existing ids 1–4 each restart at
-0). `order = class_id`. `class_name` is the model's own label.
+output-column order for that branch. `order = class_id`. `class_name` is the
+model's own label.
+
+**PK / conflict target = `(class_id, classifier_id)`** (verified on live:
+`pk_taxonomy_classid_classifierid`), so `class_id` restarts at 0 per classifier —
+it is *not* globally unique. The seed's `ON CONFLICT` must target
+`(class_id, classifier_id)`, **not** `class_id` alone. (Note: the db-plugins
+authority file `_initial_data.py` is out of sync — it declares
+`index_elements: ["class_id"]` and uses a *global* `class_id` 0–10; the back-port
+must reconcile to the live composite key.)
+
+**What `order` means.** It is a static, per-classifier, 0-indexed enumeration of a
+classifier's classes. Its only consumer is `get_taxonomy_by_classifier_id`
+(`… ORDER BY "order" ASC`), which builds a `{class_name: class_id}` dict — so
+`order` only sets iteration order and is **cosmetic** for the actual mapping, not
+load-bearing. It is **not** the per-object probability rank (that's
+`probability.ranking`, computed at write time). The existing stamp rows all use
+`order == class_id`; we follow that. If ALeRCE ever wants the catalog to *display*
+classes in the legacy semantic order (e.g. `SNIa, …, SLSN, TDE`), `order` is the
+knob — it can diverge from `class_id` without affecting the mapping. Legacy has no
+`order` column at all; its ordering is just the `classes[]` array position, and
+that semantic order differs from the model's alphabetical `classes_`.
 
 The class lists + order, read directly from the deployed pickle (see below), are:
 
@@ -167,8 +187,10 @@ model's `feature_list` uses. Tracked as a pending verification, out of scope her
 
 1. **`feature_step/features/offline/ztf_classifier_taxonomy_seed.sql`** — new
    file, sibling to `ztf_feature_luts_seed.sql`. Idempotent
-   `INSERT … ON CONFLICT DO NOTHING`. Contains the 5 `classifier` rows + 45
-   `taxonomy` rows, hand-written from the model-verified class lists.
+   `INSERT … ON CONFLICT DO NOTHING`, with conflict targets matching the live
+   PKs: **`classifier` → `(classifier_id)`**, **`taxonomy` → `(class_id,
+   classifier_id)`**. Contains the 5 `classifier` rows + 45 `taxonomy` rows,
+   hand-written from the model-verified class lists.
 2. **Applied direct-to-live** with write credentials (manual step — offline
    default credentials are read-only; same procedure used for the feature LUTs).
 3. **Docs**:
