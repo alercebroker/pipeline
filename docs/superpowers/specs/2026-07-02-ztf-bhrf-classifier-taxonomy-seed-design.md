@@ -2,8 +2,11 @@
 
 **Date:** 2026-07-02
 **Status:** Approved design, pending implementation plan. Class names locked to
-**`SNIbc`** (what the deployed model emits); a possible relabel to `SESN` is
-tracked as a pending item (see "Pending: `SNIbc` → `SESN` relabel").
+**`SESN`** — verified 2026-07-02 as what the **currently deployed** production
+model emits (md5-confirmed against the live S3 URL) and what legacy
+`alerce.taxonomy` already stores for `2.1.0`. (An earlier revision of this spec
+locked `SNIbc` off a stray `/tmp` pickle that turned out **not** to be the
+deployed artifact — see "Class-name provenance" below.)
 **Related:** `docs/superpowers/specs/2026-06-21-offline-ztf-classification-design.md`,
 `feature_step/features/offline/FLOW.md` (§3d, §7)
 
@@ -40,11 +43,12 @@ lc_classifier_BHRF_forced_phot_periodic    v2.1.0 → [LPV, EA, EB/EW, Periodic-
 lc_classifier_BHRF_forced_phot             v2.1.0 → the flat 21-leaf list (6+6+9)                                     (21)
 ```
 
-**Important:** the legacy `alerce.taxonomy`/`alerce.probability` rows above store
-the transient class as **`SESN`**, but the **deployed 2.1.0 model emits `SNIbc`**
-(see "Class-name provenance" below). We seed **`SNIbc`** — what the current
-pipeline actually produces — not the legacy label. The `SESN`/`EA`/`EB/EW` names
-in legacy are catalog artifacts, not what our model outputs.
+**Important:** the legacy `alerce.taxonomy` `2.1.0` rows above store the transient
+class as **`SESN`**, and the **currently deployed 2.1.0 model also emits `SESN`**
+(md5-verified against the live S3 URL, 2026-07-02 — see "Class-name provenance"
+below). We seed **`SESN`** — it matches both the deployed model and the legacy
+catalog. (The model's own `classes_` uses `EA`/`EB/EW` etc.; those are the model's
+labels and we seed them verbatim.)
 
 ## Strategy (the multisurvey mapping)
 
@@ -95,9 +99,9 @@ The class lists + order, read directly from the deployed pickle (see below), are
 
 | classifier_id | classifier | classes (in `class_id`/`order` = 0…n order) |
 |---|---|---|
-| 5 | flat | `AGN, Blazar, CEP, CV/Nova, DSCT, EA, EB/EW, LPV, Microlensing, Periodic-Other, QSO, RRLab, RRLc, RSCVn, SLSN, SNII, SNIIn, SNIa, SNIbc, TDE, YSO` |
+| 5 | flat | `AGN, Blazar, CEP, CV/Nova, DSCT, EA, EB/EW, LPV, Microlensing, Periodic-Other, QSO, RRLab, RRLc, RSCVn, SESN, SLSN, SNII, SNIIn, SNIa, TDE, YSO` |
 | 6 | top | `Periodic, Stochastic, Transient` |
-| 7 | transient | `SLSN, SNII, SNIIn, SNIa, SNIbc, TDE` |
+| 7 | transient | `SESN, SLSN, SNII, SNIIn, SNIa, TDE` |
 | 8 | stochastic | `AGN, Blazar, CV/Nova, Microlensing, QSO, YSO` |
 | 9 | periodic | `CEP, DSCT, EA, EB/EW, LPV, Periodic-Other, RRLab, RRLc, RSCVn` |
 
@@ -112,9 +116,13 @@ exactly these**.
 The class names/order are read **directly from the deployed model pickle**, which
 is the production artifact (verified against the production `MODEL_CONFIG`:
 `model_path = https://alerce-models.s3.amazonaws.com/squidward/2.1.0/hierarchical_random_forest_model.pkl`,
-`SquidwardFeaturesClassifier` + `SquidwardMapper`). Load it via **this checkout's
-submodule** (`alerce_classifiers/`, importable in the `training_py310` conda env
-with `PYTHONPATH` prepended) and read:
+`SquidwardFeaturesClassifier` + `SquidwardMapper`). **Authority = the bytes on
+that S3 URL** — confirm by md5, not by any pre-existing local/`/tmp` copy (a
+mislabeled `/tmp` pickle is exactly what caused the `SNIbc` mis-read). The
+md5-verified copy is saved at
+`/home/fandrades/desktop/alerce_models/squidward/2.1.0/…pkl` (outside the repo).
+Load it via **this checkout's submodule** (`alerce_classifiers/`, importable in
+the `training_py310` conda env with `PYTHONPATH` prepended) and read:
 
 - **flat** 21 leaves ← `HierarchicalRandomForestClassifier.list_of_classes`,
 - each **branch** ← `dict_of_rf[branch].classes_` (`top`, `Transient`,
@@ -125,26 +133,38 @@ the `lc_classification_step` scribe parsers (`TopBottomScribeParser`), and both
 scribes all pass the `OutputDTO` **columns through verbatim**. So the model's
 `classes_` *are* what production writes.
 
-### Class-name provenance (`SNIbc` vs `SESN`) — resolved
+### Class-name provenance (`SNIbc` vs `SESN`) — resolved (corrected 2026-07-02)
 
-Investigated 2026-07-02. The legacy `alerce` DB stores the transient class as
-`SESN`; the deployed model emits `SNIbc`. Findings:
+**The deployed model emits `SESN`.** An earlier revision of this spec concluded
+`SNIbc`; that was wrong — it read a stray pickle in `/tmp` that is *not* the
+production artifact. Re-verified end-to-end 2026-07-02:
 
-- The deployed 2.1.0 pickle contains **`SNIbc`** in `list_of_classes`,
-  `class_hierarchy`, and every branch's `classes_` — **no `SESN` anywhere**.
-- `SESN` appears **only** in the training config
-  (`training/.../HBRF/training.py`, `class_hierarchy`), never in the inference
-  path (`git log -S SESN` empty in `alerce_classifiers`; not in any step/scribe).
-- `SESN` and this model's `SNIbc` are the **same astrophysical class**
-  (stripped-envelope SNe): the pickle's transient branch has 6 classes with
-  `SNIbc` and **no** `SNIIb` — i.e. `SNIIb` was already merged into `SNIbc`, the
-  same merge `SESN` represents (`SESN = SNIbc ∪ SNIIb`).
-- The `SESN` rows in `alerce.probability` (also tagged `2.1.0`) therefore came
-  from a **different artifact / the retired old-alerce pipeline**, not this
-  deployed pickle. The `2.1.0` version tag was reused across the relabel.
+- **The live S3 URL serves the `SESN` pickle.** `HEAD` on the production
+  `model_path` (`…/squidward/2.1.0/hierarchical_random_forest_model.pkl`):
+  `Last-Modified: 2 Jun 2025`, `Content-Length: 1,720,755,396`. Downloaded it
+  fresh; its md5 (`95e8e9f1…ad81fa`) is **byte-identical** to the local
+  `staging_production/.../2.1.0/` copy. Loaded → `list_of_classes` and the
+  Transient branch's `classes_` contain **`SESN`**, **no `SNIbc`** (6 transient
+  classes: `SESN, SLSN, SNII, SNIIn, SNIa, TDE`; `SNIIb` already merged in).
+- **Legacy `alerce.taxonomy` agrees.** The `lc_classifier_BHRF_forced_phot` and
+  `…_transient` rows tagged `2.1.0` both list **`SESN`**. `taxonomy` has no
+  timestamp; it's versioned by the `classifier_version` string. `SESN` appears
+  *only* at `2.1.0`; every earlier BHRF labeling used `SNIbc` (the `…(beta)`
+  taxonomy even had `SNIbc` **and** `SNIIb` as separate classes — 22 total).
+  So `SESN` is the deliberate `2.1.0` merge/relabel of `SNIbc ∪ SNIIb`, and the
+  deployed `2.1.0` pickle matches its own taxonomy row.
+- **The `/tmp` `SNIbc` pickle is a red herring.**
+  `/tmp/SquidwardFeaturesClassifier/…pkl` is **1,384,424,855 bytes** with a
+  **different md5** — it did not come from the current production
+  `squidward/2.1.0/` URL. Provenance unknown (a different/newer model version
+  left in `/tmp`); it must not be treated as the deployed artifact.
 
-Conclusion: **seed `SNIbc`** to match what the deployed model and production
-pipeline actually emit.
+`SESN` and `SNIbc` name the **same astrophysical class** (stripped-envelope SNe,
+`SESN = SNIbc ∪ SNIIb`); the deployed model just labels it `SESN`.
+
+Conclusion: **seed `SESN`** — it matches the deployed model *and* the legacy
+catalog. (Cross-check the label at apply time by loading the pickle actually on
+S3; do not reuse any `/tmp` copy.)
 
 ### Why the name must match the model
 
@@ -154,9 +174,10 @@ The multisurvey write path (pattern in
 `get_taxonomy_by_classifier_id` = `{class_name: class_id}` fetched from the
 `taxonomy` table — an **exact string match** (`class_name_to_id`, `-1` on miss).
 The scribe (`scribe_multisurvey`) then writes the integer `class_id`; it does no
-name mapping. So if the taxonomy holds `SESN` while the model emits `SNIbc`, the
-lookup misses and `class_id` is garbage. This is the hard reason the taxonomy
-names must equal the model's labels.
+name mapping. So if the taxonomy holds the wrong label (e.g. `SNIbc` while the
+model emits `SESN`), the lookup misses and `class_id` is garbage. This is the hard
+reason the taxonomy names must equal the model's labels — and why the `SNIbc`
+mis-read had to be caught before seeding.
 
 ## Deployed model artifact — full contents (verified 2026-07-02)
 
@@ -167,21 +188,23 @@ The pickle is a `dict` with 4 keys (loaded via this checkout's submodule,
   `Amplitude_1/2`, `AndersonDarling_1/2`, … `Coordinate_x/y/z`, `sgscore1`,
   `ulens_{chi,fs,tE,u0}_1/2`, etc. This is the exact input vector the model
   expects.
-- **`list_of_classes`** — the 21 flat leaves (above).
+- **`list_of_classes`** — the 21 flat leaves (above), incl. **`SESN`**.
 - **`class_hierarchy`** — stored in the pickle (not the `class_hierarchy_old`
-  fallback): Transient(6, `SNIbc`, **no `SNIIb`**), Stochastic(6), Periodic(9).
+  fallback): Transient(6, `SESN`, **no `SNIIb`**), Stochastic(6), Periodic(9).
 - **`model`** — dict of 4 `imblearn` `BalancedRandomForestClassifier` (`top`,
   `Stochastic`, `Periodic`, `Transient`), each **500 trees**, `max_depth=100`,
   **199 features**, 500 estimators fitted.
 
-### Feature-count cross-check (199 vs 123) — flagged, separate task
+### Feature-count cross-check (199 vs 123) — verified, see below
 
 The model consumes **199 band-suffixed features**, whereas the offline
 `feature_name_lut` we already seeded has **123 band-less names** (band lives in
-`feature.band`, so the axes aren't directly comparable). Before trusting offline
-BHRF *probabilities* (not part of this taxonomy seed), confirm the offline feature
-computation actually produces all 199 features the model expects, in the names the
-model's `feature_list` uses. Tracked as a pending verification, out of scope here.
+`feature.band`, so the axes aren't directly comparable). This is **not** a soft
+"trust the probabilities" nicety: `classify_batch` does
+`features[self.feature_list]` — a *strict* column selection — so any one of the
+199 names missing from the offline output is a hard **`KeyError`** at predict
+time, i.e. a prerequisite for offline BHRF classification working at all. Now
+**verified** — see "Resolved: offline features cover the model's 199" below.
 
 ## Deliverable
 
@@ -190,7 +213,7 @@ model's `feature_list` uses. Tracked as a pending verification, out of scope her
    `INSERT … ON CONFLICT DO NOTHING`, with conflict targets matching the live
    PKs: **`classifier` → `(classifier_id)`**, **`taxonomy` → `(class_id,
    classifier_id)`**. Contains the 5 `classifier` rows + 45 `taxonomy` rows,
-   hand-written from the model-verified class lists.
+   hand-written from the model-verified class lists (transient uses **`SESN`**).
 2. **Applied direct-to-live** with write credentials (manual step — offline
    default credentials are read-only; same procedure used for the feature LUTs).
 3. **Docs**:
@@ -203,23 +226,38 @@ model's `feature_list` uses. Tracked as a pending verification, out of scope her
      first **reconcile the missing live ids 3–4** (this checkout's seed stops at
      id 2) before adding BHRF 5–9, or it will renumber over real ids.
 
-## Pending: `SNIbc` → `SESN` relabel (deferred, not blocking)
+## Resolved: `SNIbc` vs `SESN` (no relabel needed)
 
-We seed `SNIbc` now because it's what the deployed model emits and what the
-multisurvey write path requires (exact-match lookup). But the legacy catalog
-displays `SESN` for continuity, and the training config uses `SESN`. Open
-question for ALeRCE (to resolve in person): **should the new `multisurvey_ztf`
-catalog show `SESN`?** If yes, the fix is a **product/pipeline change, not a seed
-hack** — either retrain/redeploy a model that emits `SESN`, or add an explicit
-rename step *before* the `class_name → class_id` lookup — and then re-seed the two
-affected `taxonomy` rows (flat `class_id` for `SNIbc`, and transient). Until that
-decision lands, `SNIbc` stands. Also worth confirming: why `alerce.probability`
-reused the `2.1.0` tag across the `SESN`↔`SNIbc` relabel.
+Earlier drafts carried this as an open question. It's now moot: the deployed model
+**and** the legacy catalog both use **`SESN`** (md5-verified, see "Class-name
+provenance"). Seeding `SESN` matches production and the old catalog, so there is
+**no divergence to reconcile** and no rename step to add. If ALeRCE later
+retrains/redeploys a model that emits a different label (e.g. splits `SESN` back
+into `SNIbc`/`SNIIb`), re-verify against the S3 pickle and re-seed the two
+affected `taxonomy` rows then. One loose end worth a note: a non-production
+`SNIbc` pickle exists in `/tmp` (different md5) — worth confirming with the team
+what artifact/version it is so it isn't mistaken for the deployed model again.
 
-## Pending: confirm offline features cover the model's 199
+## Resolved: offline features cover the model's 199
 
-See "Feature-count cross-check" above. Needed before offline BHRF probabilities
-can be trusted; independent of this taxonomy seed.
+Verified 2026-07-02 by `feature_step/scripts/offline_verify_model_features.py` over
+9 diverse oids (dense / sparse / forced-heavy + the LUT oid). Result:
+**PASS — all 199 covered for every oid (0 missing).** `--smoke` loaded the deployed
+model from the md5-verified local copy (md5 `95e8e9f18fde62f22025e31a88ad81fa`,
+1,720,755,396 bytes — *not* the stale non-prod pickle cached in `/tmp`) and confirmed
+`predict()` runs without `KeyError` on all 9, and the loaded `feature_list` equals
+the pinned `MODEL_FEATURE_LIST` (drift guard).
+
+This is a **hard prerequisite** for offline BHRF classification, not just a
+probability-trust nicety: `classify_batch` does `features[self.feature_list]`
+(strict column selection), so any missing name raises `KeyError` at predict time.
+
+The offline extractor emits **209** columns — the 199 the model consumes plus 10
+unused fit-reference params (`TDE_mag0`, `fleet_m0`, `fleet_t0`, `ulens_mag0`,
+`ulens_t0`, each × g/r) that the `feature_list` selection silently drops. Benign.
+
+Authority modules: `feature_step/features/offline/model_feature_list.py` (the pinned
+199) and `model_features.py` (the pure diff logic). Independent of this taxonomy seed.
 
 ## Out of scope
 
@@ -234,10 +272,12 @@ can be trusted; independent of this taxonomy seed.
 
 - **ID drift.** Next-free = 5 is verified against *live* today. Re-verify at
   apply time; another deploy could claim 5+ first.
-- **`SNIbc`/`SESN` divergence from the legacy catalog.** Resolved for now
-  (seed `SNIbc`); see the pending relabel item. The residual risk is *display*
-  inconsistency with the old catalog, not a technical break.
-- **Model load cost.** Loading the pickle is a one-time network fetch (1.38 GB) +
+- **Wrong-artifact reads.** The `SNIbc` mis-read happened because a non-prod
+  pickle sat in `/tmp`. Mitigation: always md5 the bytes on the live S3 URL before
+  trusting class labels; never read a stray local/`/tmp` copy. Seeding `SESN`
+  matches both the deployed model and the legacy catalog, so there is no
+  catalog-divergence risk.
+- **Model load cost.** Loading the pickle is a one-time network fetch (~1.72 GB) +
   heavy import; done once during implementation to read the taxonomy, not at
   seed-apply time. Requires an env where `imblearn` imports cleanly
   (`training_py310` works; `atat2` has an sklearn/imblearn clash).

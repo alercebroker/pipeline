@@ -338,6 +338,14 @@ flowchart TD
   - Version is derived by the model from the path (`.../squidward/2.1.0/...` → `2.1.0`).
 - Model: `SquidwardFeaturesClassifier` (BHRF, `lc_classifier_BHRF_forced_phot`, v2.1.0).
 - `classify_oid(oid, credentials, model)` is the full DB→probabilities convenience path.
+- **Feature coverage — verified.** `classify_batch` does `features[self.feature_list]`
+  (a *strict* column selection over the model's 199 band-suffixed names), so a
+  single missing feature is a hard **`KeyError`** at predict time, not a silent
+  degrade. `scripts/offline_verify_model_features.py` confirms the offline pipeline
+  emits all 199 (see §7 Done). The offline extractor produces **209** columns —
+  the 199 the model consumes plus 10 unused fit-reference params
+  (`TDE_mag0`, `fleet_m0`, `fleet_t0`, `ulens_mag0`, `ulens_t0`, each × g/r) that
+  `feature_list` selection drops.
 
 ---
 
@@ -355,6 +363,15 @@ flowchart TD
   1 row) via `ztf_feature_luts_seed.sql`, and **feature persistence** into
   `multisurvey_ztf.feature` (`feature_writer` / `offline_compute_features.py --save`).
   ⚠ seeded directly, not yet back-ported to the db-plugins authority file (§3d).
+- **Offline features cover the model's 199** — verified 2026-07-02 by
+  `scripts/offline_verify_model_features.py` over 9 diverse oids (dense / sparse /
+  forced-heavy + the LUT oid): name-diff **PASS** (0 missing for every oid), and
+  `--smoke` loaded the md5-verified deployed model and confirmed `model.predict`
+  runs without `KeyError` on all 9, with the loaded `feature_list` matching the
+  pinned `MODEL_FEATURE_LIST`. Hard prerequisite for BHRF classification (§6).
+  ⚠ The sample is a fixed handful (`SAMPLE_OIDS`); a feature computed only for
+  light-curve shapes outside those 9 wouldn't be caught until the sample is
+  refreshed (re-run the discovery step / pass `--oid`).
 
 **Pending / deferred:**
 - **Value-level equality vs `alerce.feature`** — the truncated-LC blocker is now
@@ -409,6 +426,9 @@ flowchart TD
 | `classify.py` | features → BHRF probabilities. §6 |
 | `feature_compare.py` | pure feature-diff utilities (used by compare script). |
 | `feature_lut.py` | Local ZTF feature_name/version LUT fixture + loaders (`load_feature_name_lut`, `version_name_to_id`, `default_version_name`). |
+| `model_feature_list.py` | Pinned authority: the deployed BHRF's 199 `feature_list` names + md5/version provenance. §6 |
+| `model_features.py` | Pure coverage logic (`predict_input_columns`, `diff_feature_coverage`) mirroring the model's predict-input namespace. §6 |
+| `scripts/offline_verify_model_features.py` | Verifier: name-diff offline features vs the 199 + `--smoke` end-to-end predict check. §6/§7 |
 | `feature_writer.py` | Upsert DB-ready feature rows into `<schema>.feature` (`write_features`). §5 |
 | `scripts/offline_generate_feature_lut.py` | One-off generator that prints the fixture from a real run. |
 | `ztf_feature_luts_seed.sql` | Idempotent SQL seeding the ZTF `feature_name_lut` + `feature_version_lut` (`sid = 0`). §3d |
