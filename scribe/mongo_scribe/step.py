@@ -37,7 +37,15 @@ class MongoScribe(GenericStep):
                 new_command = self.command_factory(message["payload"])
                 valid_commands.append(new_command)
             except ValueError as e:
-                self.logger.debug(e)
+                # A command that fails to build is dropped and its offset still
+                # commits, so this log is the only trace of the lost payload.
+                # Emit it at WARN with the payload to catch other latent
+                # command-build bugs instead of losing them silently at DEBUG.
+                self.logger.warning(
+                    "Dropping invalid command: %s | payload=%s",
+                    e,
+                    message["payload"],
+                )
                 n_invalid_commands += 1
 
         logging.info(
