@@ -96,3 +96,18 @@ def test_taxonomy_order_equals_class_id():
     assert matches, "no taxonomy rows matched"
     for class_id, order in matches:
         assert order == class_id
+
+
+import pathlib
+
+_SQL_PATH = (
+    pathlib.Path(__file__).resolve().parents[2]
+    / "features" / "offline" / "ztf_classifier_taxonomy_seed.sql"
+)
+
+
+def test_committed_sql_matches_render():
+    # The .sql on disk must be exactly what render_seed_sql() produces, so the
+    # fixture stays the single source of truth (no hand-edited drift).
+    assert _SQL_PATH.exists(), f"missing generated SQL: {_SQL_PATH}"
+    assert _SQL_PATH.read_text() == render_seed_sql()
