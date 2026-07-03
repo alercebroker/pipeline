@@ -203,6 +203,10 @@ here to diff our predicted LC probabilities against.
   not the BHRF lightcurve taxonomy. `fetch_stored_probabilities` stays
   `NotImplementedError` and `offline_compare_probabilities.py` stays a stub;
   comparing against these rows would be apples-to-oranges.
+- **We now write** our own BHRF lightcurve probabilities into this same table
+  (distinct from the stamp rows already present) via `probability_writer.py`,
+  mapping class names → `class_id` through the seeded `taxonomy` (§3d). This is
+  writing our own predictions, not comparing against pre-existing ones.
 
 ### 3d. DB metadata we must populate (LUTs) — **manual, our responsibility**
 
@@ -377,6 +381,14 @@ flowchart TD
   `classifier_taxonomy_lut.py` fixture and cross-checked against the deployed
   pickle (`scripts/offline_verify_taxonomy.py`). Class names locked to **`SESN`**.
   ⚠ seeded directly, not yet back-ported to the db-plugins authority file (§3d).
+- **BHRF probabilities persist to `multisurvey_ztf.probability`** via
+  `probability_writer.py` (`offline_classify.py --save`): one row per class per
+  classifier across all 5 seeded classifiers (ids 5–9). `class_name→class_id` read
+  from the **DB `taxonomy`** (`db.fetch_taxonomy_maps`, the authority — not the
+  fixture); `classifier_version` smallint (`2.1.0`→`210`); `ranking` =
+  per-classifier dense rank desc; `lastmjd` = max MJD over detections+forced
+  (already MJD, no JD subtraction); upsert `ON CONFLICT (oid, sid, classifier_id,
+  class_id) DO UPDATE`. Dry-run by default.
 
 **Pending / deferred:**
 - **Value-level equality vs `alerce.feature`** — the truncated-LC blocker is now
@@ -396,29 +408,6 @@ flowchart TD
 - **Back-port the ZTF feature LUTs to the authority file** — they were seeded
   directly via `ztf_feature_luts_seed.sql`, so `_initial_data_pipeline.py` does not
   yet carry the ZTF `feature_name_lut` / `feature_version_lut` rows (§3d).
-- **Persist BHRF probabilities to `multisurvey_ztf.probability`** — *not built.*
-  The classify path stops at the printed `OutputDTO` (§6); there is no probability
-  writer analogous to `feature_writer` (§5). This is distinct from the (negative)
-  *compare* result above — that's about diffing against stored rows; this is about
-  **writing our own predictions in**. It's also a bigger lift than the feature
-  writer, because of an asymmetry: the feature parser already emits DB-ready rows,
-  but the lc_classification step's `ScribeParser`
-  (`lc_classification_step/.../parsers/scribe_parser.py`) only emits **name-keyed**
-  scribe commands (`classifier_name`/`classifier_version` as *strings*, class
-  columns by name), whereas `probability` needs **smallint** `classifier_id` /
-  `classifier_version` / `class_id` plus `ranking` and `lastmjd`. That name→id
-  mapping, ranking, and smallint-version conversion happen in a **downstream scribe
-  consumer**, not in the step we wrap. Replicating production's exact save rules
-  therefore needs, in order:
-  1. **locate that consumer** — the first real unknown; replicate its rules, don't
-     invent them;
-  2. seed the `classifier` + `taxonomy` ZTF/BHRF LUTs (§3d) and a
-     `classifier_version` smallint convention (cf. the `feature_version_lut`
-     decision);
-  3. compute `ranking` (per-classifier argmax → rank) and `lastmjd` (from the LC);
-  4. add a `probability_writer.py` mirroring `feature_writer` —
-     `ON CONFLICT (oid, sid, classifier_id, class_id) DO UPDATE`, dry-run by default,
-     `--execute` to write — and wire `offline_classify.py --save`.
 
 ---
 
@@ -437,6 +426,7 @@ flowchart TD
 | `model_features.py` | Pure coverage logic (`predict_input_columns`, `diff_feature_coverage`) mirroring the model's predict-input namespace. §6 |
 | `scripts/offline_verify_model_features.py` | Verifier: name-diff offline features vs the 199 + `--smoke` end-to-end predict check. §6/§7 |
 | `feature_writer.py` | Upsert DB-ready feature rows into `<schema>.feature` (`write_features`). §5 |
+| `probability_writer.py` | Build + upsert BHRF probability rows into `<schema>.probability` (`build_probability_rows` + `write_probabilities`; class_id via `db.fetch_taxonomy_maps`). §6 |
 | `scripts/offline_generate_feature_lut.py` | One-off generator that prints the fixture from a real run. |
 | `ztf_feature_luts_seed.sql` | Idempotent SQL seeding the ZTF `feature_name_lut` + `feature_version_lut` (`sid = 0`). §3d |
 | `ztf_classifier_taxonomy_seed.sql` | Idempotent SQL seeding the BHRF `classifier` (ids 5–9) + `taxonomy` (45 rows). Generated from `classifier_taxonomy_lut.py`. §3d |
