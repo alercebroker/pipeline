@@ -52,6 +52,7 @@ xmatch field); they're fetched separately from the DB and passed alongside.
 | `feature_writer.py` | `write_features(rows, credentials, schema, execute=False)` upserts the DB-ready rows into `<schema>.feature` (`ON CONFLICT … DO UPDATE`); dry-run unless `execute=True`. |
 | `feature_compare.py` | Pure diff utilities. `compare_feature_frames(ours, theirs, rtol, atol)` → `(merged, summary)` classifying each (name, fid) as match / differ / only_ours / only_theirs. `latest_feature_version(versions)` picks the newest modern version string. |
 | `classify.py` | Classification bridge. `load_squidward_model()` builds the BHRF `SquidwardFeaturesClassifier` from env vars (`MODEL_PATH`, `MAPPER_CLASS`); `classify_astro_object(ao, message, model)` names features via the real `parse_output`, builds a **features-only** `InputDTO` (`input_dto_factory`), and runs `can_predict`+`predict`; `classify_oid(...)` is the DB->probabilities convenience path. The Squidward model reads only `features`, so detections are passed empty (no `lc_classification` dependency). |
+| `classifier_taxonomy_lut.py` | BHRF (Squidward 2.1.0) `classifier` (ids 5–9) + `taxonomy` (45 rows) seed fixture — single source of truth. `render_seed_sql()` generates `ztf_classifier_taxonomy_seed.sql`. Class names locked to `SESN` (md5-verified vs the deployed pickle). |
 
 ## Scripts (`feature_step/scripts/`)
 
@@ -62,6 +63,7 @@ xmatch field); they're fetched separately from the DB and passed alongside.
 | `offline_compare_vs_alerce.py --oid <bigint|ZTFstr> [--version V] [--rtol] [--atol]` | Runs our pipeline on a multisurvey oid, maps it to its ZTF string oid via `idmapper`, fetches `alerce.feature` for that object, and diffs. |
 | `offline_classify.py --oid <bigint> [--credentials PATH] [--min-det M]` | DB -> message -> features -> BHRF probabilities for one oid. Requires `MODEL_PATH` env (the S3 BHRF url). |
 | `offline_compare_probabilities.py` | **Deferred** — predicted vs. stored probabilities. Pending the stored-probability table. |
+| `offline_verify_taxonomy.py` | Cross-checks the taxonomy fixture's class names/order against the deployed BHRF pickle at `MODEL_PATH`. Exit 0 on match. |
 
 ## Running
 

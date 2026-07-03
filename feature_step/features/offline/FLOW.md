@@ -228,8 +228,8 @@ must be edited — in the schema-authority library, not by the offline tooling:
 |---|---|---|---|
 | `feature_name_lut` | `(feature_id, sid)` | **123 ZTF rows seeded** (`sid = 0, tid = 0`, `feature_id` 0–122) alongside the prior 146 LSST `sid = 1` rows | **Done** — seeded via `ztf_feature_luts_seed.sql`. Band-less names (`feature_id` namespaced by `sid`, restarts at 0; band lives in `feature.band`). Back-port to authority file pending. |
 | `feature_version_lut` | `(version_id, sid)` | **1 ZTF row seeded** (`version_id = 0`, `version_name = 27.5.7a31`, `sid = 0, tid = 0`) | **Done** — same seed file. `version_id = 0` matches the fixture; production's `get_or_create` starts at 1 — adopting that means changing **both** the SQL and `FEATURE_VERSION_LUT`. |
-| `classifier` | `(classifier_id)` | ids 1–4, all **stamp** | **Pending** — the BHRF LC classifier: `classifier_id` = next free (live max is 4 → **5**), `classifier_name = lc_classifier_BHRF_forced_phot` (deployment tag, see §6), `classifier_version = "2.1.0"`, `tid = 0`. |
-| `taxonomy` | `(class_id, classifier_id)` | flat stamp taxonomy only | **Pending** — the BHRF class rows for the new `classifier_id`: `(class_id, class_name, order)`. The table has **no hierarchy column** — BHRF's hierarchical taxonomy must be flattened; decide how top vs. leaf classes are represented. |
+| `classifier` | `(classifier_id)` | ids 1–4 stamp **+ ids 5–9 BHRF** (flat + top + 3 branches, `classifier_version = "2.1.0"`, `tid = 0`) | **Done** — seeded via `ztf_classifier_taxonomy_seed.sql`. Back-port to authority file pending. |
+| `taxonomy` | `(class_id, classifier_id)` | flat stamp taxonomy **+ 45 BHRF rows** (21+3+6+6+9; `class_id` per-classifier 0-indexed, `order = class_id`; transient uses **`SESN`**) | **Done** — same seed file. Back-port pending. |
 
 > The **ZTF feature-name list** is captured in `offline/feature_lut.py` (the
 > 123-name fixture) and in `ztf_feature_luts_seed.sql` — both generated from a real
@@ -372,6 +372,11 @@ flowchart TD
   ⚠ The sample is a fixed handful (`SAMPLE_OIDS`); a feature computed only for
   light-curve shapes outside those 9 wouldn't be caught until the sample is
   refreshed (re-run the discovery step / pass `--oid`).
+- **BHRF `classifier` + `taxonomy` LUTs seeded** (5 classifier rows ids 5–9 +
+  45 taxonomy rows) via `ztf_classifier_taxonomy_seed.sql`, generated from the
+  `classifier_taxonomy_lut.py` fixture and cross-checked against the deployed
+  pickle (`scripts/offline_verify_taxonomy.py`). Class names locked to **`SESN`**.
+  ⚠ seeded directly, not yet back-ported to the db-plugins authority file (§3d).
 
 **Pending / deferred:**
 - **Value-level equality vs `alerce.feature`** — the truncated-LC blocker is now
@@ -383,10 +388,11 @@ flowchart TD
   BHRF lightcurve classifier (§3c). There are **no stored LC probabilities** to
   diff against, so `fetch_stored_probabilities` / `offline_compare_probabilities.py`
   stay stubs by design rather than "pending a table name."
-- **Seed the BHRF `classifier` + `taxonomy` LUTs** — still **no ZTF/BHRF rows**.
-  (The ZTF `feature_name_lut` / `feature_version_lut` are now seeded — see Done.)
-  Prerequisite for persisting BHRF probabilities (§3d). Add to db-plugins
-  `_initial_data_pipeline.py`.
+- **Back-port the BHRF `classifier` + `taxonomy` rows to the authority file** —
+  seeded directly via `ztf_classifier_taxonomy_seed.sql`; `_initial_data_pipeline.py`
+  does not yet carry BHRF ids 5–9. Must first reconcile the missing live
+  `classifier` ids 3–4 (this checkout's `classifier` block stops at id 2) before
+  adding 5–9, or it will renumber over real ids (§3d).
 - **Back-port the ZTF feature LUTs to the authority file** — they were seeded
   directly via `ztf_feature_luts_seed.sql`, so `_initial_data_pipeline.py` does not
   yet carry the ZTF `feature_name_lut` / `feature_version_lut` rows (§3d).
@@ -427,9 +433,11 @@ flowchart TD
 | `feature_compare.py` | pure feature-diff utilities (used by compare script). |
 | `feature_lut.py` | Local ZTF feature_name/version LUT fixture + loaders (`load_feature_name_lut`, `version_name_to_id`, `default_version_name`). |
 | `model_feature_list.py` | Pinned authority: the deployed BHRF's 199 `feature_list` names + md5/version provenance. §6 |
+| `classifier_taxonomy_lut.py` | BHRF classifier + taxonomy seed fixture (source of truth) + `render_seed_sql()`. §3d |
 | `model_features.py` | Pure coverage logic (`predict_input_columns`, `diff_feature_coverage`) mirroring the model's predict-input namespace. §6 |
 | `scripts/offline_verify_model_features.py` | Verifier: name-diff offline features vs the 199 + `--smoke` end-to-end predict check. §6/§7 |
 | `feature_writer.py` | Upsert DB-ready feature rows into `<schema>.feature` (`write_features`). §5 |
 | `scripts/offline_generate_feature_lut.py` | One-off generator that prints the fixture from a real run. |
 | `ztf_feature_luts_seed.sql` | Idempotent SQL seeding the ZTF `feature_name_lut` + `feature_version_lut` (`sid = 0`). §3d |
+| `ztf_classifier_taxonomy_seed.sql` | Idempotent SQL seeding the BHRF `classifier` (ids 5–9) + `taxonomy` (45 rows). Generated from `classifier_taxonomy_lut.py`. §3d |
 | `scripts/offline_*.py` | CLI entry points (in `feature_step/scripts/`). §2 |
