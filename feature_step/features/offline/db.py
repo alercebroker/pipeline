@@ -8,6 +8,7 @@ docs/superpowers/specs/2026-06-04-features-ztf-design.md).
 import json
 import logging
 import os
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -265,3 +266,27 @@ def fetch_stored_probabilities(credentials_json: str, oids: list) -> pd.DataFram
         "pending: stored-probability table TBD "
         "(see docs/superpowers/specs/2026-06-21-offline-ztf-classification-design.md)"
     )
+
+
+def fetch_taxonomy_maps(credentials_json: str, classifier_ids: list,
+                        schema: Optional[str] = None) -> dict:
+    """Return {classifier_id: {class_name: class_id}} from <schema>.taxonomy.
+
+    The authoritative class_name -> class_id mapping for writing probabilities
+    (mirrors production's get_taxonomy_by_classifier_id). Read-only. Ordered by
+    "order" per classifier (cosmetic for the dict, matches production).
+    """
+    schema = schema or SCHEMA
+    engine = _make_engine(credentials_json)
+    # schema is trusted operator input (env / CLI), same f-string convention as the
+    # other readers; classifier_ids are bound as an expanding parameter.
+    sql = text(
+        f'SELECT classifier_id, class_id, class_name FROM {schema}.taxonomy '
+        'WHERE classifier_id IN :cids ORDER BY classifier_id, "order"'
+    ).bindparams(sa.bindparam("cids", expanding=True))
+
+    maps: dict = {}
+    with engine.connect() as conn:
+        for row in conn.execute(sql, {"cids": _py_oids(classifier_ids)}).mappings():
+            maps.setdefault(int(row["classifier_id"]), {})[row["class_name"]] = int(row["class_id"])
+    return maps
