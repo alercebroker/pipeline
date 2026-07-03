@@ -61,3 +61,38 @@ def test_render_seed_sql_is_idempotent_and_targets_composite_pk():
     assert "created_date" not in sql
     # a spot-check row: flat classifier SESN at class_id 14
     assert "(14, 'SESN', 14, 5)" in sql
+
+
+def test_render_seed_sql_row_counts():
+    sql = render_seed_sql()
+    lines = sql.splitlines()
+    cls_start = next(
+        i for i, l in enumerate(lines)
+        if l.endswith("(classifier_id, classifier_name, classifier_version, tid) VALUES")
+    )
+    cls_end = next(
+        i for i in range(cls_start + 1, len(lines))
+        if lines[i].startswith("ON CONFLICT (classifier_id)")
+    )
+    assert len(lines[cls_start + 1:cls_end]) == 5
+
+    tax_start = next(
+        i for i, l in enumerate(lines)
+        if l.endswith('(class_id, class_name, "order", classifier_id) VALUES')
+    )
+    tax_end = next(
+        i for i in range(tax_start + 1, len(lines))
+        if lines[i].startswith("ON CONFLICT (class_id, classifier_id)")
+    )
+    assert len(lines[tax_start + 1:tax_end]) == 45
+
+
+def test_taxonomy_order_equals_class_id():
+    import re
+    sql = render_seed_sql()
+    # taxonomy tuples are (int, 'str', int, int); classifier tuples are (int, 'str', 'str', int)
+    # so this pattern (3rd group all-digits) matches only taxonomy rows.
+    matches = re.findall(r"\((\d+), '[^']*', (\d+), \d+\)", sql)
+    assert matches, "no taxonomy rows matched"
+    for class_id, order in matches:
+        assert order == class_id
