@@ -95,3 +95,35 @@ def build_probability_rows(output_dto, oid: int, lastmjd: float,
                 "lastmjd": float(lastmjd),
             })
     return rows
+
+
+def write_probabilities(rows: list, credentials: str, schema: Optional[str] = None,
+                        execute: bool = False) -> dict:
+    """Upsert DB-ready probability rows into <schema>.probability.
+
+    Dry-run by default (execute=False): returns {"executed": False,
+    "would_write": N} and opens no DB connection. With execute=True, upserts all
+    rows in one transaction. schema defaults to db.SCHEMA.
+    """
+    schema = schema or db.SCHEMA
+    n = len(rows)
+    if not execute:
+        return {"executed": False, "would_write": n}
+
+    # schema is a trusted operator-supplied identifier (db.SCHEMA env / CLI), not
+    # user input — same f-string convention as db.py / feature_writer.py.
+    sql = text(
+        f"INSERT INTO {schema}.probability "
+        "(oid, sid, classifier_id, classifier_version, class_id, probability, ranking, lastmjd) "
+        "VALUES (:oid, :sid, :classifier_id, :classifier_version, :class_id, "
+        ":probability, :ranking, :lastmjd) "
+        "ON CONFLICT (oid, sid, classifier_id, class_id) "
+        "DO UPDATE SET probability = EXCLUDED.probability, "
+        "classifier_version = EXCLUDED.classifier_version, "
+        "ranking = EXCLUDED.ranking, lastmjd = EXCLUDED.lastmjd"
+    )
+    engine = db._make_engine(credentials)
+    with engine.begin() as conn:
+        if rows:
+            conn.execute(sql, rows)
+    return {"executed": True, "written": n}

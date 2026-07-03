@@ -116,3 +116,72 @@ def test_build_rows_rejects_multi_oid_frame():
 def test_build_rows_requires_lastmjd():
     with pytest.raises(ValueError, match="lastmjd"):
         pw.build_probability_rows(_full_dto(), OID, None, TAX_MAPS)
+
+
+class _RecordingConn:
+    def __init__(self):
+        self.calls = []
+
+    def execute(self, sql, records):
+        self.calls.append((sql, records))
+
+
+class _FakeEngine:
+    def __init__(self):
+        self.conn = _RecordingConn()
+
+    def begin(self):
+        conn = self.conn
+
+        class _Ctx:
+            def __enter__(self_):
+                return conn
+
+            def __exit__(self_, *a):
+                return False
+
+        return _Ctx()
+
+
+def test_write_dry_run_does_not_connect(monkeypatch):
+    def _boom(_creds):
+        raise AssertionError("dry-run must not open a connection")
+    monkeypatch.setattr(pw.db, "_make_engine", _boom)
+
+    rows = pw.build_probability_rows(_full_dto(), OID, 60000.5, TAX_MAPS)
+    result = pw.write_probabilities(rows, "ignored", execute=False)
+    assert result == {"executed": False, "would_write": 45}
+
+
+def test_write_execute_upserts(monkeypatch):
+    fake = _FakeEngine()
+    monkeypatch.setattr(pw.db, "_make_engine", lambda _c: fake)
+
+    rows = pw.build_probability_rows(_full_dto(), OID, 60000.5, TAX_MAPS)
+    result = pw.write_probabilities(rows, "creds", schema="multisurvey_ztf", execute=True)
+
+    assert result == {"executed": True, "written": 45}
+    assert len(fake.conn.calls) == 1
+    sql, records = fake.conn.calls[0]
+    sql_str = str(sql)
+    assert "multisurvey_ztf.probability" in sql_str
+    assert "ON CONFLICT (oid, sid, classifier_id, class_id)" in sql_str
+    assert "DO UPDATE SET" in sql_str
+    assert "updated_date" not in sql_str  # probability has no updated_date column
+    assert records[0]["oid"] == OID and isinstance(records[0]["oid"], int)
+
+
+def test_write_default_schema_is_db_schema(monkeypatch):
+    fake = _FakeEngine()
+    monkeypatch.setattr(pw.db, "_make_engine", lambda _c: fake)
+    rows = pw.build_probability_rows(_full_dto(), OID, 1.0, TAX_MAPS)
+    pw.write_probabilities(rows, "creds", execute=True)  # no schema=
+    assert f"{pw.db.SCHEMA}.probability" in str(fake.conn.calls[0][0])
+
+
+def test_write_empty_rows_execute_no_call(monkeypatch):
+    fake = _FakeEngine()
+    monkeypatch.setattr(pw.db, "_make_engine", lambda _c: fake)
+    result = pw.write_probabilities([], "creds", execute=True)
+    assert result == {"executed": True, "written": 0}
+    assert fake.conn.calls == []
