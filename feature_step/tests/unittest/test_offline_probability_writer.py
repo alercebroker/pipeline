@@ -103,6 +103,16 @@ def test_build_rows_empty_output_returns_empty():
     assert pw.build_probability_rows(empty, OID, 1.0, TAX_MAPS) == []
 
 
+def test_build_rows_rejects_multi_oid_frame():
+    multi = pd.DataFrame(
+        [{n: 0.5 for n in TAXONOMY_LUT[5]}, {n: 0.5 for n in TAXONOMY_LUT[5]}],
+        index=[OID, OID + 1],
+    )
+    dto = OutputDTO(multi, {"top": pd.DataFrame(), "children": {}})
+    with pytest.raises(ValueError, match="single-oid"):
+        pw.build_probability_rows(dto, OID, 1.0, TAX_MAPS)
+
+
 def test_build_rows_requires_lastmjd():
     with pytest.raises(ValueError, match="lastmjd"):
         pw.build_probability_rows(_full_dto(), OID, None, TAX_MAPS)

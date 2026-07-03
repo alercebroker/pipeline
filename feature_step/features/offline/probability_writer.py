@@ -32,7 +32,7 @@ def classifier_version_to_smallint(version: str) -> int:
 
 
 def _iter_frames(output_dto):
-    """Yield (classifier_id, frame) for the 5 BHRF classifiers, in id order."""
+    """Return (classifier_id, frame) for the 5 BHRF classifiers, in id order."""
     hierarchical = output_dto.hierarchical or {}
     children = hierarchical.get("children", {}) or {}
     return [
@@ -65,6 +65,11 @@ def build_probability_rows(output_dto, oid: int, lastmjd: float,
     for classifier_id, frame in _iter_frames(output_dto):
         if frame is None or len(frame) == 0:
             continue
+        if len(frame) != 1:
+            raise ValueError(
+                f"expected a single-oid frame for classifier_id={classifier_id}, "
+                f"got {len(frame)} rows (build_probability_rows is per-oid)"
+            )
         class_id_of = taxonomy_by_classifier.get(classifier_id)
         if not class_id_of:
             raise ValueError(
