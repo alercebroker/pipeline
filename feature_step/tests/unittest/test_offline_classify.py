@@ -74,3 +74,39 @@ def test_load_squidward_model_requires_model_path(monkeypatch):
     monkeypatch.delenv("MODEL_PATH", raising=False)
     with pytest.raises(ValueError, match="MODEL_PATH"):
         classify.load_squidward_model()
+
+
+def test_classify_oid_for_save_returns_lastmjd(monkeypatch):
+    import pandas as pd
+    # Fake the DB readers + message/AO build so no real DB is needed.
+    monkeypatch.setattr(classify.db, "fetch_detections",
+                        lambda c, oids: pd.DataFrame({"mjd": [59000.0, 59010.5]}))
+    monkeypatch.setattr(classify.db, "fetch_forced_photometry",
+                        lambda c, oids: pd.DataFrame({"mjd": [59020.25]}))  # forced later than dets
+    monkeypatch.setattr(classify.db, "fetch_ps1", lambda c, oids: pd.DataFrame())
+    monkeypatch.setattr(classify.db, "fetch_allwise", lambda c, oids: pd.DataFrame())
+    monkeypatch.setattr(classify.db, "fetch_references", lambda c, oids: pd.DataFrame())
+    monkeypatch.setattr(classify, "build_message", lambda oid, d, f, p: {"oid": oid})
+    monkeypatch.setattr(classify, "compute_astro_object",
+                        lambda *a, **k: object())  # non-None AO
+    monkeypatch.setattr(classify, "classify_astro_object",
+                        lambda ao, msg, model: OutputDTO(pd.DataFrame({"AGN": [0.9]}, index=[123]),
+                                                         {"top": pd.DataFrame(), "children": {}}))
+
+    dto, lastmjd = classify.classify_oid_for_save(123, "creds", model=object())
+    assert lastmjd == 59020.25            # max over detections + forced, already MJD
+    assert dto.probabilities.loc[123, "AGN"] == 0.9
+
+
+def test_classify_oid_for_save_none_when_no_ao(monkeypatch):
+    import pandas as pd
+    monkeypatch.setattr(classify.db, "fetch_detections", lambda c, oids: pd.DataFrame({"mjd": []}))
+    monkeypatch.setattr(classify.db, "fetch_forced_photometry", lambda c, oids: pd.DataFrame({"mjd": []}))
+    monkeypatch.setattr(classify.db, "fetch_ps1", lambda c, oids: pd.DataFrame())
+    monkeypatch.setattr(classify.db, "fetch_allwise", lambda c, oids: pd.DataFrame())
+    monkeypatch.setattr(classify.db, "fetch_references", lambda c, oids: pd.DataFrame())
+    monkeypatch.setattr(classify, "build_message", lambda oid, d, f, p: {"oid": oid})
+    monkeypatch.setattr(classify, "compute_astro_object", lambda *a, **k: None)  # too few dets
+
+    dto, lastmjd = classify.classify_oid_for_save(1, "creds", model=object())
+    assert dto is None and lastmjd is None

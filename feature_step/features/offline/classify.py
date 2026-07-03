@@ -19,6 +19,8 @@ from alerce_classifiers.base.dto import OutputDTO
 from alerce_classifiers.base.factories import input_dto_factory
 
 from features.utils.parsers import parse_output
+from features.offline import db
+from features.offline.message import build_message
 from .lc_features import compute_astro_object
 
 DEFAULT_MODEL_CLASS = "alerce_classifiers.squidward.model.SquidwardFeaturesClassifier"
@@ -73,24 +75,53 @@ def classify_astro_object(ao, message: dict, model) -> OutputDTO:
     return model.predict(dto)
 
 
-def classify_oid(oid: int, credentials: str, model, min_detections: int = 1,
-                 preprocessor=None, extractor=None):
-    """DB -> message -> features -> probabilities for one oid.
-
-    Returns an OutputDTO, or None if the object has too few real detections."""
-    from features.offline import db
-    from features.offline.message import build_message
-
+def _fetch_oid_inputs(oid: int, credentials: str):
+    """DB -> (message, references, allwise, detections, forced) for one oid."""
     oids = [oid]
     dets = db.fetch_detections(credentials, oids)
     forced = db.fetch_forced_photometry(credentials, oids)
     ps1 = db.fetch_ps1(credentials, oids)
     allwise = db.fetch_allwise(credentials, oids)
     refs = db.fetch_references(credentials, oids)
-
     message = build_message(oid, dets, forced, ps1)
+    return message, refs, allwise, dets, forced
+
+
+def _lc_lastmjd(dets, forced):
+    """Max MJD over all epochs the classifier consumed (detections + forced).
+
+    Already MJD (db.py reads mjd) — do NOT subtract 2400000.5. None if no epochs.
+    """
+    mjds = []
+    if dets is not None and len(dets):
+        mjds.append(float(dets["mjd"].max()))
+    if forced is not None and len(forced):
+        mjds.append(float(forced["mjd"].max()))
+    return max(mjds) if mjds else None
+
+
+def classify_oid(oid: int, credentials: str, model, min_detections: int = 1,
+                 preprocessor=None, extractor=None):
+    """DB -> message -> features -> probabilities for one oid.
+
+    Returns an OutputDTO, or None if the object has too few real detections."""
+    message, refs, allwise, _dets, _forced = _fetch_oid_inputs(oid, credentials)
     ao = compute_astro_object(message, refs, allwise, min_detections,
                               preprocessor=preprocessor, extractor=extractor)
     if ao is None:
         return None
     return classify_astro_object(ao, message, model)
+
+
+def classify_oid_for_save(oid: int, credentials: str, model, min_detections: int = 1,
+                          preprocessor=None, extractor=None):
+    """Like classify_oid but also returns lastmjd for persistence.
+
+    Returns (OutputDTO, lastmjd), or (None, None) if too few real detections.
+    lastmjd = max MJD over detections + forced (see _lc_lastmjd)."""
+    message, refs, allwise, dets, forced = _fetch_oid_inputs(oid, credentials)
+    ao = compute_astro_object(message, refs, allwise, min_detections,
+                              preprocessor=preprocessor, extractor=extractor)
+    if ao is None:
+        return None, None
+    return classify_astro_object(ao, message, model), _lc_lastmjd(dets, forced)
