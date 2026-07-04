@@ -1,5 +1,5 @@
 from json import loads
-from .exceptions import WrongFormatCommandException
+from .exceptions import WrongFormatCommandException, MongoDialectCommandException
 from .commands import (
     Command,
     InsertObjectCommand,
@@ -69,4 +69,14 @@ def command_factory(msg: str) -> Command:
         return InsertForcedPhotometryCommand(**message)
     if type_ == "insert" and table == "score":
         return UpsertScoreCommand(**message)
+    if type_ == "update" and table == "object":
+        # Legacy dual-DB fossil: magstats_step (and historically others) still
+        # emit the Mongo-dialect object update -- a generic
+        # {"type": "update", "collection": "object"} carrying object stats -- for
+        # a MongoDB backend that no longer exists. The SQL scribe has no handler
+        # for it (the same stats arrive via the "upsert"/magstats and
+        # "update_object_from_stats" commands), so raise a *distinct* exception
+        # the step skips quietly, rather than the generic ValueError below that
+        # it WARNs + logs the full payload for. See MONGODB-LEGACY.md.
+        raise MongoDialectCommandException(type_, table)
     raise ValueError(f"Unrecognized command type {type_} in table {table}.")

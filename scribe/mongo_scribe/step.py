@@ -4,6 +4,7 @@ from .mongo.command.decode import db_command_factory as mongo_command_factory
 from .mongo.db.executor import ScribeCommandExecutor
 
 from .sql.command.decode import command_factory as sql_command_factory
+from .sql.command.exceptions import MongoDialectCommandException
 from .sql.db.executor import SQLCommandExecutor
 
 
@@ -31,11 +32,19 @@ class MongoScribe(GenericStep):
         DB Commands and executes them when they're valid.
         """
         logging.info("Processing messages...")
-        valid_commands, n_invalid_commands = [], 0
+        valid_commands, n_invalid_commands, n_mongo_dialect = [], 0, 0
         for message in messages:
             try:
                 new_command = self.command_factory(message["payload"])
                 valid_commands.append(new_command)
+            except MongoDialectCommandException:
+                # Expected legacy fossil: a Mongo-dialect command with no SQL
+                # handler and no live Mongo backend to consume it (see
+                # sql/command/decode.py and MONGODB-LEGACY.md). Skip it quietly
+                # so the WARN below stays a meaningful signal for genuine drops
+                # (e.g. a command that fails to build) rather than being drowned
+                # by the per-object magstats object update.
+                n_mongo_dialect += 1
             except ValueError as e:
                 # A command that fails to build is dropped and its offset still
                 # commits, so this log is the only trace of the lost payload.
@@ -48,9 +57,15 @@ class MongoScribe(GenericStep):
                 )
                 n_invalid_commands += 1
 
-        logging.info(
-            f"Processed {len(valid_commands)} messages successfully. Found {n_invalid_commands} invalid messages."
+        summary = (
+            f"Processed {len(valid_commands)} messages successfully. "
+            f"Found {n_invalid_commands} invalid messages."
         )
+        if n_mongo_dialect:
+            summary += (
+                f" Skipped {n_mongo_dialect} legacy Mongo-dialect commands."
+            )
+        logging.info(summary)
 
         if len(valid_commands) > 0:
             logging.info("Writing commands into database")
