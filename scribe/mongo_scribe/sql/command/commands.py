@@ -202,11 +202,24 @@ class InsertDetectionsCommand(Command):
                 new_data[field] = new_data["extra_fields"][field]
         new_data = {k: v for k, v in new_data.items() if k not in exclude}
         new_data["step_id_corr"] = new_data.get("step_id_corr", step_version)
-        new_data["parent_candid"] = (
-            int(new_data["parent_candid"])
-            if new_data["parent_candid"] != "None"
-            else None
-        )
+        # parent_candid can arrive as a non-integer sentinel: "None" for a
+        # genuinely parentless detection, or "nan" when lightcurve does
+        # detections["parent_candid"].astype(str) on a NaN (a parentless first
+        # detection). It is a nullable BigInteger, so store NULL rather than let
+        # int() raise a ValueError that gets swallowed upstream and drops the
+        # whole detection. Log any *unexpected* value so other upstream bugs
+        # surface instead of being silently nulled.
+        try:
+            new_data["parent_candid"] = int(new_data["parent_candid"])
+        except (ValueError, TypeError):
+            if new_data["parent_candid"] not in ("None", "nan", "NaN", "", None):
+                logging.warning(
+                    "Unexpected parent_candid %r (oid=%s, candid=%s); storing NULL",
+                    new_data["parent_candid"],
+                    new_data.get("oid"),
+                    new_data.get("candid"),
+                )
+            new_data["parent_candid"] = None
         new_data["fid"] = fid_map[new_data["fid"]]
         return {**new_data, **self.criteria}
 

@@ -196,6 +196,78 @@ class PsqlIntegrationTest(unittest.TestCase):
             assert oids == inserted_oids
             assert candids == inserted_candids
 
+    def test_insert_detection_with_nan_parent_candid_lands_as_null(self):
+        # Regression: lightcurve does detections["parent_candid"].astype(str),
+        # so a parentless detection arrives with parent_candid == "nan". The old
+        # code did int(parent_candid), which raised ValueError on "nan"; the step
+        # swallowed the ValueError and committed the offset, silently DROPPING the
+        # detection. It must now land with parent_candid = NULL instead of being lost.
+        oid = "ZTFnanparent"
+        candid = 999000001
+        command = {
+            "collection": "detection",
+            "type": "update",
+            "criteria": {"candid": candid, "oid": oid},
+            "data": {
+                "aid": "ALnanparent",
+                "corrected": False,
+                "dec": 1.0,
+                "dubious": False,
+                "e_dec": 1.0,
+                "e_mag": 1.0,
+                "e_mag_corr": None,
+                "e_mag_corr_ext": None,
+                "e_ra": 1.0,
+                "extra_fields": {"unused": None},
+                "fid": "r",
+                "has_stamp": True,
+                "isdiffpos": 1,
+                "mag": 1.0,
+                "mag_corr": None,
+                "mjd": 50001.0,
+                "oid": oid,
+                "parent_candid": "nan",
+                "pid": 1,
+                "ra": 1.0,
+                "sid": "ZTF",
+                "stellar": False,
+                "tid": "ZTF",
+                "step_id_corr": "test",
+            },
+        }
+        with self.db.session() as session:
+            session.execute(
+                text(
+                    f"""INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec, step_id_corr, \
+                    lastmjd, deltajd, ncovhist, ndethist, corrected, stellar)
+                    VALUES ('{oid}', 1, 50001, 1.0, 0.9, 45, 45, 'v1', 50001, 0, 1, 1, false, false) ON CONFLICT DO NOTHING"""
+                )
+            )
+            session.commit()
+
+        # Don't pollute the shared detection/object tables for the other tests
+        # (test_insert_detections_into_database asserts on the full table). Runs
+        # even if the assertions below fail, so it can't cascade.
+        def _cleanup():
+            with self.db.session() as session:
+                session.execute(text(f"DELETE FROM detection WHERE oid = '{oid}'"))
+                session.execute(text(f"DELETE FROM object WHERE oid = '{oid}'"))
+                session.commit()
+
+        self.addCleanup(_cleanup)
+
+        self.producer.produce({"payload": json.dumps(command)})
+        self.step.start()
+        with self.db.session() as session:
+            result = list(
+                session.execute(
+                    text(
+                        f"SELECT candid, parent_candid FROM detection WHERE oid = '{oid}' AND candid = {candid}"
+                    )
+                )
+            )
+        assert len(result) == 1, "detection with parent_candid='nan' was dropped (regression)"
+        assert result[0][1] is None, f"parent_candid should be NULL, got {result[0][1]!r}"
 
     def test_upsert_non_detections(self):
         command = {
