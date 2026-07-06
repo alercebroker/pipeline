@@ -1,0 +1,17 @@
+digraph flow_compute {
+    rankdir=LR;
+    bgcolor="white";
+    node [shape=box, style="rounded,filled", fillcolor="#f6f8fa", color="#57606a",
+          fontname="Helvetica", fontsize=11, margin="0.18,0.12"];
+    edge [color="#57606a"];
+
+    msg    [label="magstats_ms ZTF\nmessage"];
+    prep   [label="_prepare_detections\n(discard_bogus_detections\n+ min_detections gate)"];
+    parser [label="detections_to_astro_object\n(REAL features.utils.parsers,\nforced arg = [ ])"];
+    pre    [label="ZTFLightcurvePreprocessor\n(lc_classifier)"];
+    ext    [label="ZTFFeatureExtractor\n(lc_classifier)"];
+    out    [label="AstroObject.features\n[name, value, fid, sid, version]",
+            fillcolor="#ddf4ff", color="#1f6feb", penwidth=2];
+
+    msg -> prep -> parser -> pre -> ext -> out;
+}

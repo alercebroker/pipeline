@@ -1,0 +1,46 @@
+digraph flow_overview {
+    rankdir=TB;
+    bgcolor="white";
+    node [shape=box, style="rounded,filled", fillcolor="#f6f8fa", color="#57606a",
+          fontname="Helvetica", fontsize=11, margin="0.18,0.10"];
+    edge [color="#57606a", fontname="Helvetica", fontsize=9];
+
+    oid [label="pick oid(s) — bigint\n(see §2)", fillcolor="#fff8c5", color="#9a6700"];
+
+    subgraph cluster_db {
+        label="multisurvey_ztf DB";
+        labeljust="l";
+        fontname="Helvetica-Bold"; fontsize=12; color="#8250df"; style="rounded";
+        bgcolor="#faf5ff";
+        epochs [shape=cylinder, fillcolor="#ede9fe", color="#8250df",
+                label="detection ⋈ ztf_detection\nforced_photometry ⋈ ztf_forced_photometry\nztf_ps1"];
+        aux    [shape=cylinder, fillcolor="#ede9fe", color="#8250df",
+                label="ztf_reference\nxmatch ⋈ allwise"];
+    }
+
+    subgraph cluster_offline {
+        label="offline/  (glue around the live pipeline)";
+        labeljust="l";
+        fontname="Helvetica-Bold"; fontsize=12; color="#1f6feb"; style="rounded";
+        bgcolor="#f0f6ff";
+        msg     [label="build_message\n(magstats_ms ZTF msg)\nmessage.py"];
+        compute [label="compute_features / compute_astro_object  (lc_features.py)\l• discard_bogus_detections\l• detections_to_astro_object\l• ZTFLightcurvePreprocessor\l• ZTFFeatureExtractor\l"];
+        feats   [label="long features frame\n[name, value, fid, sid, version]",
+                 fillcolor="#ddf4ff", color="#1f6feb", penwidth=2];
+        parse   [label="parse_output → wide features dict\ninput_dto_factory → features-only InputDTO\nclassify.py"];
+        model   [label="SquidwardFeaturesClassifier\n(BHRF 2.1.0)"];
+    }
+
+    probs [label="OutputDTO → probabilities\n(top + hierarchical)",
+           fillcolor="#ddf4ff", color="#1f6feb", penwidth=2];
+
+    oid -> epochs;
+    oid -> aux;
+    epochs -> msg [label="fetch_detections / _forced / _ps1"];
+    msg -> compute;
+    aux -> compute [label="fetch_references / fetch_allwise"];
+    compute -> feats;
+    feats -> parse;
+    parse -> model;
+    model -> probs;
+}

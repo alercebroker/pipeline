@@ -1,0 +1,2 @@
+# DB credentials — contains a live password, never commit
+credentials.json

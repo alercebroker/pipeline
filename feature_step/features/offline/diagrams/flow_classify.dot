@@ -1,0 +1,21 @@
+digraph flow_classify {
+    rankdir=TB;
+    bgcolor="white";
+    node [shape=box, style="rounded,filled", fillcolor="#f6f8fa", color="#57606a",
+          fontname="Helvetica", fontsize=11, margin="0.18,0.12"];
+    edge [color="#57606a", fontname="Helvetica", fontsize=10];
+
+    in   [label="AstroObject + message"];
+    po   [label="parse_output([ao],[msg],candids)\n(REAL feature_step parser)"];
+    fdf  [label="features_df — 1 row, indexed by oid\n(wide, band-suffixed features dict)"];
+    dto  [label="input_dto_factory(∅, ∅, features_df, ∅, ∅)\n(REAL alerce_classifiers factory)\nInputDTO (features-only)"];
+    can  [shape=diamond, fillcolor="#fff8c5", color="#9a6700",
+          label="model.can_predict(dto)?"];
+    pred [label="model.predict(dto)\n→ OutputDTO (probabilities)",
+          fillcolor="#ddf4ff", color="#1f6feb", penwidth=2];
+    empty [label="empty OutputDTO", fillcolor="#ffebe9", color="#cf222e"];
+
+    in -> po -> fdf -> dto -> can;
+    can -> pred [label="yes"];
+    can -> empty [label="no"];
+}
