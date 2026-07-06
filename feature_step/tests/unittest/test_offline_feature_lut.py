@@ -8,6 +8,7 @@ from features.offline.feature_lut import (
     FEATURE_VERSION_LUT,
     default_version_name,
     load_feature_name_lut,
+    render_seed_sql,
     version_name_to_id,
 )
 
@@ -20,9 +21,24 @@ def test_name_lut_ids_contiguous_from_zero():
     assert sorted(FEATURE_NAME_LUT) == list(range(len(FEATURE_NAME_LUT)))
 
 
-def test_name_lut_sorted_by_name():
+def test_name_lut_in_extractor_order_not_alphabetical():
+    # Ids follow extractor (natural) emission order, NOT alphabetical. Guard
+    # against a regenerator accidentally re-sorting the fixture by name.
     names = [FEATURE_NAME_LUT[i] for i in sorted(FEATURE_NAME_LUT)]
-    assert names == sorted(names)
+    assert names != sorted(names)
+
+
+def test_mjd_ref_features_follow_their_extractor_siblings():
+    # Each reference-epoch feature sits immediately after its extractor's last
+    # feature — the invariant the extractor-order LUT exists to preserve.
+    pos = {name: i for i, name in FEATURE_NAME_LUT.items()}
+    for sibling, mjd_ref in [
+        ("SPM_chi", "SPM_mjd_ref"),
+        ("TDE_mag0", "TDE_mjd_ref"),
+        ("fleet_t0", "fleet_mjd_ref"),
+        ("ulens_mag0", "ulens_mjd_ref"),
+    ]:
+        assert pos[mjd_ref] == pos[sibling] + 1
 
 
 def test_load_returns_independent_copy():
@@ -49,3 +65,18 @@ def test_default_version_name_is_latest_entry():
 
 def test_default_version_name_round_trips_to_an_id():
     assert version_name_to_id(default_version_name()) == max(FEATURE_VERSION_LUT)
+
+
+def test_render_seed_sql_has_a_row_per_feature_name():
+    sql = render_seed_sql()
+    for feature_id, name in FEATURE_NAME_LUT.items():
+        assert f"({feature_id}, '{name}', 0, 0)" in sql
+    assert "INSERT INTO multisurvey_ztf.feature_name_lut" in sql
+    assert "ON CONFLICT (feature_id, sid) DO NOTHING;" in sql
+
+
+def test_render_seed_sql_seeds_every_version():
+    sql = render_seed_sql()
+    for version_id, version_name in FEATURE_VERSION_LUT.items():
+        assert f"({version_id}, '{version_name}', 0, 0)" in sql
+    assert "ON CONFLICT (version_id, sid) DO NOTHING;" in sql

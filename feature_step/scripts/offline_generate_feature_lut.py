@@ -3,8 +3,9 @@
 
 Runs the real extractor on one (or more) representative oid(s), collects the
 FULL set of band-less feature names (NOT NaN-filtered — we want the complete
-feature schema, not one object's non-NaN subset), sorts them, assigns ids
-0..N-1, and prints a ready-to-paste Python literal for
+feature schema, not one object's non-NaN subset), in EXTRACTOR (natural) order
+— the order features come out of the composite, NOT alphabetical — and assigns
+ids 0..N-1. Prints a ready-to-paste Python literal for
 feature_step/features/offline/feature_lut.py.
 
     conda run --no-capture-output -n training_py310 python \
@@ -18,9 +19,9 @@ for p in (PIPE / "feature_step", PIPE / "lc_classifier", PIPE / "libs" / "idmapp
     sys.path.insert(0, str(p))
 
 import argparse
-from importlib.metadata import version as _pkg_version
+from importlib.metadata import PackageNotFoundError, version as _pkg_version
 
-from features.offline import db, lc_features
+from features.offline import db, lc_features, feature_lut
 from features.offline.message import build_message
 
 # Mirror the back-compat name fixes in prepare_ao_features_for_db.
@@ -33,7 +34,11 @@ DEFAULT_CREDENTIALS = str(PIPE / "feature_step" / "features" / "offline" / "cred
 
 
 def collect(credentials, oids):
-    names = set()
+    # Preserve extractor (natural) emission order: first occurrence across the
+    # concatenated ao.features, deduped. NOT sorted alphabetically — the id order
+    # must mirror the order the composite emits features.
+    names = []
+    seen = set()
     for oid in oids:
         dets = db.fetch_detections(credentials, [oid])
         forced = db.fetch_forced_photometry(credentials, [oid])
@@ -46,8 +51,11 @@ def collect(credentials, oids):
             print(f"# oid {oid}: too few detections, skipped", file=sys.stderr)
             continue
         feats = ao.features  # NOT NaN-filtered
-        names.update(feats["name"].replace(_NAME_FIXES))
-    return sorted(names)
+        for name in feats["name"].replace(_NAME_FIXES):
+            if name not in seen:
+                seen.add(name)
+                names.append(name)
+    return names
 
 
 def main():
@@ -58,7 +66,12 @@ def main():
     args = ap.parse_args()
 
     names = collect(args.credentials, args.oid)
-    versions = [_pkg_version("feature-step")]
+    try:
+        versions = [_pkg_version("feature-step")]
+    except PackageNotFoundError:
+        # feature-step not pip-installed (running from source); fall back to the
+        # canonical offline version, same as offline_compute_features.
+        versions = [feature_lut.default_version_name()]
     print(f"# {len(names)} feature names; versions={versions}")
     print("FEATURE_NAME_LUT = {")
     for i, n in enumerate(names):
