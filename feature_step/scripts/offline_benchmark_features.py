@@ -32,7 +32,7 @@ from sqlalchemy import text
 from features.offline import db, lc_features
 from features.offline.message import build_message
 
-DEFAULT_CREDENTIALS = "/home/fandrades/desktop/repos/training/features_ztf/data/credentials.json"
+DEFAULT_CREDENTIALS = str(PIPE / "feature_step" / "features" / "offline" / "credentials.json")
 
 
 def _select_oids(credentials: str, n: int, min_det: int) -> list:

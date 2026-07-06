@@ -32,7 +32,7 @@ from features.offline.feature_compare import compare_feature_frames
 from features.offline.message import build_message
 from idmapper.mapper import decode_masterid, catalog_oid_to_masterid
 
-DEFAULT_CREDENTIALS = "/home/fandrades/desktop/repos/training/features_ztf/data/credentials.json"
+DEFAULT_CREDENTIALS = str(PIPE / "feature_step" / "features" / "offline" / "credentials.json")
 
 # ZTF oid strings start with "ZTF" followed by digits/letters.
 _ZTF_PREFIX = "ZTF"

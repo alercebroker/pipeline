@@ -1,7 +1,8 @@
-"""Build the magstats_ms_step ZTF output message ("correction-ztf") from DB
-reader frames — the exact input contract feature_step consumes.
+"""Build the magstats_ms_step ZTF output message from DB reader frames — the
+exact input contract feature_step consumes.
 
-Schema: features_ztf/schemas/ztf_correction.avsc. Forced photometry is emitted
+Schema: schemas/magstats_ms_step/ztf/output.avsc (the `magstats_ms_ztf`
+record). Forced photometry is emitted
 inside `detections` with forced=True (no separate forced array). Per-epoch aux
 fields (rb/procstatus/reference/PS1) go in the extra_fields map. See
 docs/superpowers/plans/2026-06-07-features-ztf-stage-3-db-to-message.md.
@@ -61,7 +62,7 @@ def _alert(row, forced: bool, extra: dict) -> dict:
 
 
 def build_message(oid, detections: pd.DataFrame, forced: pd.DataFrame, ps1: pd.DataFrame) -> dict:
-    """DB reader frames for one oid -> correction-ztf message dict."""
+    """DB reader frames for one oid -> magstats_ms_step ZTF output message dict."""
     ps1_extra = {}
     if ps1 is not None and len(ps1):
         ps1_extra = {k: ps1.iloc[0].get(k) for k in PS1_KEYS}
