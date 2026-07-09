@@ -324,6 +324,7 @@ class LsstAlertGenerator:
             "ssObjectId": obj_info.oid if obj_info.otype == "ss" else None,
             "parentDiaSourceId": parent_id,
             "midpointMjdTai": mjd,
+            "exposureTime": self._noneable(self.rng.uniform(1, 60)),
             "ra": obj_info.obj["ra"] + self.rng.uniform(-0.01, +0.01)
             if obj_info.otype == "dia"
             else self.rng.uniform(0, 360),
@@ -366,7 +367,9 @@ class LsstAlertGenerator:
             "trailAngleErr": self._noneable(self.rng.uniform(0, 10)),
             "trailChi2": self._noneable(self.rng.uniform(0, 1000)),
             "trailNdata": self.rng.randint(0, 1000),
+            "trailAlgorithm": self._noneable(self.rng.choice([1, 2])),
             "trail_flag_edge": self._noneable(self.rng.choice([True, False])),
+            "trail_flag": self._noneable(self.rng.choice([True, False])),
             "dipoleMeanFlux": self._noneable(self.rng.uniform(-1000, 1000)),
             "dipoleMeanFluxErr": self._noneable(self.rng.uniform(0, 100)),
             "dipoleFluxDiff": self._noneable(self.rng.uniform(-1000, 1000)),
@@ -396,6 +399,7 @@ class LsstAlertGenerator:
             "shape_flag_parent_source": self._noneable(self.rng.choice([True, False])),
             "extendedness": self._noneable(self.rng.uniform(0, 1)),
             "reliability": self._noneable(self.rng.uniform(0, 1)),
+            "reliabilityVersion": self._noneable(self.rng.choice(["v1", "v2"])),
             "band": self._noneable(self._random_band()),
             "isDipole": self._noneable(self.rng.choice([True, False])),
             "dipoleFitAttempted": self._noneable(self.rng.choice([True, False])),

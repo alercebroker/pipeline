@@ -425,6 +425,19 @@ def parse_probability(raw_probability: dict) -> dict:
     }
 
 
+def parse_probability_table(raw: dict) -> dict:
+    return {
+        "oid": raw["oid"],
+        "sid": raw["sid"],
+        "classifier_id": raw["classifier_id"],
+        "classifier_version": raw["classifier_version"],
+        "class_id": raw["class_id"],
+        "probability": raw["probability"],
+        "ranking": raw.get("ranking"),
+        "lastmjd": raw["lastmjd"],
+    }
+
+
 def parse_ztf_object_feature_update(raw_ztf_update: dict) -> dict:
     return {
         "oid": raw_ztf_update["oid"],

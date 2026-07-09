@@ -8,7 +8,8 @@ from sql_scribe.sql.command.commands import (
     ZTFCorrectionCommand,
     ZTFMagstatCommand,
     ProbabilityArchivalCommand,
-    ZtfObjectUpdateCommand, 
+    ProbabilityCommand,
+    ZtfObjectUpdateCommand,
 )
 
 from .connection import PSQLConnection, Session
@@ -45,6 +46,7 @@ class SQLCommandExecutor:
             LSSTFeatureCommand,
             XmatchCommand,
             ProbabilityArchivalCommand,
+            ProbabilityCommand,
             ZtfObjectUpdateCommand,
         )
         self.handlers: Dict[str, CommandHandler] = {

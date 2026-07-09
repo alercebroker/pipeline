@@ -1,3 +1,6 @@
+# Deployment-specific values (the host directories that hold the stored alerts, and any
+# extra bind addresses for the file server) come from a gitignored .env — see .env.example.
+# Committed defaults are generic/local so nothing here reveals a specific server layout.
 services:
   alerts_store:
     build:
@@ -6,40 +9,54 @@ services:
     restart: unless-stopped
     volumes:
       - ./config.yaml:/config/config.yaml
-      - /rulers/alerts-data-schema-v11:/data
+      - ${DATA_V11_1:-./data-v11_1}:/data
 
   # FastAPI app — search, pagination, night listing.
   web:
     build: ./app
     restart: unless-stopped
     volumes:
-      - /rulers/alerts-data-schema-v11:/data-v11:ro
-      - /rulers/alerts-data:/data-v10:ro
+      - ${DATA_V11_1:-./data-v11_1}:/data-v11_1:ro
+      - ${DATA_V11:-./data-v11}:/data-v11:ro
+      - ${DATA_V10:-./data-v10}:/data-v10:ro
     environment:
-      DATA_DIRS: /data-v11,/data-v10
+      DATA_DIRS: /data-v11_1,/data-v11,/data-v10
       PER_PAGE: 500
 
-  # nginx — IP whitelisting, proxies UI to `web`, serves .avro + index.txt directly.
+  # nginx — proxies the UI to `web`, serves .avro + index.txt directly.
   file_server:
     image: nginx:alpine
     restart: unless-stopped
     ports:
-      - "3546:80"
+      - "127.0.0.1:3546:80"   # local tunnels (-L 3546:localhost:3546)
+      # To reach it from other internal hosts, add a bind on the host's internal IP
+      # (e.g. "10.x.x.x:3546:80") in a gitignored docker-compose.override.yml — not here.
     volumes:
-      - /rulers/alerts-data-schema-v11:/data-v11:ro
-      - /rulers/alerts-data:/data-v10:ro
+      - ${DATA_V11_1:-./data-v11_1}:/data-v11_1:ro
+      - ${DATA_V11:-./data-v11}:/data-v11:ro
+      - ${DATA_V10:-./data-v10}:/data-v10:ro
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - web
 
-  # One-time backfill + hourly safety check for MJD dirs missing index.txt.
-  # The alerts_store service maintains index.txt for new alerts;
-  # this handles existing data and any edge cases.
+  # Backfill + hourly safety re-index for MJD dirs missing index.txt.
+  # The alerts_store service maintains index.txt for new alerts; this covers existing data.
+  indexer_v11_1:
+    image: python:3.12-slim
+    restart: unless-stopped
+    volumes:
+      - ${DATA_V11_1:-./data-v11_1}:/data
+      - ./scripts/generate_index.py:/generate_index.py:ro
+    command: python /generate_index.py
+    environment:
+      DATA_DIR: /data
+      CHECK_INTERVAL: "3600"
+
   indexer_v11:
     image: python:3.12-slim
     restart: unless-stopped
     volumes:
-      - /rulers/alerts-data-schema-v11:/data
+      - ${DATA_V11:-./data-v11}:/data
       - ./scripts/generate_index.py:/generate_index.py:ro
     command: python /generate_index.py
     environment:
@@ -50,7 +67,7 @@ services:
     image: python:3.12-slim
     restart: unless-stopped
     volumes:
-      - /rulers/alerts-data:/data
+      - ${DATA_V10:-./data-v10}:/data
       - ./scripts/generate_index.py:/generate_index.py:ro
     command: python /generate_index.py
     environment:
