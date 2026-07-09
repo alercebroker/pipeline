@@ -1,0 +1,236 @@
+<style>
+  :root {
+    --bg:        #f4f6f9;
+    --panel:     #ffffff;
+    --panel-2:   #eef1f6;
+    --ink:       #171b22;
+    --muted:     #5b6573;
+    --faint:     #8a93a1;
+    --line:      #dde2ea;
+    --accent:    #b5711b;   /* WISE infrared amber */
+    --accent-sf: #f3e6d2;
+    --dropped:   #b23a2e;   /* allwise falls out */
+    --dropped-sf:#f6e2df;
+    --kept:      #2f7d51;   /* gaia is returned */
+    --kept-sf:   #e0efe6;
+    --code-bg:   #f7f8fb;
+    --code-ink:  #2a3038;
+    --code-cmt:  #8c96a4;
+    --code-str:  #9a5b12;
+    --shadow:    0 1px 2px rgba(20,28,40,.05), 0 8px 28px rgba(20,28,40,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:#0e1219; --panel:#151b24; --panel-2:#1b232e; --ink:#e7ebf2;
+      --muted:#9aa4b3; --faint:#6b7583; --line:#28313d;
+      --accent:#e0a24a; --accent-sf:#332818;
+      --dropped:#e8756a; --dropped-sf:#33201d; --kept:#5fc088; --kept-sf:#16281d;
+      --code-bg:#10161e; --code-ink:#cdd5e0; --code-cmt:#5f6b7a; --code-str:#d99a52;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"] {
+    --bg:#f4f6f9; --panel:#ffffff; --panel-2:#eef1f6; --ink:#171b22;
+    --muted:#5b6573; --faint:#8a93a1; --line:#dde2ea;
+    --accent:#b5711b; --accent-sf:#f3e6d2;
+    --dropped:#b23a2e; --dropped-sf:#f6e2df; --kept:#2f7d51; --kept-sf:#e0efe6;
+    --code-bg:#f7f8fb; --code-ink:#2a3038; --code-cmt:#8c96a4; --code-str:#9a5b12;
+    --shadow:0 1px 2px rgba(20,28,40,.05), 0 8px 28px rgba(20,28,40,.06);
+  }
+  :root[data-theme="dark"] {
+    --bg:#0e1219; --panel:#151b24; --panel-2:#1b232e; --ink:#e7ebf2;
+    --muted:#9aa4b3; --faint:#6b7583; --line:#28313d;
+    --accent:#e0a24a; --accent-sf:#332818;
+    --dropped:#e8756a; --dropped-sf:#33201d; --kept:#5fc088; --kept-sf:#16281d;
+    --code-bg:#10161e; --code-ink:#cdd5e0; --code-cmt:#5f6b7a; --code-str:#d99a52;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 780px; margin: 0 auto; padding: clamp(28px, 5vw, 64px) clamp(20px, 4vw, 40px) 96px; }
+
+  .mono { font-family: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, Consolas, monospace; }
+
+  header { border-bottom: 1px solid var(--line); padding-bottom: 26px; margin-bottom: 34px; }
+  .eyebrow {
+    font-size: 12px; letter-spacing: .13em; text-transform: uppercase;
+    color: var(--accent); font-weight: 600; margin: 0 0 14px;
+  }
+  .eyebrow .dot { color: var(--faint); margin: 0 8px; }
+  h1 {
+    font-size: clamp(26px, 4.2vw, 38px); line-height: 1.12; margin: 0 0 12px;
+    letter-spacing: -.02em; text-wrap: balance; font-weight: 700;
+  }
+  h1 .amber { color: var(--accent); }
+  .lede { font-size: 17px; color: var(--muted); margin: 0; max-width: 60ch; text-wrap: pretty; }
+
+  .oidcard {
+    display: flex; flex-wrap: wrap; gap: 10px 28px; align-items: baseline;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 16px 20px; margin: 26px 0 40px; box-shadow: var(--shadow);
+  }
+  .oidcard .k { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); display: block; margin-bottom: 2px; }
+  .oidcard .v { font-size: 15px; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+  section { margin-bottom: 40px; }
+  h2 {
+    font-size: 13px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--muted); font-weight: 700; margin: 0 0 16px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  h2::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+  p { margin: 0 0 14px; }
+  p code, li code, .inline {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: .88em; background: var(--panel-2); color: var(--code-ink);
+    padding: 1px 6px; border-radius: 5px; border: 1px solid var(--line);
+  }
+
+  pre {
+    margin: 0 0 8px; background: var(--code-bg); border: 1px solid var(--line);
+    border-radius: 10px; padding: 16px 18px; overflow-x: auto;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 13.5px; line-height: 1.62; color: var(--code-ink);
+    box-shadow: var(--shadow);
+  }
+  pre .cmt { color: var(--code-cmt); font-style: italic; }
+  pre .str { color: var(--code-str); }
+  pre .kw  { color: var(--accent); }
+  .caption { font-size: 13px; color: var(--faint); margin: 0 0 8px; }
+
+  .result {
+    display: inline-flex; align-items: center; gap: 8px; margin-top: 6px;
+    font-size: 14px; color: var(--muted);
+  }
+  .result .mono { color: var(--ink); }
+
+  table { border-collapse: collapse; width: 100%; margin: 4px 0 6px; font-size: 14.5px; }
+  th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line); }
+  th { font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); font-weight: 600; }
+  td.dist { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+  td.id { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; color: var(--muted); }
+  tr:last-child td { border-bottom: none; }
+
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600;
+    padding: 2px 9px; border-radius: 999px; letter-spacing: .02em; white-space: nowrap;
+  }
+  .chip.kept    { color: var(--kept); background: var(--kept-sf); }
+  .chip.dropped { color: var(--dropped); background: var(--dropped-sf); }
+  .chip .glyph { font-size: 10px; }
+
+  .fix {
+    background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--accent);
+    border-radius: 10px; padding: 18px 22px; box-shadow: var(--shadow);
+  }
+  .fix .tag { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); font-weight: 700; display: block; margin-bottom: 8px; }
+  .fix p { margin: 0; color: var(--ink); }
+  .fix .note { margin-top: 10px; font-size: 14px; color: var(--muted); }
+
+  footer { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 12.5px; color: var(--faint); }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">ALeRCE<span class="dot">·</span>feature_step<span class="dot">·</span>crossmatch</p>
+    <h1>The xmatch client silently drops <span class="amber">AllWISE</span></h1>
+    <p class="lede">Xwave already exposes a <span class="inline">catalog</span> argument — forwarding it is a cleaner fix than asking for more neighbors.</p>
+  </header>
+
+  <div class="oidcard">
+    <div><span class="k">Example oid</span><span class="v mono">36028933559755080</span></div>
+    <div><span class="k">Alias</span><span class="v mono">ZTF17aaabauy</span></div>
+    <div><span class="k">Cone center</span><span class="v mono">ra 75.825020&nbsp;&nbsp;dec 42.212812</span></div>
+  </div>
+
+  <section>
+    <h2>Calling the client — minimum</h2>
+    <pre class="mono"><span class="kw">from</span> xmatch_client <span class="kw">import</span> XmatchClient
+client = XmatchClient(base_url=<span class="str">"http://quimal-db1.alerce.online:8081"</span>)
+client.conesearch(ras=[<span class="str">75.825020</span>], decs=[<span class="str">42.212812</span>],
+                  oids=[<span class="str">"36028933559755080"</span>], radius=<span class="str">1.5</span>, catalogs=[<span class="str">"allwise"</span>])</pre>
+    <div class="result">Result:&nbsp;<span class="mono">[]</span>&nbsp;— no AllWISE.</div>
+  </section>
+
+  <section>
+    <h2>Why</h2>
+    <p><span class="inline">XmatchClient.conesearch</span> hardcodes <span class="inline">nneighbor: 1</span> and sends <strong>no</strong> <span class="inline">catalog</span>, so Xwave returns the single <strong>global</strong> nearest across all catalogs:</p>
+    <pre class="mono">payload = {
+    <span class="str">"oids"</span>: oid_batch,
+    <span class="str">"ra"</span>: ra_batch,
+    <span class="str">"dec"</span>: dec_batch,
+    <span class="str">"radius"</span>: radius,
+    <span class="str">"nneighbor"</span>: <span class="str">1</span>,
+}</pre>
+    <p class="caption">then it filters that one result client-side — which can only remove, never restore:</p>
+    <pre class="mono"><span class="kw">if</span> catalogs_set <span class="kw">and</span> catalog_name <span class="kw">not in</span> catalogs_set:
+    <span class="kw">continue</span></pre>
+    <p>At this position Gaia is nearer, so AllWISE never survives the cut:</p>
+    <table>
+      <thead>
+        <tr><th>Catalog</th><th>Match id</th><th>Dist</th><th>Outcome</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="mono">gaia</td>
+          <td class="id">201794094900626176</td>
+          <td class="dist">0.107″</td>
+          <td><span class="chip kept"><span class="glyph">●</span> returned</span></td>
+        </tr>
+        <tr>
+          <td class="mono">allwise</td>
+          <td class="id">0748p424_ac51-023838</td>
+          <td class="dist">0.184″</td>
+          <td><span class="chip dropped"><span class="glyph">✕</span> dropped</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Xwave exposes a catalog argument</h2>
+    <p><span class="inline">/v1/bulk-conesearch</span> accepts a <span class="inline">catalog</span> field:</p>
+    <pre class="mono"><span class="kw">type</span> BulkConesearchRequest <span class="kw">struct</span> {
+    Ra        []float64 <span class="str">`json:"ra"`</span>
+    Dec       []float64 <span class="str">`json:"dec"`</span>
+    Radius    float64   <span class="str">`json:"radius"`</span>
+    Catalog   string    <span class="str">`json:"catalog"`</span>
+    Nneighbor int       <span class="str">`json:"nneighbor"`</span>
+}</pre>
+    <p class="caption">and the server filters candidates by catalog <strong>before</strong> the KNN, so <span class="inline">nneighbor</span> becomes per-catalog:</p>
+    <pre class="mono"><span class="kw">func</span> (c *ConesearchService) getObjectsInRanges(pixelRanges []healpix.PixelRange, catalog string) ([]repository.Mastercat, error) {
+    objects, err := c.store.FindObjectsInPixelRanges(c.ctx, pixelRanges)
+    <span class="cmt">// ...</span>
+    <span class="kw">if</span> catalog != <span class="str">"all"</span> {
+        <span class="kw">return</span> filterByCatalog(objects, catalog), nil
+    }
+    <span class="kw">return</span> objects, nil
+}</pre>
+    <p>Passing <span class="inline">catalog="allwise"</span> returns AllWISE's own nearest directly — no over-fetching, no post-filter:</p>
+    <pre class="mono">requests.post(<span class="str">".../v1/bulk-conesearch"</span>, json={
+    <span class="str">"oids"</span>: [<span class="str">"36028933559755080"</span>], <span class="str">"ra"</span>: [<span class="str">75.825020</span>], <span class="str">"dec"</span>: [<span class="str">42.212812</span>],
+    <span class="str">"radius"</span>: <span class="str">1.5</span>, <span class="str">"nneighbor"</span>: <span class="str">1</span>, <span class="str">"catalog"</span>: <span class="str">"allwise"</span>})
+<span class="cmt"># -> allwise 0748p424_ac51-023838  dist=0.184"</span></pre>
+  </section>
+
+  <section>
+    <div class="fix">
+      <span class="tag">Fix</span>
+      <p>Have <span class="inline">XmatchClient.conesearch</span> forward <span class="inline">catalog</span> to the payload instead of filtering client-side. Cleaner than <span class="inline">nneighbor&gt;=N</span> + dedupe.</p>
+      <p class="note">Note: <span class="inline">catalog</span> is a single string, so covering N catalogs (each with its own nearest) would mean N calls, one per catalog.</p>
+    </div>
+  </section>
+
+  <footer>
+    Reproduced 2026-07-08 · server: <span class="mono">xmatch/service/internal/api</span>, <span class="mono">.../search/conesearch</span>
+  </footer>
+</div>

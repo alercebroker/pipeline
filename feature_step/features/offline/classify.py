@@ -20,6 +20,7 @@ from alerce_classifiers.base.factories import input_dto_factory
 
 from features.utils.parsers import parse_output
 from features.offline import db
+from features.offline import xmatch
 from features.offline.message import build_message
 from .lc_features import compute_astro_object
 
@@ -75,16 +76,31 @@ def classify_astro_object(ao, message: dict, model) -> OutputDTO:
     return model.predict(dto)
 
 
-def _fetch_oid_inputs(oid: int, credentials: str):
-    """DB -> (message, references, allwise, detections, forced) for one oid."""
+def _fetch_oid_inputs(oid: int, credentials: str, xmatch_url: str = None):
+    """DB -> (message, references, allwise, detections, forced, matches) for one oid.
+
+    AllWISE source mirrors the live step's choice:
+      - `xmatch_url` set -> compute the crossmatch against Xwave (like
+        `step.pre_execute`), using the message's meanra/meandec as the cone
+        center; `matches` is the raw MatchWithMetadata list (for persistence).
+      - `xmatch_url` unset -> read the precomputed `multisurvey_ztf.xmatch ⋈
+        allwise` (empty for ZTF today); `matches` is [].
+    """
     oids = [oid]
     dets = db.fetch_detections(credentials, oids)
     forced = db.fetch_forced_photometry(credentials, oids)
     ps1 = db.fetch_ps1(credentials, oids)
-    allwise = db.fetch_allwise(credentials, oids)
     refs = db.fetch_references(credentials, oids)
     message = build_message(oid, dets, forced, ps1)
-    return message, refs, allwise, dets, forced
+
+    matches = []
+    if xmatch_url:
+        matches = xmatch.compute_matches(
+            [oid], [message["meanra"]], [message["meandec"]], base_url=xmatch_url)
+        allwise = xmatch.matches_to_allwise_df(matches)
+    else:
+        allwise = db.fetch_allwise(credentials, oids)
+    return message, refs, allwise, dets, forced, matches
 
 
 def _lc_lastmjd(dets, forced):
@@ -101,11 +117,14 @@ def _lc_lastmjd(dets, forced):
 
 
 def classify_oid(oid: int, credentials: str, model, min_detections: int = 1,
-                 preprocessor=None, extractor=None):
+                 preprocessor=None, extractor=None, xmatch_url: str = None):
     """DB -> message -> features -> probabilities for one oid.
 
-    Returns an OutputDTO, or None if the object has too few real detections."""
-    message, refs, allwise, _dets, _forced = _fetch_oid_inputs(oid, credentials)
+    Returns an OutputDTO, or None if the object has too few real detections.
+    `xmatch_url` (or XMATCH_URL env, resolved by the caller) computes the AllWISE
+    crossmatch against Xwave instead of reading the empty DB tables."""
+    message, refs, allwise, _dets, _forced, _matches = _fetch_oid_inputs(
+        oid, credentials, xmatch_url)
     ao = compute_astro_object(message, refs, allwise, min_detections,
                               preprocessor=preprocessor, extractor=extractor)
     if ao is None:
@@ -114,14 +133,17 @@ def classify_oid(oid: int, credentials: str, model, min_detections: int = 1,
 
 
 def classify_oid_for_save(oid: int, credentials: str, model, min_detections: int = 1,
-                          preprocessor=None, extractor=None):
-    """Like classify_oid but also returns lastmjd for persistence.
+                          preprocessor=None, extractor=None, xmatch_url: str = None):
+    """Like classify_oid but also returns (lastmjd, matches) for persistence.
 
-    Returns (OutputDTO, lastmjd), or (None, None) if too few real detections.
-    lastmjd = max MJD over detections + forced (see _lc_lastmjd)."""
-    message, refs, allwise, dets, forced = _fetch_oid_inputs(oid, credentials)
+    Returns (OutputDTO, lastmjd, matches), or (None, None, []) if too few real
+    detections. lastmjd = max MJD over detections + forced (see _lc_lastmjd);
+    `matches` is the raw Xwave crossmatch (empty unless xmatch_url is set)."""
+    message, refs, allwise, dets, forced, matches = _fetch_oid_inputs(
+        oid, credentials, xmatch_url)
     ao = compute_astro_object(message, refs, allwise, min_detections,
                               preprocessor=preprocessor, extractor=extractor)
     if ao is None:
-        return None, None
-    return classify_astro_object(ao, message, model), _lc_lastmjd(dets, forced)
+        return None, None, []
+    return (classify_astro_object(ao, message, model),
+            _lc_lastmjd(dets, forced), matches)

@@ -93,9 +93,10 @@ def test_classify_oid_for_save_returns_lastmjd(monkeypatch):
                         lambda ao, msg, model: OutputDTO(pd.DataFrame({"AGN": [0.9]}, index=[123]),
                                                          {"top": pd.DataFrame(), "children": {}}))
 
-    dto, lastmjd = classify.classify_oid_for_save(123, "creds", model=object())
+    dto, lastmjd, matches = classify.classify_oid_for_save(123, "creds", model=object())
     assert lastmjd == 59020.25            # max over detections + forced, already MJD
     assert dto.probabilities.loc[123, "AGN"] == 0.9
+    assert matches == []                  # no xmatch_url -> DB fallback, no live matches
 
 
 def test_classify_oid_for_save_none_when_no_ao(monkeypatch):
@@ -108,5 +109,5 @@ def test_classify_oid_for_save_none_when_no_ao(monkeypatch):
     monkeypatch.setattr(classify, "build_message", lambda oid, d, f, p: {"oid": oid})
     monkeypatch.setattr(classify, "compute_astro_object", lambda *a, **k: None)  # too few dets
 
-    dto, lastmjd = classify.classify_oid_for_save(1, "creds", model=object())
-    assert dto is None and lastmjd is None
+    dto, lastmjd, matches = classify.classify_oid_for_save(1, "creds", model=object())
+    assert dto is None and lastmjd is None and matches == []
