@@ -7,3 +7,7 @@ feature_plots/
 consolidated_features/
 config2.yaml
 config.yaml
+
+# Local dev only (macOS/arm64) — must not reach the repo/image
+local_config.yaml
+LOCAL_DEV_NOTES.md
