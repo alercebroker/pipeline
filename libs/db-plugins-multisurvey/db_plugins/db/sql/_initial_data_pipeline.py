@@ -229,6 +229,7 @@ INITIAL_DATA: dict[str, InitData] = {
         "index_elements": ["catid"],
         "data": [
             {"catid": 0, "catalog_name": "AllWISE"},
+            {"catid": 1, "catalog_name": "GaiaDR3_source"},
         ],
     },
     "band": {
