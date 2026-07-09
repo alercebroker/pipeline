@@ -1,3 +1,4 @@
+{{- if .Values.atlasEnabled }}
 ---
 apiVersion: v1
 kind: Service
@@ -16,6 +17,7 @@ spec:
   selector:
     app.kubernetes.io/name: '{{ include "s3-step.name" . }}-atlas'
     app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
 ---
 apiVersion: v1
 kind: Service

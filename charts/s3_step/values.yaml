@@ -4,6 +4,10 @@
 
 replicaCount: 1
 
+# Render the ATLAS half of the step (deployment + configmap + service). ATLAS ingestion
+# has been dead for years; the quimal override sets this false. Default true = unchanged on AWS.
+atlasEnabled: true
+
 namespace: s3-step
 
 image:
