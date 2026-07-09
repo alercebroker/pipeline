@@ -127,40 +127,39 @@ against `{1:g, 2:r, 3:i}`, and `isdiffpos` is normalized to `±1` ints
 > has no xmatch field. They're fetched separately and passed alongside the
 > message into `compute_features`.
 
-#### Why we read AllWISE from the DB instead of calling the xmatch API
+#### AllWISE crossmatch: compute live (like the step) or read from the DB
 
-The live `feature_step` (`features/step.py`) can obtain the AllWISE crossmatch two
-different ways, and **we deliberately use neither's network path** here:
+Computing the AllWISE crossmatch is the **feature step's own responsibility**
+(`features/step.py::pre_execute`): with `USE_XMATCH`, it calls the internal
+**Xwave** microservice through `libs/xmatch_client` —
+`XmatchClient.conesearch_with_metadata(ras, decs, oids)` does a *positional cone
+search* (POST `v1/bulk-conesearch`) + a metadata fetch (POST `v1/bulk-metadata`),
+attaches the result to `msg['xmatches']` (so `detections_to_astro_object` reads
+`W1–W4` from `metadata['w{n}mpro']['Float64']`), **and produces the match back to
+the scribe** so it lands in `multisurvey_ztf.xmatch`.
 
-- **Live path (`USE_XMATCH=true`, used for LSST).** `pre_execute` calls the
-  **xmatch microservice** through `libs/xmatch_client` —
-  `XmatchClient.conesearch_with_metadata(ras, decs, oids)` does a *positional cone
-  search* (POST `v1/bulk-conesearch`) and a metadata fetch (POST `v1/bulk-metadata`),
-  attaches the result to `msg['xmatches']`, **and produces it back to the scribe**
-  so it lands in `multisurvey.xmatch`. LSST objects arrive *without* a stored
-  crossmatch, so the step has to compute one live; it can't read what isn't there
-  yet.
-- **Offline path (here, ZTF).** For ZTF that crossmatch **already exists in the
-  DB** (`multisurvey_ztf.xmatch ⋈ multisurvey_ztf.allwise`), persisted upstream. So
-  `fetch_allwise` just reads the precomputed row — same `{metadata: {w1mpro…}}`
-  shape the parser expects, no service call.
+The offline path mirrors this (`features/offline/xmatch.py`):
 
-We read directly from the DB because:
+- **Compute-live (preferred).** When an Xwave URL is set (`--xmatch-url` /
+  `XMATCH_URL`), `classify._fetch_oid_inputs` calls
+  `xmatch.compute_matches([oid], [meanra], [meandec], url)` — the same cone search
+  the step runs, centered on the message's `meanra/meandec` — and
+  `matches_to_allwise_df` reduces it to the `[oid, W1, W2, W3, W4]` frame the
+  downstream `_xmatches`/`compute_astro_object` path already consumes.
+- **DB read (fallback).** With no URL, `fetch_allwise` reads
+  `multisurvey_ztf.xmatch ⋈ multisurvey_ztf.allwise`. **These tables are EMPTY for
+  ZTF today** (the crossmatch is produced by the feature step, which never ran with
+  `USE_XMATCH` for ZTF), so this yields `W1–W4 = NaN` for every object — which
+  silently breaks QSO/AGN IR discrimination. The compute-live path exists precisely
+  to fix that.
 
-1. **The match already exists for ZTF** — recomputing it via the API would be
-   redundant work and would hit the network for every oid.
-2. **Determinism / reproducibility.** Offline runs (backfills, benchmarks,
-   `compare_vs_alerce`) should reproduce exactly what the stored crossmatch was,
-   not a fresh cone search whose result can drift with catalog/service changes.
-3. **No side effects.** The offline tooling is strictly read-only; the live API
-   path also *writes* matches back via the scribe, which is not something a
-   recompute/validation run should do.
-4. **No service dependency.** Batch/offline use shouldn't require the xmatch
-   microservice to be up and reachable.
+**Persistence differs from the step:** offline does **not** send to the scribe.
+Instead we intend to save the crossmatch directly to the DB (`persist_matches`,
+currently a **placeholder** — dry-run builds the exact `multisurvey_ztf.xmatch`
+rows; the direct INSERT is a documented TODO).
 
-If a ZTF oid has no stored AllWISE row, `_xmatches` returns `None` and the parser
-falls back to `W1–W4 = NaN` (same as the live behavior when there's no match) — we
-do **not** fall back to calling the API.
+If a ZTF oid has no AllWISE match (either path), `_xmatches` returns `None` and the
+parser falls back to `W1–W4 = NaN` — same as the live behavior when there's no match.
 
 ### 3b. `alerce` schema — validation reference only (not part of compute)
 
