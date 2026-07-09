@@ -12,7 +12,7 @@ CONSUMER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": os.environ["CONSUMER_SERVER"],
         "group.id": os.environ["CONSUMER_GROUP_ID"],
-        "auto.offset.reset": "beginning",
+        "auto.offset.reset": os.getenv("CONSUMER_OFFSET_RESET", "beginning"),
         "max.poll.interval.ms": 3600000,
     },
     "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 60)),
@@ -41,7 +41,9 @@ STEP_METADATA = {
 }
 
 if os.getenv("KAFKA_USERNAME") and os.getenv("KAFKA_PASSWORD"):
-    CONSUMER_CONFIG["PARAMS"]["security.protocol"] = "SASL_SSL"
+    CONSUMER_CONFIG["PARAMS"]["security.protocol"] = os.getenv(
+        "KAFKA_SECURITY_PROTOCOL", "SASL_SSL"
+    )
     CONSUMER_CONFIG["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
     CONSUMER_CONFIG["PARAMS"]["sasl.username"] = os.getenv("KAFKA_USERNAME")
     CONSUMER_CONFIG["PARAMS"]["sasl.password"] = os.getenv("KAFKA_PASSWORD")
