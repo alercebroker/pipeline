@@ -1,0 +1,24 @@
+# Example config for the alerts_store step.
+# Copy to config.yaml (gitignored) and fill in the deployment-specific values (<SET_ME>).
+enabled: true
+BASE_FOLDER: "/data"
+CONSUMER_CONFIG:
+      CLASS: apf.consumers.KafkaSchemalessConsumer
+      PARAMS:
+        auto.offset.reset: beginning
+        bootstrap.servers: "<SET_ME>"
+        enable.partition.eof: false
+        group.id: "<SET_ME>"
+        sasl.mechanism: SCRAM-SHA-512
+        sasl.password: "<SET_ME>"
+        sasl.username: "<SET_ME>"
+        security.protocol: SASL_PLAINTEXT
+      # Must match the schema version currently emitted on the topic.
+      SCHEMA_PATH: "<SET_ME>"
+      TOPICS:
+      - "<SET_ME>"
+      consume.messages: 1000
+      consume.timeout: 10
+FEATURE_FLAGS:
+  USE_PROFILING: false
+  PROMETHEUS: false

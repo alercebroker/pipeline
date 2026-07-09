@@ -1,1 +1,8 @@
 data/
+data-v10/
+data-v11/
+data-v11_1/
+log.txt
+config.yaml
+.env
+docker-compose.override.yml

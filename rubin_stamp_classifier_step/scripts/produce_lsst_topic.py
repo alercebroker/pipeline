@@ -39,7 +39,7 @@ AVRO_DIR = os.path.join(
 )
 SCHEMA_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
-    "../../schemas/surveys/lsst_v11.0/lsst.v11_0.alert.avsc",
+    "../../schemas/surveys/lsst_v11.1/lsst.v11_1.alert.avsc",
 )
 
 

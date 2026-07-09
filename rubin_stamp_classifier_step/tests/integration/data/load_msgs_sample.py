@@ -14,7 +14,7 @@ def load_sample_messages() -> list[dict]:
     # Go up four levels to reach the project root
     project_root = os.path.abspath(os.path.join(script_dir, "../../../.."))
     schema_path = os.path.join(
-        project_root, "schemas", "surveys", "lsst_v11.0", "lsst.v11_0.alert.avsc"
+        project_root, "schemas", "surveys", "lsst_v11.1", "lsst.v11_1.alert.avsc"
     )
     schema = load_schema(schema_path)
 
