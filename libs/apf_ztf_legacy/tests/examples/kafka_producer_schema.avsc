@@ -1,0 +1,10 @@
+{
+	"namespace": "test_producers",
+	"type": "record",
+	"name": "simple",
+	"doc": "Simple avro schema for testing the producer",
+	"fields": [
+		{"name": "key", "type": "string"},
+		{"name": "int", "type": "int"}
+	]
+}
