@@ -298,3 +298,86 @@ def test_pre_produce_unpacks_detections_and_non_detections_by_oid():
 
     formatted = CorrectionStep.pre_produce(message4execute_copy)
     assert formatted == message4produce
+
+
+class FakeScribeProducer:
+    """librdkafka-like buffer: ``produce`` queues, ``flush`` drains to ``delivered``."""
+
+    def __init__(self):
+        self.buffered, self.delivered = [], []
+        # the fixed path reaches the underlying client via self.scribe_producer.producer.flush()
+        self.producer = self
+
+    def produce(self, message, flush=False, key=None):
+        self.buffered.append(message)
+        if flush:
+            self.flush()
+
+    def flush(self, *args, **kwargs):
+        self.delivered.extend(self.buffered)
+        self.buffered = []
+
+
+class FakeConsumer:
+    """Snapshots what the scribe producer still has buffered at offset-commit time."""
+
+    def __init__(self, scribe):
+        self.scribe = scribe
+        self.commit_called = False
+        self.buffered_at_commit = None
+
+    def commit(self):
+        self.commit_called = True
+        self.buffered_at_commit = list(self.scribe.buffered)
+
+
+def test_scribe_is_flushed_before_offset_commit_when_last_detection_is_not_new():
+    """Regression for the scribe flush/commit ordering bug (correction-step-flush-fix).
+
+    Reproduces the silent-loss window deterministically: a batch whose LAST detection is
+    ``new=False`` skips the per-message ``flush=True`` in the unfixed code, so buffered
+    scribe messages are still undelivered when GenericStep._post_produce commits the Kafka
+    offset. If the pod dies in that window the detections are lost. The invariant is that
+    nothing is buffered at commit time.
+    """
+
+    class MockCorrectionStep(CorrectionStep):
+        def __init__(self):
+            self.scribe_producer = FakeScribeProducer()
+            self.consumer = FakeConsumer(self.scribe_producer)
+            self.logger = mock.MagicMock()
+            self.metrics = mock.MagicMock()
+            self.commit = True
+
+    step = MockCorrectionStep()
+    # Batch crafted so the last detection is new=False (skipped, never triggers a flush).
+    result = {
+        "detections": [
+            {
+                "new": True,
+                "candid": "a",
+                "oid": "OID1",
+                "forced": False,
+                "has_stamp": True,
+                "extra_fields": {},
+            },
+            {
+                "new": False,
+                "candid": "b",
+                "oid": "OID1",
+                "forced": False,
+                "has_stamp": True,
+                "extra_fields": {},
+            },
+        ]
+    }
+
+    step.post_execute(result)  # real produce_scribe: buffers "a", skips "b"
+    step._post_produce()  # real framework path: consumer.commit()
+
+    assert step.consumer.commit_called
+    # The invariant: no scribe message may still be buffered once the offset is committed.
+    assert step.consumer.buffered_at_commit == []
+    # And every produced message must actually have been delivered.
+    assert len(step.scribe_producer.delivered) == 1
+    assert step.scribe_producer.buffered == []

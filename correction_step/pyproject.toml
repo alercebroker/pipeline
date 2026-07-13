@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "correction"
-version = "27.5.7a37"
+version = "27.5.7a42"
 description = "Correction library for ALeRCE pipeline."
 authors = ["ALeRCE Broker <alercebroker@gmail.com>"]
 readme = "README.md"
@@ -10,7 +10,7 @@ readme = "README.md"
 python = ">=3.10,<4.0"
 numpy = "~1.24.2"
 pandas = "~1.5.3"
-apf_base = { path = "../libs/apf", develop = true }
+apf-base-ztf-legacy = { path = "../libs/apf_ztf_legacy", develop = true }
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.12.0"
