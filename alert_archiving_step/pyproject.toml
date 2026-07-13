@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "alert-archiving-step"
-version = "27.5.7a37"
+version = "27.5.7a41"
 description = "Group alerts and upload to S3 by date"
 authors = ["ALeRCE"]
 readme = "README.md"
@@ -9,6 +9,10 @@ packages = [{include = "alert_archiving_step"}]
 [tool.poetry.dependencies]
 python = ">=3.9,<4"
 apf-base = "1.0.14"
+# Pin cfk to the librdkafka build that speaks SASL SCRAM-SHA-512 correctly; the
+# transitive 2.2.x from apf-base hits the SCRAM bug against the quimal broker.
+# Matches libs/apf's >=2.12 floor and the version watchlist_step runs on quimal.
+confluent-kafka = "2.12.2"
 numpy = "^1.25.0"
 python-snappy = "^0.6.1"
 click = {version = "^8.1.3", optional = true}

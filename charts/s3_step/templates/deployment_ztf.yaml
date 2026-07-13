@@ -125,6 +125,9 @@ spec:
               value: {{ .Release.Name }}
             - name: METRICS_SURVEY
               value: ZTF
+            {{- with .Values.extraEnvVariables }}
+            {{- tpl (toYaml .) $ | nindent 12 }}
+            {{- end }}
       {{- with .Values.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}

@@ -1,3 +1,4 @@
+{{- if .Values.atlasEnabled }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -15,6 +16,7 @@ data:
   producer-schema-path: "{{ .Values.configmap.producerSchemaPath }}"
   scribe-schema-path: "{{ .Values.configmap.scribeSchemaPath }}"
   metrics-schema-path: "{{ .Values.configmap.metricsSchemaPath }}"
+{{- end }}
 ---
 apiVersion: v1
 kind: ConfigMap
