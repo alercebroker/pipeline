@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "xmatch-step"
-version = "27.5.7a38"
+version = "27.5.7a39"
 description = "xmatch step"
 authors = []
 readme = "README.md"
@@ -16,6 +16,9 @@ requests = "^2.23.0"
 apf_base = { path = "../libs/apf", develop = true }
 aiohttp = "^3.11.12"
 asyncio = "^3.4.3"
+# Pinned: older confluent-kafka (2.0.x) bundles an OpenSSL that breaks
+# SASL/SCRAM auth against our broker. 2.12.0 is the known-good version.
+confluent-kafka = "2.12.0"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.3.1"
