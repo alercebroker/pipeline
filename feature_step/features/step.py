@@ -191,7 +191,7 @@ class FeatureStep(GenericStep):
                 'payload': {
                     'oid': int(oid),
                     'sid': sid,
-                    'catalog': match.get('catalog', 'allwise'),
+                    'catalog': match['catalog'],
                     'dist': match.get('distance'),
                     'oid_catalog': match.get('match_id')
                 }

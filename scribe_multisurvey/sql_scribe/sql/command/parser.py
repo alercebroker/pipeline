@@ -400,6 +400,8 @@ def parse_xmatch(sub_xmatch: dict) -> dict:
     catalog = sub_xmatch["catalog"]
     if catalog == "allwise":
         cat_id = 0
+    elif catalog == "gaia":
+        cat_id = 1
     else:
         cat_id = -999
     xmatch = {
