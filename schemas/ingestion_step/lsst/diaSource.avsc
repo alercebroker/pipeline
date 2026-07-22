@@ -75,6 +75,15 @@
       "type": "double"
     },
     {
+      "doc": "Effective exposure time for this diaSource [s].",
+      "default": null,
+      "name": "exposureTime",
+      "type": [
+        "null",
+        "float"
+      ]
+    },
+    {
       "doc": "Right ascension coordinate of the center of this diaSource [deg].",
       "name": "ra",
       "type": "double"
@@ -375,9 +384,27 @@
       "type": "int"
     },
     {
+      "doc": "Integer key indicating which algorithm was used to measure trailed source. 1=SDSSShape, 2=HSMShape.",
+      "default": null,
+      "name": "trailAlgorithm",
+      "type": [
+        "null",
+        "int"
+      ]
+    },
+    {
       "doc": "This flag is set if a trailed source extends onto or past edge pixels.",
       "default": null,
       "name": "trail_flag_edge",
+      "type": [
+        "null",
+        "boolean"
+      ]
+    },
+    {
+      "doc": "The trailed source fitting algorithm failed.",
+      "default": null,
+      "name": "trail_flag",
       "type": [
         "null",
         "boolean"
@@ -620,6 +647,15 @@
       "type": [
         "null",
         "float"
+      ]
+    },
+    {
+      "doc": "Version of the reliability model.",
+      "default": null,
+      "name": "reliabilityVersion",
+      "type": [
+        "null",
+        "string"
       ]
     },
     {

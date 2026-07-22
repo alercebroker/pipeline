@@ -88,12 +88,12 @@ def print_schemas(pd_schemas: dict[str, dict[str, DType]]):
 
 survey_schemas = {
     "lsst": {
-        "dia_forced_source": "../schemas/surveys/lsst_v11.0/lsst.v11_0.diaForcedSource.avsc",
-        "dia_object": "../schemas/surveys/lsst_v11.0/lsst.v11_0.diaObject.avsc",
-        "dia_source": "../schemas/surveys/lsst_v11.0/lsst.v11_0.diaSource.avsc",
-        "mpc_orbits": "../schemas/surveys/lsst_v11.0/lsst.v11_0.mpc_orbits.avsc",
-        "ss_object": "../schemas/surveys/lsst_v11.0/lsst.v11_0.ssObject.avsc",
-        "ss_source": "../schemas/surveys/lsst_v11.0/lsst.v11_0.ssSource.avsc",
+        "dia_forced_source": "../schemas/surveys/lsst_v11.1/lsst.v11_1.diaForcedSource.avsc",
+        "dia_object": "../schemas/surveys/lsst_v11.1/lsst.v11_1.diaObject.avsc",
+        "dia_source": "../schemas/surveys/lsst_v11.1/lsst.v11_1.diaSource.avsc",
+        "mpc_orbits": "../schemas/surveys/lsst_v11.1/lsst.v11_1.mpc_orbits.avsc",
+        "ss_object": "../schemas/surveys/lsst_v11.1/lsst.v11_1.ssObject.avsc",
+        "ss_source": "../schemas/surveys/lsst_v11.1/lsst.v11_1.ssSource.avsc",
     },
     "ztf": {
         "candidate": "../schemas/ingestion_step/ztf/test_no_extra_fields/candidate.avsc",

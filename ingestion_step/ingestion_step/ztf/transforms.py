@@ -1,6 +1,12 @@
 """
 Transforms that can be applied to `DataFrames` to generate new columns based
 on existing columns.
+
+*** DEBUG/FIX BUILD ***
+_calculate_mag is hardened against NA/None `forcediffimflux` /
+`forcediffimfluxunc`. Such rows are dropped later by
+`filter_by_forcediffimflux`, so returning ZERO_MAG for them produces identical
+final output but no longer crashes np.isclose -> isfinite on a pd.NA scalar.
 """
 
 import math
@@ -67,6 +73,7 @@ def sigmara_to_e_ra(df: pd.DataFrame):
     df["e_ra"] = df.apply(
         _sigmara_to_e_ra,
         axis=1,
+        result_type="reduce",
     )
 
 
@@ -86,6 +93,7 @@ def sigmadec_to_e_dec(df: pd.DataFrame):
         if "sigmadec" in x and not pd.isna(x["sigmadec"])
         else ERRORS[x["fid"]],
         axis=1,
+        result_type="reduce",
     )
 
 
@@ -104,14 +112,17 @@ def isdiffpos_to_int(df: pd.DataFrame):
 def _calculate_mag(
     magzpsci: float, forcediffimflux: float, forcediffimfluxunc: float
 ) -> tuple[float, float]:
-    if np.isclose(forcediffimflux, -99999):
+    # FIX: a null (pd.NA / None) forcediffimflux is schema-valid ZTF data and
+    # these rows are dropped by filter_by_forcediffimflux anyway. Guard before
+    # np.isclose, which calls np.isfinite and raises TypeError on a pd.NA scalar.
+    if pd.isna(forcediffimflux) or np.isclose(forcediffimflux, -99999):
         return ZERO_MAG, ZERO_MAG
 
     flux2uJy = 10.0 ** ((8.9 - magzpsci) / 2.5) * 1.0e6
 
     mag = -2.5 * np.log10(np.abs(forcediffimflux * flux2uJy)) + 23.9
 
-    if np.isclose(forcediffimfluxunc, -99999):
+    if pd.isna(forcediffimfluxunc) or np.isclose(forcediffimfluxunc, -99999):
         e_mag = ZERO_MAG
     else:
         e_mag = (
@@ -136,6 +147,7 @@ def forcediffimflux_to_mag(df: pd.DataFrame):
             x["magzpsci"], x["forcediffimflux"], x["forcediffimfluxunc"]
         )[0],
         axis=1,
+        result_type="reduce",
     )
 
 
@@ -153,6 +165,7 @@ def forcediffimflux_to_e_mag(df: pd.DataFrame):
             x["magzpsci"], x["forcediffimflux"], x["forcediffimfluxunc"]
         )[1],
         axis=1,
+        result_type="reduce",
     )
 
 
