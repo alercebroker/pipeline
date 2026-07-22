@@ -1,6 +1,14 @@
 apiVersion: v2
+<<<<<<< HEAD
 appVersion: 27.5.7a41
 description: A Helm chart for Kubernetes
 name: alert-archive-step
 type: application
 version: 27.5.7-41
+=======
+appVersion: 27.5.7a38
+description: A Helm chart for Kubernetes
+name: alert-archive-step
+type: application
+version: 27.5.7-38
+>>>>>>> 03d1bf3407d1e8edff2171412e98497a084e318a

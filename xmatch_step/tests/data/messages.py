@@ -117,7 +117,7 @@ def generate_input_batch(n: int) -> List[dict]:
             "non_detections": non_det,
         }
         batch.append(msg)
-    random.shuffle(batch, lambda: 0.1)
+    random.shuffle(batch)
     return batch
 
 
@@ -138,7 +138,7 @@ def generate_non_ztf_batch(n: int) -> List[dict]:
             "non_detections": non_det,
         }
         batch.append(msg)
-    random.shuffle(batch, lambda: 0.1)
+    random.shuffle(batch)
     return batch
 
 
