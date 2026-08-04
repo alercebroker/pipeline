@@ -46,7 +46,7 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
     
     def get_non_detection_schema(self) -> Dict[str, Any]:
         """Return the schema for LSST non-detections."""
-        return {}  # Non-detection schema omitted in LSST v10.0
+        return {}  # not yet implemented
     
     def get_ss_detection_schema(self) -> Dict[str, Any]:
         """Return the schema for LSST ss source schema."""
@@ -104,7 +104,9 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
                 cast(LsstDetection.trailAngleErr, DOUBLE_PRECISION).label("trailAngleErr"),
                 cast(LsstDetection.trailChi2, DOUBLE_PRECISION).label("trailChi2"),
                 LsstDetection.trailNdata,
+                LsstDetection.trailAlgorithm,
                 LsstDetection.trail_flag_edge,
+                LsstDetection.trail_flag,
                 cast(LsstDetection.dipoleMeanFlux, DOUBLE_PRECISION).label("dipoleMeanFlux"),
                 cast(LsstDetection.dipoleMeanFluxErr, DOUBLE_PRECISION).label("dipoleMeanFluxErr"),
                 cast(LsstDetection.dipoleFluxDiff, DOUBLE_PRECISION).label("dipoleFluxDiff"),
@@ -132,10 +134,12 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
                 LsstDetection.shape_flag_parent_source,
                 cast(LsstDetection.extendedness, DOUBLE_PRECISION).label("extendedness"),
                 cast(LsstDetection.reliability, DOUBLE_PRECISION).label("reliability"),
+                LsstDetection.reliabilityVersion,
                 LsstDetection.isDipole,
                 LsstDetection.dipoleFitAttempted,
                 LsstDetection.timeProcessedMjdTai,
                 LsstDetection.timeWithdrawnMjdTai,
+                cast(LsstDetection.exposureTime, DOUBLE_PRECISION).label("exposureTime"),
                 LsstDetection.bboxSize,
                 LsstDetection.pixelFlags,
                 LsstDetection.pixelFlags_bad,
@@ -313,7 +317,7 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
                 )
 
     def get_non_detections(self, oids: List[str], sids: List[int]) -> List[Dict[str, Any]]:
-        """Non-detection handling omitted in LSST v10.0"""
+        """Non-detection handling not yet implemented."""
         return []
     
     def _parse_lsst_detections(self, lsst_models: list, models: list, 

@@ -5,6 +5,90 @@ import warnings
 import numpy as np
 
 
+# The xwave service was rewritten (Go) and its JSON contract changed around
+# Nov 2025. These maps normalise the new responses back to the shape the rest of
+# this client (and the downstream parsing/rename logic) expects, while remaining
+# backward compatible with the old response format.
+
+# conesearch source keys: new service returns lowercase keys.
+_SOURCE_KEY_MAP = {
+    "id": "ID",
+    "ipix": "Ipix",
+    "ra": "Ra",
+    "dec": "Dec",
+    "cat": "Cat",
+}
+
+# metadata keys: new service returns lowercase keys.
+_METADATA_KEY_MAP = {
+    "w1mpro": "W1mpro",
+    "w1sigmpro": "W1sigmpro",
+    "w2mpro": "W2mpro",
+    "w2sigmpro": "W2sigmpro",
+    "w3mpro": "W3mpro",
+    "w3sigmpro": "W3sigmpro",
+    "w4mpro": "W4mpro",
+    "w4sigmpro": "W4sigmpro",
+    "j_m_2mass": "J_m_2mass",
+    "j_msig_2mass": "J_msig_2mass",
+    "h_m_2mass": "H_m_2mass",
+    "h_msig_2mass": "H_msig_2mass",
+    "k_m_2mass": "K_m_2mass",
+    "k_msig_2mass": "K_msig_2mass",
+}
+
+
+def _unwrap_value(value):
+    """Unwrap Go sql.NullFloat64 style values: {"Float64": x, "Valid": bool}."""
+    if isinstance(value, dict) and "Valid" in value and "Float64" in value:
+        return value["Float64"] if value["Valid"] else None
+    return value
+
+
+def _normalize_source(source: dict) -> dict:
+    """Normalise a single conesearch source to the legacy key names."""
+    normalized = {}
+    for key, value in source.items():
+        normalized[_SOURCE_KEY_MAP.get(key.lower(), key)] = value
+    return normalized
+
+
+def normalize_conesearch_response(data, catalog: str = "allwise") -> list:
+    """Flatten a conesearch response into a flat list of legacy-shaped sources.
+
+    Handles both the legacy flat format ``[{"ID": ...}, ...]`` and the new
+    catalog-grouped format ``[{"catalog": "allwise", "data": [{"id": ...}]}]``.
+    Only sources belonging to ``catalog`` are kept.
+    """
+    sources = []
+    if not data:
+        return sources
+    for item in data:
+        # New catalog-grouped format.
+        if isinstance(item, dict) and isinstance(item.get("data"), list):
+            item_catalog = item.get("catalog")
+            if catalog is not None and item_catalog not in (None, catalog):
+                continue
+            for source in item["data"]:
+                sources.append(_normalize_source(source))
+        # Legacy flat format.
+        elif isinstance(item, dict):
+            sources.append(_normalize_source(item))
+    return sources
+
+
+def normalize_metadata_response(metadata: dict) -> dict:
+    """Normalise metadata to legacy key names and unwrap NullFloat64 values."""
+    if not metadata:
+        return metadata
+    normalized = {}
+    for key, value in metadata.items():
+        normalized[_METADATA_KEY_MAP.get(key.lower(), key)] = _unwrap_value(
+            value
+        )
+    return normalized
+
+
 class XwaveClient:
     def __init__(self, base_url):
         self.base_url = base_url
@@ -20,12 +104,19 @@ class XwaveClient:
         result_type: str = None,
         distmaxarcsec: float = 1.005,
     ):
+        # The catalog to cross-match against. For the ZTF pipeline this must be
+        # "allwise". The xwave service now hosts several catalogs (allwise, gaia,
+        # ...) and, without a catalog filter, conesearch returns the globally
+        # nearest neighbour across all of them -- which is frequently NOT allwise.
+        ext_catalog = ext_catalog or "allwise"
         return asyncio.run(
-            self.async_execute(catalog, ext_columns, selection, distmaxarcsec)
+            self.async_execute(
+                catalog, ext_columns, selection, distmaxarcsec, ext_catalog
+            )
         )
 
     async def async_execute(
-        self, catalog, ext_columns, selection, distmaxarcsec
+        self, catalog, ext_columns, selection, distmaxarcsec, ext_catalog="allwise"
     ):
         metadata_queue = asyncio.Queue()
         results = []
@@ -36,7 +127,11 @@ class XwaveClient:
             for _ in range(self.num_workers):
                 worker = asyncio.create_task(
                     self.metadata_worker(
-                        session, metadata_queue, results, ext_columns
+                        session,
+                        metadata_queue,
+                        results,
+                        ext_columns,
+                        ext_catalog,
                     )
                 )
                 workers.append(worker)
@@ -52,6 +147,7 @@ class XwaveClient:
                     metadata_queue,
                     selection,
                     distmaxarcsec,
+                    ext_catalog,
                 )
                 coordinate_tasks.append(task)
 
@@ -97,7 +193,9 @@ class XwaveClient:
         df_empty = pd.DataFrame(columns=columns)
         return df_empty
 
-    async def metadata_worker(self, session, queue, results, projection):
+    async def metadata_worker(
+        self, session, queue, results, projection, ext_catalog="allwise"
+    ):
         while True:
             try:
                 entry = await queue.get()
@@ -106,7 +204,7 @@ class XwaveClient:
                     break
 
                 result = await self.process_metadata(
-                    session, entry, projection
+                    session, entry, projection, ext_catalog
                 )
                 if result:
                     results.append(result)
@@ -115,33 +213,55 @@ class XwaveClient:
                 queue.task_done()
 
     async def process_single_coordinate(
-        self, session, ra, dec, oid, metadata_queue, selection, distmaxarcsec
+        self,
+        session,
+        ra,
+        dec,
+        oid,
+        metadata_queue,
+        selection,
+        distmaxarcsec,
+        ext_catalog="allwise",
     ):
-        url = f"{self.base_url}/v1/conesearch?ra={ra}&dec={dec}&radius={distmaxarcsec}&nneighbor={selection}"
+        url = (
+            f"{self.base_url}/v1/conesearch?ra={ra}&dec={dec}"
+            f"&radius={distmaxarcsec}&nneighbor={selection}"
+        )
+        # Server-side filter to the requested catalog. Note the param is
+        # "catalog" (singular); "catalogs" is silently ignored by the service.
+        if ext_catalog:
+            url += f"&catalog={ext_catalog}"
         try:
             async with session.get(url) as response:
                 if response.status == 200:
                     data = await response.json()
-                    if data:
-                        for entry in data:
+                    # Client-side filter too, as defense in depth in case the
+                    # service ignores the catalog query parameter.
+                    sources = normalize_conesearch_response(data, ext_catalog)
+                    if sources:
+                        for entry in sources:
                             entry["ra_in"] = ra
                             entry["dec_in"] = dec
                             entry["oid_in"] = oid
                             await metadata_queue.put(entry)
-                        return len(data)
+                        return len(sources)
                 return 0
         except Exception as e:
             return 0
 
-    async def process_metadata(self, session, entry, projection=None):
+    async def process_metadata(
+        self, session, entry, projection=None, ext_catalog="allwise"
+    ):
         try:
             allwise_id = entry["ID"]
             url = (
-                f"{self.base_url}/v1/metadata?id={allwise_id}&catalog=allwise"
+                f"{self.base_url}/v1/metadata?id={allwise_id}"
+                f"&catalog={ext_catalog}"
             )
             async with session.get(url) as response:
                 if response.status == 200:
                     metadata = await response.json()
+                    metadata = normalize_metadata_response(metadata)
                     if metadata:
                         result_dict = {**entry}
                     if projection:

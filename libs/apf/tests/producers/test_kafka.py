@@ -43,6 +43,38 @@ class KafkaProducerTest(GenericProducerTest):
         super().test_produce(use=self.component)
         assert producer_mock().produce.call_args[1]["key"] == None
 
+    def test_flush_without_timeout(self, producer_mock):
+        producer_mock.reset_mock()
+        producer_mock().flush.return_value = 0
+        component = KafkaProducer(self.params)
+
+        component.flush()
+
+        producer_mock().flush.assert_called_once_with()
+
+    def test_flush_with_timeout(self, producer_mock):
+        producer_mock.reset_mock()
+        producer_mock().flush.return_value = 0
+        component = KafkaProducer({**self.params, "FLUSH_TIMEOUT": 5})
+
+        component.flush()
+
+        producer_mock().flush.assert_called_once_with(5.0)
+
+    def test_flush_raises_with_undelivered_messages(self, producer_mock):
+        producer_mock.reset_mock()
+        producer_mock().flush.return_value = 3
+        component = KafkaProducer({**self.params, "FLUSH_TIMEOUT": 5})
+
+        with self.assertRaises(BufferError):
+            component.flush()
+
+    def test_non_positive_flush_timeout(self, producer_mock):
+        producer_mock.reset_mock()
+
+        with self.assertRaises(ValueError):
+            KafkaProducer({**self.params, "FLUSH_TIMEOUT": 0})
+
     def test_topic_strategy(self, _):
         import copy
 

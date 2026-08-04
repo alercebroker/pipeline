@@ -269,16 +269,17 @@ class MultiScaleStampClassifier(GenericStep):
         last_idx = len(records) - 1
         for idx, record in enumerate(records):
             command = {
-                "step": "probability-archival-step",
+                "step": "update-probability",
                 "survey": "ztf",
                 "payload": record,
             }
-            self.scribe_producer.producer.produce(
-                topic=self.scribe_topic_name,
-                value=json.dumps(command).encode("utf-8"),
+            flush = idx == last_idx
+            self.scribe_producer.produce(
+                {"payload": json.dumps(command)},
                 key=str(record["oid"]).encode("utf-8"),
+                on_delivery=None,
             )
-            if idx == last_idx:
+            if flush:
                 self.scribe_producer.producer.flush()
 
     def execute(self, messages):

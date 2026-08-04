@@ -152,6 +152,46 @@ def set_data_test():
         },
     }
 
+    # The xwave service was rewritten (Go) and its JSON contract changed around
+    # Nov 2025. Convert the legacy fixtures above to the live contract:
+    #   - conesearch results are grouped by catalog, use lowercase keys, and the
+    #     request now carries a `catalog` filter query param.
+    #   - metadata uses lowercase keys and Go sql.NullFloat64 wrapped values
+    #     ({"Float64": x, "Valid": bool}).
+    def _to_new_conesearch(sources):
+        data = [
+            {
+                "id": s["ID"],
+                "ipix": s["Ipix"],
+                "ra": s["Ra"],
+                "dec": s["Dec"],
+                "cat": s["Cat"],
+            }
+            for s in sources
+        ]
+        return [{"catalog": "allwise", "data": data}]
+
+    def _to_new_metadata(meta):
+        new = {}
+        for key, value in meta.items():
+            if key == "id":
+                new[key] = value
+                continue
+            new[key.lower()] = {
+                "Float64": value if value is not None else 0,
+                "Valid": value is not None,
+            }
+        return new
+
+    conesearch_responses = {
+        f"{key}&catalog=allwise": _to_new_conesearch(value)
+        for key, value in conesearch_responses.items()
+    }
+    metadata_responses = {
+        key: _to_new_metadata(value)
+        for key, value in metadata_responses.items()
+    }
+
     output_catalog = pd.DataFrame(
         {
             "angDist": [

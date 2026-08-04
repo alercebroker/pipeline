@@ -13,6 +13,7 @@ from db_plugins.db.sql.models_pipeline import (
     ForcedPhotometry,
     MagStat,
     Object,
+    Probability,
     Xmatch,
     ZtfDataquality,
     ZtfDetection,
@@ -32,6 +33,7 @@ from .parser import (
     parse_fp,
     parse_obj_stats,
     parse_probability,
+    parse_probability_table,
     parse_xmatch,
     parse_ztf_det,
     parse_ztf_dq,
@@ -597,6 +599,37 @@ class ProbabilityArchivalCommand(Command):
                 "probability": stmt.excluded.probability,
                 "ranking": stmt.excluded.ranking,
                 "update_date": func.now(),
+            },
+        )
+        session.connection().execute(upsert, records)
+
+
+class ProbabilityCommand(Command):
+    type = "ProbabilityCommand"
+
+    def _format_data(self, data):
+        return parse_probability_table(data)
+
+    @staticmethod
+    def db_operation(session: Session, data: list):
+        if not data:
+            return
+
+        dedup = {}
+        for row in data:
+            key = (row["oid"], row["sid"], row["classifier_id"], row["class_id"])
+            if key not in dedup or row["lastmjd"] > dedup[key]["lastmjd"]:
+                dedup[key] = row
+
+        records = list(dedup.values())
+
+        stmt = insert(Probability)
+        upsert = stmt.on_conflict_do_update(
+            constraint="pk_probability_oid_classifierid_classid",
+            set_={
+                "probability": stmt.excluded.probability,
+                "ranking": stmt.excluded.ranking,
+                "lastmjd": stmt.excluded.lastmjd,
             },
         )
         session.connection().execute(upsert, records)

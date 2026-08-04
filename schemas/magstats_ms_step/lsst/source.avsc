@@ -73,6 +73,15 @@
       "type": "double"
     },
     {
+      "default": null,
+      "doc": "Effective exposure time for this diaSource [s].",
+      "name": "exposureTime",
+      "type": [
+        "null",
+        "float"
+      ]
+    },
+    {
       "doc": "Right ascension coordinate of the center of this diaSource [deg].",
       "name": "ra",
       "type": "double"
@@ -237,13 +246,9 @@
       ]
     },
     {
-      "default": null,
       "doc": "The number of data points (pixels) used to fit the point source model.",
       "name": "psfNdata",
-      "type": [
-        "null",
-        "int"
-      ]
+      "type": "int"
     },
     {
       "default": null,
@@ -372,9 +377,14 @@
       ]
     },
     {
-      "default": null,
       "doc": "The number of data points (pixels) used to fit the trailed source model.",
       "name": "trailNdata",
+      "type": "int"
+    },
+    {
+      "default": null,
+      "doc": "Integer key indicating which algorithm was used to measure trailed source. 1=SDSSShape, 2=HSMShape.",
+      "name": "trailAlgorithm",
       "type": [
         "null",
         "int"
@@ -384,6 +394,15 @@
       "default": null,
       "doc": "This flag is set if a trailed source extends onto or past edge pixels.",
       "name": "trail_flag_edge",
+      "type": [
+        "null",
+        "boolean"
+      ]
+    },
+    {
+      "default": null,
+      "doc": "The trailed source fitting algorithm failed.",
+      "name": "trail_flag",
       "type": [
         "null",
         "boolean"
@@ -453,13 +472,9 @@
       ]
     },
     {
-      "default": null,
       "doc": "The number of data points (pixels) used to fit the model.",
       "name": "dipoleNdata",
-      "type": [
-        "null",
-        "int"
-      ]
+      "type": "int"
     },
     {
       "default": null,
@@ -634,6 +649,15 @@
     },
     {
       "default": null,
+      "doc": "Version of the reliability model.",
+      "name": "reliabilityVersion",
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    {
+      "default": null,
       "doc": "Source well fit by a dipole.",
       "name": "isDipole",
       "type": [
@@ -665,13 +689,9 @@
       ]
     },
     {
-      "default": null,
       "doc": "Size of the square bounding box that fully contains the detection footprint [pixel].",
       "name": "bboxSize",
-      "type": [
-        "null",
-        "int"
-      ]
+      "type": "int"
     },
     {
       "default": null,

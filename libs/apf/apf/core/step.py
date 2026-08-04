@@ -284,16 +284,48 @@ class GenericStep(abc.ABC):
         """
         return result
 
+    def _get_producers(self) -> list[GenericProducer]:
+        """Get every producer the step holds as an attribute.
+
+        The framework only creates `self.producer`, but steps that also write
+        to a secondary topic (the scribe) keep their own producer attribute.
+        Those are discovered here so they don't have to register themselves.
+        """
+        producers = []
+        seen = set()
+        for value in vars(self).values():
+            if isinstance(value, GenericProducer) and id(value) not in seen:
+                seen.add(id(value))
+                producers.append(value)
+        return producers
+
+    def _flush_producers(self):
+        for producer in self._get_producers():
+            producer.flush()
+
     def _post_produce(self):
         self.logger.info("Messages produced. Begin post production")
         try:
             self.post_produce()
-            if self.commit:
-                self.consumer.commit()
         except Exception as error:
             self.logger.error("Error at post_produce")
             self.metrics.exceptions.labels("post_produce").inc()
             raise error
+
+        # Every producer has to be drained before the offset is committed,
+        # otherwise a pod deleted in that window loses the buffered messages.
+        try:
+            self._flush_producers()
+        except Exception as error:
+            self.logger.error(
+                "Error flushing the producers. The consumer offset will not be "
+                "committed, so the batch is reprocessed on the next run"
+            )
+            self.metrics.exceptions.labels("flush").inc()
+            raise error
+
+        if self.commit:
+            self.consumer.commit()
 
     def post_produce(self):
         """
@@ -476,6 +508,7 @@ class GenericStep(abc.ABC):
             self.metrics.messages_processed.inc(n_messages)
             self.metrics.batches_processed.inc()
             self.metrics.last_batch_processed.set_to_current_time()
+
         self._tear_down()
 
     def _tear_down(self):

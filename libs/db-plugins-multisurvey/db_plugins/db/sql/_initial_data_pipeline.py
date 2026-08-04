@@ -22,6 +22,18 @@ INITIAL_DATA: dict[str, InitData] = {
                 "classifier_version": "2.1.1",
                 "tid": 0,
             },
+            {
+                "classifier_id": 3,
+                "classifier_name": "stamp_classifier_rubin_beta_20260421",
+                "classifier_version": "2.0.2",
+                "tid": 1,
+            },
+            {
+                "classifier_id": 4,
+                "classifier_name": "stamp_classifier_ztf",
+                "classifier_version": "1.0.4",
+                "tid": 0,
+            },
         ],
     },
     "feature_name_lut": {
@@ -204,12 +216,20 @@ INITIAL_DATA: dict[str, InitData] = {
             {"class_id": 2, "class_name": "VS",        "order": 2, "classifier_id": 3},
             {"class_id": 3, "class_name": "asteroid",  "order": 3, "classifier_id": 3},
             {"class_id": 4, "class_name": "bogus",     "order": 4, "classifier_id": 3},
+
+            {"class_id": 0, "class_name": "SN",        "order": 0, "classifier_id": 4},
+            {"class_id": 1, "class_name": "AGN",       "order": 1, "classifier_id": 4},
+            {"class_id": 2, "class_name": "VS",        "order": 2, "classifier_id": 4},
+            {"class_id": 3, "class_name": "asteroid",  "order": 3, "classifier_id": 4},
+            {"class_id": 4, "class_name": "bogus",     "order": 4, "classifier_id": 4},
+            {"class_id": 5, "class_name": "satellite", "order": 5, "classifier_id": 4},
         ],
     },
     "catalog_id_lut": {
         "index_elements": ["catid"],
         "data": [
             {"catid": 0, "catalog_name": "AllWISE"},
+            {"catid": 1, "catalog_name": "GaiaDR3_source"},
         ],
     },
     "band": {

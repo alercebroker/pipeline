@@ -104,7 +104,8 @@ def detections_to_astro_object_lsst(
     aid_detections = a[~a["forced"]]
 
     w1 = w2 = w3 = w4 = np.nan
-    if xmatches is not None:
+
+    if xmatches is not None and xmatches['catalog'] == 'allwise':
         w1 = xmatches['metadata']["w1mpro"]['Float64']
         w2 = xmatches['metadata']["w2mpro"]['Float64']
         w3 = xmatches['metadata']["w3mpro"]['Float64']

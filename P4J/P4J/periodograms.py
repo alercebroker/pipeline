@@ -30,7 +30,7 @@ class MultiBandPeriodogram(BasePeriodogram):
 
     def set_data(self, mjds, mags, errs, fids):
         self.filter_names = np.unique(fids)
-        self.mjds = mjds.astype('float32')
+        self.mjds = mjds.astype('float64')  # float64: phase folding needs the precision
         self.mags = mags.astype('float32')
         self.errs = errs.astype('float32')
         self.cython_per = {}
@@ -54,17 +54,16 @@ class MultiBandPeriodogram(BasePeriodogram):
     def get_lc_time_length(self):
         return np.max(self.mjds) - np.min(self.mjds)
             
-    def _compute_periodogram(self, freqs):        
+    def _compute_periodogram(self, freqs):
         per_single_band = {}
-        per_sum = np.zeros_like(freqs) 
+        freqs = np.ascontiguousarray(freqs, dtype=np.float64)  # match eval_frequencies (double)
+        per_sum = np.zeros_like(freqs)
         d1 = 2 * self.Nharmonics
         d2_sum = 0.0
         wvar_sum = 0.0
         
         for filter_name in self.filter_names:
-            per = np.array(
-                [self.cython_per[filter_name].eval_frequency(freq) for freq in freqs],
-                dtype=np.float32)
+            per = self.cython_per[filter_name].eval_frequencies(freqs)
             d2 = float(self.lc_stats[filter_name].N - 2*self.Nharmonics - 1)
             d2 = max(d2, 0.0)
             per_single_band.update(
@@ -152,14 +151,16 @@ class periodogram(BasePeriodogram):
         """
         
         self.mjd = mjd.astype('float32')
+        self.mjd64 = mjd.astype('float64')  # full-precision mjd for MHAOV folding
         self.mag = mag.astype('float32')
         self.err = err.astype('float32')
-        
+
         # Nan Filter
         na_mask = np.isnan(self.mjd) | np.isnan(self.mag) | np.isnan(self.err)
         if np.sum(na_mask) > 0:
             print(f"Your data contain {np.sum(na_mask)} NaN values, cleaning")
             self.mjd = self.mjd[~na_mask]
+            self.mjd64 = self.mjd64[~na_mask]
             self.mag = self.mag[~na_mask]
             self.err = self.err[~na_mask]
         
@@ -214,14 +215,18 @@ class periodogram(BasePeriodogram):
             Nharmonics = 1
             if 'Nharmonics' in kwarg:
                 Nharmonics = kwarg["Nharmonics"]
-            self.cython_per = MHAOV(self.mjd, self.mag, self.err, Nharmonics)  
+            self.cython_per = MHAOV(self.mjd64, self.mag, self.err, Nharmonics)
 
     def get_lc_time_length(self):
         return np.max(self.mjd) - np.min(self.mjd)
 
     def _compute_periodogram(self, freqs):
         if self.n_jobs == 1:
-            pers = np.array([self.cython_per.eval_frequency(freq) for freq in freqs], dtype=np.float32)
+            # MHAOV has a batch path (loop in Cython); other methods loop in Python.
+            if self.method == 'MHAOV':
+                pers = self.cython_per.eval_frequencies(freqs)
+            else:
+                pers = np.array([self.cython_per.eval_frequency(freq) for freq in freqs], dtype=np.float32)
         #else:
         #    pers = Parallel(n_jobs=self.n_jobs)(delayed(self.compute_metric)(freq) for freq in freqs)
 

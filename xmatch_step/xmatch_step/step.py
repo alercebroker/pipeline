@@ -32,7 +32,11 @@ class XmatchStep(GenericStep):
             self.xmatch_client = XwaveClient(self.catalog["service_url"])
             self.xmatch_parameters = {
                 "catalog_type": None,
-                "ext_catalog": None,
+                # Catalog to cross-match against. The xwave service now hosts
+                # multiple catalogs; without this filter it returns the globally
+                # nearest neighbour (often not allwise). For ZTF this must be
+                # allwise. Defaults to "allwise" if not set in the config.
+                "ext_catalog": self.catalog.get("name", "allwise"),
                 "ext_columns": self.catalog["columns"],
                 "selection": self.catalog["selection"],
                 "result_type": None,

@@ -13,8 +13,9 @@ class LsstKafkaConsumer(KafkaConsumer):
 
     def _deserialize_message(self, message: Message):
         bytes_io = io.BytesIO(message.value())
-        magic, schema_id = unpack(">bI", bytes_io.read(5))
-        assert schema_id == 704
-        #print(self.schema)
+        # Strip the 5-byte Confluent wire prefix (magic + schema id). The id is
+        # Rubin's registry id, which we don't control (we mirror raw bytes), so we
+        # don't assert on it; decoding relies on the local SCHEMA_PATH reader schema.
+        _magic, _schema_id = unpack(">bI", bytes_io.read(5))
         data = schemaless_reader(bytes_io, self.schema)
         return data

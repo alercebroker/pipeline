@@ -61,12 +61,9 @@ class StampClassifierStep(GenericStep):
     def pre_execute(self, messages: List[dict]) -> List[dict]:
         
 
-        logging.warning("Airmass is not available in schema v7.4, setting to 1.0")
-        logging.warning("MagLim is not available in schema v7.4, setting to 25")
-        logging.warning(
-            "scienceFlux and scienceFluxErr are not available in schema v7.4, setting to 0"
-        )
-        logging.warning("Seeing is not available in schema v7.4, setting to 0.7")
+        logging.warning("Airmass is not present in LSST alerts, setting to 1.0")
+        logging.warning("MagLim is not present in LSST alerts, setting to 25")
+        logging.warning("Seeing is not present in LSST alerts, setting to 0.7")
 
         processed_messages = []
         #aqui deberia considerar todos los mensajes, si diaobject is none, entonces diasource no lo es
@@ -108,8 +105,8 @@ class StampClassifierStep(GenericStep):
                 processed_message["psfFlux"] = message["diaSource"]["psfFlux"]
                 processed_message["psfFluxErr"] = message["diaSource"]["psfFluxErr"]
 
-                processed_message["scienceFlux"] = 0.0
-                processed_message["scienceFluxErr"] = 0.0
+                processed_message["scienceFlux"] = message["diaSource"]["scienceFlux"]
+                processed_message["scienceFluxErr"] = message["diaSource"]["scienceFluxErr"]
 
                 processed_message["seeing"] = 0.7
 

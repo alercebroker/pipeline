@@ -60,16 +60,21 @@ def direct(
     package: str,
     package_dir: str = None,
     build_args: Annotated[Optional[List[str]], typer.Option()] = None,
+    tag: str = None,
     stage: Stage = Stage.staging,
     dry_run: bool = False,
 ):
     """
     Builds a single package.
+
+    --tag overrides the version-derived tags (["rc", <poetry version>]) with a single
+    explicit tag. Use it for overlay images that must not clobber the canonical tag
+    (e.g. a cfk-bumped quimal variant published as <version>-cfk2.14.2).
     """
     build_args_names = []
     build_args_values = []
-    for a in build_args:
-        name, value = a.split(":")
+    for a in build_args or []:
+        name, value = a.split(":", 1)
         build_args_names.append(name)
         build_args_values.append(value)
 
@@ -78,6 +83,7 @@ def direct(
         "build-arg": build_args_names,
         "value": build_args_values,
         "package-dir": package if package_dir is None else package_dir,
+        "tag": tag,
     }
 
     _build(package_dict, dry_run)

@@ -1,4 +1,4 @@
-# Default values for step_starter.
+# Default values for watchlist_step.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
@@ -19,17 +19,12 @@ fullnameOverride: ""
 
 podAnnotations: {}
 
-service:
-  enabled: false
-  type: ClusterIP
-  port: 8000
-
 resources: {}
 
 autoscaling:
   enabled: false
   minReplicas: 1
-  maxReplicas: 100
+  maxReplicas: 4
   targetCPUUtilizationPercentage: 80
   # targetMemoryUtilizationPercentage: 80
 
@@ -37,45 +32,103 @@ affinity:
   nodeAffinity:
     requiredDuringSchedulingIgnoredDuringExecution:
       nodeSelectorTerms:
-          - matchExpressions:
+        - matchExpressions:
             - key: eks.amazonaws.com/nodegroup
               operator: In
               ## Override this value with the NodeGroup tag accordingly
               values: []
 
-configmap:
-  consumerTopics: ""
-  updateStrategy: ""
-  consumerGroup: ""
-  consumeMessages: ""
-  internalServer: ""
-  metricsTopic: ""
-  usersDb:
-    host: ""
-    name: ""
+# When true the chart creates the target Namespace. Set false to deploy into a
+# namespace that already exists (so helm doesn't try to adopt/own it).
+createNamespace: true
 
-secrets:
-  kafkaAuth:
-    consumer:
-      enabled: false
-      username: ""
-      password: ""
-    metrics:
-      enabled: false
-      username: ""
-      password: ""
-  usersDb:
-    username: ""
-    password: ""
-
+# When true the chart creates the `image-pull-access` Secret from
+# imageCredentials below. Set false to reuse a pull Secret already in the
+# namespace (imagePullSecrets still references it by name).
+createImagePullSecret: true
 imageCredentials:
   registry: ""
   username: ""
   password: ""
   email: ""
 
-extraEnvVariables:
-  ## - name: METRICS_SOURCE
-  ##   value: {{ .Release.Name }}
-  ## - name: METRICS_SURVEY
-  ##   value: ATLAS
+# Plain env vars and, importantly, the secret overlays. run_step.py reads these
+# env names and overlays them onto the loaded config so credentials come from
+# k8s Secrets (secretKeyRef) instead of the clear-text ConfigMap:
+#   CONSUMER_KAFKA_USERNAME / CONSUMER_KAFKA_PASSWORD -> CONSUMER_CONFIG.PARAMS.sasl.*
+#   METRICS_KAFKA_USERNAME  / METRICS_KAFKA_PASSWORD  -> METRICS_CONFIG.PARAMS.PARAMS.sasl.*
+#   USERS_DB_USER           / USERS_DB_PASSWORD       -> PSQL_CONFIG.USER / .PASSWORD
+envVariables: []
+
+# The whole step configuration is rendered into /config/config.yaml (see
+# templates/configmap.yaml) and loaded by scripts/run_step.py via
+# apf.core.settings.config_from_yaml_file. Every non-secret Kafka/DB parameter
+# is set here — including auto.offset.reset and security.protocol.
+#
+# Leave the secret fields below (sasl.username/password, PSQL USER/PASSWORD)
+# empty: they are overlaid at startup from env vars sourced from k8s Secrets
+# (see the envVariables note above), so secrets stay out of the ConfigMap.
+configYaml:
+  enabled: true
+  UPDATE_STRATEGY: "SortingHat"
+  N_PROCESS: 1
+  LOGGING_DEBUG: false
+  FEATURE_FLAGS:
+    PROMETHEUS: false
+    USE_PROFILING: false
+  CONSUMER_CONFIG:
+    CLASS: "apf.consumers.KafkaSchemalessConsumer"
+    SCHEMA_PATH: "/schemas/sorting_hat_step/output.avsc"
+    TOPICS:
+      - "sorting-hat"
+    consume.timeout: 10
+    consume.messages: 1000
+    PARAMS:
+      bootstrap.servers: ""
+      group.id: ""
+      auto.offset.reset: "beginning"
+      enable.partition.eof: false
+      max.poll.interval.ms: 3600000
+      # For a SASL broker (e.g. AWS MSK) also set:
+      # security.protocol: "SASL_SSL"
+      # sasl.mechanism: "SCRAM-SHA-512"
+      # sasl.username: ""
+      # sasl.password: ""
+  METRICS_CONFIG:
+    CLASS: "apf.metrics.KafkaMetricsProducer"
+    PARAMS:
+      PARAMS:
+        bootstrap.servers: ""
+        # For a SASL broker also set security.protocol / sasl.* here.
+      TOPIC: "metrics"
+      SCHEMA:
+        $schema: "http://json-schema.org/draft-07/schema"
+        $id: "http://example.com/example.json"
+        type: "object"
+        title: "The root schema"
+        description: "The root schema comprises the entire JSON document."
+        default: {}
+        required:
+          - "timestamp_sent"
+          - "timestamp_received"
+        properties:
+          timestamp_sent:
+            $id: "#/properties/timestamp_sent"
+            type: "string"
+            title: "The timestamp_sent schema"
+            description: "Timestamp sent refers to the time at which a message is sent."
+            default: ""
+          timestamp_received:
+            $id: "#/properties/timestamp_received"
+            type: "string"
+            title: "The timestamp_received schema"
+            description: "Timestamp received refers to the time at which a message is received."
+            default: ""
+        additionalProperties: true
+  PSQL_CONFIG:
+    ENGINE: "postgresql"
+    HOST: ""
+    USER: ""
+    PASSWORD: ""
+    PORT: 5432
+    DB_NAME: ""
