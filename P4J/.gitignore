@@ -16,3 +16,9 @@
 *.swp
 
 .idea/
+
+# Benchmark / presentation artifacts: large or regenerable, not library code.
+/benchmarks/bench_results.json
+/benchmarks/build_presentation.py
+/benchmarks/presentation.html
+/benchmarks/fig_*.npz

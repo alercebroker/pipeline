@@ -110,12 +110,8 @@
     },
     {
       "doc": "The number of u-band data points.",
-      "default": null,
       "name": "u_psfFluxNdata",
-      "type": [
-        "null",
-        "int"
-      ]
+      "type": "int"
     },
     {
       "doc": "Weighted mean forced photometry flux for u filter [nJy].",
@@ -164,12 +160,8 @@
     },
     {
       "doc": "The number of g-band data points.",
-      "default": null,
       "name": "g_psfFluxNdata",
-      "type": [
-        "null",
-        "int"
-      ]
+      "type": "int"
     },
     {
       "doc": "Weighted mean forced photometry flux for g filter [nJy].",
@@ -218,12 +210,8 @@
     },
     {
       "doc": "The number of r-band data points.",
-      "default": null,
       "name": "r_psfFluxNdata",
-      "type": [
-        "null",
-        "int"
-      ]
+      "type": "int"
     },
     {
       "doc": "Weighted mean forced photometry flux for r filter [nJy].",
@@ -272,12 +260,8 @@
     },
     {
       "doc": "The number of i-band data points.",
-      "default": null,
       "name": "i_psfFluxNdata",
-      "type": [
-        "null",
-        "int"
-      ]
+      "type": "int"
     },
     {
       "doc": "Weighted mean forced photometry flux for i filter [nJy].",
@@ -326,12 +310,8 @@
     },
     {
       "doc": "The number of z-band data points.",
-      "default": null,
       "name": "z_psfFluxNdata",
-      "type": [
-        "null",
-        "int"
-      ]
+      "type": "int"
     },
     {
       "doc": "Weighted mean forced photometry flux for z filter [nJy].",
@@ -380,12 +360,8 @@
     },
     {
       "doc": "The number of y-band data points.",
-      "default": null,
       "name": "y_psfFluxNdata",
-      "type": [
-        "null",
-        "int"
-      ]
+      "type": "int"
     },
     {
       "doc": "Weighted mean forced photometry flux for y filter [nJy].",

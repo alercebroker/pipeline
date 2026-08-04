@@ -4,13 +4,20 @@ from typing import Callable, ContextManager, List, Optional
 import pandas as pd
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.pool import NullPool
 from db_plugins.db.sql.models_pipeline import ZtfReference
 
 
 class PSQLConnection:
-    def __init__(self, config: dict, echo=False) -> None:
+    def __init__(self, config: dict, echo=False, poolclass: str | None = None) -> None:
         url = self.__format_db_url(config)
-        self._engine = create_engine(url, echo=echo)
+
+        if poolclass == "NullPool":
+            poolclass = NullPool
+        else:
+            poolclass = None
+
+        self._engine = create_engine(url, echo=echo, poolclass=poolclass)
         self._session_factory = sessionmaker(
             self._engine,
         )

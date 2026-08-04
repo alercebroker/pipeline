@@ -12,8 +12,12 @@ def satisfies_filter(values: dict, type: str, params: dict) -> bool:
             raise Exception(f"Invalid filter type: {type}")
 
 
-def constant(values: dict, field: str, constant: int, op: str) -> bool:
+def constant(values: dict, field: str, constant, op: str) -> bool:
     value = values[field]
+    # User-supplied thresholds can arrive as JSON strings (e.g. "0.5"); the
+    # ordering ops need numeric operands, so coerce both sides.
+    if op != "eq":
+        value, constant = float(value), float(constant)
     match op:
         case "less":
             return value < constant

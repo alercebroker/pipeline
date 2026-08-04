@@ -32,3 +32,22 @@ class NoTableProvidedException(ValueError):
 
     def __init__(self):
         super().__init__("No table provided in the command")
+
+
+class MongoDialectCommandException(ValueError):
+    """
+    Raised for a legacy Mongo-dialect command that the SQL scribe intentionally
+    ignores -- currently the generic object update
+    ``{"type": "update", "collection": "object"}`` (with no ``xmatch`` in data)
+    that magstats_step still emits for the retired MongoDB backend.
+
+    It subclasses ValueError so any existing ``except ValueError`` handler still
+    treats it as a dropped command; the step catches it *first* to skip it
+    quietly instead of logging it as an invalid drop. See ``../../step.py`` and
+    the repo-root ``MONGODB-LEGACY.md``.
+    """
+
+    def __init__(self, type_, table):
+        super().__init__(
+            f"Ignoring legacy Mongo-dialect command: {type_} in table {table}."
+        )

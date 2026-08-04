@@ -27,7 +27,15 @@ from metadata_step import MetadataStep
 from metadata_step.utils.database import PSQLConnection
 
 
-DATABASE = get_credentials(STEP_CONFIG["DATABASE_SECRET_NAME"])
+# DB credentials. Cloud (AWS legacy): a Secrets Manager secret name resolves the
+# full connection. On-prem (quimal): no Secrets Manager access, so the non-sensitive
+# connection fields come from the mounted config.yaml (STEP_CONFIG["PSQL_CONFIG"]) and
+# only the password is injected from a Kubernetes Secret via the PSQL_PASSWORD env var.
+if STEP_CONFIG.get("DATABASE_SECRET_NAME"):
+    DATABASE = get_credentials(STEP_CONFIG["DATABASE_SECRET_NAME"])
+else:
+    DATABASE = dict(STEP_CONFIG["PSQL_CONFIG"])
+    DATABASE["PASSWORD"] = os.environ["PSQL_PASSWORD"]
 sql = PSQLConnection(DATABASE, echo=STEP_CONFIG.get("LOGGING_DEBUG", False))
 
 step = MetadataStep(config=STEP_CONFIG, db_sql=sql)

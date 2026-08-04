@@ -59,6 +59,9 @@ class WatchlistStep(GenericStep):
         res = []
         with self.users_db.conn() as conn:
             with conn.cursor() as cursor:
+                # JIT compilation dominates this hot, tiny-result q3c query
+                # (~190 ms JIT vs ~3 ms of actual index work); turn it off.
+                cursor.execute("SET jit = off")
                 cursor.execute(query, [item for coord in coordinates for item in coord])
                 res = cursor.fetchall()
         return res

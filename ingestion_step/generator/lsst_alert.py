@@ -324,6 +324,7 @@ class LsstAlertGenerator:
             "ssObjectId": obj_info.oid if obj_info.otype == "ss" else None,
             "parentDiaSourceId": parent_id,
             "midpointMjdTai": mjd,
+            "exposureTime": self._noneable(self.rng.uniform(1, 60)),
             "ra": obj_info.obj["ra"] + self.rng.uniform(-0.01, +0.01)
             if obj_info.otype == "dia"
             else self.rng.uniform(0, 360),
@@ -350,7 +351,7 @@ class LsstAlertGenerator:
             "psfFluxErr": self._noneable(self.rng.uniform(0, 100)),
             "psfLnL": self._noneable(self.rng.uniform(-1000, 1000)),
             "psfChi2": self._noneable(self.rng.uniform(0, 1000)),
-            "psfNdata": self._noneable(self.rng.randint(0, 1000)),
+            "psfNdata": self.rng.randint(0, 1000),
             "psfFlux_flag": self._noneable(self.rng.choice([True, False])),
             "psfFlux_flag_edge": self._noneable(self.rng.choice([True, False])),
             "psfFlux_flag_noGoodPixels": self._noneable(self.rng.choice([True, False])),
@@ -365,8 +366,10 @@ class LsstAlertGenerator:
             "trailAngle": self._noneable(self.rng.uniform(0, 360)),
             "trailAngleErr": self._noneable(self.rng.uniform(0, 10)),
             "trailChi2": self._noneable(self.rng.uniform(0, 1000)),
-            "trailNdata": self._noneable(self.rng.randint(0, 1000)),
+            "trailNdata": self.rng.randint(0, 1000),
+            "trailAlgorithm": self._noneable(self.rng.choice([1, 2])),
             "trail_flag_edge": self._noneable(self.rng.choice([True, False])),
+            "trail_flag": self._noneable(self.rng.choice([True, False])),
             "dipoleMeanFlux": self._noneable(self.rng.uniform(-1000, 1000)),
             "dipoleMeanFluxErr": self._noneable(self.rng.uniform(0, 100)),
             "dipoleFluxDiff": self._noneable(self.rng.uniform(-1000, 1000)),
@@ -374,7 +377,7 @@ class LsstAlertGenerator:
             "dipoleLength": self._noneable(self.rng.uniform(0, 100)),
             "dipoleAngle": self._noneable(self.rng.uniform(0, 360)),
             "dipoleChi2": self._noneable(self.rng.uniform(0, 1000)),
-            "dipoleNdata": self._noneable(self.rng.randint(0, 1000)),
+            "dipoleNdata": self.rng.randint(0, 1000),
             "scienceFlux": self._noneable(self.rng.uniform(-1000, 1000)),
             "scienceFluxErr": self._noneable(self.rng.uniform(0, 100)),
             "forced_PsfFlux_flag": self._noneable(self.rng.choice([True, False])),
@@ -396,12 +399,13 @@ class LsstAlertGenerator:
             "shape_flag_parent_source": self._noneable(self.rng.choice([True, False])),
             "extendedness": self._noneable(self.rng.uniform(0, 1)),
             "reliability": self._noneable(self.rng.uniform(0, 1)),
+            "reliabilityVersion": self._noneable(self.rng.choice(["v1", "v2"])),
             "band": self._noneable(self._random_band()),
             "isDipole": self._noneable(self.rng.choice([True, False])),
             "dipoleFitAttempted": self._noneable(self.rng.choice([True, False])),
             "timeProcessedMjdTai": self.rng.uniform(50000, 70000),  # realistic MJD TAI
             "timeWithdrawnMjdTai": None,  # always present, default None
-            "bboxSize": self._noneable(self.rng.randint(10, 100)),
+            "bboxSize": self.rng.randint(10, 100),
             "pixelFlags": self._noneable(self.rng.choice([True, False])),
             "pixelFlags_bad": self._noneable(self.rng.choice([True, False])),
             "pixelFlags_cr": self._noneable(self.rng.choice([True, False])),
@@ -519,7 +523,7 @@ class LsstAlertGenerator:
             obj[f"{band}_psfFluxMean"] = self._noneable(self.rng.uniform(-1000, 1000))
             obj[f"{band}_psfFluxMeanErr"] = self._noneable(self.rng.uniform(0, 100))
             obj[f"{band}_psfFluxSigma"] = self._noneable(self.rng.uniform(0, 100))
-            obj[f"{band}_psfFluxNdata"] = self._noneable(self.rng.randint(0, 1000))
+            obj[f"{band}_psfFluxNdata"] = self.rng.randint(0, 1000)
             obj[f"{band}_fpFluxMean"] = self._noneable(self.rng.uniform(-1000, 1000))
             obj[f"{band}_fpFluxMeanErr"] = self._noneable(self.rng.uniform(0, 100))
             obj[f"{band}_scienceFluxMean"] = self._noneable(

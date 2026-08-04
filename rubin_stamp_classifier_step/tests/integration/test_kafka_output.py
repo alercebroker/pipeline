@@ -45,8 +45,8 @@ step_config = {
             root_dir,
             "schemas",
             "surveys",
-            "lsst",
-            "v7_4_alert.avsc",
+            "lsst_v11.1",
+            "lsst.v11_1.alert.avsc",
         ),
     },
     "PRODUCER_CONFIG": {
@@ -247,8 +247,8 @@ def produce_avro_messages_to_kafka(
                 root_dir,
                 "schemas",
                 "surveys",
-                "lsst",
-                "v7_4_alert.avsc",
+                "lsst_v11.1",
+                "lsst.v11_1.alert.avsc",
             ),
         }
     )

@@ -26,7 +26,7 @@ This step is part of the ALeRCE astronomical alert broker pipeline. It processes
          auto.offset.reset: earliest
        consume.timeout: 5
        consume.messages: 16
-       SCHEMA_PATH: "/schemas/surveys/lsst/v7_4_alert.avsc"
+       SCHEMA_PATH: "/schemas/surveys/lsst_v11.1/lsst.v11_1.alert.avsc"
      PRODUCER_CONFIG:
        CLASS: "apf.producers.kafka.KafkaSchemalessProducer"
        TOPIC: rubin_stamp_classifier
@@ -117,7 +117,7 @@ configYaml:
         auto.offset.reset: earliest
       consume.timeout: 5
       consume.messages: 16
-      SCHEMA_PATH: "/schemas/surveys/lsst/v7_4_alert.avsc"
+      SCHEMA_PATH: "/schemas/surveys/lsst_v11.1/lsst.v11_1.alert.avsc"
     PRODUCER_CONFIG:
       CLASS: "apf.producers.kafka.KafkaSchemalessProducer"
       TOPIC: rubin_stamp_classifier

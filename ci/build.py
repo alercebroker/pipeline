@@ -37,6 +37,7 @@ async def _build_package(packages: dict, dry_run: bool):
                         build_args,
                         pkg,
                         dry_run,
+                        packages[pkg].get("tag"),
                     )
                 else:
                     tg.start_soon(

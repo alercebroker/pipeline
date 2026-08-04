@@ -66,3 +66,18 @@ class TestSortingHatStrategy:
         assert new_values[1][-1] == self.matches[1][3]
         assert new_values[0][:-1] == (3, 4, 100, {"mag": 12})
         assert new_values[1][:-1] == (7, 8, 101, {"mag": 13, "mjd": 11})
+
+    def test_get_new_values_converts_all_bands(self):
+        # ZTF has three bands; the char fid is mapped to its numeric id.
+        alerts = {
+            (oid, oid): {"oid": oid, "candid": oid, "mag": 18, "fid": band}
+            for oid, band in ((1, "g"), (2, "r"), (3, "i"))
+        }
+        matches = [
+            (oid, oid, oid, {"fields": {"sorting_hat": ["fid"]}, "filters": {}})
+            for oid in (1, 2, 3)
+        ]
+
+        new_values = self.sorting_hat_strat.get_new_values(matches, alerts)
+
+        assert [v[3]["fid"] for v in new_values] == [1, 2, 3]

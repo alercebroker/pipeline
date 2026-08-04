@@ -87,7 +87,7 @@ class XmatchClient:
                 oid=oid,
                 query_ra=query_ra,
                 query_dec=query_dec,
-                match_id=match["id"],
+                match_id=str(match["id"]),
                 catalog=catalog_name,
                 match_ra=match["ra"],
                 match_dec=match["dec"],
@@ -102,7 +102,7 @@ class XmatchClient:
         decs: list[float],
         oids: list[str | int],
         radius: float = 1.5,
-        catalogs: list[str] | None = None,
+        catalog: str | None = None,
     ):
         """Perform a bulk cone search for multiple positions.
 
@@ -111,15 +111,16 @@ class XmatchClient:
             decs: List of declinations.
             oids: List of object IDs.
             radius: Search radius in arcseconds.
-            catalogs: List of catalog names to search.
+            catalog: Catalog to search. When given, the server scopes the
+                search to this catalog before the KNN, so ``nneighbor``
+                applies per catalog. When ``None`` the server returns the
+                global nearest across all catalogs.
 
         Returns:
             List of Match dictionaries.
         """
         if not len(ras) == len(decs) == len(oids):
             raise ValueError("oids, ras and decs must have the same length")
-
-        catalogs_set = set(catalogs) if catalogs is not None else None
 
         matches: list[Match] = []
         for oid_batch, ra_batch, dec_batch in zip(
@@ -134,6 +135,8 @@ class XmatchClient:
                 "radius": radius,
                 "nneighbor": 1,
             }
+            if catalog is not None:
+                payload["catalog"] = catalog
 
             resp = self._request("POST", "v1/bulk-conesearch", json=payload)
             resp.raise_for_status()
@@ -143,13 +146,10 @@ class XmatchClient:
                 oid = result["Oid"]
                 query_ra = result["QueryRA"]
                 query_dec = result["QueryDec"]
-                catalogs = result["Data"]
 
-                for catalog in catalogs:
-                    catalog_name = catalog["catalog"]
-                    catalog_matches = catalog["data"]
-                    if catalogs_set and catalog_name not in catalogs_set:
-                        continue
+                for catalog_result in result["Data"]:
+                    catalog_name = catalog_result["catalog"]
+                    catalog_matches = catalog_result["data"]
 
                     matches += self._parse_matches(
                         oid, query_ra, query_dec, catalog_name, catalog_matches
@@ -176,7 +176,7 @@ class XmatchClient:
         for id, catalog in zip(ids, catalogs):
             ids_by_cat[catalog].append(id)
 
-        metadata_by_cat_by_id = {}
+        metadata_by_cat_by_id: dict[str, dict[str, Metadata]] = defaultdict(dict)
         for catalog, ids in ids_by_cat.items():
             for id_batch in batched(ids, self.batch_size):
                 payload = {"ids": id_batch, "catalog": catalog}
@@ -185,9 +185,9 @@ class XmatchClient:
                 resp.raise_for_status()
 
                 metadatas = resp.json()
-                metadata_by_cat_by_id[catalog] = {
-                    metadata["id"]: metadata for metadata in metadatas
-                }
+                metadata_by_cat_by_id[catalog].update(
+                    {str(metadata["id"]): metadata for metadata in metadatas}
+                )
 
         return metadata_by_cat_by_id
 
@@ -197,7 +197,7 @@ class XmatchClient:
         decs: list[float],
         oids: list[str | int],
         radius: float = 1.5,
-        catalogs: list[str] | None = None,
+        catalog: str | None = None,
     ):
         """Perform a cone search and fetch metadata for the matches.
 
@@ -206,12 +206,12 @@ class XmatchClient:
             decs: List of declinations.
             oids: List of object IDs.
             radius: Search radius in arcseconds.
-            catalogs: List of catalog names to search.
+            catalog: Catalog to search (see :meth:`conesearch`).
 
         Returns:
             List of MatchWithMetadata dictionaries.
         """
-        matches = self.conesearch(ras, decs, oids, radius, catalogs)
+        matches = self.conesearch(ras, decs, oids, radius, catalog)
 
         matches_id = []
         matches_catalog = []

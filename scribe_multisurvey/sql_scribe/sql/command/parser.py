@@ -400,6 +400,8 @@ def parse_xmatch(sub_xmatch: dict) -> dict:
     catalog = sub_xmatch["catalog"]
     if catalog == "allwise":
         cat_id = 0
+    elif catalog == "gaia":
+        cat_id = 1
     else:
         cat_id = -999
     xmatch = {
@@ -422,6 +424,19 @@ def parse_probability(raw_probability: dict) -> dict:
         "probability": raw_probability["probability"],
         "ranking": raw_probability.get("ranking"),
         "lastmjd": raw_probability["lastmjd"],
+    }
+
+
+def parse_probability_table(raw: dict) -> dict:
+    return {
+        "oid": raw["oid"],
+        "sid": raw["sid"],
+        "classifier_id": raw["classifier_id"],
+        "classifier_version": raw["classifier_version"],
+        "class_id": raw["class_id"],
+        "probability": raw["probability"],
+        "ranking": raw.get("ranking"),
+        "lastmjd": raw["lastmjd"],
     }
 
 

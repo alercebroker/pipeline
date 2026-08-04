@@ -136,9 +136,13 @@ flycheck*
 values*.override.yaml
 values*.override.yml
 values.staging.yaml
+values.*.staging.yaml
 values.production.yaml
+values.*.production.yaml
 values.staging.yml
+values.*.staging.yml
 values.production.yml
+values.*.production.yml
 *.tgz
 .vscode/
 

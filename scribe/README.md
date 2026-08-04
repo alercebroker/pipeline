@@ -1,5 +1,14 @@
 # ALeRCE Scribe for MongoDB
 
+> **Note — the name is a fossil.** This scribe supports **two** backends chosen
+> at runtime via `DB_ENGINE` (`mongo` | `sql`). Every current deployment runs
+> the **SQL** backend (`DB_ENGINE=sql`), decoded by `mongo_scribe/sql/command/`;
+> **no MongoDB instance is deployed anywhere**. The Mongo command format below
+> still describes the Mongo dialect. Some producers emit both dialects, and the
+> SQL scribe quietly skips the Mongo-only ones — see
+> [`../MONGODB-LEGACY.md`](../MONGODB-LEGACY.md) before touching command
+> decoding.
+
 This step will process the commands published in the consumer topics and perform DB operations according to their types:
 
 ## Command Format

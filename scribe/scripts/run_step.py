@@ -27,7 +27,6 @@ logging.basicConfig(
 )
 
 
-from apf.metrics.prometheus import PrometheusMetrics
 from mongo_scribe import MongoScribe
 from prometheus_client import start_http_server
 
@@ -54,11 +53,14 @@ if use_profiling:
         application_name="step.ScribeStep", server_address=pyroscope_server
     )
 # PROMETHEUS
-prometheus_metrics = PrometheusMetrics()
+# apf's GenericStep already builds its default PrometheusMetrics at import time
+# (registered against the global REGISTRY), so creating a second one here raises
+# "Duplicated timeseries". The apf param was also renamed prometheus_metrics ->
+# metrics and GenericStep takes no **kwargs, so we let MongoScribe use apf's
+# default and pass no metrics kwarg (mirrors scribe_multisurvey/scripts/run_step.py).
+# start_http_server serves that same global registry.
 if STEP_CONFIG.get("FEATURE_FLAGS", {}).get("PROMETHEUS"):
     start_http_server(8000)
 
-step = MongoScribe(
-    config=STEP_CONFIG, db=db_type, prometheus_metrics=prometheus_metrics
-)
+step = MongoScribe(config=STEP_CONFIG, db=db_type)
 step.start()

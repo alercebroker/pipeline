@@ -33,20 +33,17 @@ class StampClassifierStep(GenericStep):
             model_path=config["MODEL_CONFIG"]["MODEL_PATH"]
         )
         self.dict_mapping_classes = self.model.dict_mapping_classes
-        self.psql_connection = PSQLConnection(config["DB_CONFIG"])
+        self.psql_connection = PSQLConnection(config["DB_CONFIG"], poolclass="NullPool")
+        self.survey = self.config.get("SURVEY")
+
         if "CLS_ID" not in config["MODEL_CONFIG"]:
-            self.classifier_id = 1
-        else:
-            self.classifier_id = config["MODEL_CONFIG"]["CLS_ID"]
+            raise KeyError("MODEL_CONFIG.CLS_ID is required")
+        self.classifier_id = config["MODEL_CONFIG"]["CLS_ID"]
+        self.rename_stamp_columns = config.get("RENAME_STAMP_COLUMNS", False)
 
-        if "SID" not in config["MODEL_CONFIG"]:
-            self.sid = 1
-        else:
-            self.sid = config["MODEL_CONFIG"]["SID"]
-        
-
-        self.class_taxonomy = get_taxonomy_by_classifier_id(self.classifier_id, self.sid, self.psql_connection)
+        self.class_taxonomy = get_taxonomy_by_classifier_id(self.classifier_id, self.psql_connection)
         logging.info(f"Class taxonomy: {self.class_taxonomy}")
+        logging.info(f"RENAME_STAMP_COLUMNS: {self.rename_stamp_columns}")
 
         """ SCRIBE PRODUCER TO PRODUCE TO SCRIBE-MULTISURVEY TOPIC FOR ARCHIVAL PURPOSES"""
         scribe_cfg = config.get("SCRIBE_PRODUCER_CONFIG")
@@ -62,21 +59,11 @@ class StampClassifierStep(GenericStep):
 
 
     def pre_execute(self, messages: List[dict]) -> List[dict]:
-        # Preprocessing: parsing, formatting and validation.
+        
 
-        # Extract required fields from messages
-        # Metadata to provide:
-        # ['airmass', 'magLim', 'psfFlux', 'psfFluxErr', 'scienceFlux',
-        #  'scienceFluxErr', 'seeing', 'snr', 'ra', dec']
-
-        # stamps: ['visit_image', 'difference_image', 'reference_image']
-
-        logging.warning("Airmass is not available in schema v7.4, setting to 1.0")
-        logging.warning("MagLim is not available in schema v7.4, setting to 25")
-        logging.warning(
-            "scienceFlux and scienceFluxErr are not available in schema v7.4, setting to 0"
-        )
-        logging.warning("Seeing is not available in schema v7.4, setting to 0.7")
+        logging.warning("Airmass is not present in LSST alerts, setting to 1.0")
+        logging.warning("MagLim is not present in LSST alerts, setting to 25")
+        logging.warning("Seeing is not present in LSST alerts, setting to 0.7")
 
         processed_messages = []
         #aqui deberia considerar todos los mensajes, si diaobject is none, entonces diasource no lo es
@@ -118,8 +105,8 @@ class StampClassifierStep(GenericStep):
                 processed_message["psfFlux"] = message["diaSource"]["psfFlux"]
                 processed_message["psfFluxErr"] = message["diaSource"]["psfFluxErr"]
 
-                processed_message["scienceFlux"] = 0.0
-                processed_message["scienceFluxErr"] = 0.0
+                processed_message["scienceFlux"] = message["diaSource"]["scienceFlux"]
+                processed_message["scienceFluxErr"] = message["diaSource"]["scienceFluxErr"]
 
                 processed_message["seeing"] = 0.7
 
@@ -151,6 +138,22 @@ class StampClassifierStep(GenericStep):
         if not df.index.is_unique:
             raise ValueError("diaObjectId must be unique in the input messages")
 
+        stamps_df = df[
+            [
+                "visit_image",
+                "difference_image",
+                "reference_image",
+            ]
+        ]
+        if self.rename_stamp_columns:
+            stamps_df = stamps_df.rename(
+                columns={
+                    "visit_image": "flux_Science_data",
+                    "difference_image": "flux_Difference_data",
+                    "reference_image": "flux_Template_data",
+                }
+            )
+
         # Create the InputDTO
         input_dto = InputDTO(
             Detections(pd.DataFrame()),
@@ -172,15 +175,7 @@ class StampClassifierStep(GenericStep):
                 ]
             ),
             Xmatch(pd.DataFrame()),
-            Stamps(
-                df[
-                    [
-                        "visit_image",
-                        "difference_image",
-                        "reference_image",
-                    ]
-                ]
-            ),
+            Stamps(stamps_df),
         )
         return input_dto
 

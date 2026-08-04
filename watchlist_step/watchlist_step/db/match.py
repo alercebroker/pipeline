@@ -23,11 +23,18 @@ def create_match_query(len, base_radius=30 / 3600):
                 positions.dec,
                 watchlist_target.ra,
                 watchlist_target.dec,
-                LEAST(watchlist_target.radius, {})
+                {}
             )
+            AND q3c_dist(
+                positions.ra,
+                positions.dec,
+                watchlist_target.ra,
+                watchlist_target.dec
+            ) < LEAST(watchlist_target.radius, {})
         """
     ).format(
         SQL(", ").join(SQL("(%s, %s, %s, %s)") for _ in range(len)),
+        Literal(base_radius),
         Literal(base_radius),
     )
 

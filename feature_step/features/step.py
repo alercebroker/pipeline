@@ -61,7 +61,11 @@ class FeatureStep(GenericStep):
         self.logger = logging.getLogger("alerce.FeatureStep")
         self.survey = self.config.get("SURVEY")
         self.use_xmatch = self.config.get("USE_XMATCH", False)
-        
+        # Catalogs to cross-match against (one conesearch request per catalog).
+        self.xmatch_catalogs = self.config.get(
+            "XMATCH_CATALOGS", ["allwise", "gaia"]
+        )
+
         # Get schema from configuration
         self.schema = self.config.get("DB_CONFIG", {}).get("SCHEMA", "multisurvey")
 
@@ -139,7 +143,7 @@ class FeatureStep(GenericStep):
         oids = []
         ras = []
         decs = []
-        
+
         for msg in messages:
             if msg['sid'] == 2:
                 continue  # Saltar sid 2
@@ -147,19 +151,24 @@ class FeatureStep(GenericStep):
             ras.append(msg["meanra"])
             decs.append(msg["meandec"])
 
-        
-        results = self.xmatch_client.conesearch_with_metadata(
-            ras=ras, 
-            decs=decs, 
-            oids=oids
-        )
-        
+        # One request per catalog: the server scopes the search to each catalog
+        # before the KNN, so we get the nearest match in every catalog instead
+        # of only the single global nearest.
+        results = []
+        for catalog in self.xmatch_catalogs:
+            results += self.xmatch_client.conesearch_with_metadata(
+                ras=ras,
+                decs=decs,
+                oids=oids,
+                catalog=catalog,
+            )
+
         return results
 
     def produce_xmatch_to_scribe(self, xmatch_results: List[Dict[str, Any]], messages: List[dict],survey):
         """
         Produce xmatch results to scribe.
-        
+
         Parameters
         ----------
         xmatch_results : List[Dict[str, Any]]
@@ -169,21 +178,21 @@ class FeatureStep(GenericStep):
         """
         if not xmatch_results:
             return
-        
+
         # Crear mapeo de oid -> sid desde los mensajes
         oid_to_sid = {}
-        for msg in messages:            
+        for msg in messages:
             oid = str(msg['oid'])
             sid = msg['sid']
             oid_to_sid[oid] = sid
-           
-        
+
+
         # Procesar cada resultado de xmatch
         flush = False
         for idx, match in enumerate(xmatch_results):
             oid = str(match["oid"])
             sid = oid_to_sid.get(oid, 1)  # Usar sid del mensaje o valor por defecto
-            
+
             # Crear comando en el formato especificado
             xmatch_command = {
                 'step': 'xmatch',
@@ -196,10 +205,10 @@ class FeatureStep(GenericStep):
                     'oid_catalog': match.get('match_id')
                 }
             }
-            
+
             if idx == len(xmatch_results) - 1:
                 flush = True
-            
+
             self.scribe_producer.producer.produce(
                 topic= self.scribe_topic_name,
                 value=json.dumps(xmatch_command).encode("utf-8"),
@@ -287,16 +296,22 @@ class FeatureStep(GenericStep):
         # Para LSST: obtener xmatch info para TODOS los mensajes antes de filtrar
         if self.use_xmatch and len(messages) > 0:
             xmatch_results = self.get_xmatch_info(messages)
-            # Crear diccionario de oid -> xmatch para búsqueda rápida
-            xmatch_dict = {str(match['oid']): match for match in xmatch_results}
-            
+            # xmatch_results holds one match per (oid, catalog). Features only
+            # use the allwise match (W1-W4), so map oid -> allwise match for the
+            # per-message attach; the full list still goes to scribe below.
+            xmatch_dict = {
+                str(match['oid']): match
+                for match in xmatch_results
+                if match.get('catalog') == 'allwise'
+            }
+
             for msg in messages:
                 oid_str = str(msg['oid'])
                 if oid_str in xmatch_dict:
                     msg['xmatches'] = xmatch_dict[oid_str]
                 else:
                     msg['xmatches'] = None
-            self.produce_xmatch_to_scribe(xmatch_results, messages,self.survey)
+            self.produce_xmatch_to_scribe(xmatch_results, messages, self.survey)
 
         filtered_messages = []
         for message in messages:

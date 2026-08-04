@@ -8,6 +8,7 @@ from .commands import (
     ZTFCorrectionCommand,
     ZTFMagstatCommand,
     ProbabilityArchivalCommand,
+    ProbabilityCommand,
     ZtfObjectUpdateCommand,
 )
 from .exceptions import WrongFormatCommandException
@@ -89,6 +90,9 @@ def command_factory(msg: str) -> Command:
     
     if step == "probability-archival-step" and survey in {"lsst", "ztf"}:
         return ProbabilityArchivalCommand(**message)
+
+    if step == "update-probability" and survey in {"lsst", "ztf"}:
+        return ProbabilityCommand(**message)
     
     if step == "update-ztf-object-features" and survey == "ztf":
         return ZtfObjectUpdateCommand(**message)

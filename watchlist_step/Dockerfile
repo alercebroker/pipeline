@@ -37,9 +37,7 @@ COPY --from=builder /schemas /schemas
 
 COPY watchlist_step/watchlist_step /app/watchlist_step
 COPY watchlist_step/scripts /app/scripts
-COPY watchlist_step/README.md \
-  watchlist_step/settings.py \
-  /app/
+COPY watchlist_step/README.md /app/
 
 WORKDIR /app
 RUN poetry install --only-root

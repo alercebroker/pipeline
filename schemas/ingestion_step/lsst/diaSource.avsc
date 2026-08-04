@@ -75,6 +75,15 @@
       "type": "double"
     },
     {
+      "doc": "Effective exposure time for this diaSource [s].",
+      "default": null,
+      "name": "exposureTime",
+      "type": [
+        "null",
+        "float"
+      ]
+    },
+    {
       "doc": "Right ascension coordinate of the center of this diaSource [deg].",
       "name": "ra",
       "type": "double"
@@ -240,12 +249,8 @@
     },
     {
       "doc": "The number of data points (pixels) used to fit the point source model.",
-      "default": null,
       "name": "psfNdata",
-      "type": [
-        "null",
-        "int"
-      ]
+      "type": "int"
     },
     {
       "doc": "Failure to derive linear least-squares fit of psf model. Another psfFlux flag field should also be set to provide more information.",
@@ -375,8 +380,13 @@
     },
     {
       "doc": "The number of data points (pixels) used to fit the trailed source model.",
-      "default": null,
       "name": "trailNdata",
+      "type": "int"
+    },
+    {
+      "doc": "Integer key indicating which algorithm was used to measure trailed source. 1=SDSSShape, 2=HSMShape.",
+      "default": null,
+      "name": "trailAlgorithm",
       "type": [
         "null",
         "int"
@@ -386,6 +396,15 @@
       "doc": "This flag is set if a trailed source extends onto or past edge pixels.",
       "default": null,
       "name": "trail_flag_edge",
+      "type": [
+        "null",
+        "boolean"
+      ]
+    },
+    {
+      "doc": "The trailed source fitting algorithm failed.",
+      "default": null,
+      "name": "trail_flag",
       "type": [
         "null",
         "boolean"
@@ -456,12 +475,8 @@
     },
     {
       "doc": "The number of data points (pixels) used to fit the model.",
-      "default": null,
       "name": "dipoleNdata",
-      "type": [
-        "null",
-        "int"
-      ]
+      "type": "int"
     },
     {
       "doc": "Forced photometry flux for a point source model measured on the visit image centered at DiaSource position [nJy].",
@@ -635,6 +650,15 @@
       ]
     },
     {
+      "doc": "Version of the reliability model.",
+      "default": null,
+      "name": "reliabilityVersion",
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    {
       "doc": "Source well fit by a dipole.",
       "default": null,
       "name": "isDipole",
@@ -668,12 +692,8 @@
     },
     {
       "doc": "Size of the square bounding box that fully contains the detection footprint [pixel].",
-      "default": null,
       "name": "bboxSize",
-      "type": [
-        "null",
-        "int"
-      ]
+      "type": "int"
     },
     {
       "doc": "General pixel flags failure; set if anything went wrong when setting pixels flags from this footprint's mask. This implies that some pixelFlags for this source may be incorrectly set to False.",
