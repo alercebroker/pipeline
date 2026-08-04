@@ -132,10 +132,7 @@ class CorrectionStep(GenericStep):
         return result
 
     def produce_scribe(self, detections: list[dict]):
-        count = 0
         for detection in detections:
-            count += 1
-            flush = False
             # Prevent further modification for next step
             detection = deepcopy(detection)
             if not detection.pop("new"):
@@ -159,6 +156,10 @@ class CorrectionStep(GenericStep):
                 "options": {"upsert": True, "set_on_insert": set_on_insert},
             }
             scribe_payload = {"payload": json.dumps(scribe_data)}
-            if count == len(detections):
-                flush = True
-            self.scribe_producer.produce(scribe_payload, flush=flush, key=oid)
+            self.scribe_producer.produce(scribe_payload, key=oid)
+        # Guarantee every buffered scribe message is delivered before GenericStep._post_produce
+        # commits the Kafka offset. A per-message flush=True on the "last" detection is unsafe:
+        # the loop skips detections with new=False, so a batch ending in a non-new detection
+        # would commit the offset with messages still buffered -> silent detection loss on
+        # pod termination. See test_scribe_is_flushed_before_offset_commit_when_last_detection_is_not_new.
+        self.scribe_producer.producer.flush()

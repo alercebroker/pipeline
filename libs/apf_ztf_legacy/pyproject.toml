@@ -1,0 +1,40 @@
+[tool.poetry]
+name = "apf-base-ztf-legacy"
+version = "6.1.1a44"
+description = "Frozen snapshot of apf (from main) for the legacy ZTF pipeline. Do not add features."
+authors = []
+license = "MIT"
+readme = "README.md"
+packages = [{include = "apf"}]
+
+[tool.poetry.dependencies]
+python = ">=3.7.1"
+click = ">=7.1.1"
+confluent-kafka = ">=2.12.0,<2.13.0"
+fastavro = ">=0.22.0,<=1.6.1"
+jinja2 = ">=2.10.0"
+pandas = ">=1.2,<=2.2.1"
+numpy = "<2.0.0"
+boto3 = "1.26.69"
+prometheus-client = "0.16.0"
+pyroscope-io = "0.8.4"
+pyyaml = "^6.0.1"
+
+[tool.poetry.group.dev.dependencies]
+black = "~=23.0"
+isort = ">=4.35.0"
+ 
+[tool.poetry.group.test.dependencies]
+pytest = "^7.3.1"
+pytest-cov = "^4.1.0"
+pytest-docker = "^1.0.1"
+moto = "^4.1.13"
+pytest-mock = "^3.11.1"
+
+[tool.black]
+line-length = 88
+extend-exclude = 'templates/*'
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

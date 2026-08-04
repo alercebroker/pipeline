@@ -17,7 +17,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 RUN pip install poetry
 COPY correction_step/poetry.lock correction_step/pyproject.toml /app/
-COPY libs/apf /libs/apf
+COPY libs/apf_ztf_legacy /libs/apf_ztf_legacy
 COPY schemas/correction_step /schemas/correction_step
 COPY schemas/lightcurve_step /schemas/lightcurve_step
 COPY schemas/scribe_step /schemas/scribe_step

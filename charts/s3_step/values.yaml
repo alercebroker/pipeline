@@ -4,6 +4,10 @@
 
 replicaCount: 1
 
+# Render the ATLAS half of the step (deployment + configmap + service). ATLAS ingestion
+# has been dead for years; the quimal override sets this false. Default true = unchanged on AWS.
+atlasEnabled: true
+
 namespace: s3-step
 
 image:
@@ -95,4 +99,9 @@ imageCredentials:
   username: ""
   password: ""
   email: ""
+
+# Extra env vars appended to the ztf container (list — helm replaces, not merges).
+# Used by the quimal override to inject KAFKA_SECURITY_PROTOCOL / CONSUMER_OFFSET_RESET
+# (read by settings.py) and AWS_* creds (read by boto3). Empty by default = no change on AWS.
+extraEnvVariables: []
 

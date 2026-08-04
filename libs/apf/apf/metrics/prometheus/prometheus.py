@@ -71,6 +71,7 @@ class PrometheusMetrics:
             "pre_produce",
             "produce",
             "post_produce",
+            "flush",
         ]
 
         for exception_label in exception_labels:
