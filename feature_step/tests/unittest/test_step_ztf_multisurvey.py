@@ -249,6 +249,44 @@ class ParserTestCase(unittest.TestCase):
             [101], sorted(forced_mag[forced_mag["brightness"].notna()]["candid"])
         )
 
+    def test_int_procstatus_survives_the_bogus_flag_frame(self):
+        # `procstatus` is re-checked by the preprocessor after passing through a
+        # DataFrame. A column mixing ints with None becomes float64, and 0 would
+        # stringify to "0.0" — dropping every forced epoch.
+        rng = random.Random(4)
+        oid = 36028941624528297
+        message = generate_message(oid=oid)
+        message["detections"] = [
+            candidate(oid, i, "g", 60000.0 + i, rng) for i in range(1, 6)
+        ]
+        message["previous_detections"] = []
+        message["forced_photometries"] = [
+            forced_photometry(oid, 100 + i, "g", 60010.0 + i, rng, procstatus=0)
+            for i in range(3)
+        ]
+
+        ao = astro_object_from(message)
+        self.assertEqual({"0"}, set(ao.forced_photometry["procstatus"]))
+
+        ZTFLightcurvePreprocessor(drop_bogus=True).preprocess_single_object(ao)
+        self.assertEqual(6, len(ao.forced_photometry))
+
+    def test_int_procstatus_outside_the_allowed_set_is_still_dropped(self):
+        rng = random.Random(5)
+        oid = 36028941624528297
+        message = generate_message(oid=oid)
+        message["detections"] = [
+            candidate(oid, i, "g", 60000.0 + i, rng) for i in range(1, 6)
+        ]
+        message["previous_detections"] = []
+        message["forced_photometries"] = [
+            forced_photometry(oid, 100 + i, "g", 60010.0 + i, rng, procstatus=2)
+            for i in range(3)
+        ]
+
+        ao = astro_object_from(message)
+        self.assertEqual(0, len(ao.forced_photometry))
+
 
 if __name__ == "__main__":
     unittest.main()
