@@ -909,6 +909,40 @@ class ParserTestCase(unittest.TestCase):
         det_mag = ao.detections[ao.detections["unit"] == "magnitude"]
         self.assertEqual({"g", "r", "i"}, set(det_mag["fid"]))
 
+    def test_uncorrected_epochs_get_nan_brightness_not_a_neighbours_value(self):
+        # Both spellings are nullable. A row that populates neither must end up
+        # NaN -- never silently filled from the other column or another row.
+        rng = random.Random(9)
+        oid = 36028941624528297
+        message = generate_message(oid=oid)
+        message["detections"] = [
+            candidate(oid, i, "g", 60000.0 + i, rng) for i in range(1, 5)
+        ]
+        message["detections"][0]["magpsf_corr"] = None
+        message["detections"][0]["sigmapsf_corr_ext"] = None
+        message["previous_detections"] = []
+        message["forced_photometries"] = [
+            forced_photometry(oid, 100 + i, "g", 60010.0 + i, rng) for i in range(2)
+        ]
+        message["forced_photometries"][0]["mag_corr"] = None
+        message["forced_photometries"][0]["e_mag_corr_ext"] = None
+
+        ao = astro_object_from(message)
+
+        det_mag = ao.detections[ao.detections["unit"] == "magnitude"]
+        forced_mag = ao.forced_photometry[ao.forced_photometry["unit"] == "magnitude"]
+
+        self.assertEqual([1], det_mag[det_mag["brightness"].isna()]["candid"].tolist())
+        self.assertEqual(
+            [100], forced_mag[forced_mag["brightness"].isna()]["candid"].tolist()
+        )
+        self.assertEqual(
+            [2, 3, 4], sorted(det_mag[det_mag["brightness"].notna()]["candid"])
+        )
+        self.assertEqual(
+            [101], sorted(forced_mag[forced_mag["brightness"].notna()]["candid"])
+        )
+
     def test_forced_argument_must_be_empty(self):
         message = generate_message()
         prepared = build_step().pre_execute([message])[0]
@@ -928,19 +962,27 @@ Run:
 cd $REPO/feature_step && $PY -m pytest tests/unittest/test_step_ztf_multisurvey.py::ParserTestCase -q -p no:warnings
 ```
 
-Expected: `4 failed, 2 passed`:
+Expected: `5 failed, 2 passed`. Check the *names*, not just the count:
 
 - `test_forced_epochs_keep_their_corrected_magnitude` — `3 != 0`, because the
   two-loop code never reads the per-row `forced` flag, so `aid_forced` is empty.
 - `test_detections_keep_their_corrected_magnitude` — `6 != 9`, the same rows all
   mistagged into `aid_detections`.
 - `test_forced_rows_keep_distnr_rfid_and_procstatus` — the alignment bug.
+- `test_uncorrected_epochs_get_nan_brightness_not_a_neighbours_value` — forced
+  rows land in `aid_detections` with no `mag_corr` selected, so the NaN set is
+  `[1, 100, 101]` instead of `[1]`.
 - `test_forced_argument_must_be_empty` — the guard does not exist yet.
 
 The two that already pass pin behaviour that must survive the rewrite:
 `test_i_band_epochs_are_labelled_not_nan`, and
 `test_previous_detections_reach_the_astro_object` (green since Task 4 landed the
 merge — it guards that the parser does not later start dropping those rows).
+
+Honesty note: the four original failures here were observed; the
+`test_uncorrected_epochs...` line is **inferred**, because that test was added
+after the fix had already landed and the pre-fix state was never re-run with it.
+Treat its count as approximate and the reasoning as the thing to check.
 
 - [ ] **Step 3: Drop the two rename entries from `DETECTION_KEYS_MAP`**
 
@@ -1046,11 +1088,37 @@ with:
     a = pd.DataFrame(data=values, columns=detection_keys)
     a.fillna(value=np.nan, inplace=True)
 
-    # Each row populates exactly one spelling of the corrected magnitude, so the
-    # coalesce is unambiguous. It must run before the DETECTION_KEYS_MAP rename.
+    # A record's type selects at most one spelling of the corrected magnitude --
+    # the other key is absent from its schema entirely -- so the coalesce can
+    # never have to choose. An uncorrected epoch populates neither and stays NaN.
+    # This must run before the DETECTION_KEYS_MAP rename.
     a["magpsf_corr"] = a["magpsf_corr"].fillna(a["mag_corr"])
     a["sigmapsf_corr_ext"] = a["sigmapsf_corr_ext"].fillna(a["e_mag_corr_ext"])
     a.drop(columns=["mag_corr", "e_mag_corr_ext"], inplace=True)
+```
+
+Then assert the alignment this rewrite just fixed. Replace the two aux-frame
+concats further down with:
+
+```python
+    # reference_for_each_detection has distnr, rfid from dets
+    reference_for_each_detection: pd.DataFrame = get_reference_for_each_detection(
+        detections
+    )
+    bogus_flags_for_each_detection: pd.DataFrame = get_bogus_flags_for_each_detection(
+        detections
+    )
+
+    # All three frames come from the same unfiltered list in the same order, so
+    # they share a RangeIndex and concat aligns. Assert it: a length mismatch
+    # here NaN-fills distnr/rfid/rb/procstatus silently rather than failing,
+    # which is the bug this single-loop form removed.
+    assert len(a) == len(reference_for_each_detection) == len(
+        bogus_flags_for_each_detection
+    )
+
+    a = pd.concat([a, reference_for_each_detection], axis=1)
+    a = pd.concat([a, bogus_flags_for_each_detection], axis=1)
 ```
 
 Leave the rest of the function alone — `aid_forced = a[a["forced"]]` /
@@ -1065,7 +1133,7 @@ Run:
 cd $REPO/feature_step && $PY -m pytest tests/unittest/test_step_ztf_multisurvey.py -q -p no:warnings
 ```
 
-Expected: `11 passed`.
+Expected: `12 passed`.
 
 - [ ] **Step 6: Confirm the legacy suite is unchanged**
 
@@ -1214,7 +1282,7 @@ Run:
 cd $REPO/feature_step && $PY -m pytest tests/unittest/test_step_ztf_multisurvey.py -q -p no:warnings
 ```
 
-Expected: `13 passed`.
+Expected: `14 passed`.
 
 - [ ] **Step 5: Confirm the legacy suite is unchanged**
 
@@ -1359,7 +1427,7 @@ Run:
 cd $REPO/feature_step && $PY -m pytest tests/unittest/test_step_ztf_multisurvey.py -q -p no:warnings
 ```
 
-Expected: `16 passed`.
+Expected: `17 passed`.
 
 - [ ] **Step 5: Confirm the legacy suite is unchanged**
 
@@ -1434,7 +1502,7 @@ Run:
 cd $REPO/feature_step && $PY -m pytest tests/unittest/test_step_ztf_multisurvey.py::ParserTestCase -q -p no:warnings
 ```
 
-Expected: `1 failed, 11 passed` — `test_wise_magnitudes_come_from_the_allwise_match` gets
+Expected: `1 failed, 12 passed` — `test_wise_magnitudes_come_from_the_allwise_match` gets
 `nan` instead of `15.1`. The two NaN tests pass already (for the wrong reason —
 they pin the behavior so the fix cannot over-reach).
 
@@ -1463,7 +1531,7 @@ Run:
 cd $REPO/feature_step && $PY -m pytest tests/unittest/test_step_ztf_multisurvey.py -q -p no:warnings
 ```
 
-Expected: `19 passed`.
+Expected: `20 passed`.
 
 - [ ] **Step 5: Commit**
 
@@ -1579,7 +1647,7 @@ Run:
 cd $REPO/feature_step && $PY -m pytest tests/unittest/test_step_ztf_multisurvey.py -q -p no:warnings
 ```
 
-Expected: `4 failed, 19 passed`. The three `FeatureIdTestCase` tests fail with
+Expected: `4 failed, 20 passed`. The three `FeatureIdTestCase` tests fail with
 `TypeError: prepare_ao_features_for_db() takes 1 positional argument but 2 were given`;
 `test_oid_keeps_full_precision` fails with `36028941624528296 != 36028941624528297`.
 
@@ -1693,7 +1761,7 @@ Run:
 cd $REPO/feature_step && $PY -m pytest tests/unittest/test_step_ztf_multisurvey.py -q -p no:warnings
 ```
 
-Expected: `23 passed`.
+Expected: `24 passed`.
 
 - [ ] **Step 7: Confirm the legacy suite is unchanged**
 
@@ -1782,7 +1850,7 @@ git commit -m "test(feature_step): assert the ZTF step emits all 127 seeded feat
 cd $REPO/feature_step && $PY -m pytest tests/unittest/test_step_ztf_multisurvey.py -q -p no:warnings
 ```
 
-Expected: `24 passed`.
+Expected: `25 passed`.
 
 - [ ] **Step 2: Run the whole unit suite and compare to baseline**
 
@@ -1790,8 +1858,8 @@ Expected: `24 passed`.
 cd $REPO/feature_step && $PY -m pytest tests/unittest -q -p no:warnings
 ```
 
-Expected: `8 failed, 28 passed` — the same 8 legacy failures as the baseline
-(7 in `test_step_ztf.py`, 1 in `test_step_lsst.py`), plus the 24 new tests and the
+Expected: `8 failed, 29 passed` — the same 8 legacy failures as the baseline
+(7 in `test_step_ztf.py`, 1 in `test_step_lsst.py`), plus the 25 new tests and the
 4 legacy passes. **If the failure count or the failing test names differ from the
 baseline, stop and report it.**
 
