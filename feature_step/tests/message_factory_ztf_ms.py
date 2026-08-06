@@ -184,10 +184,3 @@ def allwise_match(oid, w1=15.1, w2=14.9, w3=12.5, w4=9.1):
             "w4mpro": {"Float64": w4},
         },
     }
-
-
-def generate_input_batch(n=3, **kwargs):
-    return [
-        generate_message(oid=36028941624528297 + i, seed=42 + i, **kwargs)
-        for i in range(n)
-    ]
