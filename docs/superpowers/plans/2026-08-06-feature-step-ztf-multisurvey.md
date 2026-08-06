@@ -1066,6 +1066,154 @@ keep their corrected magnitude."
 
 ---
 
+## Task 5b: `procstatus` survives the trip through the bogus-flag frame
+
+**Added during execution**, after the Task 2 code-quality review surfaced it. Not
+in the original spec.
+
+Task 2 made `discard_bogus_detections` tolerate an int `procstatus`. That fixes
+the **first** call site (`pre_execute`, on raw message dicts). It does not fix the
+**second** one: `ZTFLightcurvePreprocessor.drop_bogus_detections` re-runs the same
+filter on `astro_object.forced_photometry.to_dict("records")`, and by then the
+value has been through `get_bogus_flags_for_each_detection`, which does:
+
+```python
+bogus_flags = pd.DataFrame(bogus_flags, columns=keys)
+bogus_flags["procstatus"] = bogus_flags["procstatus"].astype(str)
+```
+
+Detections carry no `procstatus` and forced rows do, so the column is always
+`[None, ..., 0, ...]`. pandas types that as `float64`, and `.astype(str)` then
+renders `0` as `"0.0"` — which matches neither `"0"` nor `"57"`, so **every forced
+epoch is discarded**. Measured end-to-end: 6 surviving forced rows with
+`procstatus="0"`, **0** with `procstatus=0`.
+
+**Files:**
+- Modify: `feature_step/features/utils/parsers.py` (`get_bogus_flags_for_each_detection`)
+- Modify: `feature_step/tests/unittest/test_step_ztf_multisurvey.py`
+
+- [ ] **Step 1: Write the failing test**
+
+Append to `ParserTestCase` in
+`feature_step/tests/unittest/test_step_ztf_multisurvey.py`:
+
+```python
+    def test_int_procstatus_survives_the_bogus_flag_frame(self):
+        # `procstatus` is re-checked by the preprocessor after passing through a
+        # DataFrame. A column mixing ints with None becomes float64, and 0 would
+        # stringify to "0.0" — dropping every forced epoch.
+        rng = random.Random(4)
+        oid = 36028941624528297
+        message = generate_message(oid=oid)
+        message["detections"] = [
+            candidate(oid, i, "g", 60000.0 + i, rng) for i in range(1, 6)
+        ]
+        message["previous_detections"] = []
+        message["forced_photometries"] = [
+            forced_photometry(oid, 100 + i, "g", 60010.0 + i, rng, procstatus=0)
+            for i in range(3)
+        ]
+
+        ao = astro_object_from(message)
+        self.assertEqual({"0"}, set(ao.forced_photometry["procstatus"]))
+
+        ZTFLightcurvePreprocessor(drop_bogus=True).preprocess_single_object(ao)
+        self.assertEqual(6, len(ao.forced_photometry))
+
+    def test_int_procstatus_outside_the_allowed_set_is_still_dropped(self):
+        rng = random.Random(5)
+        oid = 36028941624528297
+        message = generate_message(oid=oid)
+        message["detections"] = [
+            candidate(oid, i, "g", 60000.0 + i, rng) for i in range(1, 6)
+        ]
+        message["previous_detections"] = []
+        message["forced_photometries"] = [
+            forced_photometry(oid, 100 + i, "g", 60010.0 + i, rng, procstatus=2)
+            for i in range(3)
+        ]
+
+        ao = astro_object_from(message)
+        self.assertEqual(0, len(ao.forced_photometry))
+```
+
+The second test guards the fix from over-reaching: a genuinely bogus `procstatus`
+must still be dropped, whether it arrives as `2` or `"2"`. (It is dropped in
+`pre_execute`, before the frame is built, which is why the assertion is `0` rows
+straight out of the parser.)
+
+- [ ] **Step 2: Run the tests to verify the first one fails**
+
+Run:
+
+```bash
+cd $REPO/feature_step && $PY -m pytest tests/unittest/test_step_ztf_multisurvey.py -q -p no:warnings -k procstatus
+```
+
+Expected: `1 failed, 3 passed` — `test_int_procstatus_survives_the_bogus_flag_frame`
+fails on `{'0.0'} != {'0'}`.
+
+- [ ] **Step 3: Stringify from the original values**
+
+In `feature_step/features/utils/parsers.py`, inside
+`get_bogus_flags_for_each_detection`, replace:
+
+```python
+    bogus_flags = pd.DataFrame(bogus_flags, columns=keys)
+    bogus_flags["procstatus"] = bogus_flags["procstatus"].astype(str)
+
+    return bogus_flags
+```
+
+with:
+
+```python
+    # Stringify from the original values, not from the built column: procstatus
+    # may arrive as an int, and a column mixing ints with None becomes float64,
+    # so .astype(str) would render 0 as "0.0" and discard every forced epoch.
+    procstatus = [str(row[keys.index("procstatus")]) for row in bogus_flags]
+
+    bogus_flags = pd.DataFrame(bogus_flags, columns=keys)
+    bogus_flags["procstatus"] = procstatus
+
+    return bogus_flags
+```
+
+This preserves today's behaviour exactly for string input (a missing `procstatus`
+still renders `"None"`, as it does now) and only changes the int case.
+
+- [ ] **Step 4: Run the whole module to verify**
+
+Run:
+
+```bash
+cd $REPO/feature_step && $PY -m pytest tests/unittest/test_step_ztf_multisurvey.py -q -p no:warnings
+```
+
+Expected: `13 passed`.
+
+- [ ] **Step 5: Confirm the legacy suite is unchanged**
+
+Run:
+
+```bash
+cd $REPO/feature_step && $PY -m pytest tests/unittest/test_step_ztf.py tests/unittest/test_step_lsst.py -q -p no:warnings
+```
+
+Expected: `8 failed, 4 passed`.
+
+- [ ] **Step 6: Commit**
+
+```bash
+cd $REPO && git add feature_step/features/utils/parsers.py feature_step/tests/unittest/test_step_ztf_multisurvey.py
+git commit -m "fix(feature_step): keep int procstatus intact through the bogus-flag frame
+
+A column mixing ints with None types as float64, so .astype(str) rendered
+procstatus 0 as \"0.0\" and the preprocessor discarded every forced epoch."
+```
+
+---
+
 ## Task 6: `execute` stamps `aid` and passes `forced=[]`
 
 `add_mag_and_flux_columns` does `a.set_index("aid")` and the parser reads
@@ -1187,7 +1335,7 @@ Run:
 cd $REPO/feature_step && $PY -m pytest tests/unittest/test_step_ztf_multisurvey.py -q -p no:warnings
 ```
 
-Expected: `14 passed`.
+Expected: `16 passed`.
 
 - [ ] **Step 5: Confirm the legacy suite is unchanged**
 
@@ -1262,7 +1410,7 @@ Run:
 cd $REPO/feature_step && $PY -m pytest tests/unittest/test_step_ztf_multisurvey.py::ParserTestCase -q -p no:warnings
 ```
 
-Expected: `1 failed, 9 passed` — `test_wise_magnitudes_come_from_the_allwise_match` gets
+Expected: `1 failed, 11 passed` — `test_wise_magnitudes_come_from_the_allwise_match` gets
 `nan` instead of `15.1`. The two NaN tests pass already (for the wrong reason —
 they pin the behavior so the fix cannot over-reach).
 
@@ -1291,7 +1439,7 @@ Run:
 cd $REPO/feature_step && $PY -m pytest tests/unittest/test_step_ztf_multisurvey.py -q -p no:warnings
 ```
 
-Expected: `17 passed`.
+Expected: `19 passed`.
 
 - [ ] **Step 5: Commit**
 
@@ -1407,7 +1555,7 @@ Run:
 cd $REPO/feature_step && $PY -m pytest tests/unittest/test_step_ztf_multisurvey.py -q -p no:warnings
 ```
 
-Expected: `4 failed, 17 passed`. The three `FeatureIdTestCase` tests fail with
+Expected: `4 failed, 19 passed`. The three `FeatureIdTestCase` tests fail with
 `TypeError: prepare_ao_features_for_db() takes 1 positional argument but 2 were given`;
 `test_oid_keeps_full_precision` fails with `36028941624528296 != 36028941624528297`.
 
@@ -1521,7 +1669,7 @@ Run:
 cd $REPO/feature_step && $PY -m pytest tests/unittest/test_step_ztf_multisurvey.py -q -p no:warnings
 ```
 
-Expected: `21 passed`.
+Expected: `23 passed`.
 
 - [ ] **Step 7: Confirm the legacy suite is unchanged**
 
@@ -1610,7 +1758,7 @@ git commit -m "test(feature_step): assert the ZTF step emits all 127 seeded feat
 cd $REPO/feature_step && $PY -m pytest tests/unittest/test_step_ztf_multisurvey.py -q -p no:warnings
 ```
 
-Expected: `22 passed`.
+Expected: `24 passed`.
 
 - [ ] **Step 2: Run the whole unit suite and compare to baseline**
 
@@ -1618,8 +1766,8 @@ Expected: `22 passed`.
 cd $REPO/feature_step && $PY -m pytest tests/unittest -q -p no:warnings
 ```
 
-Expected: `8 failed, 26 passed` — the same 8 legacy failures as the baseline
-(7 in `test_step_ztf.py`, 1 in `test_step_lsst.py`), plus the 22 new tests and the
+Expected: `8 failed, 28 passed` — the same 8 legacy failures as the baseline
+(7 in `test_step_ztf.py`, 1 in `test_step_lsst.py`), plus the 24 new tests and the
 4 legacy passes. **If the failure count or the failing test names differ from the
 baseline, stop and report it.**
 
@@ -1637,9 +1785,12 @@ Expected: `6 passed`.
 cd $REPO && git diff --stat main...HEAD
 ```
 
-Expected exactly these files, and nothing else:
+Expected exactly these files, and nothing else — the two `docs/` entries are the
+spec and this plan, which are versioned alongside the change:
 
 ```
+docs/superpowers/plans/2026-08-06-feature-step-ztf-multisurvey.md
+docs/superpowers/specs/2026-08-04-feature-step-ztf-multisurvey-design.md
 feature_step/features/step.py
 feature_step/features/utils/parsers.py
 feature_step/tests/message_factory_ztf_ms.py
