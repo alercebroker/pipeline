@@ -215,6 +215,40 @@ class ParserTestCase(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             detections_to_astro_object(epochs, [epochs[0]], None, None)
 
+    def test_uncorrected_epochs_get_nan_brightness_not_a_neighbours_value(self):
+        # Both spellings are nullable. A row that populates neither must end up
+        # NaN -- never silently filled from the other column or another row.
+        rng = random.Random(9)
+        oid = 36028941624528297
+        message = generate_message(oid=oid)
+        message["detections"] = [
+            candidate(oid, i, "g", 60000.0 + i, rng) for i in range(1, 5)
+        ]
+        message["detections"][0]["magpsf_corr"] = None
+        message["detections"][0]["sigmapsf_corr_ext"] = None
+        message["previous_detections"] = []
+        message["forced_photometries"] = [
+            forced_photometry(oid, 100 + i, "g", 60010.0 + i, rng) for i in range(2)
+        ]
+        message["forced_photometries"][0]["mag_corr"] = None
+        message["forced_photometries"][0]["e_mag_corr_ext"] = None
+
+        ao = astro_object_from(message)
+
+        det_mag = ao.detections[ao.detections["unit"] == "magnitude"]
+        forced_mag = ao.forced_photometry[ao.forced_photometry["unit"] == "magnitude"]
+
+        self.assertEqual([1], det_mag[det_mag["brightness"].isna()]["candid"].tolist())
+        self.assertEqual(
+            [100], forced_mag[forced_mag["brightness"].isna()]["candid"].tolist()
+        )
+        self.assertEqual(
+            [2, 3, 4], sorted(det_mag[det_mag["brightness"].notna()]["candid"])
+        )
+        self.assertEqual(
+            [101], sorted(forced_mag[forced_mag["brightness"].notna()]["candid"])
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

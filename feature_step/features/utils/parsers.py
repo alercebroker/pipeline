@@ -274,8 +274,10 @@ def detections_to_astro_object(
     a = pd.DataFrame(data=values, columns=detection_keys)
     a.fillna(value=np.nan, inplace=True)
 
-    # Each row populates exactly one spelling of the corrected magnitude, so the
-    # coalesce is unambiguous. It must run before the DETECTION_KEYS_MAP rename.
+    # A record's type selects at most one spelling of the corrected magnitude --
+    # the other key is absent from its schema entirely -- so the coalesce can
+    # never have to choose. An uncorrected epoch populates neither and stays NaN.
+    # This must run before the DETECTION_KEYS_MAP rename.
     a["magpsf_corr"] = a["magpsf_corr"].fillna(a["mag_corr"])
     a["sigmapsf_corr_ext"] = a["sigmapsf_corr_ext"].fillna(a["e_mag_corr_ext"])
     a.drop(columns=["mag_corr", "e_mag_corr_ext"], inplace=True)
@@ -284,11 +286,19 @@ def detections_to_astro_object(
     reference_for_each_detection: pd.DataFrame = get_reference_for_each_detection(
         detections
     )
-    a = pd.concat([a, reference_for_each_detection], axis=1)
-
     bogus_flags_for_each_detection: pd.DataFrame = get_bogus_flags_for_each_detection(
         detections
     )
+
+    # All three frames come from the same unfiltered list in the same order, so
+    # they share a RangeIndex and concat aligns. Assert it: a length mismatch
+    # here NaN-fills distnr/rfid/rb/procstatus silently rather than failing,
+    # which is the bug this single-loop form removed.
+    assert len(a) == len(reference_for_each_detection) == len(
+        bogus_flags_for_each_detection
+    )
+
+    a = pd.concat([a, reference_for_each_detection], axis=1)
     a = pd.concat([a, bogus_flags_for_each_detection], axis=1)
 
     a.rename(columns=DETECTION_KEYS_MAP, inplace=True)
