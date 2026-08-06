@@ -755,16 +755,19 @@ with:
 ```python
             if self.survey == "ztf":
                 epochs = (
-                    message.get("detections", [])
-                    + message.get("previous_detections", [])
+                    (message.get("detections") or [])
+                    + (message.get("previous_detections") or [])
                     + (message.get("forced_photometries") or [])
                 )
                 filtered_message["detections"] = discard_bogus_detections(epochs)
                 filtered_messages.append(filtered_message)
 ```
 
-`or []` rather than a `.get` default: the Avro union allows an explicit `null`,
-which a default would not catch.
+All three reads use `or []` rather than a `.get` default. The schema declares
+each array as required (`{"type": "array", ...}`, not a `["null", ...]` union),
+so neither form should ever matter — but `or []` also absorbs an explicit `None`,
+and applying it uniformly avoids an asymmetry that would read as if two of the
+three lines had been left deliberately unguarded.
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
