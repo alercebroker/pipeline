@@ -48,6 +48,17 @@ $PY -c "import lc_classifier, apf; print(lc_classifier.__file__)"
 Expected: a path under `/home/fandrades/desktop/pipeline_features/pipeline/lc_classifier/`.
 If it prints a `desktop/online/pipeline` path, `PYTHONPATH` is wrong — fix it before proceeding.
 
+### A caveat on the "expected failure" counts
+
+Each task's *pre-fix* expected counts were originally measured against a fully
+reverted tree, not against the incremental state that task actually starts from.
+Two were wrong and have been corrected (Task 5 Step 2, Task 6 Step 2). If a
+pre-fix count you observe differs from the plan, **stop and reason about why
+before touching anything** — the plan may be wrong again, or the failure may be
+real. What must never be adjusted to fit is the test: a test bent to match a
+prediction proves nothing. The *post-fix* counts were measured incrementally and
+should hold.
+
 ### Baseline (measured 2026-08-06, before any change)
 
 `tests/unittest` is **already partly red** and that is not your doing:
@@ -917,9 +928,19 @@ Run:
 cd $REPO/feature_step && $PY -m pytest tests/unittest/test_step_ztf_multisurvey.py::ParserTestCase -q -p no:warnings
 ```
 
-Expected: `5 failed, 1 passed`. `test_forced_epochs_keep_their_corrected_magnitude` fails on
-`brightness` being all-NaN for forced rows; `test_forced_argument_must_be_empty`
-fails because no exception is raised.
+Expected: `4 failed, 2 passed`:
+
+- `test_forced_epochs_keep_their_corrected_magnitude` — `3 != 0`, because the
+  two-loop code never reads the per-row `forced` flag, so `aid_forced` is empty.
+- `test_detections_keep_their_corrected_magnitude` — `6 != 9`, the same rows all
+  mistagged into `aid_detections`.
+- `test_forced_rows_keep_distnr_rfid_and_procstatus` — the alignment bug.
+- `test_forced_argument_must_be_empty` — the guard does not exist yet.
+
+The two that already pass pin behaviour that must survive the rewrite:
+`test_i_band_epochs_are_labelled_not_nan`, and
+`test_previous_detections_reach_the_astro_object` (green since Task 4 landed the
+merge — it guards that the parser does not later start dropping those rows).
 
 - [ ] **Step 3: Drop the two rename entries from `DETECTION_KEYS_MAP`**
 
@@ -1297,10 +1318,10 @@ Run:
 cd $REPO/feature_step && $PY -m pytest tests/unittest/test_step_ztf_multisurvey.py::ExecuteTestCase -q -p no:warnings
 ```
 
-Expected: `1 failed, 1 passed` —
-`test_execute_stamps_aid_and_passes_no_separate_forced_list` fails with
-`NotImplementedError` (Task 5's guard fires, because `execute` still passes the
-`forced_photometries` array).
+Expected: `2 failed`. Both fail with `NotImplementedError`: Task 5's guard fires
+because `execute` still passes the `forced_photometries` array as a separate
+`forced` list. That guard firing is the point — it is what makes the two-loop
+form unreachable rather than merely discouraged.
 
 `test_aid_is_the_oid` passes already, because `astro_object_from` stamps `aid`
 itself. That is intentional: it pins the parser-side contract while
