@@ -318,8 +318,8 @@ class FeatureStep(GenericStep):
             filtered_message = message.copy()
             if self.survey == "ztf":
                 epochs = (
-                    message.get("detections", [])
-                    + message.get("previous_detections", [])
+                    (message.get("detections") or [])
+                    + (message.get("previous_detections") or [])
                     + (message.get("forced_photometries") or [])
                 )
                 filtered_message["detections"] = discard_bogus_detections(epochs)
