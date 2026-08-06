@@ -285,14 +285,11 @@ def allwise_match(oid, w1=15.1, w2=14.9, w3=12.5, w4=9.1):
             "w4mpro": {"Float64": w4},
         },
     }
-
-
-def generate_input_batch(n=3, **kwargs):
-    return [
-        generate_message(oid=36028941624528297 + i, seed=42 + i, **kwargs)
-        for i in range(n)
-    ]
 ```
+
+No batch helper: the two tasks that need several messages build the list inline,
+and a `generate_input_batch(n, **kwargs)` wrapper would collide with the `oid` and
+`seed` it has to set per item.
 
 Notes for reviewers: `oid=36028941624528297` is a real ZTF multisurvey oid and is
 deliberately larger than `2**53` — Task 8 depends on that.
