@@ -317,9 +317,12 @@ class FeatureStep(GenericStep):
         for message in messages:
             filtered_message = message.copy()
             if self.survey == "ztf":
-                filtered_message["detections"] = discard_bogus_detections(
-                    filtered_message.get("detections", [])
+                epochs = (
+                    message.get("detections", [])
+                    + message.get("previous_detections", [])
+                    + (message.get("forced_photometries") or [])
                 )
+                filtered_message["detections"] = discard_bogus_detections(epochs)
                 filtered_messages.append(filtered_message)
             elif self.survey == "lsst":
                 dets = filtered_message.get('sources', []) + filtered_message.get('previous_sources', [])
