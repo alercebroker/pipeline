@@ -137,5 +137,84 @@ class PreExecuteTestCase(unittest.TestCase):
         self.assertEqual(1, len(step.pre_execute([message])))
 
 
+class ParserTestCase(unittest.TestCase):
+    def test_forced_epochs_keep_their_corrected_magnitude(self):
+        message = generate_message(n_detections=4, n_previous_detections=2, n_forced=3)
+        ao = astro_object_from(message)
+
+        forced_mag = ao.forced_photometry[ao.forced_photometry["unit"] == "magnitude"]
+        self.assertEqual(3, len(forced_mag))
+        self.assertTrue(forced_mag["brightness"].notna().all())
+        self.assertTrue(forced_mag["e_brightness"].notna().all())
+
+        expected = sorted(f["mag_corr"] for f in message["forced_photometries"])
+        self.assertEqual(expected, sorted(forced_mag["brightness"].tolist()))
+
+    def test_detections_keep_their_corrected_magnitude(self):
+        message = generate_message(n_detections=4, n_previous_detections=2, n_forced=3)
+        ao = astro_object_from(message)
+
+        det_mag = ao.detections[ao.detections["unit"] == "magnitude"]
+        self.assertEqual(6, len(det_mag))
+        self.assertTrue(det_mag["brightness"].notna().all())
+
+        expected = sorted(
+            d["magpsf_corr"]
+            for d in message["detections"] + message["previous_detections"]
+        )
+        self.assertEqual(expected, sorted(det_mag["brightness"].tolist()))
+
+    def test_previous_detections_reach_the_astro_object(self):
+        message = generate_message(n_detections=3, n_previous_detections=4, n_forced=0)
+        ao = astro_object_from(message)
+
+        det_mag = ao.detections[ao.detections["unit"] == "magnitude"]
+        got = set(det_mag["candid"].tolist())
+        for epoch in message["previous_detections"]:
+            self.assertIn(epoch["measurement_id"], got)
+
+    def test_forced_rows_keep_distnr_rfid_and_procstatus(self):
+        message = generate_message(n_detections=4, n_previous_detections=2, n_forced=3)
+        ao = astro_object_from(message)
+
+        forced_mag = ao.forced_photometry[ao.forced_photometry["unit"] == "magnitude"]
+        self.assertTrue(forced_mag["distnr"].notna().all())
+        self.assertTrue(forced_mag["rfid"].notna().all())
+        self.assertEqual({"0"}, set(forced_mag["procstatus"].unique()))
+
+        det_mag = ao.detections[ao.detections["unit"] == "magnitude"]
+        self.assertTrue(det_mag["rb"].notna().all())
+        self.assertTrue(det_mag["distnr"].notna().all())
+
+    def test_i_band_epochs_are_labelled_not_nan(self):
+        # ZTF i-band is rare but real; the band map must keep its `i` entry so
+        # those rows are labelled rather than becoming NaN.
+        rng = random.Random(3)
+        oid = 36028941624528297
+        message = generate_message(oid=oid)
+        message["detections"] = [
+            candidate(oid, 1, "g", 60000.0, rng),
+            candidate(oid, 2, "r", 60001.0, rng),
+            candidate(oid, 3, "i", 60002.0, rng),
+        ]
+        message["previous_detections"] = []
+        message["forced_photometries"] = []
+
+        ao = astro_object_from(message)
+
+        det_mag = ao.detections[ao.detections["unit"] == "magnitude"]
+        self.assertEqual({"g", "r", "i"}, set(det_mag["fid"]))
+
+    def test_forced_argument_must_be_empty(self):
+        message = generate_message()
+        prepared = build_step().pre_execute([message])[0]
+        epochs = [
+            {**e, "aid": e["oid"], "index_column": "x"} for e in prepared["detections"]
+        ]
+
+        with self.assertRaises(NotImplementedError):
+            detections_to_astro_object(epochs, [epochs[0]], None, None)
+
+
 if __name__ == "__main__":
     unittest.main()

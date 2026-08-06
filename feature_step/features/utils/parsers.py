@@ -23,8 +23,6 @@ DETECTION_KEYS_MAP = {
     "isdiffpos": "isdiffpos",
     "forced": "forced",
     "pid": "pid",
-    "mag_corr":"magpsf_corr",
-    "e_mag_corr_ext":"sigmapsf_corr_ext",
 }
 
 def flux_err_2_mag_err(flux_err, flux):
@@ -237,38 +235,50 @@ def detections_to_astro_object(
     references_db: Optional[pd.DataFrame],
 ) -> AstroObject:
     detection_keys = [
-        "oid", #si
-        "measurement_id", #si
-        "aid", #placeholder
-        "tid", # si
-        "sid", # si
-        "pid", #si 
-        "ra", #si
-        "dec", #si
-        "mjd", #si
-        "magpsf_corr",
+        "oid",
+        "measurement_id",
+        "aid",
+        "tid",
+        "sid",
+        "pid",
+        "ra",
+        "dec",
+        "mjd",
+        "magpsf_corr",      # candidate / prv_candidate spelling
+        "mag_corr",         # forced_photometry spelling
         "sigmapsf_corr_ext",
-        "mag", #si
-        "e_mag", # si
-        "band", #si
-        "isdiffpos", #si
+        "e_mag_corr_ext",
+        "mag",
+        "e_mag",
+        "band",
+        "isdiffpos",
+        "forced",
     ]
 
+    # Forced epochs arrive inline in `detections` with a per-row `forced` flag,
+    # so this arg must be empty. A non-empty `forced` would misalign the
+    # column-wise concat of the reference/bogus frames, which are computed over
+    # `detections` alone.
+    forced = forced or []
+    if forced:
+        raise NotImplementedError(
+            "detections_to_astro_object: `forced` must be empty for ZTF; forced "
+            "epochs flow inline via the per-row `forced` flag in `detections`."
+        )
+
     values = []
-    # Process regular detections (forced=False)
     for detection in detections:
         row = [detection.get(key, None) if key != 'sid' else str(detection.get(key, None)) for key in detection_keys]
-        row.append(False)  # forced = False
-        values.append(row)
-    
-    # Process forced photometry (forced=True)
-    for detection in forced:
-        row = [detection.get(key, None) if key != 'sid' else str(detection.get(key, None)) for key in detection_keys]
-        row.append(True)  # forced = True
         values.append(row)
 
-    a = pd.DataFrame(data=values, columns=detection_keys + ['forced'])
+    a = pd.DataFrame(data=values, columns=detection_keys)
     a.fillna(value=np.nan, inplace=True)
+
+    # Each row populates exactly one spelling of the corrected magnitude, so the
+    # coalesce is unambiguous. It must run before the DETECTION_KEYS_MAP rename.
+    a["magpsf_corr"] = a["magpsf_corr"].fillna(a["mag_corr"])
+    a["sigmapsf_corr_ext"] = a["sigmapsf_corr_ext"].fillna(a["e_mag_corr_ext"])
+    a.drop(columns=["mag_corr", "e_mag_corr_ext"], inplace=True)
 
     # reference_for_each_detection has distnr, rfid from dets
     reference_for_each_detection: pd.DataFrame = get_reference_for_each_detection(
