@@ -340,6 +340,15 @@ class ParserTestCase(unittest.TestCase):
 
         self.assertTrue(pd.isna(query_ao_table(ao.metadata, "W1")))
 
+    def test_oid_keeps_full_precision(self):
+        # ZTF multisurvey oids exceed 2**53; a float64 metadata column rounds them.
+        oid = 36028941624528297
+        message = generate_message(oid=oid)
+        ao = astro_object_from(message)
+
+        self.assertEqual(oid, int(query_ao_table(ao.metadata, "oid")))
+        self.assertEqual(oid, int(query_ao_table(ao.metadata, "aid")))
+
 
 class ExecuteTestCase(unittest.TestCase):
     def test_execute_stamps_aid_and_passes_no_separate_forced_list(self):
@@ -381,6 +390,56 @@ class ExecuteTestCase(unittest.TestCase):
             self.assertEqual(message["oid"], result["oid"])
             self.assertTrue(len(result["features"]) > 0)
         step.scribe_producer.producer.produce.assert_called()
+
+
+class FeatureIdTestCase(unittest.TestCase):
+    def _astro_object_with_features(self, names):
+        features = pd.DataFrame(
+            [[name, 1.0 + i, None] for i, name in enumerate(names)],
+            columns=["name", "value", "fid"],
+        )
+        ao = mock.MagicMock()
+        ao.features = features
+        return ao
+
+    def test_feature_ids_come_from_the_injected_lut(self):
+        lut = {7: "Amplitude", 11: "Beyond1Std", 42: "Multiband_period"}
+        ao = self._astro_object_with_features(
+            ["Amplitude", "Beyond1Std", "Multiband_period"]
+        )
+
+        result = prepare_ao_features_for_db(ao, lut)
+
+        self.assertEqual(
+            [7, 11, 42], result.sort_values("feature_id")["feature_id"].tolist()
+        )
+
+    def test_ids_are_stable_across_batches_with_different_feature_sets(self):
+        lut = {7: "Amplitude", 11: "Beyond1Std", 42: "Multiband_period"}
+
+        first = prepare_ao_features_for_db(
+            self._astro_object_with_features(["Amplitude", "Multiband_period"]), lut
+        )
+        second = prepare_ao_features_for_db(
+            self._astro_object_with_features(["Beyond1Std", "Multiband_period"]), lut
+        )
+
+        def id_of(frame, name):
+            return frame[frame["name"] == name]["feature_id"].iloc[0]
+
+        self.assertEqual(id_of(first, "Multiband_period"), id_of(second, "Multiband_period"))
+        self.assertEqual(42, id_of(first, "Multiband_period"))
+
+    def test_unknown_feature_name_maps_to_nan_and_warns(self):
+        lut = {7: "Amplitude"}
+        ao = self._astro_object_with_features(["Amplitude", "NotInTheLut"])
+
+        with self.assertLogs("alerce.FeatureStep", level=logging.WARNING) as logs:
+            result = prepare_ao_features_for_db(ao, lut)
+
+        unknown = result[result["name"] == "NotInTheLut"]["feature_id"].iloc[0]
+        self.assertTrue(pd.isna(unknown))
+        self.assertIn("NotInTheLut", "".join(logs.output))
 
 
 if __name__ == "__main__":

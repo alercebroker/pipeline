@@ -360,24 +360,29 @@ def detections_to_astro_object(
     
     last_mjd = float(max(all_mjds)) if all_mjds else np.nan
 
+    metadata_rows = [
+        ["aid", aid],
+        ["oid", oid],
+        ["W1", w1],
+        ["W2", w2],
+        ["W3", w3],
+        ["W4", w4],
+        ["sgscore1", sgscore1],
+        ["sgmag1", sgmag1],
+        ["srmag1", srmag1],
+        ["simag1", simag1],
+        ["szmag1", szmag1],
+        ["distpsnr1", distpsnr1],
+        ["last_mjd", last_mjd],
+    ]
+    # dtype=object keeps `oid`/`aid` as exact ints: ZTF multisurvey oids exceed
+    # 2**53, so a float64 column silently rounds them. None -> NaN is done here
+    # rather than with .fillna, which would downcast the column back to float64.
     metadata = pd.DataFrame(
-        [
-            ["aid", aid],
-            ["oid", oid],
-            ["W1", w1],
-            ["W2", w2],
-            ["W3", w3],
-            ["W4", w4],
-            ["sgscore1", sgscore1],
-            ["sgmag1", sgmag1],
-            ["srmag1", srmag1],
-            ["simag1", simag1],
-            ["szmag1", szmag1],
-            ["distpsnr1", distpsnr1],
-            ["last_mjd", last_mjd],
-        ],
+        [[name, np.nan if value is None else value] for name, value in metadata_rows],
         columns=["name", "value"],
-    ).fillna(value=np.nan)
+        dtype=object,
+    )
 
     new_references = get_new_references_from_message(detections)
 
@@ -433,7 +438,7 @@ def fid_mapper_for_db_lsst(band: str) -> int:
     return band_to_fid.get(band, 0)
 
 
-def prepare_ao_features_for_db(astro_object: AstroObject) -> pd.DataFrame: #esto tengo que verlo
+def prepare_ao_features_for_db(astro_object: AstroObject, feature_name_lut) -> pd.DataFrame:
     ao_features = astro_object.features[["name", "fid", "value"]].copy()
     ao_features = ao_features[ao_features["value"].notna()]
 
@@ -449,10 +454,9 @@ def prepare_ao_features_for_db(astro_object: AstroObject) -> pd.DataFrame: #esto
         }
     )
 
-    #deberia usar el feature_name_lut para mapear los nombres a ids,
-    unique_feature_names = ao_features["name"].unique()
-    name_to_id = {name: idx for idx, name in enumerate(unique_feature_names)}
-    #print(name_to_id)
+    # Invert the LUT so ids are stable across batches, regardless of which
+    # feature names happen to be present in this one.
+    name_to_id = {name: feature_id for feature_id, name in feature_name_lut.items()}
     
     # Map feature names to their IDs using the lookup table
     ao_features["feature_id"] = ao_features["name"].map(name_to_id)
@@ -529,7 +533,7 @@ def parse_scribe_payload(
 
     for astro_object in astro_objects:
         # for upserting features
-        ao_features = prepare_ao_features_for_db(astro_object)
+        ao_features = prepare_ao_features_for_db(astro_object, feature_name_lut)
         oid = query_ao_table(astro_object.metadata, "oid")
         last_mjd = query_ao_table(astro_object.metadata, "last_mjd")
 
