@@ -187,7 +187,10 @@ class ParserTestCase(unittest.TestCase):
         self.assertTrue(det_mag["rb"].notna().all())
         self.assertTrue(det_mag["distnr"].notna().all())
 
-    def test_aid_is_the_oid(self):
+    def test_parser_indexes_detections_by_aid(self):
+        # Given epochs that already carry `aid` (execute stamps it; so does
+        # astro_object_from), the parser must index on it rather than leave the
+        # index NaN. The execute-side stamp itself is pinned by ExecuteTestCase.
         message = generate_message()
         ao = astro_object_from(message)
 
