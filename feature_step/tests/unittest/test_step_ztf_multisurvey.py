@@ -458,6 +458,27 @@ class ExtractorParityTestCase(unittest.TestCase):
         for name in ("SPM_mjd_ref", "TDE_mjd_ref", "fleet_mjd_ref", "ulens_mjd_ref"):
             self.assertIn(name, names)
 
+    def test_the_mjd_ref_features_carry_a_real_reference_epoch(self):
+        # Presence in the LUT is not enough: a *_mjd_ref that always emits NaN
+        # would still round the count to 127. Pin the values to the light curve.
+        message = generate_message(
+            n_detections=30, n_previous_detections=20, n_forced=20
+        )
+        ao = astro_object_from(message, xmatches=allwise_match(message["oid"]))
+        ZTFLightcurvePreprocessor(drop_bogus=True).preprocess_single_object(ao)
+        ZTFFeatureExtractor().compute_features_single_object(ao)
+
+        # The reference epoch may come from a forced epoch, so bound it by the
+        # whole light curve rather than by `detections` alone.
+        epochs = pd.concat([ao.detections["mjd"], ao.forced_photometry["mjd"]])
+        first_mjd, last_mjd = epochs.min(), epochs.max()
+        for name in ("SPM_mjd_ref", "TDE_mjd_ref", "fleet_mjd_ref", "ulens_mjd_ref"):
+            values = ao.features[ao.features["name"] == name]["value"]
+            self.assertTrue(values.notna().any(), f"{name} is NaN in every band")
+            for value in values.dropna():
+                self.assertGreaterEqual(value, first_mjd, name)
+                self.assertLessEqual(value, last_mjd, name)
+
 
 if __name__ == "__main__":
     unittest.main()
