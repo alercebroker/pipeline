@@ -316,6 +316,30 @@ class ParserTestCase(unittest.TestCase):
         ZTFLightcurvePreprocessor(drop_bogus=True).preprocess_single_object(ao)
         self.assertEqual(0, len(ao.forced_photometry))
 
+    def test_wise_magnitudes_come_from_the_allwise_match(self):
+        message = generate_message()
+        ao = astro_object_from(message, xmatches=allwise_match(message["oid"]))
+
+        self.assertEqual(15.1, query_ao_table(ao.metadata, "W1"))
+        self.assertEqual(14.9, query_ao_table(ao.metadata, "W2"))
+        self.assertEqual(12.5, query_ao_table(ao.metadata, "W3"))
+        self.assertEqual(9.1, query_ao_table(ao.metadata, "W4"))
+
+    def test_wise_magnitudes_are_nan_without_a_match(self):
+        message = generate_message()
+        ao = astro_object_from(message, xmatches=None)
+
+        for name in ("W1", "W2", "W3", "W4"):
+            self.assertTrue(pd.isna(query_ao_table(ao.metadata, name)))
+
+    def test_wise_magnitudes_are_nan_for_another_catalog(self):
+        message = generate_message()
+        other = allwise_match(message["oid"])
+        other["catalog"] = "gaia"
+        ao = astro_object_from(message, xmatches=other)
+
+        self.assertTrue(pd.isna(query_ao_table(ao.metadata, "W1")))
+
 
 class ExecuteTestCase(unittest.TestCase):
     def test_execute_stamps_aid_and_passes_no_separate_forced_list(self):

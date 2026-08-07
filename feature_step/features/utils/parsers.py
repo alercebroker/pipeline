@@ -325,7 +325,7 @@ def detections_to_astro_object(
 
 
     w1 = w2 = w3 = w4 = np.nan
-    if xmatches is not None and "allwise" in xmatches.keys(): #tentativo, a revisar
+    if xmatches is not None and xmatches.get("catalog") == "allwise":
         w1 = xmatches['metadata']["w1mpro"]['Float64']
         w2 = xmatches['metadata']["w2mpro"]['Float64']
         w3 = xmatches['metadata']["w3mpro"]['Float64']
