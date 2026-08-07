@@ -13,6 +13,7 @@ import pandas as pd
 from features.step import FeatureStep
 from features.utils.parsers import (
     detections_to_astro_object,
+    get_bogus_flags_for_each_detection,
     prepare_ao_features_for_db,
 )
 from lc_classifier.features.core.base import query_ao_table
@@ -271,20 +272,36 @@ class ParserTestCase(unittest.TestCase):
         ZTFLightcurvePreprocessor(drop_bogus=True).preprocess_single_object(ao)
         self.assertEqual(6, len(ao.forced_photometry))
 
-    def test_int_procstatus_outside_the_allowed_set_is_still_dropped(self):
+    def test_int_procstatus_outside_the_allowed_set_is_dropped_at_the_frame_layer(self):
+        # Bypasses pre_execute on purpose: pre_execute's discard_bogus_detections
+        # already strips procstatus=2 forced rows before get_bogus_flags_for_each_
+        # detection ever runs (that path is covered by
+        # test_forced_rows_outside_allowed_procstatus_are_dropped), so building the
+        # message and calling astro_object_from here would never exercise this
+        # frame's stringification at all -- the assertion would pass even if the
+        # Task 5b fix regressed to mixing ints with None and producing "2.0"
+        # instead of "2", since "2.0" also fails the {"0", "57"} membership check.
+        # Call the frame builder directly on hand-built epochs instead, and pin
+        # the exact string it renders so a dtype-coercion regression is caught
+        # for what it actually breaks, not for a coincidentally-correct outcome.
         rng = random.Random(5)
         oid = 36028941624528297
-        message = generate_message(oid=oid)
-        message["detections"] = [
-            candidate(oid, i, "g", 60000.0 + i, rng) for i in range(1, 6)
-        ]
-        message["previous_detections"] = []
-        message["forced_photometries"] = [
+        detections = [candidate(oid, i, "g", 60000.0 + i, rng) for i in range(1, 6)]
+        forced = [
             forced_photometry(oid, 100 + i, "g", 60010.0 + i, rng, procstatus=2)
             for i in range(3)
         ]
+        epochs = [
+            {**e, "aid": oid, "index_column": f'{e["measurement_id"]}_{oid}'}
+            for e in detections + forced
+        ]
 
-        ao = astro_object_from(message)
+        bogus_flags = get_bogus_flags_for_each_detection(epochs)
+        forced_procstatus = bogus_flags["procstatus"].iloc[len(detections):]
+        self.assertEqual({"2"}, set(forced_procstatus))
+
+        ao = detections_to_astro_object(epochs, [], None, None)
+        ZTFLightcurvePreprocessor(drop_bogus=True).preprocess_single_object(ao)
         self.assertEqual(0, len(ao.forced_photometry))
 
 

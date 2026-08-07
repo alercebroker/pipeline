@@ -184,6 +184,9 @@ def get_bogus_flags_for_each_detection(detections: List[Dict]):
     # Stringify from the original values, not from the built column: procstatus
     # may arrive as an int, and a column mixing ints with None becomes float64,
     # so .astype(str) would render 0 as "0.0" and discard every forced epoch.
+    # Assumes procstatus is always str or int, never a genuine Python float
+    # (e.g. 0.0) -- true today since the Avro schema types it ["null","string"];
+    # a real float would still stringify as "0.0" and be wrongly discarded.
     procstatus = [str(row[keys.index("procstatus")]) for row in bogus_flags]
 
     bogus_flags = pd.DataFrame(bogus_flags, columns=keys)
