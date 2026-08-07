@@ -369,9 +369,10 @@ class FeatureStep(GenericStep):
             )
 
             if self.survey == "ztf":
-                forced = message.get("forced_photometries", None) #filtrar forced photometry
+                # No ZTF multisurvey record has an `aid`; the parser indexes on it.
+                m = map(lambda x: {**x, "aid": x["oid"]}, m)
                 xmatch_data = message.get("xmatches", None)
-                ao = self.detections_to_astro_object_fn(list(m), forced ,xmatch_data, references_db)
+                ao = self.detections_to_astro_object_fn(list(m), [], xmatch_data, references_db)
             else:
                 forced = message.get("forced_sources", None) #si no hay detections, filtrar forced photometry
                 xmatch_data = message.get("xmatches", None)

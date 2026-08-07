@@ -187,6 +187,15 @@ class ParserTestCase(unittest.TestCase):
         self.assertTrue(det_mag["rb"].notna().all())
         self.assertTrue(det_mag["distnr"].notna().all())
 
+    def test_aid_is_the_oid(self):
+        message = generate_message()
+        ao = astro_object_from(message)
+
+        aid = query_ao_table(ao.metadata, "aid")
+        self.assertFalse(pd.isna(aid))
+        self.assertEqual(message["oid"], aid)
+        self.assertEqual([message["oid"]], list(ao.detections.index.unique()))
+
     def test_i_band_epochs_are_labelled_not_nan(self):
         # ZTF i-band is rare but real; the band map must keep its `i` entry so
         # those rows are labelled rather than becoming NaN.
@@ -303,6 +312,48 @@ class ParserTestCase(unittest.TestCase):
         ao = detections_to_astro_object(epochs, [], None, None)
         ZTFLightcurvePreprocessor(drop_bogus=True).preprocess_single_object(ao)
         self.assertEqual(0, len(ao.forced_photometry))
+
+
+class ExecuteTestCase(unittest.TestCase):
+    def test_execute_stamps_aid_and_passes_no_separate_forced_list(self):
+        step = build_step()
+        spy = mock.MagicMock(wraps=step.detections_to_astro_object_fn)
+        step.detections_to_astro_object_fn = spy
+
+        message = generate_message(n_detections=4, n_previous_detections=2, n_forced=3)
+        step.execute(step.pre_execute([message]))
+
+        passed_detections, passed_forced = spy.call_args[0][0], spy.call_args[0][1]
+        self.assertEqual([], passed_forced)
+        self.assertEqual(9, len(passed_detections))
+        for epoch in passed_detections:
+            self.assertEqual(epoch["oid"], epoch["aid"])
+            self.assertEqual(
+                f'{epoch["measurement_id"]}_{epoch["oid"]}', epoch["index_column"]
+            )
+
+    def test_execute_produces_features_and_scribe_commands(self):
+        step = build_step()
+        step.feature_name_lut = {0: "Amplitude", 1: "Multiband_period"}
+        messages = [
+            generate_message(
+                oid=36028941624528297 + i,
+                seed=42 + i,
+                n_detections=30,
+                n_previous_detections=20,
+                n_forced=20,
+                with_xmatch=True,
+            )
+            for i in range(2)
+        ]
+
+        results = step.execute(step.pre_execute(messages))
+
+        self.assertEqual(2, len(results))
+        for message, result in zip(messages, results):
+            self.assertEqual(message["oid"], result["oid"])
+            self.assertTrue(len(result["features"]) > 0)
+        step.scribe_producer.producer.produce.assert_called()
 
 
 if __name__ == "__main__":
