@@ -442,5 +442,22 @@ class FeatureIdTestCase(unittest.TestCase):
         self.assertIn("NotInTheLut", "".join(logs.output))
 
 
+class ExtractorParityTestCase(unittest.TestCase):
+    """The deployed feature_name_lut has 127 rows; the step must emit all of them."""
+
+    def test_extractor_emits_the_127_seeded_feature_names(self):
+        message = generate_message(
+            n_detections=30, n_previous_detections=20, n_forced=20
+        )
+        ao = astro_object_from(message, xmatches=allwise_match(message["oid"]))
+        ZTFLightcurvePreprocessor(drop_bogus=True).preprocess_single_object(ao)
+        ZTFFeatureExtractor().compute_features_single_object(ao)
+
+        names = set(ao.features["name"].unique())
+        self.assertEqual(127, len(names))
+        for name in ("SPM_mjd_ref", "TDE_mjd_ref", "fleet_mjd_ref", "ulens_mjd_ref"):
+            self.assertIn(name, names)
+
+
 if __name__ == "__main__":
     unittest.main()
