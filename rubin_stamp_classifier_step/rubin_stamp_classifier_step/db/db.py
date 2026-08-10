@@ -4,16 +4,22 @@ from contextlib import contextmanager
 from typing import Callable, ContextManager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.pool import NullPool
 from sqlalchemy import text
 import logging
 
 
 class PSQLConnection:
-    def __init__(self, config: dict) -> None:
+    def __init__(self, config: dict, poolclass: str | None = None) -> None:
         url = self.__format_db_url(config)
         args = self.__format_connection_args(config)
 
-        self._engine = create_engine(url, connect_args=args, echo=False)
+        if poolclass == "NullPool":
+            poolclass = NullPool
+        else:
+            poolclass = None
+
+        self._engine = create_engine(url, connect_args=args, echo=False, poolclass=poolclass)
         self._session_factory = sessionmaker(
             self._engine,
         )
@@ -101,8 +107,6 @@ def classifier_version_str_to_small_integer(version: str) -> int:
 
 
 # TODO: The following function is a placeholder and should be replaced with the actual implementation
-CLASS_DICT = {"SN":0, "AGN":1,"VS":2, "asteroid":3, "bogus":4, "satellite":5}
-# CLASS_DICT = {"SN":0, "AGN":1, "VS":2, "asteroid":3, "bogus":4}
 # Hay que agregar las multisuvery credentials a la config env
 
 def class_name_to_id(class_name: str, class_taxonomy: dict[str, int]) -> int:
@@ -125,10 +129,10 @@ def class_id_to_name(class_id: int, class_taxonomy: dict[str, int]) -> str:
     return class_dict.get(class_id, "unknown")
 
 
-def get_taxonomy_by_classifier_id(classifier_id: int, sid: int, psql_connection: PSQLConnection) -> dict[str, int]:
-    """Fetch taxonomy from DB for a given classifier and sid, return {class_name: class_id}.
+def get_taxonomy_by_classifier_id(classifier_id: int, psql_connection: PSQLConnection) -> dict[str, int]:
+    """Fetch taxonomy from DB for a given classifier, return {class_name: class_id}.
 
-    Expects a table with columns: class_id, class_name, "order", classifier_id, sid, created_date
+    Expects a table with columns: class_id, class_name, "order", classifier_id, created_date
     available under the configured schema.
     """
     mapping: dict[str, int] = {}
@@ -138,20 +142,21 @@ def get_taxonomy_by_classifier_id(classifier_id: int, sid: int, psql_connection:
                 """
                 SELECT class_id, class_name
                 FROM taxonomy
-                WHERE classifier_id = :classifier_id AND sid = :sid
+                WHERE classifier_id = :classifier_id
                 ORDER BY "order" ASC
                 """
             )
-            result = session.execute(query, {"classifier_id": classifier_id, "sid": sid})
+            result = session.execute(query, {"classifier_id": classifier_id})
+
             rows = result.mappings().all()
             if rows:
                 mapping = {row["class_name"]: int(row["class_id"]) for row in rows}
             else:
                 logging.warning(
-                    f"No taxonomy rows found for classifier_id={classifier_id} and sid={sid}."
+                    f"No taxonomy rows found for classifier_id={classifier_id}."
                 )
     except Exception as e:
-        logging.error(f"Error fetching taxonomy for classifier_id={classifier_id} and sid={sid}: {e}")
+        logging.error(f"Error fetching taxonomy for classifier_id={classifier_id}: {e}")
     
     return mapping
 
