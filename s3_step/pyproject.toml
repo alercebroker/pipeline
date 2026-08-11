@@ -1,13 +1,13 @@
 [tool.poetry]
 name = "s3-step"
-version = "27.5.7a41"
+version = "27.6.0"
 description = "S3 step"
 authors = []
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "~3.9.0"
-apf_base = "1.0.9"
+apf-base-ztf-legacy = { path = "../libs/apf_ztf_legacy", develop = true }
 # Pin cfk to the librdkafka build that speaks SASL SCRAM-SHA-512 correctly; the
 # transitive 2.1.x from apf_base hits the SCRAM bug against the quimal broker.
 # Matches libs/apf's >=2.12 floor and the version watchlist_step runs on quimal.
