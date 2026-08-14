@@ -1,3 +1,8 @@
+import logging
+
+logger = logging.getLogger("alerce.SqlScribe")
+
+
 def multisurvey_detection_to_ztf(command: dict):
     if "oid" not in command:
         raise ValueError("OID was not found")
@@ -450,3 +455,77 @@ def parse_ztf_object_feature_update(raw_ztf_update: dict) -> dict:
         "g_r_max_corr": raw_ztf_update.get("g_r_max_corr"),
         "g_r_mean_corr": raw_ztf_update["g_r_mean_corr"],
     }
+
+
+def _as_int(value):
+    """int() that returns None instead of raising.
+
+    Payload ids arrive either as int or as string ("0"), and missing values as
+    None or NaN. int() keeps the precision of the 64 bit oids.
+    """
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def parse_feature_version(raw_version) -> int:
+    """Major version as int, from either 1, "1" or "1.0.0"."""
+    if isinstance(raw_version, str):
+        return _as_int(raw_version.split(".")[0])
+    return _as_int(raw_version)
+
+
+def parse_features(raw_features: dict) -> list:
+    """Feature rows of a features command payload, for any survey.
+
+    Rows carry an extra "mjd" key used only to keep the newest value of a
+    repeated feature, that must be dropped before writing. ZTF payloads have
+    no mjd, so it defaults to 0.0 and the last occurrence wins.
+    """
+    oid = _as_int(raw_features["oid"])
+    sid = _as_int(raw_features["sid"])
+    version = parse_feature_version(raw_features["features_version"])
+
+    if oid is None or sid is None or version is None:
+        raise ValueError(
+            "Invalid features command: "
+            f"oid={raw_features['oid']}, sid={raw_features['sid']}, "
+            f"features_version={raw_features['features_version']}"
+        )
+
+    mjd = raw_features.get("mjd") or 0.0
+
+    deduplication_dict = {}
+    skipped = []
+
+    for feature in raw_features["features"]:
+        feature_id = _as_int(feature.get("feature_id"))
+        band = _as_int(feature.get("band"))
+
+        # both are part of the primary key, a null would abort the whole batch
+        if feature_id is None or band is None:
+            skipped.append(feature)
+            continue
+
+        key = (oid, sid, feature_id, band)
+        row = {
+            "oid": oid,
+            "sid": sid,
+            "feature_id": feature_id,
+            "band": band,
+            "version": version,
+            "value": feature.get("value"),
+            "mjd": mjd,
+        }
+
+        if key not in deduplication_dict or mjd >= deduplication_dict[key]["mjd"]:
+            deduplication_dict[key] = row
+
+    if skipped:
+        logger.warning(
+            f"Skipped {len(skipped)} features of object {oid} "
+            f"without feature_id or band: {skipped[:5]}"
+        )
+
+    return list(deduplication_dict.values())

@@ -30,6 +30,7 @@ from sqlalchemy.orm import Session
 
 from .parser import (
     parse_det,
+    parse_features,
     parse_fp,
     parse_obj_stats,
     parse_probability,
@@ -454,43 +455,12 @@ class LSSTMagstatCommand(Command):
             )
 
 
-class LSSTFeatureCommand(Command):
-    type = "LSSTFeatureCommand"
+class FeatureCommand(Command):
+    """Upsert into the feature table. Subclassed per survey to keep the
+    command types (and so the batches) separate."""
 
     def _format_data(self, data):
-        oid = data["oid"]
-        sid = data["sid"]
-        mjd = data["mjd"]
-
-        feature_version = (
-            data["features_version"].split(".")[0]
-            if isinstance(data["features_version"], str)
-            else data["features_version"]
-        )
-
-        deduplication_dict = {}
-
-        for feature in data["features"]:
-            key = (oid, sid, feature["feature_id"], feature["band"])
-
-            row = {
-                "oid": oid,
-                "sid": sid,
-                "feature_id": feature["feature_id"],
-                "band": feature["band"],
-                "version": feature_version,
-                "value": feature["value"],
-                "mjd": mjd,  # only used for dedup logic
-            }
-
-            # Deduplicate by keeping the feature with the latest mjd
-            if (
-                key not in deduplication_dict
-                or row["mjd"] > deduplication_dict[key]["mjd"]
-            ):
-                deduplication_dict[key] = row
-
-        return list(deduplication_dict.values())
+        return parse_features(data)
 
     @staticmethod
     def db_operation(session: Session, data: list):
@@ -501,13 +471,12 @@ class LSSTFeatureCommand(Command):
 
         for row in data:
             key = (row["oid"], row["sid"], row["feature_id"], row["band"])
-            if key not in dedup or row["mjd"] > dedup[key]["mjd"]:
+            if key not in dedup or row["mjd"] >= dedup[key]["mjd"]:
                 dedup[key] = row
 
-        deduplicated_data = list(dedup.values())
-
-        for row in deduplicated_data:
-            row.pop("mjd", None)
+        deduplicated_data = [
+            {k: v for k, v in row.items() if k != "mjd"} for row in dedup.values()
+        ]
 
         stmt = insert(Feature)
 
@@ -521,6 +490,14 @@ class LSSTFeatureCommand(Command):
         )
 
         session.execute(upsert_stmt, deduplicated_data)
+
+
+class LSSTFeatureCommand(FeatureCommand):
+    type = "LSSTFeatureCommand"
+
+
+class ZTFFeatureCommand(FeatureCommand):
+    type = "ZTFFeatureCommand"
 
 
 class XmatchCommand(Command):
