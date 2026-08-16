@@ -40,6 +40,7 @@ line by line.
 | 3 | Persistence | **Scribe-only.** No DB writes from the step. `scribe_multisurvey` owns the upsert. |
 | 4 | `class_name → class_id` | **Read-only DB lookup at startup**, cached. DB `taxonomy` is the authority. |
 | 5 | Downstream Kafka topic | **New multisurvey output schema — placeholder for now.** Shape deferred. |
+| 6 | `classifier_name → classifier_id` | **Read-only DB lookup at startup**, cached. DB `classifier` is the authority; ids are never hardcoded. |
 
 ### Model and mapper live in `alerce_classifiers`
 
@@ -69,7 +70,8 @@ lc_classification_multisurvey_step/
 │   ├── probabilities.py            # OutputDTO → scribe-ready rows (5 heads)
 │   ├── db/
 │   │   ├── __init__.py
-│   │   └── db.py                   # PSQLConnection + get_taxonomy_by_classifier_id
+│   │   └── db.py                   # PSQLConnection + get_classifier_ids_by_name
+│   │                               #              + get_taxonomy_by_classifier_id
 │   └── output_parser.py            # PLACEHOLDER downstream producer
 └── tests/
     ├── __init__.py
@@ -112,7 +114,7 @@ feature_step output topic
   │    messages → input_dto.create_input_dto(messages)   # features-only
   │    model.can_predict(dto)  → skip batch if False
   │    model.predict(dto)      → OutputDTO (batched, multi-oid frames)
-  │    probabilities.build_probability_rows(dto, lastmjd_by_oid, taxonomy_maps, ...)
+  │    probabilities.build_probability_rows(dto, lastmjd_by_oid, heads, taxonomy_maps, ...)
   │      → for each of 5 heads: melt by oid → row dicts
   │
   ├─ post_execute → produce_scribe(rows)
@@ -121,9 +123,16 @@ feature_step output topic
   └─ pre_produce → output_parser (PLACEHOLDER)
 ```
 
-**Startup:** `get_taxonomy_by_classifier_id` for classifier ids 5–9 →
-`{classifier_id: {class_name: class_id}}`, cached on the step. The connection is
-opened once and not used again. Nothing else in the step touches the DB.
+**Startup (two reads, in order):**
+
+1. `get_classifier_ids_by_name(HEAD_CLASSIFIER_NAMES)` → `{classifier_name:
+   classifier_id}` from the `classifier` table.
+2. `get_taxonomy_by_classifier_id` for the ids resolved in (1) →
+   `{classifier_id: {class_name: class_id}}`.
+
+Both cached on the step; the connection is opened once and not used again.
+Nothing else in the step touches the DB. See §6 for the head→name mapping and §8
+for the fail-fast assertions on both reads.
 
 ### `oid` is already a bigint
 
@@ -151,17 +160,17 @@ The offline reference is `~/desktop/pipeline/feature_step/features/offline/`.
 
 | Offline symbol | Port | Change |
 |---|---|---|
-| `probability_writer.CLASSIFIER_IDS` = `[5,6,7,8,9]` | verbatim | — |
+| `probability_writer.CLASSIFIER_IDS` = `[5,6,7,8,9]` | **not ported** | ids come from the DB; the step pins the five *names* instead and resolves ids at startup (decision 6, §6) |
 | `probability_writer.classifier_version_to_smallint` | verbatim | `"2.1.0"` → `210`; strips a `_suffix` on the patch part |
 | `probability_writer._iter_frames` | verbatim | the 5-head mapping; see §6 |
 | `probability_writer.build_probability_rows` | **adapted** | offline is strictly per-oid and raises on a multi-row frame; the step is batched, so melt by oid instead |
 | `probability_writer.write_probabilities` | **dropped** | scribe-only (decision 3) |
-| `db.fetch_taxonomy_maps` | adapted | same query, via `PSQLConnection` instead of a raw engine |
+| `db.fetch_taxonomy_maps` | adapted | same query, via `PSQLConnection` instead of a raw engine; called with DB-resolved ids rather than the literal `[5..9]` |
 | `classify.load_squidward_model` | **dropped** | `get_class` from config instead (§2) |
 | `classify.features_message_to_dto` | adapted | one row per message instead of one oid |
 | `classify.classify_astro_object` | partially | keep `can_predict` → empty-OutputDTO-on-false; drop `parse_output` (feature_step already ran it) |
 | `classify._lc_lastmjd` | adapted | max MJD from the message's `detections` array, not from DB |
-| `classifier_taxonomy_lut` | **not ported** | the fixture stays the seed authority in the offline repo; the step reads the DB |
+| `classifier_taxonomy_lut` | **not ported** | the fixture stays the seed authority in the offline repo; the step reads the DB for both the classifier ids and the taxonomy |
 
 The single most important piece the stamp step does **not** have is
 `_iter_frames`: `stamp_classifier_2025_multisurvey_step` writes only
@@ -169,22 +178,73 @@ The single most important piece the stamp step does **not** have is
 
 ## 6. The five heads
 
+Each head is identified by a **classifier name**, and the frame it reads out of the
+`OutputDTO`. The name suffix is structural — it is what makes the head that head —
+so the suffixes are pinned; only the base name is configurable.
+
 ```python
-[
-    (5, output_dto.probabilities),                        # flat, 21 leaves
-    (6, hierarchical["top"]),                             # Periodic/Stochastic/Transient
-    (7, hierarchical["children"]["Transient"]),           # 6 classes
-    (8, hierarchical["children"]["Stochastic"]),          # 6 classes
-    (9, hierarchical["children"]["Periodic"]),            # 9 classes
-]
+CLASSIFIER_NAME = os.getenv("CLASSIFIER_NAME", "lc_classifier_BHRF_forced_phot")
+
+def heads(output_dto, base=CLASSIFIER_NAME):
+    h = output_dto.hierarchical
+    return [
+        (f"{base}",             output_dto.probabilities),      # flat, 21 leaves
+        (f"{base}_top",         h["top"]),                      # Periodic/Stochastic/Transient
+        (f"{base}_transient",   h["children"]["Transient"]),    # 6 classes
+        (f"{base}_stochastic",  h["children"]["Stochastic"]),   # 6 classes
+        (f"{base}_periodic",    h["children"]["Periodic"]),     # 9 classes
+    ]
 ```
 
-Classifier ids 5–9 correspond to `lc_classifier_BHRF_forced_phot{,_top,_transient,
-_stochastic,_periodic}`, seeded in `multisurvey_ztf` (verified applied 2026-08-03).
+`classifier_id` for each head is then `classifier_ids[name]`, resolved once at
+startup from the `classifier` table (§6.1). In the live `multisurvey_ztf` these
+happen to be 5–9 (seeded 2026-08-03), but the step never assumes that: the offline
+fixture's own comment notes the ids were picked as "next-free after live max 4" and
+must be re-verified at apply time, so a different environment — a fresh dev DB, a
+restored dump, a deploy that claimed 5+ first — can legitimately allocate other ids
+for the same names.
+
 Class names are md5-verified against the deployed pickle; the transient class is
 **`SESN`**, not `SNIbc`.
 
 A head whose frame is `None` or empty is skipped, not written.
+
+### 6.1 Resolving the ids
+
+```python
+def get_classifier_ids_by_name(
+    classifier_names: list[str], psql_connection: PSQLConnection
+) -> dict[str, dict]:
+    """{classifier_name: {"classifier_id": int, "classifier_version": str}}.
+
+    Read-only, from <schema>.classifier. Raises on a duplicated name (§8
+    assertion 2) — that is the only place a duplicate is still visible, since the
+    return value is keyed by name.
+    """
+```
+
+Query, mirroring `get_taxonomy_by_classifier_id`'s shape (`text()` + bound
+expanding param, `PSQLConnection.session()`):
+
+```sql
+SELECT classifier_id, classifier_name, classifier_version
+FROM classifier
+WHERE classifier_name IN :names
+```
+
+`classifier_name` is not unique in the table's constraints (the PK is
+`classifier_id` alone), so two rows sharing a name is possible in principle and is
+treated as a deploy error — see §8.
+
+The row's `classifier_version` is read for the startup consistency check in §8, not
+for the written value: `probability.classifier_version` stays derived from
+`MODEL_VERSION`, which describes the artifact actually loaded from `MODEL_PATH`.
+
+Neither reader swallows exceptions. The stamp step's
+`get_taxonomy_by_classifier_id` wraps its query in `try/except` and returns `{}` on
+error, which turns a dead DB into an empty map; here both readers let the exception
+propagate so a connection failure at startup is distinguishable from a genuinely
+unseeded table.
 
 ## 7. Probability row contract
 
@@ -217,7 +277,7 @@ Field derivations:
 
 - `oid` — `int(msg["oid"])`.
 - `sid` — from config `SID`, default `0` (ZTF).
-- `classifier_id` — the head's id, 5–9.
+- `classifier_id` — `classifier_ids[head_name]`, from the startup DB lookup (§6.1).
 - `classifier_version` — `classifier_version_to_smallint(MODEL_VERSION)` → `210`.
 - `class_id` — `taxonomy_maps[classifier_id][class_name]`, exact string match.
 - `probability` — the model's value.
@@ -234,10 +294,21 @@ returns `-1` on a miss, which either violates the FK or stores a garbage class.
 Offline instead raises. This step splits the difference by when the problem is
 detectable:
 
-- **Startup, fail fast.** After fetching the taxonomy, assert every classifier id
-  in 5–9 has a non-empty map. If any is missing, raise and refuse to start — an
-  unseeded or partially-seeded taxonomy is a deploy error, and a step that starts
-  anyway would silently drop every probability it produces.
+- **Startup, fail fast.** Four assertions, all raising and refusing to start. An
+  unseeded, partially-seeded or ambiguous `classifier`/`taxonomy` is a deploy
+  error, and a step that starts anyway would silently drop every probability it
+  produces or write it against the wrong classifier.
+  1. All five head names in §6 resolved to a row. Raise naming the missing ones.
+  2. No name resolved to more than one row.
+  3. Every resolved id has a non-empty taxonomy map.
+  4. Each row's `classifier_version` equals `MODEL_VERSION`. A DB row saying
+     `2.1.0` while `MODEL_PATH` points at a different artifact means the seeded
+     taxonomy may not match the model's `classes_`, which is exactly the
+     silent-garbage-class failure the class-name lookup exists to prevent.
+     (See §13 — this is the one assertion that may be too strict in practice.)
+
+  These replace the `-1`-on-miss behaviour rather than layering on it: with the ids
+  themselves coming from the DB, a name that does not resolve has no safe fallback.
 - **Per batch, skip and log.** If a class name coming out of the model is absent
   from its head's map, log an error identifying the oid, classifier id and class
   name, and drop **that oid's rows for that head**. Do not emit `class_id = -1`,
@@ -270,15 +341,20 @@ Deferring this is safe because decision 3 makes the scribe the real output path.
 | `MODEL_CLASS` | `alerce_classifiers.squidward.model.SquidwardFeaturesClassifier` | required |
 | `CLASS_MAPPER` | `alerce_classifiers.squidward.mapper.SquidwardMapper` | required |
 | `MODEL_PATH` | S3 url of `squidward/2.1.0/hierarchical_random_forest_model.pkl` | required |
-| `MODEL_VERSION` | version string → smallint | `2.1.0` |
+| `MODEL_VERSION` | version string → smallint; checked against `classifier.classifier_version` | `2.1.0` |
+| `CLASSIFIER_NAME` | base classifier name; the five head names derive from it (§6) | `lc_classifier_BHRF_forced_phot` |
 | `SCRIBE_SERVER`, `SCRIBE_TOPIC` | scribe_multisurvey topic | required |
-| `PSQL_*` / `SCHEMA` | startup taxonomy read | required, schema `multisurvey_ztf` |
+| `PSQL_*` / `SCHEMA` | startup `classifier` + `taxonomy` reads | required, schema `multisurvey_ztf` |
 | `SID` | survey id written into `probability.sid` | `0` |
 | `MIN_DETECTIONS` | optional pre-classification filter (§13) | unset |
 
-Classifier ids 5–9 are **not** configurable. They are pinned constants matching the
-seeded `classifier` rows, and the head→id mapping in §6 is positional; making them
-an env var would let the two drift.
+Classifier ids are **not** configurable and **not** constants — they are read from
+the `classifier` table at startup (decision 6). The head name *suffixes*
+(`_top`, `_transient`, `_stochastic`, `_periodic`) are pinned, because they are
+positional against the model's hierarchical output; only the base
+`CLASSIFIER_NAME` is env-driven. Making the ids an env var would let config and DB
+drift silently, and hardcoding them assumes an id allocation the DB never
+promised.
 
 ## 11. Testing
 
@@ -291,13 +367,22 @@ Pure-function unit tests, following the offline test layout
   raising; `lastmjd` taken as the max over detections without JD subtraction.
 - `test_input_dto.py` — features-only DTO; `oid` cast to int; messages with
   `features: None` filtered; empty batch → empty DTO.
-- `test_taxonomy.py` — `get_taxonomy_by_classifier_id` map construction against a
-  mocked session; startup assertion fires when a head's map is empty.
+- `test_taxonomy.py` — `get_classifier_ids_by_name` and
+  `get_taxonomy_by_classifier_id` map construction against a mocked session; the
+  head names derived from a non-default `CLASSIFIER_NAME`; rows returned in a
+  different order than requested still map correctly; and each of the four §8
+  startup assertions fires — a missing name, a duplicated name, an empty taxonomy
+  map, a `classifier_version` mismatch. Ids in the fixtures are deliberately
+  **not** 5–9, so a reintroduced hardcode fails the test.
 
 **Equivalence test against the offline reference.** The step's row builder and
 offline `probability_writer.build_probability_rows` must agree. For a handful of
 real OIDs, run the offline classifier, feed the same `OutputDTO` through both row
-builders, and assert the row sets are identical modulo ordering. This is the test
+builders, and assert the row sets are identical modulo ordering. Offline hardcodes
+`CLASSIFIER_IDS = [5..9]`, so the comparison holds only when the target DB actually
+allocated those ids — the test asserts that precondition explicitly (via
+`get_classifier_ids_by_name`) and skips with a clear message otherwise, rather than
+failing on an id mismatch that is not a port defect. This is the test
 that actually protects the port — the unit tests above only check the port's
 internal consistency. It needs the `alerce_classifiers` submodule initialised and
 `MODEL_PATH` set, so it is marked as an opt-in integration test, not part of the
@@ -309,6 +394,9 @@ default unit run.
 - Changes to the legacy `lc_classification_step`.
 - The downstream output schema (§9).
 - Seeding `classifier` / `taxonomy` rows — already applied to live `multisurvey_ztf`.
+  Note this is now a hard startup dependency, not just a write-time one: an
+  unseeded DB makes the step refuse to start (§8). Any environment the step runs
+  in — including local and CI-integration DBs — must have the seed applied.
 - Back-porting the seeds to the db-plugins authority file — tracked separately in
   the offline repo's `FLOW.md` §7.
 - LSST / Rubin models.
@@ -323,6 +411,15 @@ default unit run.
   default it to unset — every message that has features gets classified. Counts
   non-forced detections only, as the legacy step does. Revisit if the model
   produces junk on sparse light curves.
+- **How strict should the version check be?** §8 assertion 4 refuses to start when
+  `classifier.classifier_version` differs from `MODEL_VERSION`. That catches a real
+  failure mode (model artifact and seeded taxonomy out of sync), but it also means
+  a model bump becomes a two-step deploy: seed the new `classifier` rows first, or
+  the step will not come up. The alternative is to log an error and continue,
+  since `probability.classifier_version` is written from `MODEL_VERSION` either
+  way and the ids/taxonomy are still valid. **Leaning fail-fast** for consistency
+  with the rest of §8, but this is the one assertion worth revisiting once the
+  deploy story for model bumps is settled.
 - **Batch size vs. `classify_batch`.** The model classifies the whole batch in one
   call. Whether the feature_step consume batch size is a good predict batch size
   has not been measured.
