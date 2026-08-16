@@ -4,6 +4,10 @@ Two queries, both run once at startup: classifier names -> ids, and classifier
 ids -> {class_name: class_id}. The step never writes to the database; the scribe
 owns the probability upsert (design doc §2, decision 3).
 
+`resolve_classifiers` is the startup entry point: it runs both queries and
+enforces the design doc's §8 fail-fast assertions before the step is allowed
+to start.
+
 Unlike stamp_classifier_2025_multisurvey_step's reader, neither query swallows
 exceptions: an unreachable database must not look like an unseeded table.
 """
@@ -14,6 +18,8 @@ from typing import Callable, ContextManager
 from sqlalchemy import bindparam, create_engine, text
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import NullPool
+
+from ..probabilities import classifier_version_to_smallint
 
 log = logging.getLogger(__name__)
 
@@ -91,7 +97,7 @@ def get_classifier_ids_by_name(classifier_names: list, psql_connection) -> dict:
     if duplicates:
         raise ValueError(
             f"classifier table has more than one row for {sorted(duplicates)}; "
-            "cannot resolve a classifier_id unambiguously"
+            "cannot resolve a classifier_id unambiguously. Refusing to start."
         )
     return found
 
@@ -122,22 +128,31 @@ def resolve_classifiers(classifier_names: list, model_version: str, psql_connect
 
     Returns ({classifier_name: classifier_id}, {classifier_id: {class_name: class_id}}).
 
-    Implements the design doc's §8 startup assertions. All four raise: an
-    unseeded, partially-seeded, ambiguous or version-skewed classifier/taxonomy is
-    a deploy error, and a step that started anyway would silently drop every
-    probability it produced or write it against the wrong classifier.
+    Implements the design doc's §8 startup assertions. All five raise: an
+    unparseable, unseeded, partially-seeded, ambiguous or version-skewed
+    classifier/taxonomy is a deploy error, and a step that started anyway would
+    silently drop every probability it produced or write it against the wrong
+    classifier.
 
-      1. every head name resolved to a row          (here)
-      2. no name resolved to more than one row      (get_classifier_ids_by_name)
-      3. every resolved id has a non-empty taxonomy (here)
-      4. each row's classifier_version == model_version (here)
+      1. MODEL_VERSION parses to a non-zero version smallint (here)
+      2. every head name resolved to a row          (here)
+      3. no name resolved to more than one row      (get_classifier_ids_by_name)
+      4. every resolved id has a non-empty taxonomy (here)
+      5. each row's classifier_version == model_version (here)
     """
+    if classifier_version_to_smallint(model_version) == 0:
+        raise ValueError(
+            f"MODEL_VERSION '{model_version}' does not parse to a version smallint "
+            "(expected three dot-separated parts, e.g. '2.1.0'). Every probability "
+            "row would be written with classifier_version=0. Refusing to start."
+        )
+
     found = get_classifier_ids_by_name(classifier_names, psql_connection)
 
     missing = [name for name in classifier_names if name not in found]
     if missing:
         raise ValueError(
-            f"classifier table has no row for {missing}; the BHRF classifier seed "
+            f"classifier table has no row for {missing}; the classifier seed "
             "is missing or incomplete in this schema. Refusing to start."
         )
 
@@ -156,10 +171,12 @@ def resolve_classifiers(classifier_names: list, model_version: str, psql_connect
     classifier_ids = {name: found[name]["classifier_id"] for name in classifier_names}
     taxonomy_maps = get_taxonomy_by_classifier_id(list(classifier_ids.values()), psql_connection)
 
-    unseeded = [cid for cid in classifier_ids.values() if not taxonomy_maps.get(cid)]
+    unseeded = {
+        name: cid for name, cid in classifier_ids.items() if not taxonomy_maps.get(cid)
+    }
     if unseeded:
         raise ValueError(
-            f"taxonomy table has no rows for classifier_id(s) {unseeded}; "
+            f"taxonomy table has no rows for {unseeded} (name -> classifier_id); "
             "every probability for those heads would be dropped. Refusing to start."
         )
 

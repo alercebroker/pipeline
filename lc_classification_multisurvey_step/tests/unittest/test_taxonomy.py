@@ -196,6 +196,7 @@ class TestResolveClassifiers:
             db.resolve_classifiers(FIVE_NAMES, "2.1.0", conn)
 
         assert "45" in str(exc.value)
+        assert "b_periodic" in str(exc.value)
 
     def test_version_mismatch_raises_and_reports_both_versions(self):
         conn = FakeConnection(classifier_rows(version="2.0.0"), taxonomy_rows(ALL_IDS))
@@ -206,6 +207,21 @@ class TestResolveClassifiers:
         assert "2.0.0" in str(exc.value)
         assert "2.1.0" in str(exc.value)
 
+    def test_partial_version_skew_names_only_the_skewed_head(self):
+        rows = classifier_rows()
+        rows[4]["classifier_version"] = "2.0.0"  # only b_periodic is stale
+        conn = FakeConnection(rows, taxonomy_rows(ALL_IDS))
+
+        with pytest.raises(ValueError) as exc:
+            db.resolve_classifiers(FIVE_NAMES, "2.1.0", conn)
+
+        message = str(exc.value)
+        assert "b_periodic" in message
+        assert "2.0.0" in message
+        # the four correctly-versioned heads must not be reported as skewed
+        assert "b_top" not in message
+        assert "b_transient" not in message
+
     def test_duplicate_name_raises(self):
         rows = classifier_rows()
         rows.append(
@@ -215,3 +231,12 @@ class TestResolveClassifiers:
 
         with pytest.raises(ValueError, match="more than one row"):
             db.resolve_classifiers(FIVE_NAMES, "2.1.0", conn)
+
+    def test_unparseable_model_version_raises_before_touching_the_db(self):
+        conn = FakeConnection(classifier_rows(version="dev"), taxonomy_rows(ALL_IDS))
+
+        with pytest.raises(ValueError, match="classifier_version=0"):
+            db.resolve_classifiers(FIVE_NAMES, "dev", conn)
+
+        # it must fail without querying at all
+        assert conn.session_obj.executed == []
