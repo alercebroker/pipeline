@@ -65,6 +65,9 @@ def build_probability_rows(
     Parameters
     ----------
     output_dto : anything with `.probabilities` and `.hierarchical`, or None.
+    Caller contract: each head's frame must have a unique oid index. Duplicate
+    oids are not collapsed here and would emit rows colliding on the probability
+    primary key; de-duplication happens upstream when the features frame is built.
     lastmjd_map : {oid: lastmjd}. An oid missing from it is dropped and logged —
         `probability.lastmjd` is NOT NULL.
     classifier_ids : {classifier_name: classifier_id}, from the DB (design §6.1).
@@ -102,6 +105,21 @@ def build_probability_rows(
             )
             continue
 
+        # Class names are the frame's COLUMNS, so an unknown class name is a
+        # frame-wide model/taxonomy drift, never a per-oid condition — check once
+        # per head rather than once per oid.
+        unknown = sorted(set(frame.columns) - set(class_id_of))
+        if unknown:
+            log.error(
+                "classifier_id=%s (head '%s'): class names %s absent from the taxonomy; "
+                "dropping this head for all %d oids in the batch",
+                classifier_id,
+                classifier_name,
+                unknown,
+                len(frame),
+            )
+            continue
+
         melted = (
             frame.rename_axis("oid")
             .reset_index()
@@ -112,42 +130,35 @@ def build_probability_rows(
             .rank(ascending=False, method="dense")
             .astype(int)
         )
+        melted["oid"] = melted["oid"].astype("int64")
+        melted["lastmjd"] = melted["oid"].map(lastmjd_map)
 
-        for oid, group in melted.groupby("oid", sort=False):
-            oid = int(oid)
-
-            unknown = sorted(set(group["class_name"]) - set(class_id_of))
-            if unknown:
-                log.error(
-                    "oid=%s classifier_id=%s: class names %s absent from the taxonomy; "
-                    "dropping this oid's rows for this head",
-                    oid,
-                    classifier_id,
-                    unknown,
-                )
+        missing_lastmjd = melted["lastmjd"].isna()
+        if missing_lastmjd.any():
+            dropped = sorted(set(melted.loc[missing_lastmjd, "oid"]))
+            log.error(
+                "oids %s have no lastmjd; dropping their rows for classifier_id=%s",
+                dropped,
+                classifier_id,
+            )
+            melted = melted[~missing_lastmjd]
+            if melted.empty:
                 continue
 
-            lastmjd = lastmjd_map.get(oid)
-            if lastmjd is None:
-                log.error(
-                    "oid=%s has no lastmjd; dropping its rows for classifier_id=%s",
-                    oid,
-                    classifier_id,
-                )
-                continue
+        melted["class_id"] = melted["class_name"].map(class_id_of)
 
-            for record in group.to_dict("records"):
-                rows.append(
-                    {
-                        "oid": oid,
-                        "sid": int(sid),
-                        "classifier_id": int(classifier_id),
-                        "classifier_version": int(version_smallint),
-                        "class_id": int(class_id_of[record["class_name"]]),
-                        "probability": float(record["probability"]),
-                        "ranking": int(record["ranking"]),
-                        "lastmjd": float(lastmjd),
-                    }
-                )
+        for record in melted.to_dict("records"):
+            rows.append(
+                {
+                    "oid": int(record["oid"]),
+                    "sid": int(sid),
+                    "classifier_id": int(classifier_id),
+                    "classifier_version": int(version_smallint),
+                    "class_id": int(record["class_id"]),
+                    "probability": float(record["probability"]),
+                    "ranking": int(record["ranking"]),
+                    "lastmjd": float(record["lastmjd"]),
+                }
+            )
 
     return rows

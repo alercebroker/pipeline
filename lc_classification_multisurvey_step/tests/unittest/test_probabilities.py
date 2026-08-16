@@ -196,7 +196,7 @@ class TestBuildProbabilityRows:
 
         assert {r["classifier_id"] for r in rows} == {50}
 
-    def test_unknown_class_drops_that_oid_for_that_head_only(self, caplog):
+    def test_unknown_class_drops_the_whole_head(self, caplog):
         dto = make_dto(
             flat=frame([1, 2], {"SNIa": [0.5, 0.5], "Nonsense": [0.5, 0.5]}),
             top=frame([1, 2], {"Transient": [1.0, 1.0]}),
@@ -205,13 +205,13 @@ class TestBuildProbabilityRows:
         with caplog.at_level("ERROR"):
             rows = build(dto, {1: 1.0, 2: 2.0})
 
-        # the flat head is dropped for both oids, the top head survives for both
+        # an unknown class name is frame-wide: the flat head is dropped entirely, top survives
         assert {r["classifier_id"] for r in rows} == {60}
         assert len(rows) == 2
         assert "Nonsense" in caplog.text
 
     def test_known_classes_keep_every_oid(self):
-        # Counterpart to the test above: with no unknown class name, the (oid, head)
+        # Counterpart to the test above: with no unknown class name, the head
         # drop must not fire for anyone.
         dto = make_dto(flat=frame([1, 2], {"SNIa": [0.5, 0.5], "AGN": [0.5, 0.5]}))
 
@@ -259,3 +259,21 @@ class TestBuildProbabilityRows:
         dto = make_dto(flat=frame([1], {"SNIa": [0.5], "AGN": [0.5]}))
         rows = build(dto, {1: 1.0})
         json.dumps(rows)  # numpy int64/float64 would raise here
+
+    def test_multi_oid_multi_head_with_one_head_dropped(self):
+        dto = make_dto(
+            flat=frame([1, 2], {"SNIa": [0.9, 0.1], "AGN": [0.1, 0.9]}),
+            top=frame([1, 2], {"Transient": [0.8, 0.2], "Stochastic": [0.2, 0.8]}),
+            periodic=frame([1, 2], {"LPV": [0.6, 0.4], "Unseeded": [0.4, 0.6]}),
+        )
+
+        rows = build(dto, {1: 100.0, 2: 200.0})
+
+        # flat (50) and top (60) survive for both oids; periodic (90) is dropped
+        # entirely because "Unseeded" is not in its taxonomy.
+        assert {r["classifier_id"] for r in rows} == {50, 60}
+        assert len(rows) == 8
+        assert {(r["oid"], r["classifier_id"]) for r in rows} == {
+            (1, 50), (1, 60), (2, 50), (2, 60),
+        }
+        assert {r["lastmjd"] for r in rows if r["oid"] == 2} == {200.0}
