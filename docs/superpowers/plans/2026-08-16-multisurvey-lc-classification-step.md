@@ -556,7 +556,7 @@ class TestBuildProbabilityRows:
 
         assert {r["classifier_id"] for r in rows} == {50}
 
-    def test_unknown_class_drops_that_oid_for_that_head_only(self, caplog):
+    def test_unknown_class_drops_the_whole_head(self, caplog):
         dto = make_dto(
             flat=frame([1, 2], {"SNIa": [0.5, 0.5], "Nonsense": [0.5, 0.5]}),
             top=frame([1, 2], {"Transient": [1.0, 1.0]}),
@@ -565,14 +565,14 @@ class TestBuildProbabilityRows:
         with caplog.at_level("ERROR"):
             rows = build(dto, {1: 1.0, 2: 2.0})
 
-        # the flat head is dropped for both oids, the top head survives for both
+        # an unknown class name is frame-wide: the flat head is dropped entirely,
+        # top survives
         assert {r["classifier_id"] for r in rows} == {60}
         assert len(rows) == 2
         assert "Nonsense" in caplog.text
 
     def test_known_classes_keep_every_oid(self):
-        # Counterpart to the test above: with no unknown class name, the (oid, head)
-        # drop must not fire for anyone.
+        # Counterpart to the test above: with no unknown class name, nothing drops.
         dto = make_dto(flat=frame([1, 2], {"SNIa": [0.5, 0.5], "AGN": [0.5, 0.5]}))
 
         rows = build(dto, {1: 1.0, 2: 2.0})
@@ -619,6 +619,24 @@ class TestBuildProbabilityRows:
         dto = make_dto(flat=frame([1], {"SNIa": [0.5], "AGN": [0.5]}))
         rows = build(dto, {1: 1.0})
         json.dumps(rows)  # numpy int64/float64 would raise here
+
+    def test_multi_oid_multi_head_with_one_head_dropped(self):
+        dto = make_dto(
+            flat=frame([1, 2], {"SNIa": [0.9, 0.1], "AGN": [0.1, 0.9]}),
+            top=frame([1, 2], {"Transient": [0.8, 0.2], "Stochastic": [0.2, 0.8]}),
+            periodic=frame([1, 2], {"LPV": [0.6, 0.4], "Unseeded": [0.4, 0.6]}),
+        )
+
+        rows = build(dto, {1: 100.0, 2: 200.0})
+
+        # flat (50) and top (60) survive for both oids; periodic (90) is dropped
+        # entirely because "Unseeded" is not in its taxonomy.
+        assert {r["classifier_id"] for r in rows} == {50, 60}
+        assert len(rows) == 8
+        assert {(r["oid"], r["classifier_id"]) for r in rows} == {
+            (1, 50), (1, 60), (2, 50), (2, 60),
+        }
+        assert {r["lastmjd"] for r in rows if r["oid"] == 2} == {200.0}
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -649,6 +667,9 @@ def build_probability_rows(
     Parameters
     ----------
     output_dto : anything with `.probabilities` and `.hierarchical`, or None.
+        Caller contract: each head's frame must have a unique oid index. Duplicate
+        oids are not collapsed here and would emit rows colliding on the probability
+        primary key; de-duplication happens upstream when the features frame is built.
     lastmjd_map : {oid: lastmjd}. An oid missing from it is dropped and logged —
         `probability.lastmjd` is NOT NULL.
     classifier_ids : {classifier_name: classifier_id}, from the DB (design §6.1).
@@ -686,6 +707,21 @@ def build_probability_rows(
             )
             continue
 
+        # Class names are the frame's COLUMNS, so an unknown class name is a
+        # frame-wide model/taxonomy drift, never a per-oid condition — check once
+        # per head rather than once per oid.
+        unknown = sorted(set(frame.columns) - set(class_id_of))
+        if unknown:
+            log.error(
+                "classifier_id=%s (head '%s'): class names %s absent from the taxonomy; "
+                "dropping this head for all %d oids in the batch",
+                classifier_id,
+                classifier_name,
+                unknown,
+                len(frame),
+            )
+            continue
+
         melted = (
             frame.rename_axis("oid")
             .reset_index()
@@ -696,46 +732,41 @@ def build_probability_rows(
             .rank(ascending=False, method="dense")
             .astype(int)
         )
+        melted["oid"] = melted["oid"].astype("int64")
+        melted["lastmjd"] = melted["oid"].map(lastmjd_map)
 
-        for oid, group in melted.groupby("oid", sort=False):
-            oid = int(oid)
-
-            unknown = sorted(set(group["class_name"]) - set(class_id_of))
-            if unknown:
-                log.error(
-                    "oid=%s classifier_id=%s: class names %s absent from the taxonomy; "
-                    "dropping this oid's rows for this head",
-                    oid,
-                    classifier_id,
-                    unknown,
-                )
+        missing_lastmjd = melted["lastmjd"].isna()
+        if missing_lastmjd.any():
+            dropped = sorted(set(melted.loc[missing_lastmjd, "oid"]))
+            log.error(
+                "oids %s have no lastmjd; dropping their rows for classifier_id=%s",
+                dropped,
+                classifier_id,
+            )
+            melted = melted[~missing_lastmjd]
+            if melted.empty:
                 continue
 
-            lastmjd = lastmjd_map.get(oid)
-            if lastmjd is None:
-                log.error(
-                    "oid=%s has no lastmjd; dropping its rows for classifier_id=%s",
-                    oid,
-                    classifier_id,
-                )
-                continue
+        melted["class_id"] = melted["class_name"].map(class_id_of)
 
-            for record in group.to_dict("records"):
-                rows.append(
-                    {
-                        "oid": oid,
-                        "sid": int(sid),
-                        "classifier_id": int(classifier_id),
-                        "classifier_version": int(version_smallint),
-                        "class_id": int(class_id_of[record["class_name"]]),
-                        "probability": float(record["probability"]),
-                        "ranking": int(record["ranking"]),
-                        "lastmjd": float(lastmjd),
-                    }
-                )
+        for record in melted.to_dict("records"):
+            rows.append(
+                {
+                    "oid": int(record["oid"]),
+                    "sid": int(sid),
+                    "classifier_id": int(classifier_id),
+                    "classifier_version": int(version_smallint),
+                    "class_id": int(record["class_id"]),
+                    "probability": float(record["probability"]),
+                    "ranking": int(record["ranking"]),
+                    "lastmjd": float(record["lastmjd"]),
+                }
+            )
 
     return rows
 ```
+
+**Why vectorised.** Ranking is computed before any row is dropped, so it always ranks over all classes of the head for that oid. `class_id` and `lastmjd` are resolved with `.map()` over the whole melted frame and `to_dict("records")` is called once per head, not once per (oid, head) — the latter costs ~3 s of pure CPU per 1000-oid batch (5,000 tiny `to_dict` calls), on a step that runs this for every Kafka batch. This is the shape the sibling `stamp_classifier_2025_multisurvey_step/.../db.py::format_probability_records` already uses. The explicit `int()`/`float()` casts stay: they are what keeps numpy scalars out of `json.dumps` in the produce path.
 
 - [ ] **Step 4: Run test to verify it passes**
 
@@ -743,7 +774,7 @@ def build_probability_rows(
 /home/fandrades/miniconda3/envs/feature_step/bin/python -m pytest tests/unittest/test_probabilities.py -v
 ```
 
-Expected: all pass (9 from Task 2 + 14 from Task 3 = `23 passed`).
+Expected: all pass (9 from Task 2 + 15 from Task 3 = `24 passed` in this file, `26 passed` for the whole unit suite).
 
 - [ ] **Step 5: Commit**
 
@@ -1211,7 +1242,7 @@ def resolve_classifiers(classifier_names: list, model_version: str, psql_connect
 /home/fandrades/miniconda3/envs/feature_step/bin/python -m pytest tests/unittest -v
 ```
 
-Expected: everything green (Task 1: 2, Task 2-3: 23, Task 4: 11, Task 5: 6 → `42 passed`).
+Expected: everything green (Task 1: 2, Task 2-3: 24, Task 4: 11, Task 5: 6 → `43 passed`).
 
 - [ ] **Step 5: Commit**
 
@@ -1319,6 +1350,22 @@ class TestBuildFeaturesFrame:
         assert len(frame) == 0
         assert frame.index.name == "oid"
 
+    def test_duplicate_oids_collapse_keeping_the_last_message(self):
+        # Two messages for the same object can land in one consume batch. Left
+        # alone they would produce two probability rows colliding on
+        # (oid, sid, classifier_id, class_id), and the scribe's highest-lastmjd
+        # dedup could not break the tie. The stamp step collapses the same way.
+        msgs = [
+            message(oid="1", features={"a": 1.0}),
+            message(oid="1", features={"a": 2.0}),
+            message(oid="2", features={"a": 3.0}),
+        ]
+
+        frame = input_dto.build_features_frame(msgs)
+
+        assert list(frame.index) == [1, 2]
+        assert frame.loc[1, "a"] == 2.0  # last message wins
+
 
 class TestLastmjdByOid:
     def test_max_mjd_over_detections(self):
@@ -1409,6 +1456,13 @@ def build_features_frame(messages: list) -> pd.DataFrame:
     The multisurvey feature_step already emits the bigint masterid in `oid` (the
     Avro field is typed string), so this casts with `int()` and calls no idmapper
     — unlike the stamp step, which starts from raw ZTF alerts (design doc §4).
+
+    Duplicate oids within one batch are collapsed, keeping the LAST message for
+    that oid. Two messages for the same object can arrive in a single consume
+    batch; left alone they would yield two probability rows colliding on
+    `(oid, sid, classifier_id, class_id)`, which the scribe's highest-lastmjd
+    dedup cannot break because both carry the same lastmjd. This is what upholds
+    `build_probability_rows`' unique-oid-index contract.
     """
     if not messages:
         frame = pd.DataFrame()
@@ -1420,7 +1474,7 @@ def build_features_frame(messages: list) -> pd.DataFrame:
         index=[int(message["oid"]) for message in messages],
     )
     frame.index.name = "oid"
-    return frame
+    return frame[~frame.index.duplicated(keep="last")]
 
 
 def lastmjd_by_oid(messages: list) -> dict:
@@ -1462,7 +1516,7 @@ PYTHONPATH=/home/fandrades/desktop/pipeline_features/pipeline/alerce_classifiers
   /home/fandrades/miniconda3/envs/feature_step/bin/python -m pytest tests/unittest/test_input_dto.py -v
 ```
 
-Expected: first run `12 passed, 1 skipped`; second run `13 passed`.
+Expected: first run `13 passed, 1 skipped`; second run `14 passed`.
 
 - [ ] **Step 5: Commit**
 
@@ -1626,7 +1680,7 @@ class MultisurveyOutputParser:
 /home/fandrades/miniconda3/envs/feature_step/bin/python -m pytest tests/unittest -v
 ```
 
-Expected: everything green — `58 passed, 1 skipped` (2 + 23 + 17 + 12 + 4, plus the DTO test skipping without the submodule on the path).
+Expected: everything green — `60 passed, 1 skipped` (2 + 24 + 17 + 13 + 4, plus the DTO test skipping without the submodule on the path).
 
 - [ ] **Step 5: Commit**
 
@@ -2010,7 +2064,7 @@ Expected: `OK LateClassifierMultisurvey`. A `ModuleNotFoundError: numexpr` or `a
 /home/fandrades/miniconda3/envs/feature_step/bin/python -m pytest tests/unittest -v
 ```
 
-Expected: `58 passed, 1 skipped` — unchanged from Task 7. If the count changed, `step.py` leaked an import into a pure module.
+Expected: `60 passed, 1 skipped` — unchanged from Task 7. If the count changed, `step.py` leaked an import into a pure module.
 
 - [ ] **Step 4: Commit**
 
@@ -2303,7 +2357,7 @@ Expected: first `1 skipped`; second either `1 passed` or a skip naming the missi
 /home/fandrades/miniconda3/envs/feature_step/bin/python -m pytest tests -v
 ```
 
-Expected: `58 passed, 2 skipped`.
+Expected: `60 passed, 2 skipped`.
 
 - [ ] **Step 4: Commit**
 

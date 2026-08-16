@@ -163,7 +163,7 @@ The offline reference is `~/desktop/pipeline/feature_step/features/offline/`.
 | `probability_writer.CLASSIFIER_IDS` = `[5,6,7,8,9]` | **not ported** | ids come from the DB; the step pins the five *names* instead and resolves ids at startup (decision 6, §6) |
 | `probability_writer.classifier_version_to_smallint` | verbatim | `"2.1.0"` → `210`; strips a `_suffix` on the patch part |
 | `probability_writer._iter_frames` | verbatim | the 5-head mapping; see §6 |
-| `probability_writer.build_probability_rows` | **adapted** | offline is strictly per-oid and raises on a multi-row frame; the step is batched, so melt by oid instead |
+| `probability_writer.build_probability_rows` | **adapted** | offline is strictly per-oid and raises on a multi-row frame; the step is batched, so melt by oid instead, and log-and-drop rather than raise (§8). Vectorised: one `to_dict("records")` per head, `class_id`/`lastmjd` via `.map()`, following the sibling `format_probability_records`. A per-(oid, head) `to_dict` costs ~3 s per 1000-oid batch. |
 | `probability_writer.write_probabilities` | **dropped** | scribe-only (decision 3) |
 | `db.fetch_taxonomy_maps` | adapted | same query, via `PSQLConnection` instead of a raw engine; called with DB-resolved ids rather than the literal `[5..9]` |
 | `classify.load_squidward_model` | **dropped** | `get_class` from config instead (§2) |
@@ -310,14 +310,31 @@ detectable:
   These replace the `-1`-on-miss behaviour rather than layering on it: with the ids
   themselves coming from the DB, a name that does not resolve has no safe fallback.
 - **Per batch, skip and log.** If a class name coming out of the model is absent
-  from its head's map, log an error identifying the oid, classifier id and class
-  name, and drop **that oid's rows for that head**. Do not emit `class_id = -1`,
-  and do not kill the batch — one model/taxonomy drift should not stop the
-  consumer.
+  from its head's map, log an error identifying the classifier id and class name,
+  and drop **that whole head for the batch**. Do not emit `class_id = -1`, and do
+  not kill the batch — one model/taxonomy drift should not stop the consumer.
+
+  The granularity is the head, not the oid: class names are the *columns* of a
+  head's frame, so an unknown name is a frame-wide model/taxonomy drift that is
+  identical for every oid in the batch. Checking per-oid would recompute the same
+  answer once per oid and emit one near-identical error line per oid — thousands
+  of them during exactly the incident the log exists to diagnose. Check once per
+  head, log once.
+
+  An oid missing from the `lastmjd` map *is* per-oid (`probability.lastmjd` is
+  NOT NULL), so those rows drop individually, with the affected oids named in one
+  log line per head.
 - **`can_predict` false** → produce nothing, log, return an empty OutputDTO,
   matching offline `classify_astro_object` and the legacy step.
 - **Messages with no features** (`msg["features"]` is `None`) are filtered out
   before the DTO is built.
+- **Duplicate oids in one batch** are collapsed when the features frame is built,
+  keeping the last message for that oid. Two messages for the same object can
+  land in a single consume batch; left alone they produce two rows colliding on
+  `(oid, sid, classifier_id, class_id)`, and the scribe's highest-`lastmjd`
+  dedup cannot break the tie because both carry the same `lastmjd`. The stamp
+  step does the same (`df[~df.index.duplicated(...)]`). `build_probability_rows`
+  therefore documents a unique-oid-index contract rather than re-checking.
 
 ## 9. Placeholder downstream output
 
