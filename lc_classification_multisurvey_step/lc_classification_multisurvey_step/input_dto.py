@@ -10,6 +10,7 @@ extra_fields round-trip.
 this module — and the unit suite — needs no model dependency.
 """
 import logging
+import math
 
 import pandas as pd
 
@@ -37,51 +38,87 @@ def filter_messages(messages: list, min_detections=None) -> list:
     return kept
 
 
+def _collapse_by_oid(messages: list) -> dict:
+    """{oid: winning message}, one pass, oid cast to int.
+
+    Two messages for the same oid landing in a single consume batch are
+    normally an update carrying a different detection set, not identical
+    duplicates. `feature_step` produces keyed by `str(oid)`, so same-oid
+    messages land on one Kafka partition in offset order, and the LAST message
+    by arrival order really is the newest one — that is why it wins.
+
+    `build_features_frame` and `lastmjd_by_oid` both derive from this single
+    collapsed mapping so they cannot disagree about which message won for a
+    given oid: computing the winner twice, independently, let a duplicate
+    oid's features come from one message while its lastmjd came from another.
+    """
+    collapsed = {}
+    for message in messages:
+        collapsed[int(message["oid"])] = message
+    return collapsed
+
+
 def build_features_frame(messages: list) -> pd.DataFrame:
-    """One row per message, indexed by the bigint oid, columns = feature names.
+    """One row per distinct oid, indexed by the bigint oid, columns = feature names.
 
     The multisurvey feature_step already emits the bigint masterid in `oid` (the
     Avro field is typed string), so this casts with `int()` and calls no idmapper
     — unlike the stamp step, which starts from raw ZTF alerts (design doc §4).
 
-    Duplicate oids within one batch are collapsed, keeping the LAST message for
-    that oid. Two messages for the same object can arrive in a single consume
-    batch; left alone they would yield two probability rows colliding on
-    `(oid, sid, classifier_id, class_id)`, which the scribe's highest-lastmjd
-    dedup cannot break because both carry the same lastmjd. This is what upholds
-    `build_probability_rows`' unique-oid-index contract.
+    Duplicate oids collapse via `_collapse_by_oid`, keeping the winning message
+    for that oid. Left alone, duplicates would yield two probability rows
+    colliding on `(oid, sid, classifier_id, class_id)`, which the scribe's
+    highest-lastmjd dedup cannot break because both carry the same lastmjd.
+    This is what upholds `build_probability_rows`' unique-oid-index contract.
     """
     if not messages:
         frame = pd.DataFrame()
         frame.index.name = "oid"
         return frame
 
+    collapsed = _collapse_by_oid(messages)
     frame = pd.DataFrame(
-        [message["features"] for message in messages],
-        index=[int(message["oid"]) for message in messages],
+        [message["features"] for message in collapsed.values()],
+        index=list(collapsed.keys()),
     )
     frame.index.name = "oid"
-    return frame[~frame.index.duplicated(keep="last")]
+    return frame
 
 
 def lastmjd_by_oid(messages: list) -> dict:
-    """{oid: max detection mjd}. Already MJD — do NOT subtract 2400000.5.
+    """{oid: max detection mjd} for the same winning message as build_features_frame.
 
-    The `detections` array carries forced photometry too (each entry has a
-    `forced` flag), so this is the max over detections and forced together,
-    matching offline `classify._lc_lastmjd`.
+    Already MJD — do NOT subtract 2400000.5. The `detections` array carries
+    forced photometry too (each entry has a `forced` flag), so this is the max
+    over detections and forced together, matching offline `classify._lc_lastmjd`.
+
+    A missing or non-finite (NaN/inf) mjd is skipped rather than compared: `max`
+    is order-sensitive with NaN (`max(nan, x)` is `nan`, `max(x, nan)` is `x`),
+    so a NaN must be filtered out before `max`, not left for `max` to resolve.
     """
+    collapsed = _collapse_by_oid(messages)
     lastmjd = {}
-    for message in messages:
-        mjds = [
-            float(d["mjd"])
-            for d in (message.get("detections") or [])
-            if d.get("mjd") is not None
-        ]
+    missing_oids = []
+    for oid, message in collapsed.items():
+        mjds = []
+        for d in message.get("detections") or []:
+            mjd = d.get("mjd")
+            if mjd is None:
+                continue
+            mjd = float(mjd)
+            if not math.isfinite(mjd):
+                continue
+            mjds.append(mjd)
         if not mjds:
-            log.warning("oid=%s has no detection mjd; it will produce no rows", message["oid"])
+            missing_oids.append(oid)
             continue
-        lastmjd[int(message["oid"])] = max(mjds)
+        lastmjd[oid] = max(mjds)
+    if missing_oids:
+        log.warning(
+            "%d oid(s) have no usable detection mjd; they will produce no rows: %s",
+            len(missing_oids),
+            missing_oids,
+        )
     return lastmjd
 
 

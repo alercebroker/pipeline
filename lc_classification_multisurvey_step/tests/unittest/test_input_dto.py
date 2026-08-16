@@ -53,6 +53,12 @@ class TestFilterMessages:
         assert input_dto.filter_messages(msgs, min_detections=2) == []
         assert len(input_dto.filter_messages(msgs, min_detections=1)) == 1
 
+    def test_missing_forced_key_defaults_to_non_forced(self):
+        # A detection dict with no "forced" key at all must still count toward
+        # min_detections, the same as an explicit forced=False.
+        msgs = [message(oid="1", detections=[{"mjd": 1.0, "candid": "c", "oid": "1"}])]
+        assert len(input_dto.filter_messages(msgs, min_detections=1)) == 1
+
 
 class TestBuildFeaturesFrame:
     def test_one_row_per_message_indexed_by_int_oid(self):
@@ -112,6 +118,53 @@ class TestLastmjdByOid:
     def test_message_without_detections_is_absent(self):
         msgs = [message(oid="1", detections=[]), message(oid="2")]
         assert input_dto.lastmjd_by_oid(msgs) == {2: 60000.0}
+
+    def test_none_mjd_is_skipped(self):
+        msgs = [
+            message(
+                oid="1",
+                detections=[detection(60000.0), {"mjd": None, "forced": False, "candid": "c", "oid": "1"}],
+            )
+        ]
+        assert input_dto.lastmjd_by_oid(msgs) == {1: 60000.0}
+
+    def test_nan_mjd_does_not_leak_through_regardless_of_order(self):
+        # max() is order-sensitive with NaN: max(nan, 60000.0) is nan, but
+        # max(60000.0, nan) is 60000.0. A NaN mjd must never win either way.
+        msgs = [message(oid="1", detections=[detection(float("nan")), detection(60000.0)])]
+        assert input_dto.lastmjd_by_oid(msgs) == {1: 60000.0}
+
+    def test_oids_with_no_usable_mjd_are_logged_once_per_batch(self, caplog):
+        # A batch-wide flood of per-message warnings would bury the signal in
+        # exactly the incident the log exists to diagnose (see probabilities.py's
+        # equivalent aggregation for the same reasoning).
+        msgs = [message(oid="1", detections=[]), message(oid="2", detections=[])]
+
+        with caplog.at_level("WARNING"):
+            result = input_dto.lastmjd_by_oid(msgs)
+
+        assert result == {}
+        warnings = [r for r in caplog.records if r.levelname == "WARNING"]
+        assert len(warnings) == 1
+        assert "1" in warnings[0].message and "2" in warnings[0].message
+
+
+class TestDuplicateOidConsistency:
+    def test_features_and_lastmjd_derive_from_the_same_winning_message(self):
+        # The winning message for oid 7 (last by arrival order) has an empty
+        # detections list. build_features_frame and lastmjd_by_oid must agree
+        # on which message won: the emitted row must not pair the winner's
+        # features with the loser's stale lastmjd.
+        msgs = [
+            message(oid="7", features={"a": 1.0}, detections=[detection(60000.0)]),
+            message(oid="7", features={"a": 2.0}, detections=[]),
+        ]
+
+        frame = input_dto.build_features_frame(msgs)
+        lastmjd = input_dto.lastmjd_by_oid(msgs)
+
+        assert frame.loc[7, "a"] == 2.0  # winner's features
+        assert 7 not in lastmjd  # winner has no detections -> absent, not msg1's stale value
 
 
 class TestCreateInputDto:
