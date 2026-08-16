@@ -187,7 +187,12 @@ __pycache__/
 .coverage
 htmlcov/
 *.egg-info/
+config.yaml
+config.yml
+config.*.yaml
 ```
+
+The `config.*` rules match every sibling step (`correction_multisurvey_step`, `magstats_multisurvey_step`, `feature_step`, and the two stamp steps all ignore their local config). `scripts/run_step.py` reads `/config/config.yaml` when `CONFIG_FROM_YAML` is set, so a developer running this step locally will have a credential-bearing `config.yaml` in this directory.
 
 `lc_classification_multisurvey_step/README.md`:
 
