@@ -70,8 +70,15 @@ class TestGetClassifierIdsByName:
     def test_names_are_passed_as_a_bound_parameter(self):
         conn = FakeConnection(CLASSIFIER_ROWS)
         db.get_classifier_ids_by_name(["base", "base_top"], conn)
-        _statement, params = conn.session_obj.executed[0]
+        statement, params = conn.session_obj.executed[0]
         assert params == {"names": ["base", "base_top"]}
+        # The names must reach the DB as a bound parameter, never interpolated.
+        # An expanding bindparam defers placeholder rendering to execution time,
+        # so an unexecuted statement shows SQLAlchemy's POSTCOMPILE token rather
+        # than ":names" — its presence, plus the absence of the literal values,
+        # is what proves the query is parameterised.
+        assert "__[POSTCOMPILE_names]" in statement
+        assert "base" not in statement
 
     def test_missing_name_is_simply_absent(self):
         conn = FakeConnection([CLASSIFIER_ROWS[0]])
@@ -116,8 +123,11 @@ class TestGetTaxonomyByClassifierId:
     def test_ids_are_passed_as_a_bound_parameter(self):
         conn = FakeConnection(TAXONOMY_ROWS)
         db.get_taxonomy_by_classifier_id([50, 60], conn)
-        _statement, params = conn.session_obj.executed[0]
+        statement, params = conn.session_obj.executed[0]
         assert params == {"classifier_ids": [50, 60]}
+        # See the note in test_names_are_passed_as_a_bound_parameter.
+        assert "__[POSTCOMPILE_classifier_ids]" in statement
+        assert "50" not in statement
 
     def test_classifier_with_no_rows_is_absent(self):
         conn = FakeConnection([TAXONOMY_ROWS[0]])
@@ -131,3 +141,77 @@ class TestGetTaxonomyByClassifierId:
 
         with pytest.raises(RuntimeError, match="connection refused"):
             db.get_taxonomy_by_classifier_id([50], Boom())
+
+
+# --- resolve_classifiers ---------------------------------------------------
+
+FIVE_NAMES = ["b", "b_top", "b_transient", "b_stochastic", "b_periodic"]
+
+
+def classifier_rows(version="2.1.0", names=None, start_id=41):
+    """One classifier row per name, with ids that are deliberately not 5-9."""
+    names = names if names is not None else FIVE_NAMES
+    return [
+        {"classifier_id": start_id + i, "classifier_name": n, "classifier_version": version}
+        for i, n in enumerate(names)
+    ]
+
+
+def taxonomy_rows(ids):
+    return [
+        {"classifier_id": cid, "class_id": 0, "class_name": f"class{cid}"} for cid in ids
+    ]
+
+
+ALL_IDS = [41, 42, 43, 44, 45]
+
+
+class TestResolveClassifiers:
+    def test_returns_ids_by_name_and_taxonomy_by_id(self):
+        conn = FakeConnection(classifier_rows(), taxonomy_rows(ALL_IDS))
+
+        ids, taxonomy = db.resolve_classifiers(FIVE_NAMES, "2.1.0", conn)
+
+        assert ids == dict(zip(FIVE_NAMES, ALL_IDS))
+        assert taxonomy == {cid: {f"class{cid}": 0} for cid in ALL_IDS}
+
+    def test_taxonomy_is_queried_with_the_resolved_ids(self):
+        conn = FakeConnection(classifier_rows(), taxonomy_rows(ALL_IDS))
+        db.resolve_classifiers(FIVE_NAMES, "2.1.0", conn)
+        _statement, params = conn.session_obj.executed[1]
+        assert params == {"classifier_ids": ALL_IDS}
+
+    def test_missing_classifier_name_raises_and_names_it(self):
+        conn = FakeConnection(classifier_rows(names=FIVE_NAMES[:4]), taxonomy_rows(ALL_IDS))
+
+        with pytest.raises(ValueError) as exc:
+            db.resolve_classifiers(FIVE_NAMES, "2.1.0", conn)
+
+        assert "b_periodic" in str(exc.value)
+
+    def test_empty_taxonomy_for_one_head_raises_and_names_it(self):
+        conn = FakeConnection(classifier_rows(), taxonomy_rows(ALL_IDS[:4]))
+
+        with pytest.raises(ValueError) as exc:
+            db.resolve_classifiers(FIVE_NAMES, "2.1.0", conn)
+
+        assert "45" in str(exc.value)
+
+    def test_version_mismatch_raises_and_reports_both_versions(self):
+        conn = FakeConnection(classifier_rows(version="2.0.0"), taxonomy_rows(ALL_IDS))
+
+        with pytest.raises(ValueError) as exc:
+            db.resolve_classifiers(FIVE_NAMES, "2.1.0", conn)
+
+        assert "2.0.0" in str(exc.value)
+        assert "2.1.0" in str(exc.value)
+
+    def test_duplicate_name_raises(self):
+        rows = classifier_rows()
+        rows.append(
+            {"classifier_id": 99, "classifier_name": "b", "classifier_version": "2.1.0"}
+        )
+        conn = FakeConnection(rows, taxonomy_rows(ALL_IDS + [99]))
+
+        with pytest.raises(ValueError, match="more than one row"):
+            db.resolve_classifiers(FIVE_NAMES, "2.1.0", conn)

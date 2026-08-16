@@ -115,3 +115,53 @@ def get_taxonomy_by_classifier_id(classifier_ids: list, psql_connection) -> dict
                 row["class_id"]
             )
     return maps
+
+
+def resolve_classifiers(classifier_names: list, model_version: str, psql_connection):
+    """Resolve the head names to ids and fetch their taxonomy, or refuse to start.
+
+    Returns ({classifier_name: classifier_id}, {classifier_id: {class_name: class_id}}).
+
+    Implements the design doc's §8 startup assertions. All four raise: an
+    unseeded, partially-seeded, ambiguous or version-skewed classifier/taxonomy is
+    a deploy error, and a step that started anyway would silently drop every
+    probability it produced or write it against the wrong classifier.
+
+      1. every head name resolved to a row          (here)
+      2. no name resolved to more than one row      (get_classifier_ids_by_name)
+      3. every resolved id has a non-empty taxonomy (here)
+      4. each row's classifier_version == model_version (here)
+    """
+    found = get_classifier_ids_by_name(classifier_names, psql_connection)
+
+    missing = [name for name in classifier_names if name not in found]
+    if missing:
+        raise ValueError(
+            f"classifier table has no row for {missing}; the BHRF classifier seed "
+            "is missing or incomplete in this schema. Refusing to start."
+        )
+
+    skewed = {
+        name: row["classifier_version"]
+        for name, row in found.items()
+        if row["classifier_version"] != model_version
+    }
+    if skewed:
+        raise ValueError(
+            f"classifier.classifier_version {skewed} does not match MODEL_VERSION "
+            f"'{model_version}'; the seeded taxonomy may not match the model's "
+            "classes_. Refusing to start."
+        )
+
+    classifier_ids = {name: found[name]["classifier_id"] for name in classifier_names}
+    taxonomy_maps = get_taxonomy_by_classifier_id(list(classifier_ids.values()), psql_connection)
+
+    unseeded = [cid for cid in classifier_ids.values() if not taxonomy_maps.get(cid)]
+    if unseeded:
+        raise ValueError(
+            f"taxonomy table has no rows for classifier_id(s) {unseeded}; "
+            "every probability for those heads would be dropped. Refusing to start."
+        )
+
+    log.info("resolved classifier ids %s", classifier_ids)
+    return classifier_ids, taxonomy_maps
