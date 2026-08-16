@@ -93,3 +93,169 @@ class TestIterHeadFrames:
         got = dict(p.iter_head_frames(dto, "base"))
         assert got["base"] is not None
         assert all(got[n] is None for n in p.head_names("base")[1:])
+
+
+# --- build_probability_rows ------------------------------------------------
+
+NAMES = p.head_names("base")
+IDS = {NAMES[0]: 50, NAMES[1]: 60, NAMES[2]: 70, NAMES[3]: 80, NAMES[4]: 90}
+TAXONOMY = {
+    50: {"SNIa": 0, "AGN": 1, "LPV": 2},
+    60: {"Transient": 0, "Stochastic": 1, "Periodic": 2},
+    70: {"SNIa": 0, "SLSN": 1},
+    80: {"AGN": 0, "QSO": 1},
+    90: {"LPV": 0, "EA": 1},
+}
+# Ids are deliberately NOT 5-9: a reintroduced hardcode must fail these tests.
+
+
+def build(dto, lastmjd_map, ids=IDS, taxonomy=TAXONOMY, **kw):
+    return p.build_probability_rows(
+        dto, lastmjd_map, ids, taxonomy, base_name="base", version="2.1.0", **kw
+    )
+
+
+class TestBuildProbabilityRows:
+    def test_empty_output_dto_yields_no_rows(self):
+        assert build(make_dto(), {}) == []
+
+    def test_none_output_dto_yields_no_rows(self):
+        assert build(None, {}) == []
+
+    def test_flat_head_row_contract(self):
+        dto = make_dto(flat=frame([123], {"SNIa": [0.7], "AGN": [0.2], "LPV": [0.1]}))
+
+        rows = build(dto, {123: 60000.5})
+
+        assert len(rows) == 3
+        by_class = {r["class_id"]: r for r in rows}
+        assert by_class[0] == {
+            "oid": 123,
+            "sid": 0,
+            "classifier_id": 50,
+            "classifier_version": 210,
+            "class_id": 0,
+            "probability": pytest.approx(0.7),
+            "ranking": 1,
+            "lastmjd": 60000.5,
+        }
+        assert set(rows[0]) == {
+            "oid", "sid", "classifier_id", "classifier_version",
+            "class_id", "probability", "ranking", "lastmjd",
+        }
+
+    def test_sid_is_configurable(self):
+        dto = make_dto(flat=frame([123], {"SNIa": [1.0]}))
+        rows = build(dto, {123: 1.0}, sid=3)
+        assert {r["sid"] for r in rows} == {3}
+
+    def test_melts_a_multi_oid_frame(self):
+        dto = make_dto(flat=frame([1, 2], {"SNIa": [0.6, 0.1], "AGN": [0.4, 0.9]}))
+
+        rows = build(dto, {1: 100.0, 2: 200.0})
+
+        assert len(rows) == 4
+        assert {r["oid"] for r in rows} == {1, 2}
+        oid2 = [r for r in rows if r["oid"] == 2]
+        assert {r["lastmjd"] for r in oid2} == {200.0}
+        # ranking is per (oid, head): oid 2's AGN wins even though oid 1's SNIa is higher
+        agn_id = TAXONOMY[50]["AGN"]
+        assert [r["ranking"] for r in oid2 if r["class_id"] == agn_id] == [1]
+
+    def test_ranking_is_dense_descending_within_oid_and_head(self):
+        dto = make_dto(flat=frame([1], {"SNIa": [0.5], "AGN": [0.5], "LPV": [0.0]}))
+
+        rows = build(dto, {1: 1.0})
+
+        rank_by_class = {r["class_id"]: r["ranking"] for r in rows}
+        assert rank_by_class[TAXONOMY[50]["SNIa"]] == 1
+        assert rank_by_class[TAXONOMY[50]["AGN"]] == 1  # tie -> same dense rank
+        assert rank_by_class[TAXONOMY[50]["LPV"]] == 2  # dense, not 3
+
+    def test_all_five_heads_are_emitted(self):
+        dto = make_dto(
+            flat=frame([1], {"SNIa": [1.0]}),
+            top=frame([1], {"Transient": [1.0]}),
+            transient=frame([1], {"SNIa": [1.0]}),
+            stochastic=frame([1], {"AGN": [1.0]}),
+            periodic=frame([1], {"LPV": [1.0]}),
+        )
+
+        rows = build(dto, {1: 1.0})
+
+        assert sorted(r["classifier_id"] for r in rows) == [50, 60, 70, 80, 90]
+
+    def test_missing_and_empty_heads_are_skipped(self):
+        dto = make_dto(
+            flat=frame([1], {"SNIa": [1.0]}),
+            top=None,
+            transient=frame([], {"SNIa": []}),
+        )
+
+        rows = build(dto, {1: 1.0})
+
+        assert {r["classifier_id"] for r in rows} == {50}
+
+    def test_unknown_class_drops_that_oid_for_that_head_only(self, caplog):
+        dto = make_dto(
+            flat=frame([1, 2], {"SNIa": [0.5, 0.5], "Nonsense": [0.5, 0.5]}),
+            top=frame([1, 2], {"Transient": [1.0, 1.0]}),
+        )
+
+        with caplog.at_level("ERROR"):
+            rows = build(dto, {1: 1.0, 2: 2.0})
+
+        # the flat head is dropped for both oids, the top head survives for both
+        assert {r["classifier_id"] for r in rows} == {60}
+        assert len(rows) == 2
+        assert "Nonsense" in caplog.text
+
+    def test_known_classes_keep_every_oid(self):
+        # Counterpart to the test above: with no unknown class name, the (oid, head)
+        # drop must not fire for anyone.
+        dto = make_dto(flat=frame([1, 2], {"SNIa": [0.5, 0.5], "AGN": [0.5, 0.5]}))
+
+        rows = build(dto, {1: 1.0, 2: 2.0})
+
+        assert {r["oid"] for r in rows} == {1, 2}
+        assert len(rows) == 4
+
+    def test_oid_without_lastmjd_is_dropped_and_logged(self, caplog):
+        dto = make_dto(flat=frame([1, 2], {"SNIa": [1.0, 1.0]}))
+
+        with caplog.at_level("ERROR"):
+            rows = build(dto, {1: 1.0})
+
+        assert {r["oid"] for r in rows} == {1}
+        assert "2" in caplog.text
+
+    def test_head_with_no_taxonomy_map_is_dropped_and_logged(self, caplog):
+        dto = make_dto(flat=frame([1], {"SNIa": [1.0]}), top=frame([1], {"Transient": [1.0]}))
+        taxonomy = {50: TAXONOMY[50]}  # no map for the top head's id
+
+        with caplog.at_level("ERROR"):
+            rows = p.build_probability_rows(
+                dto, {1: 1.0}, IDS, taxonomy, base_name="base", version="2.1.0"
+            )
+
+        assert {r["classifier_id"] for r in rows} == {50}
+        assert "60" in caplog.text
+
+    def test_head_with_no_resolved_id_is_dropped_and_logged(self, caplog):
+        dto = make_dto(flat=frame([1], {"SNIa": [1.0]}), top=frame([1], {"Transient": [1.0]}))
+        ids = {NAMES[0]: 50}  # top head never resolved
+
+        with caplog.at_level("ERROR"):
+            rows = p.build_probability_rows(
+                dto, {1: 1.0}, ids, TAXONOMY, base_name="base", version="2.1.0"
+            )
+
+        assert {r["classifier_id"] for r in rows} == {50}
+        assert NAMES[1] in caplog.text
+
+    def test_values_are_native_python_types_for_json_serialisation(self):
+        import json
+
+        dto = make_dto(flat=frame([1], {"SNIa": [0.5], "AGN": [0.5]}))
+        rows = build(dto, {1: 1.0})
+        json.dumps(rows)  # numpy int64/float64 would raise here
