@@ -345,13 +345,52 @@ detectable:
   matching offline `classify_astro_object` and the legacy step.
 - **Messages with no features** (`msg["features"]` is `None`) are filtered out
   before the DTO is built.
-- **Duplicate oids in one batch** are collapsed when the features frame is built,
-  keeping the last message for that oid. Two messages for the same object can
-  land in a single consume batch; left alone they produce two rows colliding on
-  `(oid, sid, classifier_id, class_id)`, and the scribe's highest-`lastmjd`
-  dedup cannot break the tie because both carry the same `lastmjd`. The stamp
-  step does the same (`df[~df.index.duplicated(...)]`). `build_probability_rows`
-  therefore documents a unique-oid-index contract rather than re-checking.
+- **Messages whose `oid` will not parse as an integer** are dropped and logged,
+  one aggregated warning per batch naming the offending raw values. This is the
+  one input-shape guard the step carries, and it exists because `oid` is the one
+  field where Avro is weaker than the code's assumption: the field is typed plain
+  `string` (§7), and Avro cannot constrain a string to digits, so validity rests
+  on a producer convention rather than on the wire format. Every other field the
+  step reads — `detections`, its `mjd`, `features` — is pinned by the schema
+  (`array`, non-nullable `double`, and a fixed 209-field record), so shape guards
+  there would defend against messages the deserializer already rejects, and the
+  step deliberately carries none.
+
+  Note this risk is *introduced* by the multisurvey port rather than inherited:
+  the legacy `lc_classification_step` never casts `oid`, indexing its frame by
+  the raw string. The cast is new here because multisurvey oids are bigints
+  (§7). Without the guard, one malformed oid raises inside `int()` and kills the
+  whole batch — and on a Kafka consumer it re-raises on every redelivery, so the
+  partition stalls rather than merely losing a message.
+- **Detections whose `mjd` is non-finite** (NaN or ±inf) are skipped when
+  `lastmjd` is computed; an oid left with no usable mjd is dropped, again with
+  one aggregated warning per batch. NaN matters because `max()` is order-
+  sensitive with it (`max(nan, x)` is `nan`, `max(x, nan)` is `x`), which would
+  otherwise make the result depend on detection ordering. `inf` matters more:
+  a NaN `lastmjd` is caught downstream by the `.isna()` check above, but an
+  `inf` is a valid `double precision` value that Postgres accepts and that then
+  wins the scribe's highest-`lastmjd` dedup permanently — no later, correct
+  message could ever displace it.
+- **Duplicate oids in one batch** are collapsed in a single pass that picks one
+  winning message per oid — the last, by arrival order — from which *both* the
+  features frame and the `lastmjd` map are derived. Two messages for the same
+  object can land in a single consume batch; left alone they produce two rows
+  colliding on `(oid, sid, classifier_id, class_id)`. The stamp step does the
+  same (`df[~df.index.duplicated(...)]`), as does the legacy step
+  (`drop_duplicates("oid", keep="last")`). `build_probability_rows` therefore
+  documents a unique-oid-index contract rather than re-checking.
+
+  Last-wins is correct because `feature_step` produces keyed by `str(oid)`, so
+  same-oid messages land on one partition in offset order and the last really is
+  the newest. (It is *not* because duplicates carry the same `lastmjd` — they
+  normally do not, being updates with different detection sets.)
+
+  The collapse must happen once, not once per derived structure. Computing the
+  frame and the `lastmjd` map in two independent passes lets them disagree: if
+  the winning message carries an empty `detections` list — legal, the field
+  defaults to `[]` — a frame-side "last wins" rule pairs the winner's features
+  with the *loser's* timestamp. Deriving both from one collapsed mapping removes
+  that class of bug by construction rather than by keeping two rules in sync.
 
 ## 9. Placeholder downstream output
 
