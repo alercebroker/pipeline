@@ -20,12 +20,25 @@ log = logging.getLogger(__name__)
 def filter_messages(messages: list, min_detections=None) -> list:
     """Drop messages the classifier cannot or should not consume.
 
+    - unparseable oid -> dropped before anything else touches int(oid). `oid`
+      is a plain Avro "string": the schema cannot constrain it to digits, so
+      its validity rests on a producer convention, not the wire format. A
+      message whose oid does not convert would otherwise crash int(oid) inside
+      _collapse_by_oid and take the whole batch down, repeating on every Kafka
+      redelivery (design §8: log and drop rather than kill the batch). Bad
+      oids are aggregated into one warning per batch naming the raw values.
     - no features (`features` is None or empty) -> cannot classify (design §8);
     - fewer than `min_detections` *non-forced* detections -> optional pre-filter,
       counted the way the legacy step counts it (design §13). Unset by default.
     """
     kept = []
+    bad_oids = []
     for message in messages:
+        try:
+            int(message["oid"])
+        except ValueError:
+            bad_oids.append(message["oid"])
+            continue
         if not message.get("features"):
             continue
         if min_detections is not None:
@@ -35,6 +48,12 @@ def filter_messages(messages: list, min_detections=None) -> list:
             if n_detections < min_detections:
                 continue
         kept.append(message)
+    if bad_oids:
+        log.warning(
+            "%d message(s) had an oid that does not parse as int; dropped: %s",
+            len(bad_oids),
+            bad_oids,
+        )
     return kept
 
 

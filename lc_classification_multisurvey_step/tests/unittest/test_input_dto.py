@@ -60,6 +60,39 @@ class TestFilterMessages:
         assert len(input_dto.filter_messages(msgs, min_detections=1)) == 1
 
 
+class TestFilterMessagesBadOid:
+    # `oid` is a plain Avro "string" — the schema cannot constrain it to
+    # digits, so its validity rests on a producer convention, not the wire
+    # format. Records with these oids deserialize fine and then crash int().
+    # One such message must not take down the whole batch (design §8): drop
+    # it here, before it ever reaches _collapse_by_oid.
+    @pytest.mark.parametrize("bad_oid", ["ZTF21abcdefg", "", "1e5"])
+    def test_drops_messages_with_unparseable_oid(self, bad_oid):
+        kept = input_dto.filter_messages([message(oid=bad_oid)])
+        assert kept == []
+
+    def test_bad_oid_does_not_take_down_the_rest_of_the_batch(self):
+        msgs = [message(oid="ZTF21abcdefg"), message(oid="2")]
+
+        kept = input_dto.filter_messages(msgs)
+
+        assert [m["oid"] for m in kept] == ["2"]
+        frame = input_dto.build_features_frame(kept)
+        lastmjd = input_dto.lastmjd_by_oid(kept)
+        assert list(frame.index) == [2]
+        assert 2 in lastmjd
+
+    def test_bad_oids_are_logged_once_per_batch_naming_the_raw_value(self, caplog):
+        with caplog.at_level("WARNING"):
+            kept = input_dto.filter_messages([message(oid="ZTF21abcdefg"), message(oid="")])
+
+        assert kept == []
+        warnings = [r for r in caplog.records if r.levelname == "WARNING"]
+        assert len(warnings) == 1
+        assert "ZTF21abcdefg" in warnings[0].message
+        assert "''" in warnings[0].message
+
+
 class TestBuildFeaturesFrame:
     def test_one_row_per_message_indexed_by_int_oid(self):
         msgs = [
@@ -128,10 +161,15 @@ class TestLastmjdByOid:
         ]
         assert input_dto.lastmjd_by_oid(msgs) == {1: 60000.0}
 
-    def test_nan_mjd_does_not_leak_through_regardless_of_order(self):
+    @pytest.mark.parametrize("bad_mjd", [float("nan"), float("inf")])
+    def test_nan_mjd_does_not_leak_through_regardless_of_order(self, bad_mjd):
         # max() is order-sensitive with NaN: max(nan, 60000.0) is nan, but
-        # max(60000.0, nan) is 60000.0. A NaN mjd must never win either way.
-        msgs = [message(oid="1", detections=[detection(float("nan")), detection(60000.0)])]
+        # max(60000.0, nan) is 60000.0. Neither NaN nor inf may win either way.
+        # inf is the more dangerous of the two: a NaN lastmjd gets dropped
+        # downstream by probabilities.py's isna() check, but an inf lastmjd is
+        # accepted by Postgres double precision and would win the scribe's
+        # highest-lastmjd dedup forever.
+        msgs = [message(oid="1", detections=[detection(bad_mjd), detection(60000.0)])]
         assert input_dto.lastmjd_by_oid(msgs) == {1: 60000.0}
 
     def test_oids_with_no_usable_mjd_are_logged_once_per_batch(self, caplog):
