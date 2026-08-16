@@ -1956,7 +1956,13 @@ class LateClassifierMultisurvey(GenericStep):
         # Startup, in order: names -> ids, then ids -> taxonomy. Both are
         # read-only and cached; the connection is not used again. Any of the four
         # §8 assertions failing raises here and the step refuses to start.
-        self.db = PSQLConnection(config["PSQL_CONFIG"])
+        #
+        # NullPool because this connection serves exactly two queries and is then
+        # idle for the life of the consumer. With the default QueuePool the
+        # startup checkout is returned to the pool rather than closed, holding an
+        # idle Postgres connection per replica against max_connections for
+        # nothing. correction_multisurvey_step/step.py does the same.
+        self.db = PSQLConnection(config["PSQL_CONFIG"], poolclass="NullPool")
         self.classifier_ids, self.taxonomy_maps = resolve_classifiers(
             head_names(self.classifier_name), self.model_version, self.db
         )
@@ -2384,8 +2390,8 @@ Do not touch these while executing this plan; if one seems necessary, stop and r
 
 Raise these in review rather than rediscovering them:
 
-1. **`get_classifier_ids_by_name` returns `dict[str, dict]`**, not `dict[str, int]` — the row's `classifier_version` is needed for §8 assertion 4. The spec was updated to match.
-2. **Assertion 2 (duplicate names) lives in the reader, not `resolve_classifiers`** — a duplicate is only visible before the rows collapse into a name-keyed dict. Assertions 1, 3 and 4 are in `resolve_classifiers`.
+1. **`get_classifier_ids_by_name` returns `dict[str, dict]`**, not `dict[str, int]` — the row's `classifier_version` is needed for the §8 version-skew assertion. The spec was updated to match.
+2. **The duplicate-name assertion lives in the reader, not `resolve_classifiers`** — a duplicate is only visible before the rows collapse into a name-keyed dict. The other four §8 assertions are in `resolve_classifiers`.
 3. **`probabilities.py` also drops a head with no resolved id / no taxonomy map per batch**, logging rather than raising. Startup already guarantees both exist, so this is defence in depth for a caller that skipped `resolve_classifiers`.
 4. **No `credentials.py`-based secret manager path is wired into `settings.py`** — `PSQL_CONFIG` is read straight from env vars. `credentials.py` is copied for parity with the sibling steps but unused; the spec's §10 lists only `PSQL_*` env vars, so this matches it.
 5. **`PRODUCER_CONFIG` is empty unless `PRODUCER_SERVER` is set**, letting apf fall back to `DefaultProducer`. The spec says the producer is "configured but the shape is not a contract"; configuring a Kafka producer with no schema would fail at startup, so it is opt-in instead.

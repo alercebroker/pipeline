@@ -294,18 +294,33 @@ returns `-1` on a miss, which either violates the FK or stores a garbage class.
 Offline instead raises. This step splits the difference by when the problem is
 detectable:
 
-- **Startup, fail fast.** Four assertions, all raising and refusing to start. An
-  unseeded, partially-seeded or ambiguous `classifier`/`taxonomy` is a deploy
-  error, and a step that starts anyway would silently drop every probability it
-  produces or write it against the wrong classifier.
-  1. All five head names in §6 resolved to a row. Raise naming the missing ones.
-  2. No name resolved to more than one row.
-  3. Every resolved id has a non-empty taxonomy map.
-  4. Each row's `classifier_version` equals `MODEL_VERSION`. A DB row saying
+- **Startup, fail fast.** Five assertions, all raising and refusing to start. An
+  unseeded, partially-seeded, ambiguous or version-skewed `classifier`/`taxonomy`
+  is a deploy error, and a step that starts anyway would silently drop every
+  probability it produces or write it against the wrong classifier.
+  1. `MODEL_VERSION` parses to a non-zero smallint. Checked first, because it
+     needs no DB round trip. `classifier_version_to_smallint` returns `0` for
+     anything that is not three dot-separated parts, so a `MODEL_VERSION` of
+     `dev` — matched by an equally malformed seeded `classifier_version`, which
+     passes assertion 5 — would write `classifier_version = 0` on every row for
+     the life of the deploy. That is the same silent-garbage failure this section
+     exists to prevent, on a different column.
+  2. All five head names in §6 resolved to a row. Raise naming the missing ones.
+  3. No name resolved to more than one row.
+  4. Every resolved id has a non-empty taxonomy map. Raise naming the *heads*,
+     not just the ids — ids are DB-resolved and not assumed to be 5–9, so an id
+     alone does not tell an operator in a crashloop which head is unseeded.
+  5. Each row's `classifier_version` equals `MODEL_VERSION`. A DB row saying
      `2.1.0` while `MODEL_PATH` points at a different artifact means the seeded
      taxonomy may not match the model's `classes_`, which is exactly the
      silent-garbage-class failure the class-name lookup exists to prevent.
-     (See §13 — this is the one assertion that may be too strict in practice.)
+     Checked before the taxonomy query, so a version-skewed deploy fails without
+     a second round trip. (See §13 — this is the one assertion that may be too
+     strict in practice.)
+
+  These messages are the operator interface for a step that will not start, so
+  each names the offending value, states what the consequence would have been,
+  and ends with "Refusing to start."
 
   These replace the `-1`-on-miss behaviour rather than layering on it: with the ids
   themselves coming from the DB, a name that does not resolve has no safe fallback.
@@ -323,7 +338,9 @@ detectable:
 
   An oid missing from the `lastmjd` map *is* per-oid (`probability.lastmjd` is
   NOT NULL), so those rows drop individually, with the affected oids named in one
-  log line per head.
+  log line per head. An oid whose mapped `lastmjd` is NaN drops the same way —
+  the column is NOT NULL, so a NaN is as unusable as a missing key, and the
+  vectorised `.isna()` check treats them alike deliberately.
 - **`can_predict` false** → produce nothing, log, return an empty OutputDTO,
   matching offline `classify_astro_object` and the legacy step.
 - **Messages with no features** (`msg["features"]` is `None`) are filtered out
