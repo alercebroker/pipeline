@@ -64,13 +64,36 @@ class LateClassifierMultisurvey(GenericStep):
     def _empty_output() -> OutputDTO:
         return OutputDTO(pd.DataFrame(), {"top": pd.DataFrame(), "children": {}})
 
+    def _drop_batch(self, what: str, error: Exception) -> Tuple[OutputDTO, dict]:
+        """Log an unexpected failure and drop the batch (design doc §8).
+
+        Returns the empty-output tuple so the step produces nothing, commits, and
+        moves on. Letting the exception escape instead would only log and re-raise
+        (apf `core/step.py`), exiting the process with the offset uncommitted —
+        Kafka then redelivers the same batch, which fails identically, and the
+        partition stalls forever on one poison message.
+        """
+        self.logger.error(f"{what} for this batch, dropping it: {error}")
+        self.logger.error(traceback.format_exc())
+        return self._empty_output(), {}
+
     def execute(self, messages: List[dict]) -> Tuple[OutputDTO, dict]:
-        kept = filter_messages(messages, self.min_detections)
+        try:
+            kept = filter_messages(messages, self.min_detections)
+        except Exception as error:
+            return self._drop_batch("Filtering failed", error)
+
         self.logger.info(f"Classifying {len(kept)}/{len(messages)} messages")
         if not kept:
             return self._empty_output(), {}
 
-        dto = create_input_dto(kept)
+        try:
+            dto = create_input_dto(kept)
+        except Exception as error:
+            return self._drop_batch("Building the input DTO failed", error)
+
+        # Deliberately unguarded: `can_predict` is null checks over the features
+        # frame and has no failure mode of its own.
         can_predict, reason = self.model.can_predict(dto)
         if not can_predict:
             self.logger.warning(f"Model cannot predict this batch: {reason}")
@@ -78,12 +101,15 @@ class LateClassifierMultisurvey(GenericStep):
 
         try:
             output_dto = self.model.predict(dto)
-        except Exception as e:
-            self.logger.error(f"Prediction failed for this batch: {e}")
-            self.logger.error(traceback.format_exc())
-            return self._empty_output(), {}
+        except Exception as error:
+            return self._drop_batch("Prediction failed", error)
 
-        return output_dto, lastmjd_by_oid(kept)
+        try:
+            lastmjd_map = lastmjd_by_oid(kept)
+        except Exception as error:
+            return self._drop_batch("Computing lastmjd failed", error)
+
+        return output_dto, lastmjd_map
 
     def post_execute(self, result: Tuple[OutputDTO, dict]) -> Tuple[OutputDTO, dict]:
         output_dto, lastmjd_map = result
@@ -104,20 +130,25 @@ class LateClassifierMultisurvey(GenericStep):
 
         Envelope matches stamp_classifier_2025_multisurvey_step and is accepted by
         scribe_multisurvey's `decode.command_factory` (design doc §7).
+
+        No explicit flush here. apf's `_post_produce` drains every producer it
+        finds on the step before the consumer offset is committed, and the
+        `KafkaProducer.flush` it calls honours `FLUSH_TIMEOUT` and raises
+        `BufferError` rather than committing over undelivered writes. Reaching
+        past it to `self.scribe_producer.producer.flush()` — as the older sibling
+        steps do — bypasses both guards: it ignores `FLUSH_TIMEOUT`, blocks for
+        the full `message.timeout.ms` when the broker is down, and reports the
+        outage as a `post_execute` error.
         """
         if not rows:
             return
 
-        last_index = len(rows) - 1
-        for index, row in enumerate(rows):
+        for row in rows:
             command = {"step": "update-probability", "survey": "ztf", "payload": row}
             self.scribe_producer.produce(
                 {"payload": json.dumps(command)},
                 key=str(row["oid"]).encode("utf-8"),
-                on_delivery=None,
             )
-            if index == last_index:
-                self.scribe_producer.producer.flush()
 
         self.logger.info(f"Produced {len(rows)} probability rows to the scribe")
 
@@ -128,7 +159,10 @@ class LateClassifierMultisurvey(GenericStep):
         ).value
 
     def tear_down(self):
+        # No `else: self.consumer.__del__()`. `__del__` and `teardown` are defined
+        # only on KafkaConsumer, so the sibling steps' else-branch raises
+        # AttributeError on a JSON/AVRO replay consumer, which `_tear_down`
+        # re-raises before `_write_success()` runs. Nothing is lost by omitting
+        # it: KafkaConsumer.__del__ only calls teardown() anyway.
         if isinstance(self.consumer, KafkaConsumer):
             self.consumer.teardown()
-        else:
-            self.consumer.__del__()
