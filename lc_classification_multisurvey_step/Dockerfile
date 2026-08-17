@@ -17,7 +17,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 RUN pip install poetry
 COPY lc_classification_multisurvey_step/pyproject.toml /app/
-# Requires apf >= commit 49a95d98b, which added GenericStep._flush_producers.
+# Requires apf >= commit 3cdde14a4, which added GenericStep._flush_producers.
 # step.py's produce_scribe does no manual flush and relies on the framework
 # flushing every producer before the offset commit; on an older apf, scribe
 # writes would be committed over and lost silently on pod deletion.
