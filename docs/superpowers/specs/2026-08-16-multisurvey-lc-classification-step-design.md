@@ -480,17 +480,31 @@ Pure-function unit tests, following the offline test layout
   **not** 5–9, so a reintroduced hardcode fails the test.
 
 **Equivalence test against the offline reference.** The step's row builder and
-offline `probability_writer.build_probability_rows` must agree. For a handful of
-real OIDs, run the offline classifier, feed the same `OutputDTO` through both row
-builders, and assert the row sets are identical modulo ordering. Offline hardcodes
-`CLASSIFIER_IDS = [5..9]`, so the comparison holds only when the target DB actually
-allocated those ids — the test asserts that precondition explicitly (via
-`get_classifier_ids_by_name`) and skips with a clear message otherwise, rather than
-failing on an id mismatch that is not a port defect. This is the test
+offline `probability_writer.build_probability_rows` must agree. This is the test
 that actually protects the port — the unit tests above only check the port's
-internal consistency. It needs the `alerce_classifiers` submodule initialised and
-`MODEL_PATH` set, so it is marked as an opt-in integration test, not part of the
-default unit run.
+internal consistency.
+
+As built (`tests/integration/test_offline_equivalence.py`), it feeds **one
+synthetic single-oid `OutputDTO`** through both row builders and asserts the row
+sets are identical modulo ordering, comparing all eight fields. Offline hardcodes
+`CLASSIFIER_IDS = [5..9]` while the step resolves ids from the DB, so the test
+binds the step's head names to those same ids. An earlier draft of this section
+called for asserting that precondition against the live DB via
+`get_classifier_ids_by_name` and skipping otherwise; binding is better, because it
+isolates the row-building logic under test from id allocation entirely, rather
+than making the test's ability to run depend on how a particular database was
+seeded.
+
+The test needs the offline checkout — at `~/desktop/pipeline/feature_step`, note
+the `feature_step` subdirectory, since `features.offline` does not resolve from
+the checkout root — and is gated behind `RUN_EQUIVALENCE_TEST=1`, so it is not
+part of the default unit run. It does **not** need the `alerce_classifiers`
+submodule or `MODEL_PATH`: both row builders are pure, and no classifier is run.
+
+What it does not cover, by construction: the **multi-oid melt path**, because the
+offline reference is strictly per-oid and raises on a multi-row frame — that
+asymmetry is a large part of why the port exists. Multi-oid behaviour is covered
+only by the unit tests. Real model output is likewise not exercised.
 
 ## 12. Out of scope
 
