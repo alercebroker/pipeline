@@ -22,6 +22,18 @@ from .input_dto import create_input_dto, filter_messages, lastmjd_by_oid
 from .output_parser import MultisurveyOutputParser
 from .probabilities import build_probability_rows, head_names
 
+# Consecutive dropped batches before the log escalates to CRITICAL.
+#
+# Dropping a bad batch is what design §8 asks for, but every drop still commits
+# its offset, so a *persistent* fault — a broken lazy import inside
+# `create_input_dto`, say — consumes the topic at full speed, writes nothing,
+# and still reports healthy. One poison batch is routine and must not page
+# anyone; this many in a row is systemic and needs a human before the backlog
+# has to be replayed. At the default `consume.messages` of 100 this is ~500
+# objects discarded, which is small enough to catch early and large enough that
+# a single bad batch or a brief blip never trips it.
+CONSECUTIVE_DROP_ALERT = 5
+
 
 class LateClassifierMultisurvey(GenericStep):
     """BHRF classification over the multisurvey feature stream."""
@@ -60,6 +72,9 @@ class LateClassifierMultisurvey(GenericStep):
 
         self.step_parser = MultisurveyOutputParser()
 
+        # Batches dropped back-to-back; see CONSECUTIVE_DROP_ALERT.
+        self._consecutive_drops = 0
+
     @staticmethod
     def _empty_output() -> OutputDTO:
         return OutputDTO(pd.DataFrame(), {"top": pd.DataFrame(), "children": {}})
@@ -72,9 +87,31 @@ class LateClassifierMultisurvey(GenericStep):
         (apf `core/step.py`), exiting the process with the offset uncommitted —
         Kafka then redelivers the same batch, which fails identically, and the
         partition stalls forever on one poison message.
+
+        The cost of that trade is that a *persistent* fault is silent: offsets
+        keep advancing and the step looks healthy. The drop counter and the
+        escalation below exist to make that visible, and are the reason dropping
+        is safe. This method must never raise — it runs on the path that already
+        failed — so the metric is best-effort.
         """
+        self._consecutive_drops += 1
         self.logger.error(f"{what} for this batch, dropping it: {error}")
         self.logger.error(traceback.format_exc())
+
+        try:
+            self.metrics.exceptions.labels("execute_drop").inc()
+        except Exception:
+            # Telemetry must never be the thing that kills a batch.
+            self.logger.warning("Could not record the dropped-batch metric", exc_info=True)
+
+        if self._consecutive_drops >= CONSECUTIVE_DROP_ALERT:
+            self.logger.critical(
+                f"{self._consecutive_drops} consecutive batches dropped and their "
+                "offsets committed: this topic is being consumed and discarded, and "
+                "the step will keep reporting healthy. Nothing is being written; the "
+                "skipped batches need a replay once the cause is fixed."
+            )
+
         return self._empty_output(), {}
 
     def execute(self, messages: List[dict]) -> Tuple[OutputDTO, dict]:
@@ -85,6 +122,8 @@ class LateClassifierMultisurvey(GenericStep):
 
         self.logger.info(f"Classifying {len(kept)}/{len(messages)} messages")
         if not kept:
+            # A normal outcome, not a drop: nothing in the batch was classifiable.
+            self._consecutive_drops = 0
             return self._empty_output(), {}
 
         try:
@@ -97,6 +136,7 @@ class LateClassifierMultisurvey(GenericStep):
         can_predict, reason = self.model.can_predict(dto)
         if not can_predict:
             self.logger.warning(f"Model cannot predict this batch: {reason}")
+            self._consecutive_drops = 0
             return self._empty_output(), {}
 
         try:
@@ -109,6 +149,7 @@ class LateClassifierMultisurvey(GenericStep):
         except Exception as error:
             return self._drop_batch("Computing lastmjd failed", error)
 
+        self._consecutive_drops = 0
         return output_dto, lastmjd_map
 
     def post_execute(self, result: Tuple[OutputDTO, dict]) -> Tuple[OutputDTO, dict]:
