@@ -1680,7 +1680,15 @@ class MultisurveyOutputParser:
 /home/fandrades/miniconda3/envs/feature_step/bin/python -m pytest tests/unittest -v
 ```
 
-Expected: everything green — `60 passed, 1 skipped` (2 + 24 + 17 + 13 + 4, plus the DTO test skipping without the submodule on the path).
+Expected: everything green — `73 passed, 1 skipped`, the DTO test being the one that skips without the submodule on the path.
+
+> **On the counts below.** The per-task test counts written into this plan were
+> estimates made before implementation. Review rounds added tests — regression
+> tests for real defects found in Tasks 3, 5, and 6 — so the suite is larger than
+> originally projected. `73 passed, 1 skipped` after Task 7 is the as-built
+> number, verified by running it. If your count is higher, that is expected when
+> review adds a test; reconcile it explicitly rather than deleting tests to hit
+> a number in this document.
 
 - [ ] **Step 5: Commit**
 
@@ -2070,7 +2078,7 @@ Expected: `OK LateClassifierMultisurvey`. A `ModuleNotFoundError: numexpr` or `a
 /home/fandrades/miniconda3/envs/feature_step/bin/python -m pytest tests/unittest -v
 ```
 
-Expected: `60 passed, 1 skipped` — unchanged from Task 7. If the count changed, `step.py` leaked an import into a pure module.
+Expected: `73 passed, 1 skipped` — unchanged from Task 7. If the count changed, `step.py` leaked an import into a pure module.
 
 - [ ] **Step 4: Commit**
 
@@ -2363,7 +2371,7 @@ Expected: first `1 skipped`; second either `1 passed` or a skip naming the missi
 /home/fandrades/miniconda3/envs/feature_step/bin/python -m pytest tests -v
 ```
 
-Expected: `60 passed, 2 skipped`.
+Expected: `73 passed, 2 skipped`.
 
 - [ ] **Step 4: Commit**
 
