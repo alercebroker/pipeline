@@ -24,10 +24,12 @@ COPY lc_classification_multisurvey_step/pyproject.toml /app/
 COPY libs/apf /libs/apf
 COPY libs/db-plugins-multisurvey /libs/db-plugins-multisurvey
 COPY alerce_classifiers /alerce_classifiers
+WORKDIR /app
+RUN poetry install --no-root --without=dev,test
+# Below the install on purpose: nothing in the dependency resolve reads the
+# schemas, so copying them here keeps a schema edit from invalidating it.
 COPY schemas/scribe_step /schemas/scribe_step
 COPY schemas/lc_classification_step /schemas/lc_classification_step
-WORKDIR /app
-RUN poetry install --no-root
 
 
 FROM python:3.10-slim as production
