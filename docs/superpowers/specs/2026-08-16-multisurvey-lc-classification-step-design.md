@@ -60,7 +60,6 @@ lc_classification_multisurvey_step/
 ├── .gitignore
 ├── settings.py                     # env → config dict
 ├── models_settings.py              # squidward_params + configurator (one entry)
-├── credentials.py                  # DB creds (from correction_multisurvey_step)
 ├── scripts/
 │   └── run_step.py
 ├── lc_classification_multisurvey_step/
