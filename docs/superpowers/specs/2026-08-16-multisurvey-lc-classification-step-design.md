@@ -428,6 +428,29 @@ positional against the model's hierarchical output; only the base
 drift silently, and hardcoding them assumes an id allocation the DB never
 promised.
 
+### Inherited operational hazard: boolean env vars
+
+`settings.py` follows the pipeline-wide `bool(os.getenv(...))` idiom, which
+treats **any non-empty string as true**. `ENABLE_PARTITION_EOF=false`,
+`=False`, and `=0` all evaluate to `True`; only the empty string and an unset
+variable are false. This is not a quirk of this step — the idiom appears in 17
+`settings.py` files across the repo with no counterexamples — so this step
+matches its siblings deliberately rather than being the one that behaves
+differently.
+
+Flagging it because one instance has real production consequences:
+`apf/consumers/kafka.py` does `if eof: break`, so a deployment that sets
+`ENABLE_PARTITION_EOF=false` intending to disable it gets a step that **stops
+consuming and exits** the moment it catches up with the topic — the opposite of
+what was written, with no error logged anywhere. `USE_PROMETHEUS` and
+`LOGGING_DEBUG` share the idiom but fail harmlessly.
+
+The right fix is a shared `env_bool()` helper applied across all steps in one
+coordinated pass. It is deliberately **not** done here: fixing this step alone
+would make it the only one whose flags parse differently, which is worse for
+operators than uniform, documented wrongness. Until then: set boolean env vars
+by omitting them, never by setting them to `false`.
+
 ## 11. Testing
 
 Pure-function unit tests, following the offline test layout
