@@ -1,5 +1,6 @@
 """The downstream payload is a PLACEHOLDER (design doc §9). These tests pin only
 that it is well-formed and cannot throw — not that the shape is a contract."""
+import logging
 from types import SimpleNamespace
 
 import numpy as np
@@ -90,13 +91,48 @@ class TestMultisurveyOutputParser:
         ).value
         assert list(empty_head[0]["top_class"]) == ["base"]
 
-    def test_all_nan_row_drops_that_head_for_that_oid(self):
-        """An all-NaN row has no argmax. The oid keeps its message; the head is
-        simply absent, as for an oid the head never scored."""
-        dto = make_dto(flat=frame([1, 2], {"SNIa": [0.4, np.nan], "AGN": [0.6, np.nan]}))
+    def test_nan_rows_drop_the_head_only_for_fully_unscored_oids(self):
+        """An all-NaN row has no argmax, so that oid loses the head — but an oid
+        with a NaN in *some* class still has a winner and must keep it. Dropping
+        on any-NaN instead of all-NaN would silently discard a valid score."""
+        dto = make_dto(
+            flat=frame(
+                [1, 2, 3],
+                {"SNIa": [0.4, np.nan, np.nan], "AGN": [0.6, 0.6, np.nan]},
+            )
+        )
 
         out = MultisurveyOutputParser().parse(dto, base_name="base", version="2.1.0").value
 
-        assert [m["oid"] for m in out] == [1, 2]
+        assert [m["oid"] for m in out] == [1, 2, 3]
         assert out[0]["top_class"]["base"] == {"class_name": "AGN", "probability": 0.6}
-        assert out[1]["top_class"] == {}
+        # oid 2 is partially scored: the head survives with the non-NaN winner.
+        assert out[1]["top_class"]["base"] == {"class_name": "AGN", "probability": 0.6}
+        # oid 3 is scored by nothing at all: the head is absent, not null.
+        assert out[2]["top_class"] == {}
+
+    def test_degenerate_heads_are_logged_once_per_head_not_per_oid(self, caplog):
+        """Design §8 is log *and* drop. The line count is the point: a per-oid
+        log is a thousand lines a batch."""
+        dto = make_dto(
+            flat=frame(
+                [1, 2, 3, 4],
+                {"SNIa": [0.4, np.nan, np.nan, np.nan], "AGN": [0.6, np.nan, np.nan, np.nan]},
+            ),
+            top=pd.DataFrame(index=[1, 2, 3, 4]),
+        )
+
+        with caplog.at_level(logging.WARNING):
+            MultisurveyOutputParser().parse(dto, base_name="base", version="2.1.0")
+
+        assert len(caplog.records) == 2, caplog.messages
+        no_classes = [m for m in caplog.messages if "no classes" in m]
+        unscored = [m for m in caplog.messages if "entirely NaN" in m]
+        assert len(no_classes) == 1 and len(unscored) == 1
+        # Each line names its own head and its own cause. A head with no classes
+        # is a different fault from a head whose scores came back NaN, and
+        # reporting one as the other sends the operator to the wrong place.
+        assert "base_top" in no_classes[0]
+        assert "'base'" in unscored[0]
+        # the aggregate names how many oids went missing, so the drop is auditable
+        assert "3" in unscored[0]
