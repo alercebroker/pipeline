@@ -229,6 +229,27 @@ class TestBuildProbabilityRows:
         assert {r["oid"] for r in rows} == {1}
         assert "2" in caplog.text
 
+    def test_missing_lastmjd_is_logged_once_for_the_batch_not_once_per_head(self, caplog):
+        # lastmjd_map is the same for all five heads, so the missing set is a
+        # batch-wide fact: computing it inside the head loop logs the identical
+        # oid list five times for one problem.
+        dto = make_dto(
+            flat=frame([1, 2], {"SNIa": [1.0, 1.0]}),
+            top=frame([1, 2], {"Transient": [1.0, 1.0]}),
+            transient=frame([1, 2], {"SNIa": [1.0, 1.0]}),
+            stochastic=frame([1, 2], {"AGN": [1.0, 1.0]}),
+            periodic=frame([1, 2], {"LPV": [1.0, 1.0]}),
+        )
+
+        with caplog.at_level("ERROR"):
+            rows = build(dto, {1: 100.0})
+
+        lastmjd_lines = [r for r in caplog.records if "lastmjd" in r.getMessage()]
+        assert len(lastmjd_lines) == 1
+        # ...and the drop itself still applies to every head.
+        assert {r["oid"] for r in rows} == {1}
+        assert len(rows) == 5
+
     def test_head_with_no_taxonomy_map_is_dropped_and_logged(self, caplog):
         dto = make_dto(flat=frame([1], {"SNIa": [1.0]}), top=frame([1], {"Transient": [1.0]}))
         taxonomy = {50: TAXONOMY[50]}  # no map for the top head's id
@@ -252,6 +273,54 @@ class TestBuildProbabilityRows:
 
         assert {r["classifier_id"] for r in rows} == {50}
         assert NAMES[1] in caplog.text
+
+    def test_partial_nan_row_keeps_its_valid_classes_and_ranks_among_them(self):
+        # Same policy as output_parser.parse's `how="all"`: an oid with a NaN in
+        # only some classes still has a valid winner and keeps it.
+        dto = make_dto(flat=frame([1], {"SNIa": [0.7], "AGN": [float("nan")], "LPV": [0.3]}))
+
+        rows = build(dto, {1: 100.0})
+
+        assert {r["class_id"] for r in rows} == {TAXONOMY[50]["SNIa"], TAXONOMY[50]["LPV"]}
+        rank_by_class = {r["class_id"]: r["ranking"] for r in rows}
+        assert rank_by_class[TAXONOMY[50]["SNIa"]] == 1
+        assert rank_by_class[TAXONOMY[50]["LPV"]] == 2
+
+    def test_all_nan_row_is_dropped_for_that_head_only(self):
+        nan = float("nan")
+        dto = make_dto(
+            flat=frame([1, 2], {"SNIa": [nan, 0.6], "AGN": [nan, 0.4]}),
+            top=frame([1, 2], {"Transient": [1.0, 1.0]}),
+        )
+
+        rows = build(dto, {1: 100.0, 2: 200.0})
+
+        # oid 1 has no flat-head rows, but keeps the top head; oid 2 is untouched.
+        assert {(r["oid"], r["classifier_id"]) for r in rows} == {
+            (1, 60), (2, 50), (2, 60),
+        }
+
+    def test_every_oid_all_nan_drops_the_head_without_raising(self):
+        nan = float("nan")
+        dto = make_dto(
+            flat=frame([1, 2], {"SNIa": [nan, nan], "AGN": [nan, nan]}),
+            top=frame([1, 2], {"Transient": [1.0, 1.0]}),
+        )
+
+        rows = build(dto, {1: 100.0, 2: 200.0})
+
+        assert {r["classifier_id"] for r in rows} == {60}
+
+    def test_nan_probabilities_are_logged_once_per_head_not_once_per_oid(self, caplog):
+        nan = float("nan")
+        dto = make_dto(flat=frame([1, 2, 3], {"SNIa": [nan] * 3, "AGN": [nan] * 3}))
+
+        with caplog.at_level("WARNING"):
+            build(dto, {1: 1.0, 2: 2.0, 3: 3.0})
+
+        nan_lines = [r for r in caplog.records if "NaN" in r.getMessage()]
+        assert len(nan_lines) == 1
+        assert "3" in nan_lines[0].getMessage()
 
     def test_values_are_native_python_types_for_json_serialisation(self):
         import json
