@@ -2128,7 +2128,22 @@ print('OK', LateClassifierMultisurvey.__name__)
 "
 ```
 
-Expected: `OK LateClassifierMultisurvey`. A `ModuleNotFoundError: numexpr` or `apf` here means the wrong interpreter; re-check the PYTHON path in the Environment section.
+Expected: `OK LateClassifierMultisurvey`.
+
+> **`ModuleNotFoundError: No module named 'numexpr'` is expected on this machine
+> and is NOT a code defect.** An earlier draft of this note blamed the
+> interpreter; that was wrong. `numexpr` is absent from all eleven conda envs on
+> this box, and there is no poetry `.venv` for the step. The dependency is
+> correctly declared (`pyproject.toml`: `numexpr = "^2.8.8"`) and all four
+> sibling classifier steps do the identical `import numexpr` +
+> `numexpr.utils.set_num_threads(1)`, so the container build installs it and
+> production is unaffected.
+>
+> Do **not** remove the import to make this check pass. To verify the rest of
+> the import chain locally, either `pip install numexpr` into the env, or put a
+> throwaway `numexpr` stub on `PYTHONPATH` (outside the project tree) — with a
+> stub the command prints `OK LateClassifierMultisurvey`, confirming every other
+> import resolves.
 
 - [ ] **Step 3: Verify the unit suite still passes untouched**
 
