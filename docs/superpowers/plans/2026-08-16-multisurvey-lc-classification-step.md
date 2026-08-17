@@ -38,6 +38,34 @@ cd /home/fandrades/desktop/pipeline_features/pipeline/lc_classification_multisur
 
 Work happens on the current branch `feat/multisurvey-lc-classification-step`. Do not create a worktree.
 
+### Two environment traps, both verified
+
+Neither is a code defect and neither affects the container build, but both will
+mislead you if you validate locally without knowing about them.
+
+**1. The importable `apf` is not the one this step depends on.** `pyproject.toml`
+declares `apf-base = { path = "../libs/apf", develop = true }`, but the
+`feature_step` conda env resolves `apf` to a *different project tree*:
+
+```
+$ python -c "import apf, apf.core.step as s; print(apf.__file__, hasattr(s.GenericStep,'_flush_producers'))"
+/home/fandrades/desktop/online/pipeline/libs/apf/apf/__init__.py False
+```
+
+That stale copy has **no `_flush_producers` and no `KafkaProducer.flush`**; the
+in-repo `libs/apf` has both (`apf/core/step.py:302,318`). Any local check of apf
+behaviour — producer flushing, offset commits, the `start()` loop — is therefore
+checking the wrong code unless you force the in-repo copy first on `PYTHONPATH`.
+State which `apf` a result came from whenever it matters. Before trusting Task
+11, `poetry install` against the in-repo path.
+
+**2. `numexpr` is not installed in any conda env on this machine.** It is
+correctly declared (`pyproject.toml`) and imported identically by all four
+sibling classifier steps, so the image is fine. Locally, either install it or
+put a throwaway stub on `PYTHONPATH` outside the repo — the stub needs
+`__version__` as well as `utils.set_num_threads`, because pandas probes the
+version. Never remove the import to make a check pass.
+
 ---
 
 ## File Structure
