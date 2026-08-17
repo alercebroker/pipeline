@@ -47,7 +47,6 @@ Work happens on the current branch `feat/multisurvey-lc-classification-step`. Do
 | `pyproject.toml` | Deploy artifact: deps, `step` entrypoint. Not installed by this plan. |
 | `settings.py` | env → config dict. Consumer/scribe/producer/metrics/PSQL/model blocks. |
 | `models_settings.py` | One-entry `configurator` returning the `MODEL_CONFIG` block. |
-| `credentials.py` | `get_secret` passthrough, copied from `correction_multisurvey_step/credentials.py`. |
 | `scripts/run_step.py` | Entrypoint: yaml-or-settings config, logging, prometheus, `step.start()`. |
 | `lc_classification_multisurvey_step/probabilities.py` | **Pure.** Head names/frames, version→smallint, `OutputDTO` → scribe row dicts. No alerce, no DB. |
 | `lc_classification_multisurvey_step/db/db.py` | `PSQLConnection`, the two read-only queries, and `resolve_classifiers` (the §8 startup assertions). No pandas, no alerce. |
@@ -1732,16 +1731,24 @@ git commit -m "feat(lc_classification_multisurvey_step): placeholder downstream 
 
 ---
 
-### Task 8: `settings.py`, `models_settings.py`, `credentials.py`
+### Task 8: `settings.py`, `models_settings.py`
 
 Implements: spec §3 (`models_settings` one entry), §10 (configuration).
 
 **Files:**
 - Create: `lc_classification_multisurvey_step/models_settings.py`
 - Create: `lc_classification_multisurvey_step/settings.py`
-- Create: `lc_classification_multisurvey_step/credentials.py`
 
 No unit test — these are env plumbing, verified by importing them under a controlled environment. Task 9 depends on the exact key names below.
+
+> **`credentials.py` is deliberately NOT created.** An earlier draft of this plan
+> copied it from `correction_multisurvey_step` "for parity". It would be dead
+> code: the sibling's `run_step.py` imports `get_credentials`, but this step's
+> (Task 10) does not, and `settings.py` reads `PSQL_CONFIG` straight from env
+> vars as spec §10 specifies. The file is also almost entirely a MongoDB config
+> parser, and this step touches no MongoDB. Copying it would imply a
+> secret-manager path that does not exist here. If a secret-manager path is
+> wanted later, add it deliberately with the step that uses it.
 
 - [ ] **Step 1: Write `models_settings.py`**
 
@@ -1773,16 +1780,7 @@ def configurator(model_class: str):
     raise Exception(f"Model class not supported by this step: {model_class}")
 ```
 
-- [ ] **Step 2: Write `credentials.py`**
-
-Copy `correction_multisurvey_step/credentials.py` verbatim:
-
-```bash
-cd /home/fandrades/desktop/pipeline_features/pipeline
-cp correction_multisurvey_step/credentials.py lc_classification_multisurvey_step/credentials.py
-```
-
-- [ ] **Step 3: Write `settings.py`**
+- [ ] **Step 2: Write `settings.py`**
 
 ```python
 ##################################################
@@ -1889,7 +1887,7 @@ def config():
 
 Note `PSQL_CONFIG` uses the key `USER` (not `USERNAME`): `db.get_db_url` reads `config['USER']`, matching `stamp_classifier_2025_multisurvey_step`. `correction_multisurvey_step` uses `USERNAME` with its own connection class — do not cross the two.
 
-- [ ] **Step 4: Verify settings builds under a controlled environment**
+- [ ] **Step 3: Verify settings builds under a controlled environment**
 
 ```bash
 cd /home/fandrades/desktop/pipeline_features/pipeline/lc_classification_multisurvey_step
@@ -1915,7 +1913,7 @@ print('OK', c['MODEL_CONFIG']['NAME'])
 
 Expected: `OK SquidwardFeaturesClassifier`.
 
-- [ ] **Step 5: Verify an unsupported model class is rejected**
+- [ ] **Step 4: Verify an unsupported model class is rejected**
 
 ```bash
 env -i PATH=$PATH MODEL_CLASS=some.other.Model \
@@ -1931,7 +1929,7 @@ raise SystemExit('should have raised')
 
 Expected: `OK rejected: Model class not supported by this step: some.other.Model`.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 cd /home/fandrades/desktop/pipeline_features/pipeline
@@ -2230,7 +2228,6 @@ COPY lc_classification_multisurvey_step/scripts /app/scripts
 COPY lc_classification_multisurvey_step/README.md /app/README.md
 COPY lc_classification_multisurvey_step/settings.py /app/settings.py
 COPY lc_classification_multisurvey_step/models_settings.py /app/models_settings.py
-COPY lc_classification_multisurvey_step/credentials.py /app/credentials.py
 COPY lc_classification_multisurvey_step/lc_classification_multisurvey_step /app/lc_classification_multisurvey_step
 
 WORKDIR /app/
@@ -2433,5 +2430,5 @@ Raise these in review rather than rediscovering them:
 1. **`get_classifier_ids_by_name` returns `dict[str, dict]`**, not `dict[str, int]` — the row's `classifier_version` is needed for the §8 version-skew assertion. The spec was updated to match.
 2. **The duplicate-name assertion lives in the reader, not `resolve_classifiers`** — a duplicate is only visible before the rows collapse into a name-keyed dict. The other four §8 assertions are in `resolve_classifiers`.
 3. **`probabilities.py` also drops a head with no resolved id / no taxonomy map per batch**, logging rather than raising. Startup already guarantees both exist, so this is defence in depth for a caller that skipped `resolve_classifiers`.
-4. **No `credentials.py`-based secret manager path is wired into `settings.py`** — `PSQL_CONFIG` is read straight from env vars. `credentials.py` is copied for parity with the sibling steps but unused; the spec's §10 lists only `PSQL_*` env vars, so this matches it.
+4. **No secret-manager path is wired into `settings.py`** — `PSQL_CONFIG` is read straight from env vars, and the spec's §10 lists only `PSQL_*` env vars, so this matches it. `credentials.py` is not created at all (see Task 8): nothing in this step would import it.
 5. **`PRODUCER_CONFIG` is empty unless `PRODUCER_SERVER` is set**, letting apf fall back to `DefaultProducer`. The spec says the producer is "configured but the shape is not a contract"; configuring a Kafka producer with no schema would fail at startup, so it is opt-in instead.
