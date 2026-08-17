@@ -110,17 +110,26 @@ def squidward_params(model_class: str):
 feature_step output topic
   │
   ├─ execute(messages)
-  │    messages → input_dto.create_input_dto(messages)   # features-only
+  │    input_dto.filter_messages(messages, min_detections)
+  │    messages → input_dto.create_input_dto(kept)       # features-only
   │    model.can_predict(dto)  → skip batch if False
   │    model.predict(dto)      → OutputDTO (batched, multi-oid frames)
-  │    probabilities.build_probability_rows(dto, lastmjd_by_oid, heads, taxonomy_maps, ...)
-  │      → for each of 5 heads: melt by oid → row dicts
+  │    → returns (OutputDTO, input_dto.lastmjd_by_oid(kept))
   │
-  ├─ post_execute → produce_scribe(rows)
-  │    one `update-probability` command per row → scribe_multisurvey topic
+  ├─ post_execute(result)
+  │    probabilities.build_probability_rows(dto, lastmjd_map, ids, taxonomy_maps, ...)
+  │      → for each of 5 heads: melt by oid → row dicts
+  │    produce_scribe(rows)
+  │      one `update-probability` command per row → scribe_multisurvey topic
   │
   └─ pre_produce → output_parser (PLACEHOLDER)
 ```
+
+`build_probability_rows` runs in `post_execute`, not `execute`: `execute`
+returns the `(OutputDTO, lastmjd_map)` pair and `post_execute` turns it into
+rows and produces them. apf runs the two unconditionally back to back, so the
+split is observational only — it keeps `execute` to "classify" and
+`post_execute` to "persist", matching the sibling steps.
 
 **Startup (two reads, in order):**
 
