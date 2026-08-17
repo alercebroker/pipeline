@@ -28,7 +28,10 @@ OFFLINE_ROOT = os.path.expanduser("~/desktop/pipeline/feature_step")
 
 pytestmark = pytest.mark.skipif(
     not os.getenv("RUN_EQUIVALENCE_TEST"),
-    reason="opt-in: set RUN_EQUIVALENCE_TEST=1 (needs the offline checkout)",
+    reason=(
+        "opt-in: set RUN_EQUIVALENCE_TEST=1 (needs the offline checkout at "
+        f"{OFFLINE_ROOT})"
+    ),
 )
 
 
