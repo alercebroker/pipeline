@@ -2136,7 +2136,7 @@ Expected: `OK LateClassifierMultisurvey`. A `ModuleNotFoundError: numexpr` or `a
 /home/fandrades/miniconda3/envs/feature_step/bin/python -m pytest tests/unittest -v
 ```
 
-Expected: `73 passed, 1 skipped` — unchanged from Task 7. If the count changed, `step.py` leaked an import into a pure module.
+Expected: `78 passed, 1 skipped` — unchanged from Task 7. If the count changed, `step.py` leaked an import into a pure module.
 
 - [ ] **Step 4: Commit**
 
