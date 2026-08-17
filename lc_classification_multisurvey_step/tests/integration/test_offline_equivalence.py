@@ -5,8 +5,15 @@ must agree. Offline is strictly per-oid and pins CLASSIFIER_IDS = [5..9]; the st
 melts by oid and resolves ids from the DB. So this feeds one OutputDTO through
 both and compares row sets modulo ordering.
 
-Opt-in: needs RUN_EQUIVALENCE_TEST=1, the alerce_classifiers submodule importable,
-and the offline checkout on the path. Not part of the default unit run.
+Opt-in: needs RUN_EQUIVALENCE_TEST=1 and the offline checkout present at
+`~/desktop/pipeline/feature_step` — note the `feature_step` subdirectory, since
+the checkout root alone does not resolve `features.offline`. It needs neither the
+`alerce_classifiers` submodule nor MODEL_PATH: both row builders are pure and no
+classifier is run. Not part of the default unit run.
+
+What this cannot cover: the multi-oid melt path. The offline reference is strictly
+per-oid and raises on a multi-row frame by design, so there is nothing to compare
+against there; multi-oid behaviour is covered by the unit tests only.
 """
 import importlib.util
 import os
