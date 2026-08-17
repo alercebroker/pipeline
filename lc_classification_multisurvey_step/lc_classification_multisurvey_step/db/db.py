@@ -15,7 +15,7 @@ import logging
 from contextlib import contextmanager
 from typing import Callable, ContextManager
 
-from sqlalchemy import bindparam, create_engine, text
+from sqlalchemy import URL, bindparam, create_engine, text
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import NullPool
 
@@ -24,10 +24,24 @@ from ..probabilities import classifier_version_to_smallint
 log = logging.getLogger(__name__)
 
 
-def get_db_url(config: dict) -> str:
-    return (
-        f"postgresql://{config['USER']}:{config['PASSWORD']}"
-        f"@{config['HOST']}:{config['PORT']}/{config['DB_NAME']}"
+def get_db_url(config: dict) -> URL:
+    """Build the connection URL, escaping the credentials.
+
+    `URL.create` rather than f-string interpolation (which the sibling step
+    still uses) because the password is not URL-safe in general: an `@` in it
+    ends the userinfo early, so psycopg2 would try to resolve everything after
+    it as the host, and `/`, `:`, `?` and `#` corrupt the URL in related ways.
+    A password is a secret, not an identifier, so nothing constrains its
+    alphabet. `URL.create` escapes each component instead of pasting them
+    together, and never renders the password in `repr()`.
+    """
+    return URL.create(
+        drivername="postgresql",
+        username=config["USER"],
+        password=config["PASSWORD"],
+        host=config["HOST"],
+        port=int(config["PORT"]),
+        database=config["DB_NAME"],
     )
 
 
