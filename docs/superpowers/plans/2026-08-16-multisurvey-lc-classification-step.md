@@ -1620,10 +1620,13 @@ schema is designed. Deferring is safe because the scribe is the real output path
 Duck-typed over the OutputDTO like probabilities.py, so it needs no
 alerce_classifiers import.
 """
+import logging
 from dataclasses import dataclass
 from typing import Generic, TypeVar
 
 from .probabilities import DEFAULT_CLASSIFIER_NAME, iter_head_frames
+
+log = logging.getLogger(__name__)
 
 T = TypeVar("T")
 
@@ -1658,16 +1661,41 @@ class MultisurveyOutputParser:
         # Rank each head once for the whole frame. The per-oid form (a .loc plus
         # an idxmax per oid per head) costs ~24x more on a 1000-object batch
         # (344 ms vs 15 ms, same output).
+        # Logged once per head, never per oid: a per-oid line is a thousand
+        # lines a batch.
         heads = []
         for name, frame in iter_head_frames(model_output, base_name):
-            # shape[1], not len(): a frame with rows but no columns has no
-            # argmax and would raise "argmax of an empty sequence".
-            if frame is None or frame.shape[0] == 0 or frame.shape[1] == 0:
+            # A head that scored nobody is routine (no oid took that branch),
+            # so it is dropped without a warning.
+            if frame is None or frame.shape[0] == 0:
                 continue
-            # An all-NaN row has no argmax either: pandas 2 returns NaN (an
-            # opaque KeyError downstream), pandas 3 raises outright. Dropping
-            # those rows leaves the oid simply uncovered by this head.
-            frame = frame.dropna(how="all")
+            # Rows but no classes is not routine. The dropna below would empty
+            # this frame anyway; the explicit guard is here to name the case and
+            # say so, rather than let a broken head vanish quietly.
+            if frame.shape[1] == 0:
+                log.warning(
+                    "head '%s': frame has no classes; dropping the head for all %d oids "
+                    "in the batch",
+                    name,
+                    frame.shape[0],
+                )
+                continue
+            # An oid scored entirely NaN has no argmax: pandas 2 returns NaN (an
+            # opaque KeyError downstream) and pandas 3 raises for the whole head.
+            # Dropping those rows leaves just those oids uncovered by this head.
+            # how="all", not "any": an oid with a NaN in only some classes still
+            # has a valid winner and must keep it.
+            scored = frame.dropna(how="all")
+            unscored = frame.shape[0] - scored.shape[0]
+            if unscored:
+                log.warning(
+                    "head '%s': %d of %d oids scored entirely NaN; dropping the head "
+                    "for those oids",
+                    name,
+                    unscored,
+                    frame.shape[0],
+                )
+            frame = scored
             if frame.shape[0] == 0:
                 continue
             # Plain dicts, not Series: the per-oid lookup below is then a hash
