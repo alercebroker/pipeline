@@ -2,7 +2,8 @@
 
 **Branch:** `feat/multisurvey-lc-classification-step` (off `multisurvey`)
 **Date:** 2026-08-16
-**Status:** design approved, not yet implemented
+**Status:** implemented on `feat/multisurvey-lc-classification-step`; this
+document was revised during implementation and describes the code as built
 
 A new `lc_classification_multisurvey_step/` that consumes the multisurvey
 `feature_step` output, runs the ZTF BHRF (Squidward 2.1.0) classifier, and writes
@@ -74,10 +75,17 @@ lc_classification_multisurvey_step/
 │   └── output_parser.py            # PLACEHOLDER downstream producer
 └── tests/
     ├── __init__.py
-    └── unittest/
-        ├── test_probabilities.py
-        ├── test_input_dto.py
-        └── test_taxonomy.py
+    ├── unittest/
+    │   ├── __init__.py
+    │   ├── test_probabilities.py
+    │   ├── test_input_dto.py
+    │   ├── test_output_parser.py
+    │   ├── test_taxonomy.py
+    │   └── test_package_imports.py  # the pure modules import with no
+    │                                # alerce_classifiers and no apf
+    └── integration/
+        ├── __init__.py
+        └── test_offline_equivalence.py   # opt-in, see §11
 ```
 
 Model wiring in `step.__init__`:
@@ -101,6 +109,11 @@ def squidward_params(model_class: str):
         "PARAMS": {"model_path": os.getenv("MODEL_PATH")},
         "NAME": model_class.split(".")[-1],
         "VERSION": os.getenv("MODEL_VERSION", "2.1.0"),
+        "CLASSIFIER_NAME": os.getenv("CLASSIFIER_NAME", "lc_classifier_BHRF_forced_phot"),
+        "SID": int(os.getenv("SID", 0)),
+        "MIN_DETECTIONS": (
+            int(os.environ["MIN_DETECTIONS"]) if os.getenv("MIN_DETECTIONS") else None
+        ),
     }
 ```
 
@@ -290,6 +303,17 @@ Field derivations:
 - `class_id` — `taxonomy_maps[classifier_id][class_name]`, exact string match.
 - `probability` — the model's value.
 - `ranking` — dense rank descending **within (oid, classifier_id)**, i.e. per head.
+  Dense rank means ties share a rank, so **`ranking = 1` is not unique**: two
+  classes scoring equally both get 1, and both rows are written. This is faithful
+  to the offline reference, which uses the identical
+  `rank(ascending=False, method="dense")`, and the equivalence test (§11) pins the
+  agreement on a deliberate 0.5/0.5 tie. Consumers that read the top class with
+  `WHERE ranking = 1` must therefore expect more than one row per
+  (oid, classifier_id) and break the tie themselves. Note the placeholder
+  downstream payload (§9) resolves the same tie differently — it reports a single
+  top class via `idxmax`, which picks the first column — so the two outputs can
+  name different members of the same tied set. Neither contradicts the other:
+  `idxmax`'s pick is always inside the rank-1 set.
 - `lastmjd` — `max(det["mjd"] for det in msg["detections"])`. Already MJD; **do not**
   subtract 2400000.5. The message's `detections` array carries forced photometry
   too (each entry has a `forced` flag), so this is the max over detections and
@@ -409,8 +433,15 @@ Decision 5 is "new multisurvey output schema", but its shape is deferred. For no
   top-ranked class per head — and is marked `# PLACEHOLDER` with a pointer to this
   section.
 - No `schemas/lc_classification_multisurvey_step/` Avro file is added yet.
-- The producer is configured but the shape is not treated as a contract; nothing
-  downstream should be pointed at it until the schema is designed.
+- **No downstream producer is configurable.** `PRODUCER_CONFIG` is always `{}`,
+  so apf falls back to its `DefaultProducer` and the step produces nothing
+  downstream. An earlier draft gated a real producer behind `PRODUCER_SERVER`,
+  but that branch could not work: apf's `KafkaProducer.__init__` reads
+  `config["SCHEMA_PATH"]` unconditionally, and there is no schema to point it at
+  (see the bullet above), so setting `PRODUCER_SERVER` raised
+  `KeyError: 'SCHEMA_PATH'` before the step consumed anything. A switch that
+  cannot work is worse than no switch, so it was removed. Restore it together
+  with the `.avsc` when the schema is designed.
 
 Deferring this is safe because decision 3 makes the scribe the real output path.
 
@@ -474,9 +505,9 @@ Pure-function unit tests, following the offline test layout
 - `test_taxonomy.py` — `get_classifier_ids_by_name` and
   `get_taxonomy_by_classifier_id` map construction against a mocked session; the
   head names derived from a non-default `CLASSIFIER_NAME`; rows returned in a
-  different order than requested still map correctly; and each of the four §8
-  startup assertions fires — a missing name, a duplicated name, an empty taxonomy
-  map, a `classifier_version` mismatch. Ids in the fixtures are deliberately
+  different order than requested still map correctly; and each of the five §8
+  startup assertions fires — an unparseable `MODEL_VERSION`, a missing name, a
+  duplicated name, a `classifier_version` mismatch, an empty taxonomy map. Ids in the fixtures are deliberately
   **not** 5–9, so a reintroduced hardcode fails the test.
 
 **Equivalence test against the offline reference.** The step's row builder and
@@ -529,7 +560,7 @@ only by the unit tests. Real model output is likewise not exercised.
   default it to unset — every message that has features gets classified. Counts
   non-forced detections only, as the legacy step does. Revisit if the model
   produces junk on sparse light curves.
-- **How strict should the version check be?** §8 assertion 4 refuses to start when
+- **How strict should the version check be?** §8 assertion 5 refuses to start when
   `classifier.classifier_version` differs from `MODEL_VERSION`. That catches a real
   failure mode (model artifact and seeded taxonomy out of sync), but it also means
   a model bump becomes a two-step deploy: seed the new `classifier` rows first, or

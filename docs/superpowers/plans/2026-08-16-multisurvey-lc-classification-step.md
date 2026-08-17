@@ -242,11 +242,19 @@ The unit suite has no model dependency:
 
     python -m pytest tests/unittest -v
 
-The offline-equivalence test is opt-in and needs the `alerce_classifiers`
-submodule plus `MODEL_PATH`:
+The offline-equivalence test is opt-in. It needs the offline checkout at
+`~/desktop/pipeline/feature_step` — note the `feature_step` subdirectory, since
+`features.offline` does not resolve from the checkout root. It needs neither the
+`alerce_classifiers` submodule nor `MODEL_PATH`: both row builders are pure and
+no classifier is run.
 
-    RUN_EQUIVALENCE_TEST=1 MODEL_PATH=<s3 url> python -m pytest tests/integration -v
+    RUN_EQUIVALENCE_TEST=1 python -m pytest tests/integration -v
 ```
+
+> **Note:** the README text above is the corrected version. The original draft of
+> this plan claimed the test needed the `alerce_classifiers` submodule and
+> `MODEL_PATH`; it needs neither, and the precondition it actually has — the
+> offline checkout path — was both wrong and unstated. See Task 11.
 
 - [ ] **Step 6: Re-run the test and commit**
 
@@ -2471,7 +2479,7 @@ Expected: first `1 skipped`; second either `1 passed` or a skip naming the missi
 /home/fandrades/miniconda3/envs/feature_step/bin/python -m pytest tests -v
 ```
 
-Expected: `73 passed, 2 skipped`.
+Expected: `78 passed, 2 skipped` (`79 passed, 1 skipped` with `RUN_EQUIVALENCE_TEST=1`).
 
 - [ ] **Step 4: Commit**
 

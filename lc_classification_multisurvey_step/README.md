@@ -16,7 +16,20 @@ The unit suite has no model dependency:
 
     python -m pytest tests/unittest -v
 
-The offline-equivalence test is opt-in and needs the `alerce_classifiers`
-submodule plus `MODEL_PATH`:
+The offline-equivalence test is opt-in. It needs the offline checkout at
+`~/desktop/pipeline/feature_step` — note the `feature_step` subdirectory, since
+`features.offline` does not resolve from the checkout root. It needs neither the
+`alerce_classifiers` submodule nor `MODEL_PATH`: both row builders are pure and
+no classifier is run.
 
-    RUN_EQUIVALENCE_TEST=1 MODEL_PATH=<s3 url> python -m pytest tests/integration -v
+    RUN_EQUIVALENCE_TEST=1 python -m pytest tests/integration -v
+
+If it reports `SKIPPED`, the offline checkout was not found — the skip message
+names the path it looked for. A skip here means the test did not run at all, so
+treat it as no coverage rather than as a pass.
+
+This is the only test that checks the port against the implementation it was
+ported from; the unit suite checks the port's internal consistency. It compares
+one single-oid `OutputDTO` through both row builders. It cannot cover the
+multi-oid melt path, because the offline reference raises on a multi-row frame
+by design.
