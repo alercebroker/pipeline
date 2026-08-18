@@ -76,6 +76,8 @@ There are three ways an oid enters the flow:
 | `offline_compute_features.py --oid <bigint>` | A **single** oid, supplied on the CLI. |
 | `offline_classify.py --oid <bigint>` | A **single** oid, supplied on the CLI. |
 | `offline_compare_vs_alerce.py --oid <bigint\|ZTFstr>` | A **single** oid; accepts either the bigint or the ZTF string and resolves both via `idmapper` (`decode_masterid` / `catalog_oid_to_masterid`). |
+| `offline_compare_probabilities.py --oid <bigint\|ZTFstr>` | A **single** oid, resolved the same way; compares BHRF probabilities against `alerce.probability` (§3b). |
+| `offline_xmatch_oid.py --oid <bigint\|ZTFstr>` | A **single** oid; crossmatch only (no model needed), optionally persisted to `<schema>.xmatch` (§3a). |
 | `offline_benchmark_features.py --n N --min-det M` | A **sample/subset**: the only place a set of oids is selected from the DB (see below). |
 
 The **only** subset-selection query lives in the benchmark script
@@ -131,19 +133,22 @@ against `{1:g, 2:r, 3:i}`, and `isdiffpos` is normalized to `±1` ints
 
 Computing the AllWISE crossmatch is the **feature step's own responsibility**
 (`features/step.py::pre_execute`): with `USE_XMATCH`, it calls the internal
-**Xwave** microservice through `libs/xmatch_client` —
-`XmatchClient.conesearch_with_metadata(ras, decs, oids)` does a *positional cone
-search* (POST `v1/bulk-conesearch`) + a metadata fetch (POST `v1/bulk-metadata`),
-attaches the result to `msg['xmatches']` (so `detections_to_astro_object` reads
-`W1–W4` from `metadata['w{n}mpro']['Float64']`), **and produces the match back to
-the scribe** so it lands in `multisurvey_ztf.xmatch`.
+**Xwave** microservice through `libs/xmatch_client`. `step.get_xmatch_info` issues
+**one `conesearch_with_metadata(ras, decs, oids, catalog=<name>)` request per
+catalog** in `XMATCH_CATALOGS` (default `["allwise","gaia"]`) — a *positional cone
+search* (POST `v1/bulk-conesearch`, passing the `catalog` field so the server
+scopes that catalog *before* the KNN) + a metadata fetch (POST `v1/bulk-metadata`).
+It attaches the allwise match to `msg['xmatches']` (so `detections_to_astro_object`
+reads `W1–W4` from `metadata['w{n}mpro']['Float64']`), **and produces the matches
+back to the scribe** so they land in `multisurvey_ztf.xmatch`.
 
 The offline path mirrors this (`features/offline/xmatch.py`):
 
 - **Compute-live (preferred).** When an Xwave URL is set (`--xmatch-url` /
   `XMATCH_URL`), `classify._fetch_oid_inputs` calls
-  `xmatch.compute_matches([oid], [meanra], [meandec], url)` — the same cone search
-  the step runs, centered on the message's `meanra/meandec` — and
+  `xmatch.compute_matches([oid], [meanra], [meandec], url)` — which, like
+  `get_xmatch_info`, does **one cone search per catalog** (`catalog=<name>`),
+  centered on the message's `meanra/meandec` — and
   `matches_to_allwise_df` reduces it to the `[oid, W1, W2, W3, W4]` frame the
   downstream `_xmatches`/`compute_astro_object` path already consumes.
 - **DB read (fallback).** With no URL, `fetch_allwise` reads
@@ -154,23 +159,45 @@ The offline path mirrors this (`features/offline/xmatch.py`):
   to fix that.
 
 **Persistence differs from the step:** offline does **not** send to the scribe.
-Instead we intend to save the crossmatch directly to the DB (`persist_matches`,
-currently a **placeholder** — dry-run builds the exact `multisurvey_ztf.xmatch`
-rows; the direct INSERT is a documented TODO).
+It writes the crossmatch straight to the DB instead (`persist_matches`, **implemented**):
+`INSERT … ON CONFLICT (oid, sid, catid) DO UPDATE SET oid_catalog, dist, updated_date`,
+mirroring the scribe's `XmatchCommand.db_operation`. Dry-run by default — with
+`execute=False` it opens no connection and returns `{"executed": False, "would_write": N}`;
+`execute=True` upserts every row in one transaction. Rows missing `dist` or
+`oid_catalog` are dropped with a warning (both are `NOT NULL`). **Link table only** —
+the AllWISE catalog rows in `multisurvey_ztf.allwise` are loaded by a separate
+process, not here. Exposed as `offline_classify.py --persist-xmatch` and
+`offline_xmatch_oid.py --save` (both need `--execute` + `--write-credentials` to write).
 
 If a ZTF oid has no AllWISE match (either path), `_xmatches` returns `None` and the
 parser falls back to `W1–W4 = NaN` — same as the live behavior when there's no match.
 
 ### 3b. `alerce` schema — validation reference only (not part of compute)
 
-Used **only** by `offline_compare_vs_alerce.py` to diff our features against the
-legacy stored ones. Not touched by feature computation or classification.
+Used **only** by the compare scripts (`offline_compare_vs_alerce.py` for features,
+`offline_compare_probabilities.py` for probabilities) to diff our output against the
+legacy stored one. Not touched by feature computation or classification. Everything
+here is keyed by the **ZTF string oid**, not the multisurvey bigint.
 
 | Reader | Table | Purpose |
 |---|---|---|
 | `fetch_alerce_features` | `alerce.feature` | stored legacy features for a ZTF **string** oid; `[name, value, fid, version]`. Optionally filtered by `version`. |
 | `list_alerce_feature_versions` | `alerce.feature` | distinct `version` strings stored for an oid (no timestamp column exists). |
+| `fetch_stored_probabilities` | `alerce.probability` | stored legacy **BHRF** probabilities for an oid; `[classifier_name, class_name, probability, ranking]`, filtered by `classifier_version` + `classifier_name = ANY(...)`. **This is the LC-classifier counterpart that `multisurvey_ztf.probability` does not have** (§3c). |
 | `_fetch_alerce_lc_span` (in script) | `alerce.object` | `firstmjd, lastmjd, ndet` — LC-span context for the comparison printout. |
+
+**`alerce.feature` query cost:** ~7.5B rows and **no index on `version`** — filtering
+by version across objects times out. Per-oid reads are fine (PK); population stats
+need `TABLESAMPLE`. NaN is stored as `NULL`.
+
+**`alerce.probability` query cost:** ~1.47B rows, **LIST-partitioned by
+`classifier_name`**. Always filter `classifier_name = ANY(:names)` — it prunes to
+just those partitions, and each partition's PK
+`(oid, classifier_name, classifier_version, class_name)` then makes it an index
+lookup. Two gotchas: `classifier_name` values are **mixed-case**
+(`lc_classifier_BHRF_forced_phot`) even though Postgres lowercases the child *table*
+names — pass the column values, not the table names; and `classifier_version` is a
+**VARCHAR** here (`'2.1.0'`), unlike the smallint in the multisurvey scheme (§3c).
 
 ### 3c. `multisurvey_ztf.probability` — stamp classifiers only (no stored LC probs)
 
@@ -199,9 +226,14 @@ here to diff our predicted LC probabilities against.
   (`2.1.1` → `211`, `1.0.4` → `104`).
 - **Consequence:** the predicted-vs-stored BHRF compare has **no counterpart in
   this table** — these are stamp probabilities with a flat 5–6 class taxonomy,
-  not the BHRF lightcurve taxonomy. `fetch_stored_probabilities` stays
-  `NotImplementedError` and `offline_compare_probabilities.py` stays a stub;
-  comparing against these rows would be apples-to-oranges.
+  not the BHRF lightcurve taxonomy. Comparing against these rows would be
+  apples-to-oranges.
+- **Where the stored BHRF probabilities actually live: `alerce.probability`**
+  (the *legacy* schema, §3b) — found 2026-07-06. That closes the compare:
+  `db.fetch_stored_probabilities` + `probability_compare.py` +
+  `offline_compare_probabilities.py` are implemented, no longer stubs. The join is
+  a straight `(classifier_name, class_name)` match — same model on both sides, so
+  the class strings agree and **no class_id mapping is involved**.
 - **We now write** our own BHRF lightcurve probabilities into this same table
   (distinct from the stamp rows already present) via `probability_writer.py`,
   mapping class names → `class_id` through the seeded `taxonomy` (§3d). This is
@@ -229,15 +261,40 @@ must be edited — in the schema-authority library, not by the offline tooling:
 
 | LUT | PK (`index_elements`) | Current state | What's left |
 |---|---|---|---|
-| `feature_name_lut` | `(feature_id, sid)` | **123 ZTF rows seeded** (`sid = 0, tid = 0`, `feature_id` 0–122) alongside the prior 146 LSST `sid = 1` rows | **Done** — seeded via `ztf_feature_luts_seed.sql`. Band-less names (`feature_id` namespaced by `sid`, restarts at 0; band lives in `feature.band`). Back-port to authority file pending. |
+| `feature_name_lut` | `(feature_id, sid)` | **127 ZTF rows seeded** (`sid = 0, tid = 0`, `feature_id` 0–126) alongside the prior 146 LSST `sid = 1` rows | **Done** — seeded via `ztf_feature_luts_seed.sql`, re-derived in **extractor emission order** and including the 4 `*_mjd_ref` reference-epoch features. Band-less names (`feature_id` namespaced by `sid`, restarts at 0; band lives in `feature.band`). Back-port to authority file pending. |
 | `feature_version_lut` | `(version_id, sid)` | **1 ZTF row seeded** (`version_id = 0`, `version_name = 27.5.7a31`, `sid = 0, tid = 0`) | **Done** — same seed file. `version_id = 0` matches the fixture; production's `get_or_create` starts at 1 — adopting that means changing **both** the SQL and `FEATURE_VERSION_LUT`. |
 | `classifier` | `(classifier_id)` | ids 1–4 stamp **+ ids 5–9 BHRF** (flat + top + 3 branches, `classifier_version = "2.1.0"`, `tid = 0`) | **Done** — seeded via `ztf_classifier_taxonomy_seed.sql`. Back-port to authority file pending. |
 | `taxonomy` | `(class_id, classifier_id)` | flat stamp taxonomy **+ 45 BHRF rows** (21+3+6+6+9; `class_id` per-classifier 0-indexed, `order = class_id`; transient uses **`SESN`**) | **Done** — same seed file. Back-port pending. |
 
 > The **ZTF feature-name list** is captured in `offline/feature_lut.py` (the
-> 123-name fixture) and in `ztf_feature_luts_seed.sql` — both generated from a real
+> 127-name fixture) and in `ztf_feature_luts_seed.sql` — both generated from a real
 > `compute_features(...)` run (§5). The LSST `feature_name_lut` set is *not*
 > reusable as-is.
+
+#### The DB is the authority; the fixtures are only bootstrap
+
+`classifier_taxonomy_lut.py` and `feature_lut.py` are **seed fixtures, not runtime
+lookups**. The rule:
+
+- **At runtime, ids come from the DB.** `probability_writer` resolves
+  `class_name -> class_id` through `db.fetch_taxonomy_maps` (reading
+  `<schema>.taxonomy`), never through `TAXONOMY_LUT`. A wrong or stale fixture
+  cannot corrupt a written `class_id`.
+- **The fixtures exist for the chicken-and-egg cases only:** (a) generating the
+  seed SQL that *creates* those rows — you cannot read rows that do not exist yet;
+  (b) `scripts/offline_verify_taxonomy.py`, where the fixture's value *is* being an
+  independent copy checked against the deployed pickle; (c) unit tests, which stub
+  what the DB would return without needing a DB.
+- **Prefer `classifier_name` over `classifier_id` as the stable key.** The ids are
+  assigned by hand and differ per environment (see the drift warning above), while
+  the names are model-derived and stable. Code that hardcodes "BHRF flat is
+  classifier_id 5" breaks silently in an environment where 5 is something else;
+  code that resolves `classifier_name -> classifier_id` against `<schema>.classifier`
+  does not care what the id is.
+  ⚠ `probability_compare.py` currently derives its `classifier_id -> classifier_name`
+  map from the `CLASSIFIER_LUT` fixture — the one runtime spot that still violates
+  this. It is benign today (it only labels output heads and matches on the *name*
+  against `alerce.probability`), but it should read `<schema>.classifier` instead.
 
 ---
 
@@ -362,7 +419,7 @@ flowchart TD
 - DB → features → BHRF probabilities end-to-end (`offline_classify.py`, needs `MODEL_PATH`).
 - Feature diff tooling vs `alerce.feature` (`offline_compare_vs_alerce.py`).
 - Benchmark harness over a sample of oids (`offline_benchmark_features.py`).
-- **ZTF feature LUTs seeded** (`feature_name_lut` 123 rows + `feature_version_lut`
+- **ZTF feature LUTs seeded** (`feature_name_lut` 127 rows + `feature_version_lut`
   1 row) via `ztf_feature_luts_seed.sql`, and **feature persistence** into
   `multisurvey_ztf.feature` (`feature_writer` / `offline_compute_features.py --save`).
   ⚠ seeded directly, not yet back-ported to the db-plugins authority file (§3d).
@@ -388,25 +445,80 @@ flowchart TD
   per-classifier dense rank desc; `lastmjd` = max MJD over detections+forced
   (already MJD, no JD subtraction); upsert `ON CONFLICT (oid, sid, classifier_id,
   class_id) DO UPDATE`. Dry-run by default.
+- **Per-catalog crossmatch — the AllWISE-drop bug is fixed.** `libs/xmatch_client`
+  now forwards a `catalog` argument to `v1/bulk-conesearch`, so the server scopes
+  the search to one catalog *before* the KNN. Both the live step
+  (`step.get_xmatch_info`, over `XMATCH_CATALOGS`, default `["allwise","gaia"]`)
+  and offline (`xmatch.compute_matches`) issue **one request per catalog**.
+  Previously the single global `nneighbor=1` returned only the overall nearest
+  match, silently hiding AllWISE whenever a co-located Gaia source was closer.
+  See `XMATCH_NNEIGHBOR_NOTE.md`.
+- **Crossmatch persistence** into `<schema>.xmatch` (`persist_matches`), §3a.
+- **Predicted-vs-stored probability compare** — implemented against the *legacy*
+  `alerce.probability` (§3b/§3c): `db.fetch_stored_probabilities` +
+  `probability_compare.py` + `offline_compare_probabilities.py`. Joins on
+  `(classifier_name, class_name)` across all 5 BHRF heads and reports per-head
+  rank-1 agreement.
+- **End-to-end validation vs the legacy production pipeline** —
+  see **`OFFLINE_VS_LEGACY_VALIDATION.md`**. On the 559 OIDs provably classified
+  with feature version 27.5.6, the offline pipeline reproduces the production BHRF
+  **final class for 554/559 = 99.1%** (all 5 heads: 89.4%), and the live-Xwave
+  AllWISE crossmatch matches the stored WISE colors **75/75** (|Δ| ≈ 1e-6). The 5
+  disagreements are single borderline neighbor flips. Two must-dos are documented
+  there: **truncate the LC** to the 27.5.6 epoch, and load the model from a **local
+  md5-verified path** (a URL `MODEL_PATH` silently reuses a stale SNIbc pickle in
+  `/tmp/SquidwardFeaturesClassifier/`).
+- **Production finding: recent feature versions have no AllWISE** — see
+  **`WISE_NULL_CLASSIFICATION_IMPACT.md`**. `27.5.7a32.dev1` is 100% NaN in the 11
+  WISE colors, which biases BHRF toward Stochastic: stored predictions dropped from
+  71.5% to 36.8% Periodic across the ~Oct–Nov 2025 rollover, and a controlled
+  ablation (blank only WISE) reproduces that value (87% → 37.2%). The missing WISE
+  is **86% recoverable** with our xmatch client at 1.005″.
 
 **Pending / deferred:**
-- **Value-level equality vs `alerce.feature`** — the truncated-LC blocker is now
-  **lifted** (we read full-history `multisurvey_ztf` light curves). A clean
-  apples-to-apples comparison still needs `--version` matching the deployed
-  `lc_classifier`; this has not yet been run/confirmed on the new data.
-- **Predicted-vs-stored probability compare** — resolved (negative):
-  `multisurvey_ztf.probability` holds **only stamp-classifier** output, not the
-  BHRF lightcurve classifier (§3c). There are **no stored LC probabilities** to
-  diff against, so `fetch_stored_probabilities` / `offline_compare_probabilities.py`
-  stay stubs by design rather than "pending a table name."
-- **Back-port the BHRF `classifier` + `taxonomy` rows to the authority file** —
-  seeded directly via `ztf_classifier_taxonomy_seed.sql`; `_initial_data_pipeline.py`
-  does not yet carry BHRF ids 5–9. Must first reconcile the missing live
-  `classifier` ids 3–4 (this checkout's `classifier` block stops at id 2) before
-  adding 5–9, or it will renumber over real ids (§3d).
-- **Back-port the ZTF feature LUTs to the authority file** — they were seeded
-  directly via `ztf_feature_luts_seed.sql`, so `_initial_data_pipeline.py` does not
-  yet carry the ZTF `feature_name_lut` / `feature_version_lut` rows (§3d).
+- **Why `27.5.7a32.dev1` has no AllWISE at all** — still undetermined. The data
+  exists (86% recoverable), so it is a pipeline/enrichment gap, not absent
+  counterparts.
+- **Attribution by reconstruction for the WISE note** — the class-composition
+  argument leans on the `lastmjd` proxy. The direct confirmation (feed each object's
+  `27.5.6` *and* `dev1` vector to BHRF and see which reproduces the stored
+  prediction) has not been run.
+- **Feature-value equality is characterized, not "clean"** — with the LC matched,
+  the residual differences are understood and split three ways
+  (`OFFLINE_VS_LEGACY_VALIDATION.md` §5): non-convex fits and period-derived
+  quantities (irreproducible by nature), **input provenance** — reprocessed forced
+  photometry (`procstatus` 61→0), `distpsnr1`, reference values — and a matched
+  core (WISE colors, `Mean`, coordinates). The provenance group is the only
+  systematic one; `offline_forced_swap_experiment.py` isolates the forced-photometry
+  half of it.
+- **`probability_compare.py` should read `<schema>.classifier`** instead of the
+  `CLASSIFIER_LUT` fixture for its `classifier_id -> classifier_name` map (§3d).
+- **Back-port every seeded LUT row to the authority file** (§3d). We seeded the
+  live DB with raw SQL, bypassing
+  `libs/db-plugins-multisurvey/db_plugins/db/sql/_initial_data_pipeline.py`, so the
+  authority file and the live DB have diverged:
+
+  | | live DB | `INITIAL_DATA` |
+  |---|---|---|
+  | `feature_name_lut` ZTF (`sid = 0`) | 127 rows | **0** (only the 146 LSST `sid = 1` rows) |
+  | `classifier` | ids 1–4 stamp + **5–9 BHRF** | stops at **id 2** |
+  | `taxonomy` BHRF | 45 rows | **0** (its stamp rows already reference a `classifier_id 3` absent from its own `classifier` block) |
+
+  Two consequences: a **fresh deploy or staging DB comes up without the ZTF LUTs**,
+  so `feature_writer` / `probability_writer` fail there on the FK; and the file no
+  longer describes reality.
+
+  **The renumbering hazard — why order matters.** `classifier_id` is assigned by
+  hand in that list. This checkout ends at id 2, so "just continuing the list" would
+  make BHRF flat `classifier_id = 3` — but in the live DB 3 is already a stamp
+  classifier. Since the insert is `ON CONFLICT (classifier_id) DO NOTHING`, applying
+  that file to the live DB would **silently do nothing** (3 stays the stamp
+  classifier) while a fresh DB would get 3 = BHRF flat: the same id means different
+  things per environment, and `probability` rows keyed on it become ambiguous.
+  **Therefore: first rebase db-plugins so it carries the real ids 3–4 and verify
+  against live, only then append 5–9 and the ZTF `feature_name_lut` /
+  `feature_version_lut` rows.** The offline code itself should not depend on the
+  outcome — it resolves ids from the DB (§3d).
 
 ---
 
@@ -418,7 +530,9 @@ flowchart TD
 | `message.py` | `build_message` → magstats_ms_step ZTF output message dict. §4 |
 | `lc_features.py` | message → AstroObject → features. §5 |
 | `classify.py` | features → BHRF probabilities. §6 |
-| `feature_compare.py` | pure feature-diff utilities (used by compare script). |
+| `feature_compare.py` | pure feature-diff utilities (used by compare script). Canonicalizes names (`/`→`_`) so the legacy `Power_rate_1/2` and the extractor's `Power_rate_1_2` join as one feature. |
+| `probability_compare.py` | pure probability-diff utilities: BHRF `OutputDTO` → per-head series, joined against `alerce.probability` rows on `(classifier_name, class_name)`. §3b |
+| `xmatch.py` | Live AllWISE crossmatch via Xwave (`compute_matches`, one request per catalog), `matches_to_allwise_df`, and the `<schema>.xmatch` upsert (`persist_matches`). §3a |
 | `feature_lut.py` | Local ZTF feature_name/version LUT fixture + loaders (`load_feature_name_lut`, `version_name_to_id`, `default_version_name`). |
 | `model_feature_list.py` | Pinned authority: the deployed BHRF's 199 `feature_list` names + md5/version provenance. §6 |
 | `classifier_taxonomy_lut.py` | BHRF classifier + taxonomy seed fixture (source of truth) + `render_seed_sql()`. §3d |
@@ -430,3 +544,7 @@ flowchart TD
 | `ztf_feature_luts_seed.sql` | Idempotent SQL seeding the ZTF `feature_name_lut` + `feature_version_lut` (`sid = 0`). §3d |
 | `ztf_classifier_taxonomy_seed.sql` | Idempotent SQL seeding the BHRF `classifier` (ids 5–9) + `taxonomy` (45 rows). Generated from `classifier_taxonomy_lut.py`. §3d |
 | `scripts/offline_*.py` | CLI entry points (in `feature_step/scripts/`). §2 |
+| `OFFLINE_VS_LEGACY_VALIDATION.md` | **Validation report**: how we picked version 27.5.6 and the 559-OID cohort, the 99.1% class reproduction, and where features still differ + why. §7 |
+| `WISE_NULL_CLASSIFICATION_IMPACT.md` | **Finding**: recent feature versions have no AllWISE, which biases BHRF toward Stochastic. Evidence = NaN rates + stored-probability timeline + model ablation. §7 |
+| `XMATCH_NNEIGHBOR_NOTE.md` | Diagnosis (and now the fix) of the global-`nneighbor=1` bug that hid AllWISE behind a nearer Gaia match. §3a |
+| `nan_distribution/`, `wise_ablation/`, `class_over_time/` | The scripts + CSVs + figures backing `WISE_NULL_CLASSIFICATION_IMPACT.md` (each has its own README). |
