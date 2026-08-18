@@ -256,16 +256,41 @@ def list_alerce_feature_versions(credentials_json: str, ztf_oid: str) -> list[st
     return df["version"].tolist()
 
 
-def fetch_stored_probabilities(credentials_json: str, oids: list) -> pd.DataFrame:
-    """Read stored BHRF probabilities, for compare-vs-offline. DEFERRED.
+def fetch_stored_probabilities(
+    credentials_json: str,
+    ztf_oid: str,
+    classifier_names: list,
+    version: str,
+) -> pd.DataFrame:
+    """Stored legacy probabilities for one ZTF string oid, given classifiers+version.
 
-    The stored-probability table (schema/name and the classifier_name/version
-    filter) is not yet pinned down. Wire this up once it is; see the offline
-    classification design doc."""
-    raise NotImplementedError(
-        "pending: stored-probability table TBD "
-        "(see docs/superpowers/specs/2026-06-21-offline-ztf-classification-design.md)"
-    )
+    Reads `alerce.probability` — the legacy ZTF probability table (string-keyed,
+    LIST-partitioned by classifier_name; ~1.47B rows). The filter
+    `classifier_name = ANY(:names)` prunes to just those partitions and the
+    per-partition PK `(oid, classifier_name, classifier_version, class_name)`
+    turns each into a cheap index lookup (no scan of the huge partitions).
+
+    NOTE: `classifier_name` values are mixed-case (e.g.
+    `lc_classifier_BHRF_forced_phot`) even though the child partition table names
+    are lowercased by Postgres — pass the column values, not the table names.
+    `classifier_version` here is a VARCHAR (e.g. '2.1.0'), unlike the smallint in
+    the multisurvey scheme.
+
+    Returns columns [classifier_name, class_name, probability, ranking].
+    """
+    engine = _make_engine(credentials_json)
+    query = text(f"""
+        SELECT classifier_name, class_name, probability, ranking
+        FROM {ALERCE_SCHEMA}.probability
+        WHERE oid = :oid
+          AND classifier_version = :version
+          AND classifier_name = ANY(:names)
+    """)
+    with engine.connect() as conn:
+        return pd.read_sql_query(
+            query, conn,
+            params={"oid": ztf_oid, "version": version, "names": list(classifier_names)},
+        )
 
 
 def fetch_taxonomy_maps(credentials_json: str, classifier_ids: list,
