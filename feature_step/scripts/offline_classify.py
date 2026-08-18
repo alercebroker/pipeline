@@ -49,11 +49,13 @@ def main():
                          "reading the (empty) multisurvey_ztf.xmatch table. Pass '' to force the "
                          "DB-read fallback.")
     ap.add_argument("--persist-xmatch", action="store_true",
-                    help="Save the computed crossmatch directly to the DB (PLACEHOLDER — "
-                         "dry-run only; requires --xmatch-url).")
+                    help="Save the computed crossmatch directly to <schema>.xmatch "
+                         "(dry-run unless --execute; requires --xmatch-url).")
     args = ap.parse_args()
 
-    if args.save and args.execute and not args.write_credentials:
+    if args.execute and not (args.save or args.persist_xmatch):
+        ap.error("--execute requires --save and/or --persist-xmatch (nothing to write otherwise)")
+    if args.execute and not args.write_credentials:
         ap.error("--execute requires --write-credentials (the default credentials are read-only)")
     if args.persist_xmatch and not args.xmatch_url:
         ap.error("--persist-xmatch requires --xmatch-url (nothing is computed to persist otherwise)")
@@ -81,12 +83,14 @@ def main():
     print("\nOK: probabilities produced.")
 
     if args.persist_xmatch:
-        rows = xmatch.persist_matches(matches, write_credentials=args.write_credentials,
-                                      execute=False)
-        print(f"\npersist-xmatch (PLACEHOLDER, dry-run): {len(rows)} row(s) that would be "
-              f"written to {db.SCHEMA}.xmatch:")
-        for r in rows:
-            print(f"  {r}")
+        outcome = xmatch.persist_matches(
+            matches, write_credentials=args.write_credentials or args.credentials,
+            execute=args.execute)
+        print(f"\npersist-xmatch: {outcome}")
+        if not args.execute:
+            for r in xmatch.build_xmatch_rows(matches):
+                print(f"  would write -> {db.SCHEMA}.xmatch: {r}")
+            print("  (dry-run — pass --execute with --write-credentials to write)")
 
     if args.save:
         # class_id authority is the DB taxonomy — read it (read-only creds).

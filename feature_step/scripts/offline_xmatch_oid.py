@@ -44,11 +44,26 @@ def main():
                     help="Comma-separated catalogs to keep, or 'all' for every catalog "
                          "the client returns (default: allwise).")
     ap.add_argument("--nneighbor", type=int, default=1,
-                    help="Neighbors per position. The XmatchClient hardcodes 1 (single "
-                         "GLOBAL nearest across all catalogs). >1 bypasses the client and "
-                         "hits v1/bulk-conesearch raw so each catalog can contribute "
-                         "(default: 1).")
+                    help="Neighbors per position. The XmatchClient issues one "
+                         "per-catalog request (nneighbor=1 => the nearest match in "
+                         "each catalog). >1 bypasses the client and hits "
+                         "v1/bulk-conesearch raw for extra neighbors (default: 1).")
+    ap.add_argument("--save", action="store_true",
+                    help="Upsert the computed crossmatch into <schema>.xmatch "
+                         "(dry-run unless --execute). No model needed.")
+    ap.add_argument("--execute", action="store_true",
+                    help="With --save, actually write. Requires --write-credentials.")
+    ap.add_argument("--write-credentials", default=None, dest="write_credentials",
+                    help="Write-capable DB credentials JSON (default credentials are read-only).")
     args = ap.parse_args()
+
+    if args.execute and not args.save:
+        ap.error("--execute requires --save (nothing to write otherwise)")
+    if args.execute and not args.write_credentials:
+        ap.error("--execute requires --write-credentials (the default credentials are read-only)")
+    if args.save and args.nneighbor != 1:
+        ap.error("--save works with the client path only (nneighbor=1); the raw "
+                 "multi-neighbor path is diagnostic-only")
 
     catalogs = None if args.catalogs.lower() == "all" else args.catalogs.split(",")
 
@@ -68,8 +83,8 @@ def main():
     print("=" * 70)
 
     if args.nneighbor != 1:
-        # The client hardcodes nneighbor=1; hit the service raw to let each
-        # catalog contribute its own nearest neighbor(s).
+        # The client only asks for nneighbor=1 per catalog; hit the service raw
+        # to fetch more than one neighbor per catalog.
         import requests
         resp = requests.post(
             f"{args.xmatch_url.rstrip('/')}/v1/bulk-conesearch",
@@ -106,6 +121,16 @@ def main():
         meta = m.get("metadata") or {}
         if meta:
             print(f"      metadata keys: {sorted(meta)}")
+
+    if args.save:
+        outcome = xmatch.persist_matches(
+            matches, write_credentials=args.write_credentials or args.credentials,
+            execute=args.execute)
+        print(f"\nsave: {outcome} -> {db.SCHEMA}.xmatch")
+        if not args.execute:
+            for r in xmatch.build_xmatch_rows(matches):
+                print(f"  would write: {r}")
+            print("  (dry-run — pass --execute with --write-credentials to write)")
 
 
 if __name__ == "__main__":

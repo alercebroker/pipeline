@@ -26,6 +26,7 @@ import os
 
 import numpy as np
 import pandas as pd
+from sqlalchemy import text
 
 log = logging.getLogger(__name__)
 
@@ -39,8 +40,11 @@ ALLWISE_CATALOG = "allwise"
 _CATALOG_TO_CATID = {ALLWISE_CATALOG: ALLWISE_CATID}
 _UNKNOWN_CATID = -999
 
-# Xwave conesearch defaults (mirror the step / xmatch_client defaults).
-DEFAULT_RADIUS = 1.5   # arcsec
+# Xwave conesearch defaults. NOTE: the offline radius is intentionally tighter
+# than the live step / xmatch_client default (1.5"): 1.005" scopes the AllWISE
+# cone to a ~1" match. (The live step passes no radius, so it uses the client's
+# 1.5"; offline deviates here on purpose.)
+DEFAULT_RADIUS = 1.005   # arcsec
 DEFAULT_BATCH_SIZE = 500
 # Internal Xwave crossmatch service. Used only as the CLI default
 # (env-overridable via XMATCH_URL); the library `_resolve_url` stays strict.
@@ -75,7 +79,12 @@ def compute_matches(oids, ras, decs, base_url=None, radius=DEFAULT_RADIUS,
                     client=None):
     """Cone-search Xwave for `oids` at (ras, decs); return MatchWithMetadata list.
 
-    Mirrors `feature_step.step.get_xmatch_info` -> `conesearch_with_metadata`.
+    Mirrors `feature_step.step.get_xmatch_info`: one `conesearch_with_metadata`
+    request **per catalog** (the client's `catalog` arg scopes the search on the
+    server *before* the KNN, so each catalog yields its own nearest match rather
+    than only the single global nearest across all catalogs). `catalogs=None`
+    means one global-nearest call (`catalog=None`, the client default).
+
     `client` is injectable for tests (defaults to a real XmatchClient). `oids`
     are passed as strings, as the client expects."""
     if not (len(oids) == len(ras) == len(decs)):
@@ -83,10 +92,15 @@ def compute_matches(oids, ras, decs, base_url=None, radius=DEFAULT_RADIUS,
     if len(oids) == 0:
         return []
     client = client or _make_client(base_url, batch_size)
-    return client.conesearch_with_metadata(
-        ras=list(ras), decs=list(decs), oids=[str(o) for o in oids],
-        radius=radius, catalogs=list(catalogs) if catalogs is not None else None,
-    )
+    str_oids = [str(o) for o in oids]
+    ras, decs = list(ras), list(decs)
+    cats = list(catalogs) if catalogs is not None else [None]
+    matches = []
+    for cat in cats:
+        matches += client.conesearch_with_metadata(
+            ras=ras, decs=decs, oids=str_oids, radius=radius, catalog=cat,
+        )
+    return matches
 
 
 def _meta_float(match, meta_key):
@@ -161,30 +175,70 @@ def build_xmatch_rows(matches):
     return rows
 
 
-def persist_matches(matches, write_credentials=None, execute=False):
-    """Save the crossmatch directly to the DB — PLACEHOLDER (does not scribe).
+def _xmatch_records(rows):
+    """Sanitize build_xmatch_rows output into native-typed dict records.
+
+    `multisurvey_ztf.xmatch.dist` and `.oid_catalog` are both NOT NULL, so drop
+    (with a warning) any match missing a distance or a catalog id — it cannot be
+    persisted. Cast to native Python types so the >2**53 oid bigint and the
+    smallints are not coerced to float by the driver."""
+    records = []
+    dropped = 0
+    for r in rows:
+        if r.get("dist") is None or r.get("oid_catalog") is None:
+            dropped += 1
+            continue
+        records.append({
+            "oid": int(r["oid"]),
+            "sid": int(r["sid"]),
+            "catid": int(r["catid"]),
+            "oid_catalog": str(r["oid_catalog"]),
+            "dist": float(r["dist"]),
+        })
+    if dropped:
+        log.warning("Dropping %d xmatch row(s) with NULL dist/oid_catalog "
+                    "(both are NOT NULL in %s.xmatch)", dropped, "multisurvey_ztf")
+    return records
+
+
+def persist_matches(matches, write_credentials=None, schema=None, execute=False):
+    """Upsert the crossmatch link rows directly into <schema>.xmatch (no scribe).
 
     Sending the crossmatch to the DB is the feature step's responsibility: the
     live step produces it to the scribe, which upserts `multisurvey_ztf.xmatch`
     on conflict `(oid, sid, catid)`, updating `oid_catalog, dist, updated_date`.
-    Offline we intend to write the same rows straight into the table (write-
-    capable creds, like `probability_writer.write_probabilities`), skipping the
-    scribe.
+    Offline we write the same rows straight into the table with write-capable
+    creds — like `probability_writer.write_probabilities` — skipping the scribe.
+    Link table only: the AllWISE catalog rows in `multisurvey_ztf.allwise` are
+    loaded by a separate process, NOT here.
 
-    The direct-write SQL is intentionally not implemented yet: this builds and
-    returns the exact `Xmatch` rows that would be written (see
-    `build_xmatch_rows`) and, on `execute`, raises NotImplementedError so nothing
-    is silently dropped."""
-    rows = build_xmatch_rows(matches)
+    Dry-run by default (execute=False): returns {"executed": False,
+    "would_write": N} and opens no DB connection. With execute=True, upserts all
+    records in one transaction and returns {"executed": True, "written": N}.
+    `schema` defaults to db.SCHEMA."""
+    from features.offline import db  # lazy: importing this module must not need db
+
+    schema = schema or db.SCHEMA
+    records = _xmatch_records(build_xmatch_rows(matches))
+    n = len(records)
     log.info("persist_matches: %d %s.xmatch row(s) prepared (execute=%s)",
-             len(rows), "multisurvey_ztf", execute)
+             n, schema, execute)
+
     if not execute:
-        return rows
-    # TODO(placeholder): upsert `rows` into multisurvey_ztf.xmatch using
-    # write_credentials — INSERT ... ON CONFLICT (oid, sid, catid) DO UPDATE SET
-    # oid_catalog=EXCLUDED.oid_catalog, dist=EXCLUDED.dist, updated_date=now().
-    # Mirrors scribe_multisurvey XmatchCommand.db_operation. Link table only; the
-    # AllWISE catalog rows are loaded separately, not here.
-    raise NotImplementedError(
-        "persist_matches: direct DB write is a placeholder — not yet implemented"
+        return {"executed": False, "would_write": n}
+
+    # schema is a trusted operator-supplied identifier (db.SCHEMA env / CLI), not
+    # user input — same f-string convention as db.py's read queries. Mirrors
+    # scribe_multisurvey XmatchCommand.db_operation.
+    sql = text(
+        f"INSERT INTO {schema}.xmatch (oid, sid, catid, oid_catalog, dist, created_date) "
+        "VALUES (:oid, :sid, :catid, :oid_catalog, :dist, now()) "
+        "ON CONFLICT (oid, sid, catid) "
+        "DO UPDATE SET oid_catalog = EXCLUDED.oid_catalog, dist = EXCLUDED.dist, "
+        "updated_date = now()"
     )
+    engine = db._make_engine(write_credentials)
+    with engine.begin() as conn:
+        if records:
+            conn.execute(sql, records)
+    return {"executed": True, "written": n}

@@ -1,6 +1,13 @@
 # Xmatch client drops AllWISE — Xwave `catalog` arg is the fix
 
-**Example oid:** `36028933559755080` (ZTF17aaabauy), center `ra=75.825020 dec=42.212812`.
+> **STATUS (2026-07-14): FIXED.** `libs/xmatch_client` now forwards a `catalog`
+> argument to `/v1/bulk-conesearch` (`conesearch[_with_metadata](..., catalog=...)`),
+> so the server scopes per catalog *before* the KNN. The live `feature_step`
+> (`step.get_xmatch_info`) issues one request per catalog in `XMATCH_CATALOGS`
+> (default `["allwise","gaia"]`), and the offline path (`features/offline/xmatch.py
+> ::compute_matches`) mirrors it — one request per catalog with `catalog=<name>`.
+> The diagnosis below is retained for the record; the "Fix" section is now
+> implemented, not proposed.
 
 ## Calling the client (minimum)
 

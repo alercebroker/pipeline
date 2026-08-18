@@ -25,15 +25,21 @@ def _match(oid, w1, w2, w3, w4, match_id="J1", distance=0.1, catalog="allwise"):
 
 
 class _FakeClient:
-    """Records the conesearch args and returns canned matches."""
+    """Stands in for XmatchClient with the real `conesearch_with_metadata`
+    signature (single `catalog` string). Records one entry per call and returns
+    canned matches, mirroring the per-catalog request loop the step uses."""
     def __init__(self, matches):
         self._matches = matches
-        self.called_with = None
+        self.calls = []
 
-    def conesearch_with_metadata(self, ras, decs, oids, radius=1.5, catalogs=None):
-        self.called_with = {"ras": ras, "decs": decs, "oids": oids,
-                            "radius": radius, "catalogs": catalogs}
+    def conesearch_with_metadata(self, ras, decs, oids, radius=1.5, catalog=None):
+        self.calls.append({"ras": ras, "decs": decs, "oids": oids,
+                           "radius": radius, "catalog": catalog})
         return self._matches
+
+    @property
+    def called_with(self):
+        return self.calls[-1] if self.calls else None
 
 
 def test_compute_matches_passes_string_oids_and_returns_matches():
@@ -41,10 +47,28 @@ def test_compute_matches_passes_string_oids_and_returns_matches():
     client = _FakeClient([m])
     out = xmatch.compute_matches([100], [285.7], [76.5], client=client)
     assert out == [m]
+    # default catalogs=(allwise,) -> exactly one per-catalog request
+    assert len(client.calls) == 1
+    assert client.called_with["catalog"] == "allwise"
     # oids stringified, coords forwarded as-is
     assert client.called_with["oids"] == ["100"]
     assert client.called_with["ras"] == [285.7]
     assert client.called_with["decs"] == [76.5]
+
+
+def test_compute_matches_one_request_per_catalog():
+    m = _match(100, 12.0, 11.0, 9.0, 7.0)
+    client = _FakeClient([m])
+    xmatch.compute_matches([100], [285.7], [76.5], client=client,
+                           catalogs=("allwise", "gaia"))
+    assert [c["catalog"] for c in client.calls] == ["allwise", "gaia"]
+
+
+def test_compute_matches_none_catalogs_is_single_global_call():
+    client = _FakeClient([])
+    xmatch.compute_matches([100], [285.7], [76.5], client=client, catalogs=None)
+    assert len(client.calls) == 1
+    assert client.called_with["catalog"] is None
 
 
 def test_compute_matches_empty_short_circuits():
@@ -105,14 +129,90 @@ def test_build_xmatch_rows_non_allwise_catid_is_unknown():
     assert rows[0]["catid"] == -999
 
 
-def test_persist_matches_dry_run_returns_rows():
-    rows = xmatch.persist_matches([_match(100, 12.0, 11.0, 9.0, 7.0)], execute=False)
-    assert len(rows) == 1 and rows[0]["oid"] == 100
+class _RecordingConn:
+    def __init__(self):
+        self.calls = []
+
+    def execute(self, sql, records):
+        self.calls.append((sql, records))
 
 
-def test_persist_matches_execute_is_placeholder():
-    with pytest.raises(NotImplementedError, match="placeholder"):
-        xmatch.persist_matches([_match(100, 12.0, 11.0, 9.0, 7.0)], execute=True)
+class _FakeEngine:
+    def __init__(self):
+        self.conn = _RecordingConn()
+
+    def begin(self):
+        conn = self.conn
+
+        class _Ctx:
+            def __enter__(self_):
+                return conn
+
+            def __exit__(self_, *a):
+                return False
+
+        return _Ctx()
+
+
+def test_persist_matches_dry_run_counts_and_does_not_connect(monkeypatch):
+    def _boom(_creds):
+        raise AssertionError("dry-run must not open a connection")
+    from features.offline import db
+    monkeypatch.setattr(db, "_make_engine", _boom)
+
+    result = xmatch.persist_matches([_match(100, 12.0, 11.0, 9.0, 7.0)], execute=False)
+    assert result == {"executed": False, "would_write": 1}
+
+
+def test_persist_matches_execute_upserts_native_types(monkeypatch):
+    fake = _FakeEngine()
+    from features.offline import db
+    monkeypatch.setattr(db, "_make_engine", lambda _c: fake)
+
+    result = xmatch.persist_matches(
+        [_match(36028941624528297, 12.0, 11.0, 9.0, 7.0, match_id="J190248", distance=0.33)],
+        write_credentials="creds", schema="multisurvey_ztf", execute=True)
+
+    assert result == {"executed": True, "written": 1}
+    assert len(fake.conn.calls) == 1
+    sql, records = fake.conn.calls[0]
+    sql_str = str(sql)
+    assert "multisurvey_ztf.xmatch" in sql_str
+    assert "ON CONFLICT (oid, sid, catid)" in sql_str
+    assert "DO UPDATE SET" in sql_str
+    r0 = records[0]
+    # native types, big oid preserved (not float)
+    assert r0["oid"] == 36028941624528297 and isinstance(r0["oid"], int)
+    assert isinstance(r0["sid"], int) and isinstance(r0["catid"], int)
+    assert r0["oid_catalog"] == "J190248" and r0["dist"] == pytest.approx(0.33)
+
+
+def test_persist_matches_drops_null_dist_or_catalog(monkeypatch, caplog):
+    import logging
+    fake = _FakeEngine()
+    from features.offline import db
+    monkeypatch.setattr(db, "_make_engine", lambda _c: fake)
+
+    good = _match(100, 1.0, 1.0, 1.0, 1.0, match_id="ok", distance=0.2)
+    no_dist = _match(101, 1.0, 1.0, 1.0, 1.0, match_id="x", distance=None)
+    no_cat = _match(102, 1.0, 1.0, 1.0, 1.0, match_id=None, distance=0.3)
+    with caplog.at_level(logging.WARNING, logger="features.offline.xmatch"):
+        result = xmatch.persist_matches([good, no_dist, no_cat],
+                                        write_credentials="creds", execute=True)
+    assert result == {"executed": True, "written": 1}
+    records = fake.conn.calls[0][1]
+    assert [r["oid"] for r in records] == [100]
+    assert any("NULL dist/oid_catalog" in r.getMessage() for r in caplog.records)
+
+
+def test_persist_matches_default_schema_is_db_schema(monkeypatch):
+    fake = _FakeEngine()
+    from features.offline import db
+    monkeypatch.setattr(db, "_make_engine", lambda _c: fake)
+    xmatch.persist_matches([_match(100, 1.0, 1.0, 1.0, 1.0)],
+                           write_credentials="creds", execute=True)  # no schema=
+    from features.offline import db as _db
+    assert f"{_db.SCHEMA}.xmatch" in str(fake.conn.calls[0][0])
 
 
 def test_resolve_url_prefers_arg_then_env(monkeypatch):

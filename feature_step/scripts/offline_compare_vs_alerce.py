@@ -8,26 +8,28 @@ Run from the pipeline root or feature_step/:
 Accepts either a multisurvey bigint oid (e.g. 36028933559755080) or a ZTF string
 oid (e.g. ZTF17aaabauy). Resolves both forms automatically via idmapper.
 
-NOTE: until the multisurvey DB is backfilled to full light curves, large differences
-(i.e. 'differ' status) are EXPECTED — the input light curves differ (multisurvey
-currently holds only a recent ~3-month slice, while alerce holds the full history).
-The tooling is correct; exit code 1 today simply reflects the truncated LC, not a
-bug. Re-run once multisurvey is backfilled to confirm full equality.
+NOTE: reads multisurvey_ztf, which now holds full multi-year light curves (the old
+~3-month `multisurvey` slice is gone). For a fair equality check pick an oid whose
+LC is COMPLETE in the backfill (ms.lastmjd == live alerce.object.lastmjd) and pass
+--version matching the feature version that produced the comparison target; a
+version mismatch alone can make fitted features (SPM/FLEET/ulens/Harmonics) differ.
 
 Default --credentials points at the training-repo credentials file; override as needed.
 """
 import argparse
+import os
 import sys
 from pathlib import Path
 
 PIPE = Path(__file__).resolve().parents[2]   # .../pipeline
-for p in (PIPE / "feature_step", PIPE / "lc_classifier", PIPE / "libs" / "idmapper"):
+for p in (PIPE / "feature_step", PIPE / "lc_classifier", PIPE / "libs" / "idmapper",
+          PIPE / "libs" / "xmatch_client"):
     sys.path.insert(0, str(p))
 
 import pandas as pd
 from sqlalchemy import text
 
-from features.offline import db, feature_compare, lc_features
+from features.offline import db, feature_compare, lc_features, xmatch
 from features.offline.feature_compare import compare_feature_frames
 from features.offline.message import build_message
 from idmapper.mapper import decode_masterid, catalog_oid_to_masterid
@@ -115,6 +117,14 @@ def main():
         default=DEFAULT_CREDENTIALS,
         help="Path to DB credentials JSON (override for non-default envs).",
     )
+    parser.add_argument(
+        "--xmatch-url",
+        default=os.getenv("XMATCH_URL", xmatch.DEFAULT_XMATCH_URL),
+        dest="xmatch_url",
+        help="Xwave crossmatch service URL (default: %(default)s). Computes the AllWISE "
+             "crossmatch LIVE like the step (so WISE features W1-W4 are populated). Pass "
+             "'' to use the DB-read fallback (multisurvey_ztf.xmatch, empty for ZTF -> NaN).",
+    )
     args = parser.parse_args()
 
     bigint_oid, ztf_oid = _resolve_oid(args.oid)
@@ -132,7 +142,6 @@ def main():
         dets = db.fetch_detections(credentials, oids)
         forced = db.fetch_forced_photometry(credentials, oids)
         ps1 = db.fetch_ps1(credentials, oids)
-        allwise = db.fetch_allwise(credentials, oids)
         refs = db.fetch_references(credentials, oids)
     except Exception as exc:
         print(f"ERROR: failed to fetch multisurvey data: {exc}")
@@ -165,6 +174,16 @@ def main():
     print("\nComputing our features...")
     try:
         message = build_message(bigint_oid, dets, forced, ps1)
+        # AllWISE crossmatch: live Xwave (like the step) so WISE features are
+        # populated; empty --xmatch-url falls back to the (ZTF-empty) DB read.
+        if args.xmatch_url:
+            print(f"  AllWISE: live Xwave @ {args.xmatch_url}")
+            allwise = xmatch.compute_allwise(
+                [bigint_oid], [message["meanra"]], [message["meandec"]],
+                base_url=args.xmatch_url)
+        else:
+            print("  AllWISE: DB read (multisurvey_ztf.xmatch)")
+            allwise = db.fetch_allwise(credentials, oids)
         our_features = lc_features.compute_features(message, refs, allwise)
     except Exception as exc:
         print(f"ERROR: failed to compute features: {exc}")
@@ -246,9 +265,11 @@ def main():
     print("\n" + "=" * 70)
     if summary["differ"] > 0 or summary["n_compared"] == 0:
         print(
-            "  NOTE: 'differ' or n_compared=0 is EXPECTED until multisurvey is backfilled\n"
-            "  to full light curves. Our LC is a recent ~3-month slice; alerce stores the\n"
-            "  full multi-year history. Re-run once backfill is complete."
+            "  NOTE: multisurvey_ztf holds full multi-year LCs now, so 'differ' is NOT\n"
+            "  explained by a truncated LC. Check: is this oid's LC complete in the\n"
+            "  backfill (ms.lastmjd == alerce.object.lastmjd)? Does --version match the\n"
+            "  compared feature version? Fitted features (SPM/FLEET/ulens/Harmonics)\n"
+            "  differing while simple stats match points to a fit/version issue."
         )
     print("=" * 70)
 
