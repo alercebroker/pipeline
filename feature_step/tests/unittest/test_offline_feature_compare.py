@@ -234,6 +234,41 @@ def test_ours_empty():
 
 
 # ---------------------------------------------------------------------------
+# Power_rate underscore (ours/model) vs slash (legacy DB) name reconciliation.
+# The extractor emits Power_rate_1_2 (underscore, what the model consumes);
+# alerce.feature stores the legacy slash form Power_rate_1/2. They are the SAME
+# feature, so the compare must join them, not report spurious only_ours/only_theirs.
+# ---------------------------------------------------------------------------
+
+def test_power_rate_slash_underscore_matches():
+    ours = _ours([
+        ("Power_rate_1_2", 0.5, "g,r"),
+        ("Power_rate_1_3", 0.3, "g,r"),
+        ("Power_rate_1_4", 0.1, "g,r"),
+    ])
+    theirs = _theirs([
+        ("Power_rate_1/2", 0.5, 12),
+        ("Power_rate_1/3", 0.3, 12),
+        ("Power_rate_1/4", 0.1, 12),
+    ])
+    _, summary = compare_feature_frames(ours, theirs)
+    assert summary["match"] == 3
+    assert summary["only_ours"] == 0
+    assert summary["only_theirs"] == 0
+    assert summary["n_compared"] == 3
+
+
+def test_power_rate_slash_underscore_differ_not_only():
+    """Same feature, differing value -> 'differ' (a real diff), never only_*."""
+    ours = _ours([("Power_rate_1_2", 1.0, "g,r")])
+    theirs = _theirs([("Power_rate_1/2", 2.0, 12)])
+    _, summary = compare_feature_frames(ours, theirs)
+    assert summary["differ"] == 1
+    assert summary["only_ours"] == 0
+    assert summary["only_theirs"] == 0
+
+
+# ---------------------------------------------------------------------------
 # latest_feature_version
 # ---------------------------------------------------------------------------
 

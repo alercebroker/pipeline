@@ -56,6 +56,20 @@ def _fid_letters_to_int(fid_series: pd.Series) -> pd.Series:
     return fid_series.map(fid_mapper_for_db)
 
 
+def _canonical_name(name_series: pd.Series) -> pd.Series:
+    """Canonicalize feature names so equivalent legacy/offline forms join.
+
+    The extractor emits Power_rate_1_2 (underscore) — the exact form the model's
+    feature_list consumes — while the legacy alerce.feature DB stores the slash
+    form Power_rate_1/2 (see the back-compat map in
+    features.utils.parsers.prepare_ao_features_for_db). They are the SAME feature;
+    without this the outer join splits them into spurious only_ours + only_theirs.
+    Slash is not used by any other ZTF feature name, so a blanket "/"->"_" is safe
+    and collapses both conventions onto the model-canonical underscore form.
+    """
+    return name_series.str.replace("/", "_", regex=False)
+
+
 def compare_feature_frames(
     ours: pd.DataFrame,
     theirs: pd.DataFrame,
@@ -84,12 +98,14 @@ def compare_feature_frames(
             only_ours_names (sorted list, up to _MAX_ONLY_NAMES),
             only_theirs_names (sorted list, up to _MAX_ONLY_NAMES).
     """
-    # --- Normalize our fid letters to int ---
+    # --- Normalize our fid letters to int + canonicalize names ---
     ours_norm = ours[["name", "value", "fid"]].copy()
+    ours_norm["name"] = _canonical_name(ours_norm["name"])
     ours_norm["fid_int"] = _fid_letters_to_int(ours_norm["fid"])
     ours_norm = ours_norm[["name", "fid_int", "value"]].rename(columns={"value": "value_ours"})
 
     theirs_norm = theirs[["name", "value", "fid"]].copy()
+    theirs_norm["name"] = _canonical_name(theirs_norm["name"])
     theirs_norm = theirs_norm.rename(columns={"fid": "fid_int", "value": "value_theirs"})
 
     # --- Outer join on (name, fid_int) ---
