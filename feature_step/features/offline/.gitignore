@@ -1,2 +1,7 @@
 # DB credentials — contains a live password, never commit
 credentials.json
+
+# Large regenerable query dumps (~11M) — regenerate with
+# class_over_time/fetch_class_dates.py; the figures + README are committed.
+class_over_time/class_dates_flat.csv
+class_over_time/class_dates_top.csv
