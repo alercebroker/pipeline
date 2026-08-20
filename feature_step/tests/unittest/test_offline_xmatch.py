@@ -222,3 +222,39 @@ def test_resolve_url_prefers_arg_then_env(monkeypatch):
     monkeypatch.delenv("XMATCH_URL", raising=False)
     with pytest.raises(ValueError, match="XMATCH_URL"):
         xmatch._resolve_url(None)
+
+
+def test_allwise_for_oid_computes_live_when_a_url_is_given(monkeypatch):
+    """With a URL, the AllWISE colors come from Xwave — never from the DB.
+
+    <schema>.allwise is empty for ZTF (the catalog rows are bulk-loaded by a
+    separate process, and that load never ran for multisurvey_ztf), so a DB read
+    silently yields no WISE and the features come out NaN. That is the exact
+    shape of the production bug in WISE_NULL_CLASSIFICATION_IMPACT.md, so the
+    live path must not fall back to it.
+    """
+    def _boom(*a, **k):
+        raise AssertionError("must not read the DB when a crossmatch URL is given")
+    monkeypatch.setattr(xmatch, "_db_allwise", _boom)
+    monkeypatch.setattr(xmatch, "compute_matches",
+                        lambda *a, **k: [_match(7, 13.7, 13.1, 9.7, 7.2)])
+
+    allwise, matches = xmatch.allwise_for_oid(
+        7, 222.98, 4.92, "creds", xmatch_url="http://127.0.0.1:8081")
+
+    assert list(allwise.columns) == ["oid", "W1", "W2", "W3", "W4"]
+    assert allwise.iloc[0]["W1"] == 13.7
+    assert len(matches) == 1          # raw matches returned so they can be persisted
+
+
+def test_allwise_for_oid_reads_the_db_when_no_url_is_given(monkeypatch):
+    frame = pd.DataFrame({"oid": [7], "W1": [1.0], "W2": [2.0], "W3": [3.0], "W4": [4.0]})
+    monkeypatch.setattr(xmatch, "_db_allwise", lambda creds, oids: frame)
+    monkeypatch.setattr(xmatch, "compute_matches",
+                        lambda *a, **k: (_ for _ in ()).throw(
+                            AssertionError("must not hit Xwave without a URL")))
+
+    allwise, matches = xmatch.allwise_for_oid(7, 222.98, 4.92, "creds", xmatch_url=None)
+
+    assert allwise.equals(frame)
+    assert matches == []              # nothing was computed, so nothing to persist

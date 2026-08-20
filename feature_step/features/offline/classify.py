@@ -93,13 +93,11 @@ def _fetch_oid_inputs(oid: int, credentials: str, xmatch_url: str = None):
     refs = db.fetch_references(credentials, oids)
     message = build_message(oid, dets, forced, ps1)
 
-    matches = []
-    if xmatch_url:
-        matches = xmatch.compute_matches(
-            [oid], [message["meanra"]], [message["meandec"]], base_url=xmatch_url)
-        allwise = xmatch.matches_to_allwise_df(matches)
-    else:
-        allwise = db.fetch_allwise(credentials, oids)
+    # .get: the cone centre is only needed for the live crossmatch, so the DB-read
+    # path must not require the message to carry coordinates.
+    allwise, matches = xmatch.allwise_for_oid(
+        oid, message.get("meanra"), message.get("meandec"), credentials,
+        xmatch_url=xmatch_url)
     return message, refs, allwise, dets, forced, matches
 
 

@@ -201,6 +201,34 @@ def _xmatch_records(rows):
     return records
 
 
+def _db_allwise(credentials_json, oids):
+    """Read AllWISE from <schema>.xmatch join <schema>.allwise.
+
+    A thin indirection so `db` stays a lazy import here (importing this module
+    must not require db) and so the DB read is injectable in tests."""
+    from features.offline import db
+    return db.fetch_allwise(credentials_json, oids)
+
+
+def allwise_for_oid(oid, ra, dec, credentials_json, xmatch_url=None):
+    """AllWISE colors for one oid -> (allwise_df, matches).
+
+    With `xmatch_url`, cone-search Xwave live, exactly like the deployed step;
+    `matches` is the raw crossmatch, so the caller can also persist it. Without
+    it, read the precomputed `xmatch join allwise` and return no matches.
+
+    The two are NOT interchangeable today: <schema>.allwise is empty for ZTF —
+    the catalog rows are bulk-loaded by a separate process, and that load never
+    ran for multisurvey_ztf — so the DB read yields no WISE at all and every
+    WISE colour comes out NaN, which biases BHRF toward Stochastic
+    (WISE_NULL_CLASSIFICATION_IMPACT.md). Pass a URL whenever the result matters.
+    """
+    if xmatch_url:
+        matches = compute_matches([oid], [ra], [dec], base_url=xmatch_url)
+        return matches_to_allwise_df(matches), matches
+    return _db_allwise(credentials_json, [oid]), []
+
+
 def persist_matches(matches, write_credentials=None, schema=None, execute=False):
     """Upsert the crossmatch link rows directly into <schema>.xmatch (no scribe).
 

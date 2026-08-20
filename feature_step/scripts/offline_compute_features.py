@@ -15,10 +15,11 @@ for p in (PIPE / "feature_step", PIPE / "lc_classifier", PIPE / "libs" / "idmapp
     sys.path.insert(0, str(p))
 
 import argparse
+import os
 
 from importlib.metadata import PackageNotFoundError, version as _pkg_version
 
-from features.offline import db, lc_features, feature_writer
+from features.offline import db, lc_features, feature_writer, xmatch
 from features.offline.feature_lut import default_version_name
 from features.offline.message import build_message
 
@@ -37,6 +38,11 @@ def main():
                     help="Feature-step version string (e.g. 27.5.7a31). "
                          "Defaults to importlib.metadata version('feature-step'); "
                          "supply this if the package is not installed in the active env.")
+    ap.add_argument("--xmatch-url", default=os.getenv("XMATCH_URL", ""), dest="xmatch_url",
+                    help="Xwave crossmatch service URL (or set XMATCH_URL). Computes the "
+                         "AllWISE crossmatch live, like the deployed step. Without it the "
+                         "(empty) <schema>.allwise is read and every WISE colour is NaN, "
+                         "which biases the resulting classification toward Stochastic.")
     ap.add_argument("--save", action="store_true",
                     help="Persist the DB-ready features into <schema>.feature.")
     ap.add_argument("--execute", action="store_true",
@@ -60,12 +66,16 @@ def main():
     dets = db.fetch_detections(credentials, oids)
     forced = db.fetch_forced_photometry(credentials, oids)
     ps1 = db.fetch_ps1(credentials, oids)
-    allwise = db.fetch_allwise(credentials, oids)
     refs = db.fetch_references(credentials, oids)
+
+    # The cone centre lives in the message, so the crossmatch comes after it.
+    message = build_message(oid, dets, forced, ps1)
+    allwise, _matches = xmatch.allwise_for_oid(
+        oid, message.get("meanra"), message.get("meandec"), credentials,
+        xmatch_url=args.xmatch_url or None)
     print(f"detections={dets.shape} forced={forced.shape} ps1={ps1.shape} "
           f"allwise={allwise.shape} references={refs.shape}")
-
-    message = build_message(oid, dets, forced, ps1)
+    print(f"xmatch: {'live Xwave @ ' + args.xmatch_url if args.xmatch_url else 'DB read (empty for ZTF)'}")
     print(f"message: {len(message['detections'])} detections")
 
     # Both LUT ids come from the DB, not the local fixture: <schema>.feature has
