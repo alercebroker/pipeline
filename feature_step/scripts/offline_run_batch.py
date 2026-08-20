@@ -440,10 +440,15 @@ def process_unit(unit) -> dict:
     feats = (pd.concat(feat_frames, ignore_index=True) if feat_frames
              else pd.DataFrame(columns=["oid", "sid", "feature_id",
                                         "band", "version", "value"]))
-    _write_shard(out_dir / "probabilities" / f"unit_{index:07d}.parquet",
-                 pd.DataFrame(prob_rows))
-    if cfg["features"]:
-        _write_shard(out_dir / "features" / f"unit_{index:07d}.parquet", feats)
+    # The shards are the primary output UNLESS --load-db is on, in which case the
+    # database holds the same rows and nothing ever reads them back: resume keys
+    # off the manifest, and no loader exists that could consume them. That is
+    # ~68 GB across the full run, so it is worth being able to say no.
+    if not cfg.get("no_shards"):
+        _write_shard(out_dir / "probabilities" / f"unit_{index:07d}.parquet",
+                     pd.DataFrame(prob_rows))
+        if cfg["features"]:
+            _write_shard(out_dir / "features" / f"unit_{index:07d}.parquet", feats)
 
     # --- optional load into the DB -----------------------------------------
     # ONE call per table per unit, not per oid: the writers batch every row into
@@ -496,6 +501,16 @@ def process_unit(unit) -> dict:
     }
     _write_json(out_dir / "manifests" / f"unit_{index:07d}.json", manifest)
     return manifest
+
+
+def shards_would_be_lost(no_shards: bool, load_db: bool) -> bool:
+    """True when --no-shards would throw the run's output away.
+
+    The shards are only redundant because the database holds the same rows.
+    Without --load-db they are the ONLY output, and dropping them means
+    computing 26M objects and keeping nothing but the counters.
+    """
+    return no_shards and not load_db
 
 
 def rss_mb(ru_maxrss: int, system: str) -> float:
@@ -652,6 +667,10 @@ def main():
                          "(and <schema>.feature with --features). Requires "
                          "--write-credentials. Off by default: the parquet shards are "
                          "the primary output, and a probe run should not touch the DB.")
+    ap.add_argument("--no-shards", action="store_true", dest="no_shards",
+                    help="skip the parquet shards; requires --load-db. The DB then "
+                         "holds the same rows and nothing reads the shards back "
+                         "(~68 GB saved across a full run).")
     ap.add_argument("--write-credentials", dest="write_credentials",
                     help="credentials JSON with INSERT rights, required by --load-db "
                          "(--credentials may be read-only).")
@@ -686,6 +705,8 @@ def main():
     # finding out about a missing flag after that wastes minutes.
     if args.load_db and not args.write_credentials:
         ap.error("--load-db requires --write-credentials (--credentials may be read-only)")
+    if shards_would_be_lost(args.no_shards, args.load_db):
+        ap.error("--no-shards without --load-db would discard the run's only output")
 
     # Progress on a multi-hour run is usually watched through a redirected log,
     # where Python's default block buffering would hold it back for minutes.
@@ -745,6 +766,7 @@ def main():
     cfg = {
         "credentials": args.credentials, "schema": args.schema,
         "load_db": args.load_db, "write_credentials": args.write_credentials,
+        "no_shards": args.no_shards,
         "xmatch_url": args.xmatch_url or None, "out_dir": str(out_dir),
         "minibatch": args.minibatch, "min_detections": args.min_detections,
         "features": args.features, "retries": args.retries,

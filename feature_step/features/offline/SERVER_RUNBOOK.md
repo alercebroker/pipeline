@@ -7,9 +7,18 @@ a full offline run over `multisurvey_ztf`. For what the pipeline *does*, read
 **What the run produces:** parquet shards on local disk — probability rows always,
 feature rows with `--features`. With `--load-db` it *also* upserts each finished
 unit into `<schema>.probability`, `<schema>.xmatch` and (with `--features`)
-`<schema>.feature`, one batched statement per table per unit. The shards stay
-the primary output either way; the database load is opt-in so a probe run cannot
-touch production.
+`<schema>.feature`, one batched statement per table per unit. The database load
+is opt-in so a probe run cannot touch production.
+
+**With `--load-db`, add `--no-shards`.** The shards then hold exactly what the
+database holds and nothing ever reads them: resume keys off the manifest, and
+there is no loader that could consume them (§11). Measured on real output that
+is ~15 GB of probabilities and ~53 GB of features across the run — 68 GB of a
+copy no tool opens. The manifests and the error sidecars are still written;
+they are small and they are the resume machinery. Keep the shards only if you
+want a local copy to re-derive from should a bug turn up later, and note you
+would have to write the loader to use it. `--no-shards` without `--load-db` is
+refused outright: that would discard the run's only output.
 
 `xmatch` is in that list because writing the crossmatch link is the *feature
 step's* job in the live pipeline; this run replaces that step. It is skipped
@@ -251,7 +260,8 @@ du -sh /data/bhrf_probe2       # extrapolate: this is 640k of 26.3M oids
 poetry run python scripts/offline_run_batch.py \
     --oid-file /data/oids/run.npy \
     --out-dir /data/bhrf_run --workers 64 --features \
-    --load-db --write-credentials features/offline/write_credentials.json
+    --load-db --write-credentials features/offline/write_credentials.json \
+    --no-shards
 ```
 
 Step 2 was run on 2026-08-20 over 20 oids against `multisurvey_ztf`: 900
@@ -315,7 +325,10 @@ command — finished units are checkpointed and it picks up where it stopped.
 
 **Size the disk from the probes, not from arithmetic.** Order of magnitude: ~45
 probability rows and ~193 feature rows per object, so ~1.2e9 and ~5.1e9 rows
-respectively across the run. `--features` is opt-in for exactly this reason.
+respectively across the run — ~68 GB of parquet at ~11 bytes/row measured, or
+none of it with `--no-shards`. The probes should keep their shards: they are
+small, and `du -sh` on them is how you size the real run's disk if you decide
+to keep it.
 
 **Defaults worth knowing:** `--workers` defaults to *physical* cores − 2 (not
 `os.cpu_count()`, which counts hyperthreads and oversubscribes a CPU-bound run);
@@ -329,12 +342,16 @@ Per-unit progress goes to stdout; the durable record is on disk:
 
 ```
 /data/bhrf_run/
-├─ probabilities/unit_NNNNNNN.parquet
-├─ features/unit_NNNNNNN.parquet
+├─ probabilities/unit_NNNNNNN.parquet   # absent with --no-shards
+├─ features/unit_NNNNNNN.parquet        # absent with --no-shards
 ├─ errors/unit_NNNNNNN.jsonl      # only for units that hit per-oid failures
 ├─ manifests/unit_NNNNNNN.json    # written LAST — its presence means "done"
 └─ run.json                       # oid-list fingerprint
 ```
+
+Only the last two matter for resuming: the manifest is the done-marker and
+`run.json` is the fingerprint. The shards are output, not state, which is why
+`--no-shards` is safe.
 
 Watch these in the summary:
 

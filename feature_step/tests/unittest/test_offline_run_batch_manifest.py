@@ -310,3 +310,51 @@ def test_per_oid_errors_alone_do_not_fail_the_run():
     stops meaning anything.
     """
     assert R.exit_code(n_failed_units=0, n_oid_errors=250) == 0
+
+
+def test_no_shards_skips_the_parquet_but_still_marks_the_unit_done(monkeypatch, tmp_path):
+    """With --load-db the database holds the answer and nothing reads the shards.
+
+    ~68 GB of parquet across the run that no tool opens: resume keys off the
+    manifest, not the shards, and there is no loader that could read them back.
+    The manifest and the error sidecar must still be written -- they are the
+    resume machinery and the only record of which oids failed.
+    """
+    cfg = _cfg_db(tmp_path, features=True)
+    cfg["no_shards"] = True
+    monkeypatch.setattr(R, "_W", {"cfg": cfg})
+    monkeypatch.setattr(R, "fetch_minibatch",
+                        lambda mb, cfg: _inputs(mb, with_allwise=set(mb)))
+    monkeypatch.setattr(R, "process_oid", lambda oid, *a, **k: (
+        [{"oid": oid}], pd.DataFrame({"oid": [oid], "sid": [0], "feature_id": [1],
+                                      "band": [1], "version": [1], "value": [0.5]})))
+    monkeypatch.setattr(R, "write_probabilities",
+                        lambda rows, creds, **kw: {"written": len(rows)})
+    monkeypatch.setattr(R, "write_features",
+                        lambda frame, creds, **kw: {"written": len(frame)})
+    monkeypatch.setattr(R, "persist_matches",
+                        lambda matches, creds, **kw: {"written": len(matches)})
+
+    manifest = R.process_unit((0, [1, 2, 3]))
+
+    assert not list(tmp_path.glob("probabilities/*.parquet"))
+    assert not list(tmp_path.glob("features/*.parquet"))
+    assert (tmp_path / "manifests" / "unit_0000000.json").exists()
+    assert manifest["db_prob_rows"] == 3      # the rows still went to the DB
+
+
+def test_shards_are_written_by_default(monkeypatch, tmp_path):
+    monkeypatch.setattr(R, "_W", {"cfg": _cfg(tmp_path)})
+    monkeypatch.setattr(R, "fetch_minibatch",
+                        lambda mb, cfg: _inputs(mb, with_allwise=set(mb)))
+    monkeypatch.setattr(R, "process_oid", lambda oid, *a, **k: ([{"oid": oid}], None))
+
+    R.process_unit((0, [1, 2]))
+    assert list(tmp_path.glob("probabilities/*.parquet"))
+
+
+def test_no_shards_is_refused_without_load_db():
+    """Then the run would compute 26M objects and keep none of the results."""
+    assert R.shards_would_be_lost(no_shards=True, load_db=False) is True
+    assert R.shards_would_be_lost(no_shards=True, load_db=True) is False
+    assert R.shards_would_be_lost(no_shards=False, load_db=False) is False
