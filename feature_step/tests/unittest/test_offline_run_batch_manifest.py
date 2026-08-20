@@ -147,3 +147,70 @@ def test_manifest_separates_the_three_reasons_an_oid_is_skipped(monkeypatch, tmp
     assert manifest["n_no_detections"] == 1
     # n_skipped stays the total of the three, so existing readers keep working
     assert manifest["n_skipped"] == 3
+
+
+def _cfg_db(tmp_path, **over):
+    cfg = _cfg(tmp_path)
+    cfg.update({"load_db": True, "write_credentials": "write-creds"})
+    cfg.update(over)
+    return cfg
+
+
+def test_load_db_writes_both_tables_and_records_the_counts(monkeypatch, tmp_path):
+    monkeypatch.setattr(R, "_W", {"cfg": _cfg_db(tmp_path, features=True)})
+    monkeypatch.setattr(R, "fetch_minibatch",
+                        lambda mb, cfg: _inputs(mb, with_allwise=set(mb)))
+    monkeypatch.setattr(R, "process_oid", lambda oid, *a, **k: (
+        [{"oid": oid}], pd.DataFrame({"oid": [oid], "sid": [0], "feature_id": [1],
+                                      "band": [1], "version": [1], "value": [0.5]})))
+
+    seen = {}
+    monkeypatch.setattr(R, "write_probabilities", lambda rows, creds, **kw: (
+        seen.update(prob=(len(rows), creds, kw.get("execute"))), {"written": len(rows)})[1])
+    monkeypatch.setattr(R, "write_features", lambda frame, creds, **kw: (
+        seen.update(feat=(len(frame), creds, kw.get("execute"))), {"written": len(frame)})[1])
+
+    manifest = R.process_unit((0, [1, 2, 3]))
+
+    assert seen["prob"] == (3, "write-creds", True)   # ONE call for the whole unit
+    assert seen["feat"] == (3, "write-creds", True)
+    assert manifest["db_prob_rows"] == 3
+    assert manifest["db_feat_rows"] == 3
+
+
+def test_no_db_write_when_load_db_is_off(monkeypatch, tmp_path):
+    monkeypatch.setattr(R, "_W", {"cfg": _cfg(tmp_path)})
+    monkeypatch.setattr(R, "fetch_minibatch",
+                        lambda mb, cfg: _inputs(mb, with_allwise=set(mb)))
+    monkeypatch.setattr(R, "process_oid", lambda oid, *a, **k: ([{"oid": oid}], None))
+
+    def _boom(*a, **k):
+        raise AssertionError("must not touch the DB without --load-db")
+    monkeypatch.setattr(R, "write_probabilities", _boom)
+    monkeypatch.setattr(R, "write_features", _boom)
+
+    manifest = R.process_unit((0, [1, 2]))
+    assert manifest["db_prob_rows"] == 0
+
+
+def test_a_failed_db_load_leaves_the_unit_unmarked(monkeypatch, tmp_path):
+    """The manifest is the done-marker, so it must land AFTER the commit.
+
+    If it were written first, a unit whose rows never reached the database would
+    be treated as finished forever and the resume logic would skip it. Failing
+    with no manifest is what makes the rerun redo it — safe, because the upsert
+    is idempotent.
+    """
+    monkeypatch.setattr(R, "_W", {"cfg": _cfg_db(tmp_path)})
+    monkeypatch.setattr(R, "fetch_minibatch",
+                        lambda mb, cfg: _inputs(mb, with_allwise=set(mb)))
+    monkeypatch.setattr(R, "process_oid", lambda oid, *a, **k: ([{"oid": oid}], None))
+
+    def _db_down(*a, **k):
+        raise RuntimeError("connection refused")
+    monkeypatch.setattr(R, "write_probabilities", _db_down)
+
+    with pytest.raises(RuntimeError, match="connection refused"):
+        R.process_unit((0, [1, 2]))
+
+    assert not (tmp_path / "manifests" / "unit_0000000.json").exists()

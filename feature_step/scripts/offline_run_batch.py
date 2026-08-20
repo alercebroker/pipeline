@@ -49,8 +49,15 @@ Xwave/DB errors are retried with backoff rather than silently degraded -- a
 missing AllWISE crossmatch changes the predicted class, so falling back to
 "no WISE" would quietly corrupt results.
 
-Output is parquet shards. Loading them into the DB is a separate, deliberate
-step (bulk COPY), not something this runner does per oid.
+Output is parquet shards, always. --load-db additionally upserts each finished
+unit into <schema>.probability (and <schema>.feature with --features): ONE
+statement-batch per table per unit, ~2% of the unit's wall clock, not one
+transaction per oid. The write lands BEFORE the manifest, so a unit only counts
+as done once its rows are committed.
+
+--load-db is a start-of-run decision, not something to switch on midway. Resume
+skips a unit when its MANIFEST exists, never by looking at the database, so any
+unit finished while the flag was off stays on disk forever and is never loaded.
 
 Typical use:
 
@@ -69,7 +76,8 @@ Typical use:
     # 3. the real run (resumable: rerun the same command after any interruption)
     python feature_step/scripts/offline_run_batch.py \
         --oid-file feature_step/features/offline/oids/run_ndet6.npy \
-        --out-dir /data/bhrf_run --workers 64
+        --out-dir /data/bhrf_run --workers 64 --features \
+        --load-db --write-credentials feature_step/features/offline/write_credentials.json
 """
 # --- thread pinning: MUST happen before numpy/BLAS/JAX are imported ---
 import os
@@ -99,6 +107,7 @@ for _p in (PIPE / "feature_step", PIPE / "lc_classifier", PIPE / "libs" / "idmap
     sys.path.insert(0, str(_p))
 
 import numpy as np
+import sqlalchemy as sa
 import pandas as pd
 from sqlalchemy import text
 
@@ -118,7 +127,9 @@ from features.offline.classifier_taxonomy_lut import CLASSIFIER_VERSION
 from features.offline.feature_lut import default_version_name
 from features.offline.lc_features import compute_astro_object
 from features.offline.message import build_message
-from features.offline.probability_writer import CLASSIFIER_IDS, build_probability_rows
+from features.offline.feature_writer import write_features
+from features.offline.probability_writer import (
+    CLASSIFIER_IDS, build_probability_rows, write_probabilities)
 from features.utils.parsers import prepare_ao_features_for_db
 
 DEFAULT_CREDENTIALS = str(PIPE / "feature_step" / "features" / "offline" / "credentials.json")
@@ -412,16 +423,35 @@ def process_unit(unit) -> dict:
                 feat_frames.append(f_rows)
             n_ok += 1
 
+    feats = (pd.concat(feat_frames, ignore_index=True) if feat_frames
+             else pd.DataFrame(columns=["oid", "sid", "feature_id",
+                                        "band", "version", "value"]))
     _write_shard(out_dir / "probabilities" / f"unit_{index:07d}.parquet",
                  pd.DataFrame(prob_rows))
     if cfg["features"]:
-        _write_shard(out_dir / "features" / f"unit_{index:07d}.parquet",
-                     pd.concat(feat_frames, ignore_index=True) if feat_frames
-                     else pd.DataFrame(columns=["oid", "sid", "feature_id",
-                                                "band", "version", "value"]))
+        _write_shard(out_dir / "features" / f"unit_{index:07d}.parquet", feats)
 
-    # Before the manifest: the manifest is the done-marker, so its presence must
-    # mean the error list is complete too.
+    # --- optional load into the DB -----------------------------------------
+    # ONE call per table per unit, not per oid: the writers batch every row into
+    # one statement per page, which is ~2% of a unit's wall clock. Per-oid would
+    # be ~15M transactions across the run instead of ~3k, for the same rows.
+    #
+    # Placed BEFORE the manifest on purpose. The manifest is the done-marker, so
+    # a unit is only finished once its rows are committed; if this raises, the
+    # unit stays unmarked and the rerun redoes it -- safe, because the upsert is
+    # idempotent. Writing the manifest first would strand the unit as "done"
+    # with nothing in the database.
+    n_db_prob = n_db_feat = 0
+    if cfg.get("load_db"):
+        wc = cfg["write_credentials"]
+        if prob_rows:
+            n_db_prob = write_probabilities(
+                prob_rows, wc, schema=cfg["schema"], execute=True)["written"]
+        if cfg["features"] and len(feats):
+            n_db_feat = write_features(
+                feats, wc, schema=cfg["schema"], execute=True)["written"]
+
+    # Also before the manifest: its presence must mean the error list is complete.
     _write_jsonl(out_dir / "errors" / f"unit_{index:07d}.jsonl", failed)
 
     manifest = {
@@ -435,6 +465,7 @@ def process_unit(unit) -> dict:
         "n_no_allwise": n_no_allwise,
         "prob_rows": len(prob_rows),
         "feat_rows": int(sum(len(f) for f in feat_frames)),
+        "db_prob_rows": n_db_prob, "db_feat_rows": n_db_feat,
         "elapsed_s": round(time.perf_counter() - t0, 2),
         "errors": failed[:20],   # sample; errors/unit_*.jsonl has all of them
     }
@@ -551,6 +582,14 @@ def main():
     ap.add_argument("--min-detections", type=int, default=1)
     ap.add_argument("--features", action="store_true",
                     help="also write feature shards (~199 rows/oid).")
+    ap.add_argument("--load-db", action="store_true", dest="load_db",
+                    help="also upsert each finished unit into <schema>.probability "
+                         "(and <schema>.feature with --features). Requires "
+                         "--write-credentials. Off by default: the parquet shards are "
+                         "the primary output, and a probe run should not touch the DB.")
+    ap.add_argument("--write-credentials", dest="write_credentials",
+                    help="credentials JSON with INSERT rights, required by --load-db "
+                         "(--credentials may be read-only).")
     ap.add_argument("--retries", type=int, default=4,
                     help="attempts per DB/Xwave call before failing the unit.")
     ap.add_argument("--credentials", default=DEFAULT_CREDENTIALS)
@@ -577,6 +616,11 @@ def main():
     ap.add_argument("--plan-only", action="store_true",
                     help="select oids, report the plan, write --save-oids, and exit.")
     args = ap.parse_args()
+
+    # Validate BEFORE the oid selection: --min-n-det scans a 130M-row table, and
+    # finding out about a missing flag after that wastes minutes.
+    if args.load_db and not args.write_credentials:
+        ap.error("--load-db requires --write-credentials (--credentials may be read-only)")
 
     # Progress on a multi-hour run is usually watched through a redirected log,
     # where Python's default block buffering would hold it back for minutes.
@@ -635,6 +679,7 @@ def main():
 
     cfg = {
         "credentials": args.credentials, "schema": args.schema,
+        "load_db": args.load_db, "write_credentials": args.write_credentials,
         "xmatch_url": args.xmatch_url or None, "out_dir": str(out_dir),
         "minibatch": args.minibatch, "min_detections": args.min_detections,
         "features": args.features, "retries": args.retries,
@@ -659,6 +704,13 @@ def main():
         print(f"feature LUT from DB: {len(cfg['feature_lut'])} names; "
               f"version {fver} -> id {cfg['feature_version_id']}")
 
+    # Fail before forking N workers if the write credentials cannot connect.
+    if args.load_db:
+        with db._make_engine(args.write_credentials).connect() as _conn:
+            _conn.execute(sa.text("SELECT 1"))
+        print(f"load-db: ON -> {args.schema}.probability"
+              f"{' + ' + args.schema + '.feature' if args.features else ''}")
+
     if not args.warnings:
         _silence_library_warnings()   # the parent loads the model + logs too
 
@@ -681,7 +733,7 @@ def main():
     t_run = time.perf_counter()
     agg = {"n_ok": 0, "n_skipped": 0, "n_errors": 0, "n_no_allwise": 0,
            "n_no_detections": 0, "n_unclassifiable": 0,
-           "prob_rows": 0, "feat_rows": 0}
+           "prob_rows": 0, "feat_rows": 0, "db_prob_rows": 0, "db_feat_rows": 0}
     n_failed = 0
 
     # ProcessPoolExecutor, NOT multiprocessing.Pool. When a worker dies abruptly
@@ -766,6 +818,9 @@ def main():
     print(f"  probability rows: {agg['prob_rows']:,}")
     if args.features:
         print(f"  feature rows   : {agg['feat_rows']:,}")
+    if args.load_db:
+        print(f"  upserted to DB : {agg['db_prob_rows']:,} probability, "
+              f"{agg['db_feat_rows']:,} feature")
     print(f"  elapsed        : {elapsed/3600:.2f} h "
           f"({agg['n_ok']/elapsed if elapsed else 0:.1f} oid/s, "
           f"{elapsed*args.workers/max(agg['n_ok'],1):.3f} core-s/oid)")

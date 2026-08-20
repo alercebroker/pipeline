@@ -5,11 +5,14 @@ a full offline run over `multisurvey_ztf`. For what the pipeline *does*, read
 [`FLOW.md`](./FLOW.md); this file is only the operational sequence.
 
 **What the run produces:** parquet shards on local disk — probability rows always,
-feature rows with `--features`. **It does not write to the database.** Loading the
-shards into `<schema>.feature` / `<schema>.probability` via bulk `COPY` is a
-separate step that **does not exist yet** (§8). The single-oid CLIs
-(`offline_compute_features.py --save --execute`, `offline_classify.py --save
---execute`) do write directly, and are the validated path for one object at a time.
+feature rows with `--features`. With `--load-db` it *also* upserts each finished
+unit into `<schema>.probability` (and `<schema>.feature`), one batched statement
+per table per unit. The shards stay the primary output either way; the database
+load is opt-in so a probe run cannot touch production.
+
+**Decide `--load-db` before the first unit runs.** Resume skips a unit when its
+manifest exists — it never looks at the database. Turning the flag on halfway
+through leaves every already-finished unit on disk and permanently unloaded (§11).
 
 ---
 
@@ -74,9 +77,16 @@ poetry run python -c "from features.offline import db; print(db.SCHEMA)"
  "port": 5432, "dbname": "ztf"}
 ```
 
-The run only **reads** from the DB, so a read-only user is enough — the shards go
-to disk. Writing (the single-oid `--execute` paths, or the future loader) needs a
-write-capable user: `write_user` has no grants on `multisurvey_ztf`, only `alerce`.
+Without `--load-db` the run only **reads**, so a read-only user is enough. With
+`--load-db` you need a second file for `--write-credentials`, and that user must
+hold `INSERT`/`UPDATE` on `multisurvey_ztf.feature` and `.probability`.
+
+**This is the open blocker.** `write_user` has no grants on `multisurvey_ztf` —
+only on `alerce`. Every write validated so far went through the `alerce`
+superuser. Before the run, either get the grants for a scoped user or decide
+deliberately to run as `alerce`. The runner opens the write connection in the
+parent and fails there, before forking workers, so a wrong user costs seconds
+rather than a unit.
 
 Check connectivity and that the LUTs the run depends on are present:
 
@@ -167,17 +177,32 @@ poetry run python scripts/offline_verify_batch_equivalence.py --n 12 --min-n-det
 poetry run python scripts/offline_run_batch.py --min-n-det 6 \
     --save-oids /data/oids/run_ndet6.npy --plan-only
 
-# 2. scaling probe: measure throughput, disk per unit, and the no-AllWISE rate
+# 2. one unit against the real database — the first end-to-end write of the run
+poetry run python scripts/offline_run_batch.py \
+    --oid-file /data/oids/run_ndet6.npy \
+    --out-dir /data/bhrf_one --workers 4 --max-units 1 --features \
+    --load-db --write-credentials features/offline/write_credentials.json
+# then cross-check disk against DB for that unit:
+jq '.db_prob_rows, .prob_rows, .db_feat_rows, .feat_rows' /data/bhrf_one/manifests/unit_0000000.json
+
+# 3. scaling probe: measure throughput, disk per unit, and the no-AllWISE rate
 poetry run python scripts/offline_run_batch.py \
     --oid-file /data/oids/run_ndet6.npy \
     --out-dir /data/bhrf_probe --workers 16 --max-units 16 --features
 du -sh /data/bhrf_probe        # extrapolate: this is 80k of 7.45M oids
 
-# 3. the real run — rerun the SAME command after any interruption to resume
+# 4. the real run — rerun the SAME command after any interruption to resume
 poetry run python scripts/offline_run_batch.py \
     --oid-file /data/oids/run_ndet6.npy \
-    --out-dir /data/bhrf_run --workers 64 --features
+    --out-dir /data/bhrf_run --workers 64 --features \
+    --load-db --write-credentials features/offline/write_credentials.json
 ```
+
+Step 2 is not optional the first time: everything about `--load-db` has been
+verified against fake engines and a single-oid smoke test, never against a real
+work unit's ~19k feature rows going through the 32 hash partitions. Use a
+throwaway `--out-dir` — the upsert is idempotent, so the rows it writes are the
+same ones the real run would write.
 
 Run it under `tmux`/`screen` or `nohup`: it is a multi-hour job, and a dropped
 SSH session kills the parent.
@@ -212,6 +237,11 @@ Watch two numbers in the summary:
 - **`errors`** — now reported separately from "no detections" and
   "unclassifiable", which are expected outcomes and not worth chasing.
 
+With `--load-db` the summary also prints `upserted to DB`, and each manifest
+carries `db_prob_rows` / `db_feat_rows` beside `prob_rows` / `feat_rows`. Those
+pairs matching is the only check that disk and database agree; they are written
+in the same manifest precisely so the comparison needs no query.
+
 Interrupting is safe. Finished units are checkpointed and the same command
 resumes; the fingerprint in `run.json` refuses a resume against a different oid
 list, because unit *N* only means anything relative to one specific array.
@@ -234,7 +264,9 @@ not match the original shards. That is the guard working, not an obstacle.
 
 | Gap | Consequence |
 |---|---|
-| **No parquet → DB loader.** The bulk `COPY` step does not exist. | The run ends with shards on disk and nothing in the database. |
+| **No write grants on `multisurvey_ztf` for a scoped user** (§4). | `--load-db` has to run as the `alerce` superuser until that is resolved. |
+| **`--load-db` never exercised over a real work unit.** Fake engines and one oid only. | Step 2 of §8 exists to close this; do not skip it. |
+| **No parquet → DB backfill loader.** `--load-db` writes during the run; there is nothing that loads shards afterwards. | Units finished before the flag was turned on can only be redone into a fresh `--out-dir`. |
 | `main()` returns 0 even when units failed. | A supervisor or cron reads the run as successful; check `FAILED units` in the summary or count `errors/*.jsonl`. |
 | `multisurvey_ztf.allwise` is empty. | `XMATCH_URL` is mandatory (§6), and the features written cannot be recomputed from the DB alone. |
 | Objects with no AllWISE counterpart are indistinguishable from never-crossmatched ones in the stored data. | Only the per-unit `n_no_allwise` count records the difference. |
