@@ -11,12 +11,35 @@ Dry-run unless execute=True.
 import logging
 from typing import Optional
 
-from sqlalchemy import text
+from psycopg2.extras import execute_values
 
 from features.offline import db
 from features.offline.classifier_taxonomy_lut import CLASSIFIER_VERSION
 
 log = logging.getLogger(__name__)
+
+# Rows per INSERT statement; see feature_writer.PAGE_SIZE.
+PAGE_SIZE = 1000
+
+
+def _assert_no_duplicate_keys(records, key_fields, table) -> None:
+    """Refuse a batch that carries the same primary key twice.
+
+    execute_values puts many rows in ONE statement, and Postgres rejects an
+    ON CONFLICT DO UPDATE that would touch the same row twice ("cannot affect
+    row a second time"). Under the old per-row executemany this was impossible,
+    so the batching introduces the failure mode -- and it always means the
+    caller assembled the rows wrong (the same oid twice in a unit), which is
+    worth naming rather than passing to the driver.
+    """
+    seen = set()
+    for r in records:
+        key = tuple(r[f] for f in key_fields)
+        if key in seen:
+            raise ValueError(
+                f"duplicate {table} key {dict(zip(key_fields, key))} in one write batch"
+            )
+        seen.add(key)
 
 # The 5 seeded BHRF classifiers, in id order (flat, top, transient, stochastic, periodic).
 CLASSIFIER_IDS = [5, 6, 7, 8, 9]
@@ -121,23 +144,36 @@ def write_probabilities(rows: list, credentials: str, schema: Optional[str] = No
     """
     schema = schema or db.SCHEMA
     n = len(rows)
+    _assert_no_duplicate_keys(
+        rows, ("oid", "sid", "classifier_id", "class_id"), "probability")
     if not execute:
         return {"executed": False, "would_write": n}
 
     # schema is a trusted operator-supplied identifier (db.SCHEMA env / CLI), not
     # user input — same f-string convention as db.py / feature_writer.py.
-    sql = text(
+    sql = (
         f"INSERT INTO {schema}.probability "
         "(oid, sid, classifier_id, classifier_version, class_id, probability, ranking, lastmjd) "
-        "VALUES (:oid, :sid, :classifier_id, :classifier_version, :class_id, "
-        ":probability, :ranking, :lastmjd) "
+        "VALUES %s "
         "ON CONFLICT (oid, sid, classifier_id, class_id) "
         "DO UPDATE SET probability = EXCLUDED.probability, "
         "classifier_version = EXCLUDED.classifier_version, "
         "ranking = EXCLUDED.ranking, lastmjd = EXCLUDED.lastmjd"
     )
+    rows_out = [(r["oid"], r["sid"], r["classifier_id"], r["classifier_version"],
+                 r["class_id"], r["probability"], r["ranking"], r["lastmjd"])
+                for r in rows]
+
     engine = db._make_engine(credentials)
-    with engine.begin() as conn:
-        if rows:
-            conn.execute(sql, rows)
+    raw = engine.raw_connection()
+    try:
+        if rows_out:
+            with raw.cursor() as cur:
+                execute_values(cur, sql, rows_out, page_size=PAGE_SIZE)
+        raw.commit()
+    except Exception:
+        raw.rollback()
+        raise
+    finally:
+        raw.close()
     return {"executed": True, "written": n}

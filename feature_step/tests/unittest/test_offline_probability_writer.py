@@ -131,29 +131,50 @@ def test_build_rows_requires_lastmjd():
         pw.build_probability_rows(_full_dto(), OID, None, TAX_MAPS)
 
 
-class _RecordingConn:
-    def __init__(self):
-        self.calls = []
+class _FakeCursor:
+    def __init__(self, owner):
+        self.owner = owner
 
-    def execute(self, sql, records):
-        self.calls.append((sql, records))
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+
+class _FakeRaw:
+    """Stands in for a psycopg2 connection taken from the pool."""
+
+    def __init__(self, owner):
+        self.owner = owner
+
+    def cursor(self):
+        return _FakeCursor(self.owner)
+
+    def commit(self):
+        self.owner.commits += 1
+
+    def rollback(self):
+        self.owner.rollbacks += 1
+
+    def close(self):
+        self.owner.closed += 1
 
 
 class _FakeEngine:
     def __init__(self):
-        self.conn = _RecordingConn()
+        self.calls = []          # one entry per execute_values call
+        self.commits = self.rollbacks = self.closed = 0
 
-    def begin(self):
-        conn = self.conn
+    def raw_connection(self):
+        return _FakeRaw(self)
 
-        class _Ctx:
-            def __enter__(self_):
-                return conn
 
-            def __exit__(self_, *a):
-                return False
-
-        return _Ctx()
+def _capture(engine):
+    """Replacement for execute_values that records (sql, tuples, page_size)."""
+    def _execute_values(cur, sql, argslist, page_size=None, **kw):
+        engine.calls.append((str(sql), list(argslist), page_size))
+    return _execute_values
 
 
 def test_write_dry_run_does_not_connect(monkeypatch):
@@ -166,30 +187,44 @@ def test_write_dry_run_does_not_connect(monkeypatch):
     assert result == {"executed": False, "would_write": 45}
 
 
-def test_write_execute_upserts(monkeypatch):
+def test_write_execute_sends_all_rows_in_one_batched_statement(monkeypatch):
+    """One execute_values call, not one round trip per row. See the feature
+    writer's equivalent test for the measured cost of the per-row loop."""
     fake = _FakeEngine()
     monkeypatch.setattr(pw.db, "_make_engine", lambda _c: fake)
+    monkeypatch.setattr(pw, "execute_values", _capture(fake))
 
     rows = pw.build_probability_rows(_full_dto(), OID, 60000.5, TAX_MAPS)
     result = pw.write_probabilities(rows, "creds", schema="multisurvey_ztf", execute=True)
 
     assert result == {"executed": True, "written": 45}
-    assert len(fake.conn.calls) == 1
-    sql, records = fake.conn.calls[0]
-    sql_str = str(sql)
-    assert "multisurvey_ztf.probability" in sql_str
-    assert "ON CONFLICT (oid, sid, classifier_id, class_id)" in sql_str
-    assert "DO UPDATE SET" in sql_str
-    assert "updated_date" not in sql_str  # probability has no updated_date column
-    assert records[0]["oid"] == OID and isinstance(records[0]["oid"], int)
+    assert len(fake.calls) == 1
+    sql, tuples, page_size = fake.calls[0]
+    assert "multisurvey_ztf.probability" in sql
+    assert "VALUES %s" in sql
+    assert "ON CONFLICT (oid, sid, classifier_id, class_id)" in sql
+    assert "DO UPDATE SET" in sql
+    assert "updated_date" not in sql   # probability has no updated_date column
+    assert page_size and page_size > 1
+    assert fake.commits == 1 and fake.closed == 1
+    assert tuples[0][0] == OID and isinstance(tuples[0][0], int)
+
+
+def test_write_refuses_a_batch_with_a_duplicated_key(monkeypatch):
+    """Same (oid, sid, classifier_id, class_id) twice in one statement is a
+    Postgres error under ON CONFLICT; surface it as a clear one instead."""
+    rows = pw.build_probability_rows(_full_dto(), OID, 60000.5, TAX_MAPS)
+    with pytest.raises(ValueError, match="duplicate"):
+        pw.write_probabilities(rows + [rows[0]], "ignored", execute=False)
 
 
 def test_write_default_schema_is_db_schema(monkeypatch):
     fake = _FakeEngine()
     monkeypatch.setattr(pw.db, "_make_engine", lambda _c: fake)
+    monkeypatch.setattr(pw, "execute_values", _capture(fake))
     rows = pw.build_probability_rows(_full_dto(), OID, 1.0, TAX_MAPS)
     pw.write_probabilities(rows, "creds", execute=True)  # no schema=
-    assert f"{pw.db.SCHEMA}.probability" in str(fake.conn.calls[0][0])
+    assert f"{pw.db.SCHEMA}.probability" in fake.calls[0][0]
 
 
 def test_write_empty_rows_execute_no_call(monkeypatch):
@@ -197,4 +232,4 @@ def test_write_empty_rows_execute_no_call(monkeypatch):
     monkeypatch.setattr(pw.db, "_make_engine", lambda _c: fake)
     result = pw.write_probabilities([], "creds", execute=True)
     assert result == {"executed": True, "written": 0}
-    assert fake.conn.calls == []
+    assert fake.calls == []

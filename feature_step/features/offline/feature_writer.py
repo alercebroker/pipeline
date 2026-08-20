@@ -8,11 +8,35 @@ import logging
 from typing import Optional
 
 import pandas as pd
-from sqlalchemy import text
+from psycopg2.extras import execute_values
 
 from features.offline import db
 
 log = logging.getLogger(__name__)
+
+# Rows per INSERT statement. execute_values folds this many tuples into one
+# VALUES list, so the cost is one round trip per page instead of one per row.
+PAGE_SIZE = 1000
+
+
+def _assert_no_duplicate_keys(records, key_fields, table) -> None:
+    """Refuse a batch that carries the same primary key twice.
+
+    execute_values puts many rows in ONE statement, and Postgres rejects an
+    ON CONFLICT DO UPDATE that would touch the same row twice ("cannot affect
+    row a second time"). Under the old per-row executemany this was impossible,
+    so the batching introduces the failure mode -- and it always means the
+    caller assembled the rows wrong (the same oid twice in a unit), which is
+    worth naming rather than passing to the driver.
+    """
+    seen = set()
+    for r in records:
+        key = tuple(r[f] for f in key_fields)
+        if key in seen:
+            raise ValueError(
+                f"duplicate {table} key {dict(zip(key_fields, key))} in one write batch"
+            )
+        seen.add(key)
 
 
 def _records(rows: pd.DataFrame) -> list:
@@ -44,6 +68,7 @@ def _records(rows: pd.DataFrame) -> list:
             "version": int(r["version"]),
             "value": None if value is None or pd.isna(value) else float(value),
         })
+    _assert_no_duplicate_keys(records, ("oid", "sid", "feature_id", "band"), "feature")
     return records
 
 
@@ -64,14 +89,25 @@ def write_features(rows: pd.DataFrame, credentials: str, schema: Optional[str] =
 
     # schema is a trusted operator-supplied identifier (db.SCHEMA env / CLI), not
     # user input — same f-string convention as db.py's read queries.
-    sql = text(
+    sql = (
         f"INSERT INTO {schema}.feature (oid, sid, feature_id, band, version, value) "
-        "VALUES (:oid, :sid, :feature_id, :band, :version, :value) "
+        "VALUES %s "
         "ON CONFLICT (oid, sid, feature_id, band) "
         "DO UPDATE SET value = EXCLUDED.value, version = EXCLUDED.version, updated_date = now()"
     )
+    rows_out = [(r["oid"], r["sid"], r["feature_id"], r["band"], r["version"], r["value"])
+                for r in records]
+
     engine = db._make_engine(credentials)
-    with engine.begin() as conn:
-        if records:
-            conn.execute(sql, records)
+    raw = engine.raw_connection()
+    try:
+        if rows_out:
+            with raw.cursor() as cur:
+                execute_values(cur, sql, rows_out, page_size=PAGE_SIZE)
+        raw.commit()
+    except Exception:
+        raw.rollback()
+        raise
+    finally:
+        raw.close()
     return {"executed": True, "written": n}
