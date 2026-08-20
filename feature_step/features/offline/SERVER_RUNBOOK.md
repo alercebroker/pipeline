@@ -23,11 +23,12 @@ them up later (§11). Switching between *different* `--out-dir`s is fine and is
 what the probes do: a fresh directory has no manifests, so the real run simply
 redoes those oids.
 
-**Shortcut:** `scripts/offline_setup.py` runs §3–§8's setup steps for you — it
-checks what is already in place, downloads the model, verifies its md5, and
-materializes the oid list, skipping anything already done. It cannot create the
-credentials files (they carry live passwords) or issue the grants (§4). Read the
-sections below for what the steps mean; run the script to actually do them.
+**Shortcut:** `scripts/offline_setup.py` checks everything §3–§7 asks for and
+does the two expensive parts itself — downloading the model with its md5 (§5)
+and materializing the oid list (§8 step 1) — skipping whatever is already in
+place. It does not install anything (§1–§3 stay manual), cannot write the
+credentials files (they carry live passwords) and cannot issue the grants (§4).
+Read the sections below for what the steps mean; run the script to do them.
 
 ```bash
 python scripts/offline_setup.py --check-only   # what is missing, changes nothing
@@ -101,7 +102,7 @@ poetry run python -c "from features.offline import db; print(db.SCHEMA)"
 
 Without `--load-db` the run only **reads**, so a read-only user is enough. With
 `--load-db` you need a second file for `--write-credentials`, and that user must
-hold `INSERT`/`UPDATE` on `multisurvey_ztf.feature` and `.probability`.
+hold `INSERT`/`UPDATE` on `multisurvey_ztf.feature`, `.probability` and `.xmatch`.
 
 `write_user` was granted these on 2026-08-20 (as `postgres` on quimal-db1):
 
@@ -224,7 +225,8 @@ poetry run python scripts/offline_run_batch.py --min-n-det 2 \
 # 2. a small unit against the real database — the first end-to-end write.
 #    --unit-size, NOT --max-units: a unit is one worker's task and is never split
 #    across cores, so a default 5000-oid unit is 5000 objects in series.
-head -200 /data/oids/run.txt > /data/oids/smoke.txt
+poetry run python -c "import numpy as np; \
+    np.savetxt('/data/oids/smoke.txt', np.load('/data/oids/run.npy')[:200], fmt='%d')"
 poetry run python scripts/offline_run_batch.py \
     --oid-file /data/oids/smoke.txt --out-dir /data/bhrf_one \
     --unit-size 200 --minibatch 200 --workers 1 --features \
@@ -260,9 +262,6 @@ server: the upsert does not disturb the *other* classifiers' rows for the same
 oids (the key includes `classifier_id`), and partition routing needs no grants
 on the children. Repeat it there anyway — it is also the first real test of the
 `write_user` login and of Xwave from that host.
-
-Run it under `tmux`/`screen` or `nohup`: it is a multi-hour job, and a dropped
-SSH session kills the parent.
 
 Two probes, not one, because a small *fraction* of the catalogue is not the
 same as a short run. `--max-units` truncates the unit list, but a unit is one
@@ -310,6 +309,10 @@ series: the slowest unit decides when the last worker finishes, and the mean
 hides it. **`no AllWISE`** should sit near 14%; much higher means Xwave is
 returning empty, not that the sky is.
 
+Run step 4 under `tmux`/`screen` or `nohup`: it is a multi-day job, and a
+dropped SSH session kills the parent. If it is interrupted, rerun the identical
+command — finished units are checkpointed and it picks up where it stopped.
+
 **Size the disk from the probes, not from arithmetic.** Order of magnitude: ~45
 probability rows and ~193 feature rows per object, so ~1.2e9 and ~5.1e9 rows
 respectively across the run. `--features` is opt-in for exactly this reason.
@@ -333,7 +336,7 @@ Per-unit progress goes to stdout; the durable record is on disk:
 └─ run.json                       # oid-list fingerprint
 ```
 
-Watch two numbers in the summary:
+Watch these in the summary:
 
 - **`no AllWISE`** — expect ~14%. A much higher rate means Xwave is returning
   empty, not that the sky is empty.
@@ -376,7 +379,7 @@ not match the original shards. That is the guard working, not an obstacle.
 
 | Gap | Consequence |
 |---|---|
-| **`--load-db` never exercised over a real work unit.** Fake engines and one oid only. | Step 2 of §8 exists to close this; do not skip it. |
+| **`--load-db` has never run a full 5000-oid unit.** It was exercised end to end over 20 oids (§8), not at unit scale. | The per-statement paging is untested against ~19k feature rows at once; step 2 on the server is what closes it. |
 | **No parquet → DB backfill loader.** `--load-db` writes during the run; there is nothing that loads shards afterwards. | Units finished before the flag was turned on can only be redone into a fresh `--out-dir`. |
 | `multisurvey_ztf.allwise` is empty. | `XMATCH_URL` is mandatory (§6). `--load-db` writes the `xmatch` link rows, but with no catalog rows to join against, the features still cannot be recomputed from the DB alone. |
 | Objects with no AllWISE counterpart are indistinguishable from never-crossmatched ones in the stored data. | Only the per-unit `n_no_allwise` count records the difference. |
