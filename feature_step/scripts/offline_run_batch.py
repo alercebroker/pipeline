@@ -491,10 +491,35 @@ def process_unit(unit) -> dict:
         "db_prob_rows": n_db_prob, "db_feat_rows": n_db_feat,
         "db_xmatch_rows": n_db_xmatch,
         "elapsed_s": round(time.perf_counter() - t0, 2),
+        "peak_rss_mb": worker_peak_rss_mb(),
         "errors": failed[:20],   # sample; errors/unit_*.jsonl has all of them
     }
     _write_json(out_dir / "manifests" / f"unit_{index:07d}.json", manifest)
     return manifest
+
+
+def rss_mb(ru_maxrss: int, system: str) -> float:
+    """getrusage's ru_maxrss -> MB.
+
+    The field is kilobytes on Linux and BYTES on macOS/BSD. Reading it raw makes
+    a Mac look 1024x worse than it is, which is exactly the kind of number that
+    gets a run cancelled for no reason.
+    """
+    return round(ru_maxrss / (1024 * 1024) if system == "Darwin" else ru_maxrss / 1024, 1)
+
+
+def worker_peak_rss_mb() -> float:
+    """Peak RSS of THIS worker process since it started.
+
+    Under fork the 1.7 GB model is shared copy-on-write, but refcounting dirties
+    the pages it touches, so the sharing degrades as the model is used. Whether
+    it degrades a little or all the way to one private copy per worker is the
+    difference between a run that finishes and a machine that gets OOM-killed --
+    and until this landed in the manifest it was only visible to somebody
+    watching `top` while the probe happened to be running.
+    """
+    import resource
+    return rss_mb(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss, platform.system())
 
 
 def exit_code(n_failed_units: int, n_oid_errors: int) -> int:

@@ -277,10 +277,38 @@ production. Each needs its own `--out-dir` because `--unit-size` is part of the
 `run.json` fingerprint, and neither leaves anything the real run will trip over
 — it starts in a fresh directory and redoes those oids.
 
-What to read off them: **oid/s**, the **total RSS** across workers (the risk
-that ends a run — the 1.7 GB model is shared copy-on-write under `fork`, and if
-that sharing degrades it becomes one copy per worker), **disk per unit**, and
-the **no-AllWISE rate**.
+You do not have to read them by hand — every unit records its timing, row
+counts and the worker's peak RSS in its manifest, and `offline_estimate.py`
+turns those into a projection for the real run:
+
+```bash
+poetry run python scripts/offline_estimate.py /data/bhrf_probe1 \
+    --oid-file /data/oids/run.npy --workers 64
+```
+
+```
+measured: 64 units, 32,000 oids
+  per oid        : 1.403 core-s
+  per unit       : p50 14s  p90 15s  max 15s
+  no AllWISE     : 14.2%  (~14% expected)
+  peak RSS/worker: 664 MB
+projected: 26,300,000 oids on 64 workers
+  elapsed        : 160.2 h  (6.7 days)
+  probability    : 1.18e9 rows
+  feature        : 4.14e9 rows
+  RSS all workers: 41 GB  <- compare against the host's RAM before scaling up
+```
+
+Four things decide whether to go ahead. **`per oid`** sets the duration, and it
+divides by workers, so it is also what says whether more cores are worth it.
+**`RSS all workers`** is the one that ends a run rather than slowing it: the
+1.7 GB model is shared copy-on-write under `fork` and refcounting dirties the
+pages it touches, so if that sharing degrades the projection climbs toward one
+private copy per worker — check it against the host's RAM before scaling up.
+**`per unit` p90 vs max** matters because a unit is one worker's task run in
+series: the slowest unit decides when the last worker finishes, and the mean
+hides it. **`no AllWISE`** should sit near 14%; much higher means Xwave is
+returning empty, not that the sky is.
 
 **Size the disk from the probes, not from arithmetic.** Order of magnitude: ~45
 probability rows and ~193 feature rows per object, so ~1.2e9 and ~5.1e9 rows
