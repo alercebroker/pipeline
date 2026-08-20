@@ -1,0 +1,235 @@
+# Server runbook — offline ZTF features + BHRF classification at scale
+
+Everything that has to happen on a **freshly cloned repo** to get from nothing to
+a full offline run over `multisurvey_ztf`. For what the pipeline *does*, read
+[`FLOW.md`](./FLOW.md); this file is only the operational sequence.
+
+**What the run produces:** parquet shards on local disk — probability rows always,
+feature rows with `--features`. **It does not write to the database.** Loading the
+shards into `<schema>.feature` / `<schema>.probability` via bulk `COPY` is a
+separate step that **does not exist yet** (§8). The single-oid CLIs
+(`offline_compute_features.py --save --execute`, `offline_classify.py --save
+--execute`) do write directly, and are the validated path for one object at a time.
+
+---
+
+## 1. Clone
+
+```bash
+git clone --recurse-submodules git@github.com:alercebroker/pipeline.git
+cd pipeline
+```
+
+`--recurse-submodules` is not optional: `alerce_classifiers/` is a submodule, and
+without it the BHRF model cannot be loaded at all. On an existing clone:
+
+```bash
+git submodule update --init --recursive
+```
+
+## 2. System packages
+
+```bash
+sudo apt-get update && sudo apt-get install -y git build-essential
+```
+
+`build-essential` is required: `P4J` and `mhps` are Cython/C extensions compiled
+from source. On **Linux x86-64 nothing from `LOCAL_DEV_NOTES.md` applies** — that
+document describes arm64/macOS workarounds (the `-march=x86-64-v3` flag, the
+`fastavro` wheel). On the target platform the original code builds as-is.
+
+Python **3.10** specifically — `feature_step/pyproject.toml` pins
+`python = ">=3.10,<3.11"`.
+
+## 3. Install
+
+Order matters; this mirrors `feature_step/Dockerfile`, which is the authority.
+
+```bash
+cd feature_step
+pip install poetry
+
+# The C extensions need these present BEFORE they build. Cython is pinned:
+# modern Cython fails on P4J/mhps.
+poetry run python -m pip install setuptools wheel Cython==0.29.36 numpy
+poetry run python -m pip install ../mhps
+poetry run python -m pip install -r ../P4J/requirements.txt
+
+poetry install --without=test --no-root   # add --with=test to run the suite
+```
+
+Verify the interpreter resolves the offline package:
+
+```bash
+poetry run python -c "from features.offline import db; print(db.SCHEMA)"
+# -> multisurvey_ztf
+```
+
+## 4. Database credentials
+
+`features/offline/credentials.json` is **gitignored** and must be created by hand:
+
+```json
+{"user": "...", "password": "...", "host": "quimal-db1.alerce.online",
+ "port": 5432, "dbname": "ztf"}
+```
+
+The run only **reads** from the DB, so a read-only user is enough — the shards go
+to disk. Writing (the single-oid `--execute` paths, or the future loader) needs a
+write-capable user: `write_user` has no grants on `multisurvey_ztf`, only `alerce`.
+
+Check connectivity and that the LUTs the run depends on are present:
+
+```bash
+poetry run python -c "
+from features.offline import db
+C='features/offline/credentials.json'
+print('feature names :', len(db.fetch_feature_name_lut(C)))          # 127
+print('version 27.5.7a31 ->', db.fetch_feature_version_id(C,'27.5.7a31'))  # 1
+print('taxonomy heads:', sorted(db.fetch_taxonomy_maps(C,[5,6,7,8,9])))    # [5..9]
+"
+```
+
+If any of those is empty you are pointing at a DB that was never seeded — apply
+`ztf_feature_luts_seed.sql` and `ztf_classifier_taxonomy_seed.sql` first. They are
+idempotent. Note there are **no FK constraints** on `feature`/`probability`, so a
+missing LUT does not raise on write; it silently produces rows that resolve to
+nothing. That is why the runner resolves these ids up front and refuses to start
+without them.
+
+## 5. The model
+
+Download once, verify, and use a **local path that contains the version**:
+
+```bash
+mkdir -p /data/models/SquidwardFeaturesClassifier/2.1.0
+curl -o /data/models/SquidwardFeaturesClassifier/2.1.0/hierarchical_random_forest_model.pkl \
+  https://alerce-models.s3.amazonaws.com/squidward/2.1.0/hierarchical_random_forest_model.pkl
+
+md5sum /data/models/SquidwardFeaturesClassifier/2.1.0/hierarchical_random_forest_model.pkl
+# must be 95e8e9f18fde62f22025e31a88ad81fa  (1,720,755,396 bytes)
+
+export MODEL_PATH=/data/models/SquidwardFeaturesClassifier/2.1.0/hierarchical_random_forest_model.pkl
+```
+
+Two traps, both real:
+
+- **A URL `MODEL_PATH` is downloaded into `/tmp/SquidwardFeaturesClassifier/` and
+  whatever already sits there is reused.** That cache has held a stale SNIbc
+  pickle. On a pristine server the URL is safe, but a local verified file removes
+  the question permanently.
+- **The version is derived from the path**, not from the pickle
+  (`alerce_classifiers/base/model.py:_get_model_version` scans the path
+  components). A path with no `2.1.0` in it yields the literal `"no_version"`.
+  The batch runner stamps the pinned `CLASSIFIER_VERSION` regardless, so the
+  written data is correct either way — but the logs will lie to you.
+
+## 6. Crossmatch service
+
+```bash
+export XMATCH_URL=http://quimal-db1.alerce.online:8081     # or a local Xwave
+curl -s -o /dev/null -w '%{http_code}\n' $XMATCH_URL/      # expect 200
+```
+
+**This is mandatory, not optional.** `multisurvey_ztf.allwise` is empty — the
+catalog rows are bulk-loaded by a separate process that never ran for this schema
+— so without `XMATCH_URL` every WISE colour comes out NaN and the classifications
+carry the Stochastic bias documented in
+[`WISE_NULL_CLASSIFICATION_IMPACT.md`](./WISE_NULL_CLASSIFICATION_IMPACT.md).
+The runner does not degrade silently: Xwave failures retry with backoff and then
+fail the unit.
+
+## 7. Verify before committing 7.45M objects
+
+Three checks, minutes each. Do not skip them; each has caught a real defect.
+
+```bash
+# a) the model's 199 features are all produced, and it predicts without KeyError
+poetry run python scripts/offline_verify_model_features.py --smoke
+
+# b) the seeded taxonomy matches the deployed pickle's classes (SESN, not SNIbc)
+poetry run python scripts/offline_verify_taxonomy.py
+
+# c) the batched reads hand the extractor the same inputs as the validated
+#    single-oid path — a grouping bug would shift predicted classes silently
+poetry run python scripts/offline_verify_batch_equivalence.py --n 12 --min-n-det 20
+```
+
+## 8. The run
+
+```bash
+# 1. materialize the oid list once (n_det >= 6 -> ~7.45M of the 130M)
+poetry run python scripts/offline_run_batch.py --min-n-det 6 \
+    --save-oids /data/oids/run_ndet6.npy --plan-only
+
+# 2. scaling probe: measure throughput, disk per unit, and the no-AllWISE rate
+poetry run python scripts/offline_run_batch.py \
+    --oid-file /data/oids/run_ndet6.npy \
+    --out-dir /data/bhrf_probe --workers 16 --max-units 16 --features
+du -sh /data/bhrf_probe        # extrapolate: this is 80k of 7.45M oids
+
+# 3. the real run — rerun the SAME command after any interruption to resume
+poetry run python scripts/offline_run_batch.py \
+    --oid-file /data/oids/run_ndet6.npy \
+    --out-dir /data/bhrf_run --workers 64 --features
+```
+
+Run it under `tmux`/`screen` or `nohup`: it is a multi-hour job, and a dropped
+SSH session kills the parent.
+
+**Size the disk from step 2, not from arithmetic.** Order of magnitude: ~45
+probability rows and ~193 feature rows per object, so ~335M and ~1.4e9 rows
+respectively across the run. `--features` is opt-in for exactly this reason.
+
+**Defaults worth knowing:** `--workers` defaults to *physical* cores − 2 (not
+`os.cpu_count()`, which counts hyperthreads and oversubscribes a CPU-bound run);
+`--unit-size 5000` is the checkpoint granularity; `--minibatch 500` is the
+round-trip granularity; `--start-method` is `fork` on Linux, which is what lets
+all workers share one copy-on-write model.
+
+## 9. While it runs
+
+Per-unit progress goes to stdout; the durable record is on disk:
+
+```
+/data/bhrf_run/
+├─ probabilities/unit_NNNNNNN.parquet
+├─ features/unit_NNNNNNN.parquet
+├─ errors/unit_NNNNNNN.jsonl      # only for units that hit per-oid failures
+├─ manifests/unit_NNNNNNN.json    # written LAST — its presence means "done"
+└─ run.json                       # oid-list fingerprint
+```
+
+Watch two numbers in the summary:
+
+- **`no AllWISE`** — expect ~14%. A much higher rate means Xwave is returning
+  empty, not that the sky is empty.
+- **`errors`** — now reported separately from "no detections" and
+  "unclassifiable", which are expected outcomes and not worth chasing.
+
+Interrupting is safe. Finished units are checkpointed and the same command
+resumes; the fingerprint in `run.json` refuses a resume against a different oid
+list, because unit *N* only means anything relative to one specific array.
+
+## 10. Retrying failed oids
+
+A per-oid failure does not kill its unit — but the unit then completes and marks
+itself done, so a plain rerun will never revisit it. Retry them explicitly:
+
+```bash
+cat /data/bhrf_run/errors/*.jsonl | jq -r .oid > /data/oids/retry.txt
+poetry run python scripts/offline_run_batch.py \
+    --oid-file /data/oids/retry.txt --out-dir /data/bhrf_run-retry --features
+```
+
+A separate `--out-dir` is required: the oid list differs, so the fingerprint will
+not match the original shards. That is the guard working, not an obstacle.
+
+## 11. Known gaps
+
+| Gap | Consequence |
+|---|---|
+| **No parquet → DB loader.** The bulk `COPY` step does not exist. | The run ends with shards on disk and nothing in the database. |
+| `main()` returns 0 even when units failed. | A supervisor or cron reads the run as successful; check `FAILED units` in the summary or count `errors/*.jsonl`. |
+| `multisurvey_ztf.allwise` is empty. | `XMATCH_URL` is mandatory (§6), and the features written cannot be recomputed from the DB alone. |
+| Objects with no AllWISE counterpart are indistinguishable from never-crossmatched ones in the stored data. | Only the per-unit `n_no_allwise` count records the difference. |
