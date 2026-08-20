@@ -27,13 +27,40 @@ ALLWISE_CATID = 0
 log = logging.getLogger(__name__)
 
 
+# Engine cache, keyed by (pid, credentials path). Every reader calls
+# _make_engine, so without this a batched run pays a fresh TCP+auth handshake per
+# reader per oid. Keying on the pid makes it fork-safe: a forked child gets a new
+# pid and therefore builds its own engine instead of reusing the parent's
+# sockets (psycopg2 connections are NOT fork-safe).
+_ENGINES: dict = {}
+
+
 def _make_engine(credentials_json: str) -> sa.Engine:
+    key = (os.getpid(), os.path.abspath(credentials_json))
+    engine = _ENGINES.get(key)
+    if engine is not None:
+        return engine
     with open(credentials_json, "r", encoding="utf-8") as f:
         params = json.load(f)
-    return sa.create_engine(
+    engine = sa.create_engine(
         f"postgresql+psycopg2://{params['user']}:{params['password']}"
-        f"@{params['host']}/{params['dbname']}"
+        f"@{params['host']}/{params['dbname']}",
+        # ONE connection per process, no overflow: a worker issues its queries
+        # serially, so a second connection is never in use -- and with ~126
+        # workers the pool size is multiplied by 126 against the server's
+        # max_connections. pool_recycle drops connections the server may have
+        # closed under a multi-hour run, without paying pool_pre_ping's extra
+        # round trip on every checkout.
+        pool_size=1, max_overflow=0, pool_recycle=1800,
     )
+    _ENGINES[key] = engine
+    return engine
+
+
+def dispose_engines() -> None:
+    """Close this process's pooled connections (call before forking workers)."""
+    for key in [k for k in _ENGINES if k[0] == os.getpid()]:
+        _ENGINES.pop(key).dispose()
 
 
 def _py_oids(oids) -> list:
@@ -76,6 +103,13 @@ def _postprocess_epochs(df: pd.DataFrame) -> pd.DataFrame:
 def fetch_detections(credentials_json: str, oids: list) -> pd.DataFrame:
     """Per-epoch ZTF detections: detection ⋈ ztf_detection on (oid, measurement_id).
 
+    ORDER BY is load-bearing, not cosmetic: without it Postgres returns rows in
+    plan order, which differs between a single-oid lookup and a 500-oid
+    `ANY(...)` batch. Same rows, different order -- and the fitted features
+    (SPM/Harmonics/period) are order-sensitive, so the feature values moved with
+    the batch size. Pinning (oid, mjd, measurement_id) makes a read reproducible
+    regardless of how many oids it asks for.
+
     Returns one row per detection with columns
     `oid, sid, measurement_id, mjd, ra, dec, band(int), mag, e_mag,
     mag_corr, e_mag_corr_ext, isdiffpos(±1), distnr, rb, rfid`.
@@ -102,6 +136,7 @@ def fetch_detections(credentials_json: str, oids: list) -> pd.DataFrame:
         JOIN {SCHEMA}.ztf_detection z
           ON d.oid = z.oid AND d.measurement_id = z.measurement_id
         WHERE d.oid = ANY(:oids) AND d.sid = :sid
+        ORDER BY d.oid, d.mjd, d.measurement_id
     """)
     with engine.connect() as conn:
         df = pd.read_sql_query(query, conn, params={"oids": _py_oids(oids), "sid": SID})
@@ -140,6 +175,7 @@ def fetch_forced_photometry(credentials_json: str, oids: list) -> pd.DataFrame:
         JOIN {SCHEMA}.ztf_forced_photometry z
           ON fp.oid = z.oid AND fp.measurement_id = z.measurement_id
         WHERE fp.oid = ANY(:oids) AND fp.sid = :sid
+        ORDER BY fp.oid, fp.mjd, fp.measurement_id
     """)
     with engine.connect() as conn:
         df = pd.read_sql_query(query, conn, params={"oids": _py_oids(oids), "sid": SID})
@@ -199,6 +235,7 @@ def fetch_references(credentials_json: str, oids: list) -> pd.DataFrame:
         SELECT oid, rfid, sharpnr, chinr
         FROM {SCHEMA}.ztf_reference
         WHERE oid = ANY(:oids) AND chinr >= 0
+        ORDER BY oid, rfid
     """)
     with engine.connect() as conn:
         return pd.read_sql_query(query, conn, params={"oids": _py_oids(oids)})
