@@ -555,9 +555,11 @@ def main():
                     help="attempts per DB/Xwave call before failing the unit.")
     ap.add_argument("--credentials", default=DEFAULT_CREDENTIALS)
     ap.add_argument("--schema", default=db.SCHEMA)
-    ap.add_argument("--xmatch-url", default=os.getenv("XMATCH_URL", ""),
+    ap.add_argument("--xmatch-url", default=os.getenv("XMATCH_URL", xmatch.DEFAULT_XMATCH_URL),
                     dest="xmatch_url",
-                    help="Xwave URL; empty falls back to the (ZTF-empty) DB read.")
+                    help="Xwave URL (default: %(default)s; or set XMATCH_URL). Pass '' to "
+                         "force the DB read instead -- which yields NO WISE at all, since "
+                         "<schema>.allwise is empty for ZTF, so only do that deliberately.")
     ap.add_argument("--start-method", default=default_start_method(),
                     choices=["fork", "spawn"],
                     help="fork shares the loaded model copy-on-write (Linux); "

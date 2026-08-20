@@ -99,45 +99,50 @@ without them.
 
 ## 5. The model
 
-Download once, verify, and use a **local path that contains the version**:
+Download once, verify the md5, point `MODEL_PATH` at it. The location does not
+matter:
 
 ```bash
-mkdir -p /data/models/SquidwardFeaturesClassifier/2.1.0
-curl -o /data/models/SquidwardFeaturesClassifier/2.1.0/hierarchical_random_forest_model.pkl \
+mkdir -p /data/models
+curl -o /data/models/hierarchical_random_forest_model.pkl \
   https://alerce-models.s3.amazonaws.com/squidward/2.1.0/hierarchical_random_forest_model.pkl
 
-md5sum /data/models/SquidwardFeaturesClassifier/2.1.0/hierarchical_random_forest_model.pkl
+md5sum /data/models/hierarchical_random_forest_model.pkl
 # must be 95e8e9f18fde62f22025e31a88ad81fa  (1,720,755,396 bytes)
 
-export MODEL_PATH=/data/models/SquidwardFeaturesClassifier/2.1.0/hierarchical_random_forest_model.pkl
+export MODEL_PATH=/data/models/hierarchical_random_forest_model.pkl
 ```
 
-Two traps, both real:
+**Use a local file, not the URL.** A URL `MODEL_PATH` is downloaded into
+`/tmp/SquidwardFeaturesClassifier/` and whatever already sits there is reused —
+that cache has held a stale SNIbc pickle. On a pristine server the URL is safe,
+but a verified local file removes the question permanently.
 
-- **A URL `MODEL_PATH` is downloaded into `/tmp/SquidwardFeaturesClassifier/` and
-  whatever already sits there is reused.** That cache has held a stale SNIbc
-  pickle. On a pristine server the URL is safe, but a local verified file removes
-  the question permanently.
-- **The version is derived from the path**, not from the pickle
-  (`alerce_classifiers/base/model.py:_get_model_version` scans the path
-  components). A path with no `2.1.0` in it yields the literal `"no_version"`.
-  The batch runner stamps the pinned `CLASSIFIER_VERSION` regardless, so the
-  written data is correct either way — but the logs will lie to you.
+`alerce_classifiers` derives the model version by scanning the path for a
+version-shaped component, so a local file reports `"no_version"`.
+`classify.resolve_model_version` handles that: it stamps the pinned
+`MODEL_VERSION` and **refuses to run** if the path claims a version that is not
+2.1.0 — the feature list, the seeded taxonomy and `classifier_version` all
+assume it. No directory naming convention is required.
 
 ## 6. Crossmatch service
 
+Every offline CLI already defaults to `http://quimal-db1.alerce.online:8081`, so
+there is nothing to export. Just check it answers:
+
 ```bash
-export XMATCH_URL=http://quimal-db1.alerce.online:8081     # or a local Xwave
-curl -s -o /dev/null -w '%{http_code}\n' $XMATCH_URL/      # expect 200
+curl -s -o /dev/null -w '%{http_code}\n' http://quimal-db1.alerce.online:8081/   # expect 200
 ```
 
-**This is mandatory, not optional.** `multisurvey_ztf.allwise` is empty — the
-catalog rows are bulk-loaded by a separate process that never ran for this schema
-— so without `XMATCH_URL` every WISE colour comes out NaN and the classifications
-carry the Stochastic bias documented in
+Override with `--xmatch-url` or `XMATCH_URL` to point at a different Xwave.
+
+**Never pass `--xmatch-url ''`** unless you mean it: that forces the DB read, and
+`multisurvey_ztf.allwise` is empty — the catalog rows are bulk-loaded by a
+separate process that never ran for this schema. Every WISE colour would come out
+NaN and the classifications would carry the Stochastic bias documented in
 [`WISE_NULL_CLASSIFICATION_IMPACT.md`](./WISE_NULL_CLASSIFICATION_IMPACT.md).
-The runner does not degrade silently: Xwave failures retry with backoff and then
-fail the unit.
+A live Xwave that fails is different: those retry with backoff and then fail the
+unit, rather than degrading silently.
 
 ## 7. Verify before committing 7.45M objects
 

@@ -38,11 +38,14 @@ def main():
                     help="Feature-step version string (e.g. 27.5.7a31). "
                          "Defaults to importlib.metadata version('feature-step'); "
                          "supply this if the package is not installed in the active env.")
-    ap.add_argument("--xmatch-url", default=os.getenv("XMATCH_URL", ""), dest="xmatch_url",
-                    help="Xwave crossmatch service URL (or set XMATCH_URL). Computes the "
-                         "AllWISE crossmatch live, like the deployed step. Without it the "
-                         "(empty) <schema>.allwise is read and every WISE colour is NaN, "
-                         "which biases the resulting classification toward Stochastic.")
+    ap.add_argument("--xmatch-url",
+                    default=os.getenv("XMATCH_URL", xmatch.DEFAULT_XMATCH_URL),
+                    dest="xmatch_url",
+                    help="Xwave crossmatch service URL (default: %(default)s; or set "
+                         "XMATCH_URL). Computes the AllWISE crossmatch live, like the "
+                         "deployed step. Pass '' to force the DB read instead: "
+                         "<schema>.allwise is empty for ZTF, so that yields NaN for every "
+                         "WISE colour and biases the classification toward Stochastic.")
     ap.add_argument("--save", action="store_true",
                     help="Persist the DB-ready features into <schema>.feature.")
     ap.add_argument("--execute", action="store_true",

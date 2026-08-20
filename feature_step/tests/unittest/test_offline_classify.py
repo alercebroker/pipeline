@@ -111,3 +111,31 @@ def test_classify_oid_for_save_none_when_no_ao(monkeypatch):
 
     dto, lastmjd, matches = classify.classify_oid_for_save(1, "creds", model=object())
     assert dto is None and lastmjd is None and matches == []
+
+
+def test_resolve_model_version_falls_back_to_the_pinned_version():
+    """The version must come from the code, not from the shape of a file path.
+
+    alerce_classifiers derives it by scanning MODEL_PATH's components for
+    something version-shaped, so a local pickle at /data/models/model.pkl yields
+    the literal "no_version". Requiring operators to bury the file under a
+    2.1.0/ directory to make a version appear is a filesystem convention
+    standing in for a constant we already pin.
+    """
+    from features.offline.model_feature_list import MODEL_VERSION
+    assert classify.resolve_model_version("no_version") == MODEL_VERSION
+
+
+def test_resolve_model_version_keeps_a_real_reported_version():
+    assert classify.resolve_model_version("2.1.0") == "2.1.0"
+
+
+def test_resolve_model_version_refuses_a_version_that_is_not_the_pinned_one():
+    """A path saying 9.9.9 means the artifact is not the one we validated.
+
+    MODEL_FEATURE_LIST, the seeded taxonomy and CLASSIFIER_VERSION are all
+    pinned to 2.1.0, so silently classifying with a different model would write
+    probabilities whose class ids mean something else.
+    """
+    with pytest.raises(ValueError, match="9.9.9"):
+        classify.resolve_model_version("9.9.9")

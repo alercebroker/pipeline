@@ -11,6 +11,7 @@ Model config is read from the same env vars the deployed step uses:
     MAPPER_CLASS (optional) - defaults to the Squidward mapper
     CLASSIFIER_NAME (optional) - output label; deployment uses lc_classifier_BHRF_forced_phot
 """
+import logging
 import os
 
 import pandas as pd
@@ -22,17 +23,49 @@ from features.utils.parsers import parse_output
 from features.offline import db
 from features.offline import xmatch
 from features.offline.message import build_message
+from features.offline.model_feature_list import MODEL_VERSION
 from .lc_features import compute_astro_object
+
+log = logging.getLogger(__name__)
 
 DEFAULT_MODEL_CLASS = "alerce_classifiers.squidward.model.SquidwardFeaturesClassifier"
 DEFAULT_MAPPER_CLASS = "alerce_classifiers.squidward.mapper.SquidwardMapper"
 
 
+def resolve_model_version(reported: str) -> str:
+    """The model's self-reported version -> the version we actually stamp.
+
+    alerce_classifiers derives it by scanning MODEL_PATH for a version-shaped
+    path component, so a local pickle (which OFFLINE_VS_LEGACY_VALIDATION.md §3
+    requires, because a URL reuses whatever is cached in /tmp) reports the
+    literal "no_version" unless it is buried under a 2.1.0/ directory. That is a
+    filesystem convention standing in for a constant already pinned here, so
+    fall back to MODEL_VERSION instead of demanding the directory.
+
+    A version that is neither "no_version" nor the pinned one is refused: the
+    feature list, the seeded taxonomy and CLASSIFIER_VERSION are all pinned to
+    2.1.0, so a different artifact would write probabilities whose class ids
+    mean something else.
+    """
+    if reported in (None, "", "no_version"):
+        log.info("model reports no version (derived from MODEL_PATH); "
+                 "stamping the pinned %s", MODEL_VERSION)
+        return MODEL_VERSION
+    if reported != MODEL_VERSION:
+        raise ValueError(
+            f"model at MODEL_PATH reports version {reported!r}, but this code is "
+            f"pinned to {MODEL_VERSION} (feature list, taxonomy and "
+            f"classifier_version all assume it) -- refusing to classify"
+        )
+    return reported
+
+
 def load_squidward_model(model_class: str = DEFAULT_MODEL_CLASS):
     """Instantiate the BHRF classifier from env vars (mirrors the deployed step).
 
-    Returns (model, classifier_name, classifier_version). The version is derived
-    by the model from the model path (e.g. ".../squidward/2.1.0/..." -> "2.1.0").
+    Returns (model, classifier_name, classifier_version). The version is the
+    pinned MODEL_VERSION; see resolve_model_version for why it is not simply the
+    one the model derives from the path.
     """
     model_path = os.getenv("MODEL_PATH")
     if not model_path:
@@ -41,7 +74,7 @@ def load_squidward_model(model_class: str = DEFAULT_MODEL_CLASS):
     mapper = get_class(mapper_class)()
     model = get_class(model_class)(model_path=model_path, mapper=mapper)
     name = os.getenv("CLASSIFIER_NAME", model_class.split(".")[-1])
-    return model, name, model.model_version
+    return model, name, resolve_model_version(model.model_version)
 
 
 def features_message_to_dto(out_message: dict):
