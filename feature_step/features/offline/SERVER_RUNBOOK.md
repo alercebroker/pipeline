@@ -20,6 +20,19 @@ DB and there is nothing new to record.
 manifest exists — it never looks at the database. Turning the flag on halfway
 through leaves every already-finished unit on disk and permanently unloaded (§11).
 
+**Shortcut:** `scripts/offline_setup.py` runs §3–§8's setup steps for you — it
+checks what is already in place, downloads the model, verifies its md5, and
+materializes the oid list, skipping anything already done. It cannot create the
+credentials files (they carry live passwords) or issue the grants (§4). Read the
+sections below for what the steps mean; run the script to actually do them.
+
+```bash
+python scripts/offline_setup.py --check-only   # what is missing, changes nothing
+python scripts/offline_setup.py                # ...and fix what it can
+```
+
+Exit code is 0 only when the machine can start a run.
+
 ---
 
 ## 1. Clone
@@ -180,7 +193,7 @@ NaN and the classifications would carry the Stochastic bias documented in
 A live Xwave that fails is different: those retry with backoff and then fail the
 unit, rather than degrading silently.
 
-## 7. Verify before committing 7.45M objects
+## 7. Verify before committing 26.3M objects
 
 Three checks, minutes each. Do not skip them; each has caught a real defect.
 
@@ -199,14 +212,16 @@ poetry run python scripts/offline_verify_batch_equivalence.py --n 12 --min-n-det
 ## 8. The run
 
 ```bash
-# 1. materialize the oid list once (n_det >= 6 -> ~7.45M of the 130M)
-poetry run python scripts/offline_run_batch.py --min-n-det 6 \
-    --save-oids /data/oids/run_ndet6.npy --plan-only
+# 1. materialize the oid list once (n_det >= 2 -> ~26.3M of the 130M).
+#    offline_setup.py already did this; the explicit form is here for a
+#    different cut (n_det >= 6 keeps ~7.5M, n_det >= 20 keeps ~2.5M).
+poetry run python scripts/offline_run_batch.py --min-n-det 2 \
+    --save-oids /data/oids/run.npy --plan-only
 
 # 2. a small unit against the real database — the first end-to-end write.
 #    --unit-size, NOT --max-units: a unit is one worker's task and is never split
 #    across cores, so a default 5000-oid unit is 5000 objects in series.
-head -200 /data/oids/run_ndet6.txt > /data/oids/smoke.txt
+head -200 /data/oids/run.txt > /data/oids/smoke.txt
 poetry run python scripts/offline_run_batch.py \
     --oid-file /data/oids/smoke.txt --out-dir /data/bhrf_one \
     --unit-size 200 --minibatch 200 --workers 1 --features \
@@ -216,13 +231,13 @@ jq '{db_prob_rows, prob_rows, db_feat_rows, feat_rows, db_xmatch_rows}' /data/bh
 
 # 3. scaling probe: measure throughput, disk per unit, and the no-AllWISE rate
 poetry run python scripts/offline_run_batch.py \
-    --oid-file /data/oids/run_ndet6.npy \
+    --oid-file /data/oids/run.npy \
     --out-dir /data/bhrf_probe --workers 16 --max-units 16 --features
-du -sh /data/bhrf_probe        # extrapolate: this is 80k of 7.45M oids
+du -sh /data/bhrf_probe        # extrapolate: this is 80k of 26.3M oids
 
 # 4. the real run — rerun the SAME command after any interruption to resume
 poetry run python scripts/offline_run_batch.py \
-    --oid-file /data/oids/run_ndet6.npy \
+    --oid-file /data/oids/run.npy \
     --out-dir /data/bhrf_run --workers 64 --features \
     --load-db --write-credentials features/offline/write_credentials.json
 ```
@@ -240,7 +255,7 @@ Run it under `tmux`/`screen` or `nohup`: it is a multi-hour job, and a dropped
 SSH session kills the parent.
 
 **Size the disk from step 2, not from arithmetic.** Order of magnitude: ~45
-probability rows and ~193 feature rows per object, so ~335M and ~1.4e9 rows
+probability rows and ~193 feature rows per object, so ~1.2e9 and ~5.1e9 rows
 respectively across the run. `--features` is opt-in for exactly this reason.
 
 **Defaults worth knowing:** `--workers` defaults to *physical* cores − 2 (not
