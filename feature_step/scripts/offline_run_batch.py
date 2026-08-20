@@ -359,7 +359,7 @@ def process_unit(unit) -> dict:
 
     oids = [int(o) for o in oids]
     prob_rows, feat_frames = [], []
-    n_ok = n_skipped = n_errors = 0
+    n_ok = n_skipped = n_errors = n_no_allwise = 0
     errors = []   # capped sample for the manifest; n_errors is the true count
 
     for start in range(0, len(oids), cfg["minibatch"]):
@@ -372,6 +372,16 @@ def process_unit(unit) -> dict:
             if got is None:
                 n_skipped += 1
                 continue
+            # An oid the crossmatch was ASKED about and that came back empty.
+            # Counted here, after the no-detections skip above, because an oid
+            # with no detections never reaches the cone search and so is not a
+            # miss. Without this number, "no counterpart" and "the crossmatch
+            # never ran" are indistinguishable in everything the run leaves
+            # behind: no WISE rows in <schema>.feature, no row in
+            # <schema>.xmatch, either way. Expect ~14%
+            # (WISE_NULL_CLASSIFICATION_IMPACT.md puts recovery at 86%).
+            if len(got[2]) == 0:
+                n_no_allwise += 1
             try:
                 p_rows, f_rows = process_oid(oid, *got, cfg)
             except Exception as exc:
@@ -399,6 +409,7 @@ def process_unit(unit) -> dict:
     manifest = {
         "unit": index, "oid_lo": oids[0], "oid_hi": oids[-1], "n_oids": len(oids),
         "n_ok": n_ok, "n_skipped": n_skipped, "n_errors": n_errors,
+        "n_no_allwise": n_no_allwise,
         "prob_rows": len(prob_rows),
         "feat_rows": int(sum(len(f) for f in feat_frames)),
         "elapsed_s": round(time.perf_counter() - t0, 2),
@@ -632,7 +643,8 @@ def main():
     ctx = mp.get_context(args.start_method)
     n_units = len(todo)
     t_run = time.perf_counter()
-    agg = {"n_ok": 0, "n_skipped": 0, "n_errors": 0, "prob_rows": 0, "feat_rows": 0}
+    agg = {"n_ok": 0, "n_skipped": 0, "n_errors": 0, "n_no_allwise": 0,
+           "prob_rows": 0, "feat_rows": 0}
     n_failed = 0
 
     # ProcessPoolExecutor, NOT multiprocessing.Pool. When a worker dies abruptly
@@ -703,6 +715,10 @@ def main():
     print(f"  units          : {n_units:,}")
     print(f"  classified     : {agg['n_ok']:,}")
     print(f"  skipped        : {agg['n_skipped']:,}  (errors: {agg['n_errors']:,})")
+    _asked = agg["n_ok"] + agg["n_errors"]
+    print(f"  no AllWISE     : {agg['n_no_allwise']:,}"
+          f"  ({100 * agg['n_no_allwise'] / _asked if _asked else 0:.1f}% of the oids "
+          f"the crossmatch was asked about; ~14% expected)")
     if n_failed:
         print(f"  FAILED units   : {n_failed:,}  <- left unmarked; rerun to retry")
     print(f"  probability rows: {agg['prob_rows']:,}")
