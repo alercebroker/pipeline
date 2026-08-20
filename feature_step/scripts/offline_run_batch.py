@@ -31,11 +31,23 @@ handles for you:
     in the parent and shared copy-on-write. Under spawn each worker loads its
     own copy of the pickle.
 
-Failures are isolated per oid and per unit: a bad object is recorded and skipped,
-and a unit that dies (e.g. Xwave down) is simply not marked done, so rerunning
-the same command picks it up. Xwave/DB errors are retried with backoff rather
-than silently degraded -- a missing AllWISE crossmatch changes the predicted
-class, so falling back to "no WISE" would quietly corrupt results.
+Failures are isolated per oid and per unit. A unit that dies (e.g. Xwave down)
+is simply not marked done, so rerunning the same command picks it up. A single
+bad OBJECT does not kill its unit -- but the unit then completes and marks
+itself done, so the resume logic will never look at it again. Every failed oid
+is therefore written to errors/unit_*.jsonl (the manifest only samples 20), and
+retrying them is a second, small run over that list:
+
+    cat <out-dir>/errors/*.jsonl | jq -r .oid > retry.txt
+    python offline_run_batch.py --oid-file retry.txt --out-dir <out-dir>-retry
+
+A separate --out-dir is required, not optional: the oid list differs, so the
+run fingerprint will not match the original shards -- which is the guard doing
+its job, not an obstacle.
+
+Xwave/DB errors are retried with backoff rather than silently degraded -- a
+missing AllWISE crossmatch changes the predicted class, so falling back to
+"no WISE" would quietly corrupt results.
 
 Output is parquet shards. Loading them into the DB is a separate, deliberate
 step (bulk COPY), not something this runner does per oid.
@@ -359,8 +371,12 @@ def process_unit(unit) -> dict:
 
     oids = [int(o) for o in oids]
     prob_rows, feat_frames = [], []
-    n_ok = n_skipped = n_errors = n_no_allwise = 0
-    errors = []   # capped sample for the manifest; n_errors is the true count
+    n_ok = n_errors = n_no_allwise = n_no_detections = n_unclassifiable = 0
+    # `failed` keeps EVERY failed oid and lands in errors/unit_*.jsonl; the
+    # manifest only carries a capped sample of it. The unit still completes and
+    # still writes its manifest, so the resume logic will skip it forever --
+    # without the full list those oids are counted, unnamed and unrecoverable.
+    failed = []
 
     for start in range(0, len(oids), cfg["minibatch"]):
         mb = oids[start:start + cfg["minibatch"]]
@@ -370,7 +386,7 @@ def process_unit(unit) -> dict:
         for oid in mb:
             got = inputs.get(oid)
             if got is None:
-                n_skipped += 1
+                n_no_detections += 1   # nothing to classify; not a failure
                 continue
             # An oid the crossmatch was ASKED about and that came back empty.
             # Counted here, after the no-detections skip above, because an oid
@@ -386,12 +402,10 @@ def process_unit(unit) -> dict:
                 p_rows, f_rows = process_oid(oid, *got, cfg)
             except Exception as exc:
                 n_errors += 1
-                if len(errors) < 20:
-                    errors.append({"oid": oid, "error": f"{type(exc).__name__}: {exc}"})
-                n_skipped += 1
+                failed.append({"oid": oid, "error": f"{type(exc).__name__}: {exc}"})
                 continue
             if not p_rows:
-                n_skipped += 1
+                n_unclassifiable += 1   # too few real detections; not a failure
                 continue
             prob_rows.extend(p_rows)
             if f_rows is not None and len(f_rows):
@@ -406,14 +420,23 @@ def process_unit(unit) -> dict:
                      else pd.DataFrame(columns=["oid", "sid", "feature_id",
                                                 "band", "version", "value"]))
 
+    # Before the manifest: the manifest is the done-marker, so its presence must
+    # mean the error list is complete too.
+    _write_jsonl(out_dir / "errors" / f"unit_{index:07d}.jsonl", failed)
+
     manifest = {
         "unit": index, "oid_lo": oids[0], "oid_hi": oids[-1], "n_oids": len(oids),
-        "n_ok": n_ok, "n_skipped": n_skipped, "n_errors": n_errors,
+        "n_ok": n_ok, "n_errors": n_errors,
+        # n_skipped is the total of the three reasons below, kept so existing
+        # readers of older manifests keep working. Only n_errors is worth a retry.
+        "n_skipped": n_errors + n_no_detections + n_unclassifiable,
+        "n_no_detections": n_no_detections,
+        "n_unclassifiable": n_unclassifiable,
         "n_no_allwise": n_no_allwise,
         "prob_rows": len(prob_rows),
         "feat_rows": int(sum(len(f) for f in feat_frames)),
         "elapsed_s": round(time.perf_counter() - t0, 2),
-        "errors": errors,
+        "errors": failed[:20],   # sample; errors/unit_*.jsonl has all of them
     }
     _write_json(out_dir / "manifests" / f"unit_{index:07d}.json", manifest)
     return manifest
@@ -478,6 +501,17 @@ def _write_shard(path: Path, frame: pd.DataFrame) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(".parquet.tmp")
     frame.to_parquet(tmp, index=False)
+    os.replace(tmp, path)
+
+
+def _write_jsonl(path: Path, records: list) -> None:
+    """Atomically write one JSON object per line. No records -> no file, so
+    `ls errors/` names exactly the units that hit trouble."""
+    if not records:
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".jsonl.tmp")
+    tmp.write_text("".join(json.dumps(r) + "\n" for r in records))
     os.replace(tmp, path)
 
 
@@ -644,6 +678,7 @@ def main():
     n_units = len(todo)
     t_run = time.perf_counter()
     agg = {"n_ok": 0, "n_skipped": 0, "n_errors": 0, "n_no_allwise": 0,
+           "n_no_detections": 0, "n_unclassifiable": 0,
            "prob_rows": 0, "feat_rows": 0}
     n_failed = 0
 
@@ -714,7 +749,12 @@ def main():
     print("\n" + "=" * 70)
     print(f"  units          : {n_units:,}")
     print(f"  classified     : {agg['n_ok']:,}")
-    print(f"  skipped        : {agg['n_skipped']:,}  (errors: {agg['n_errors']:,})")
+    print(f"  skipped        : {agg['n_skipped']:,}  "
+          f"(no detections: {agg['n_no_detections']:,}, "
+          f"unclassifiable: {agg['n_unclassifiable']:,}, "
+          f"errors: {agg['n_errors']:,})")
+    if agg["n_errors"]:
+        print(f"  -> retry them  : cat {out_dir}/errors/*.jsonl | jq -r .oid > retry.txt")
     _asked = agg["n_ok"] + agg["n_errors"]
     print(f"  no AllWISE     : {agg['n_no_allwise']:,}"
           f"  ({100 * agg['n_no_allwise'] / _asked if _asked else 0:.1f}% of the oids "
