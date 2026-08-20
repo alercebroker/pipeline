@@ -732,8 +732,12 @@ def main():
     if args.load_db:
         with db._make_engine(args.write_credentials).connect() as _conn:
             _conn.execute(sa.text("SELECT 1"))
-        print(f"load-db: ON -> {args.schema}.probability"
-              f"{' + ' + args.schema + '.feature' if args.features else ''}")
+        tables = [f"{args.schema}.probability"]
+        if args.xmatch_url:
+            tables.append(f"{args.schema}.xmatch")
+        if args.features:
+            tables.append(f"{args.schema}.feature")
+        print("load-db: ON -> " + ", ".join(tables))
 
     if not args.warnings:
         _silence_library_warnings()   # the parent loads the model + logs too

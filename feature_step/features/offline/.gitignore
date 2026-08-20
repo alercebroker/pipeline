@@ -1,5 +1,7 @@
-# DB credentials — contains a live password, never commit
-credentials.json
+# DB credentials — contain a live password, never commit.
+# Glob, not a list: write_credentials.json was added later and an exact
+# name would have left it trackable.
+*credentials.json
 
 # Large regenerable query dumps (~11M) — regenerate with
 # class_over_time/fetch_class_dates.py; the figures + README are committed.

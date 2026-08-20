@@ -203,10 +203,13 @@ poetry run python scripts/offline_verify_batch_equivalence.py --n 12 --min-n-det
 poetry run python scripts/offline_run_batch.py --min-n-det 6 \
     --save-oids /data/oids/run_ndet6.npy --plan-only
 
-# 2. one unit against the real database — the first end-to-end write of the run
+# 2. a small unit against the real database — the first end-to-end write.
+#    --unit-size, NOT --max-units: a unit is one worker's task and is never split
+#    across cores, so a default 5000-oid unit is 5000 objects in series.
+head -200 /data/oids/run_ndet6.txt > /data/oids/smoke.txt
 poetry run python scripts/offline_run_batch.py \
-    --oid-file /data/oids/run_ndet6.npy \
-    --out-dir /data/bhrf_one --workers 4 --max-units 1 --features \
+    --oid-file /data/oids/smoke.txt --out-dir /data/bhrf_one \
+    --unit-size 200 --minibatch 200 --workers 1 --features \
     --load-db --write-credentials features/offline/write_credentials.json
 # then cross-check disk against DB for that unit:
 jq '{db_prob_rows, prob_rows, db_feat_rows, feat_rows, db_xmatch_rows}' /data/bhrf_one/manifests/unit_0000000.json
@@ -224,11 +227,14 @@ poetry run python scripts/offline_run_batch.py \
     --load-db --write-credentials features/offline/write_credentials.json
 ```
 
-Step 2 is not optional the first time: everything about `--load-db` has been
-verified against fake engines and a single-oid smoke test, never against a real
-work unit's ~19k feature rows going through the 32 hash partitions. Use a
-throwaway `--out-dir` — the upsert is idempotent, so the rows it writes are the
-same ones the real run would write.
+Step 2 was run on 2026-08-20 over 20 oids against `multisurvey_ztf`: 900
+probability rows, 3,319 feature rows spread across the hash partitions, and 16
+`xmatch` rows all landed, and the manifest counters matched the database
+exactly. Two things that check confirmed and that are worth re-checking on the
+server: the upsert does not disturb the *other* classifiers' rows for the same
+oids (the key includes `classifier_id`), and partition routing needs no grants
+on the children. Repeat it there anyway — it is also the first real test of the
+`write_user` login and of Xwave from that host.
 
 Run it under `tmux`/`screen` or `nohup`: it is a multi-hour job, and a dropped
 SSH session kills the parent.
