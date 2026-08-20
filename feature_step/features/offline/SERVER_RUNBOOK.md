@@ -65,40 +65,64 @@ git submodule update --init --recursive
 ## 2. System packages
 
 ```bash
-sudo apt-get update && sudo apt-get install -y git build-essential
+sudo apt-get update
+sudo apt-get install -y git build-essential \
+    python3.10 python3.10-venv python3.10-dev
 ```
 
-`build-essential` is required: `P4J` and `mhps` are Cython/C extensions compiled
-from source. On **Linux x86-64 nothing from `LOCAL_DEV_NOTES.md` applies** — that
-document describes arm64/macOS workarounds (the `-march=x86-64-v3` flag, the
-`fastavro` wheel). On the target platform the original code builds as-is.
+Python **3.10 specifically** — `pyproject.toml` pins `>=3.10,<3.11`. Ubuntu
+22.04 ships it; 24.04 ships 3.12 and needs the deadsnakes PPA
+(`sudo add-apt-repository ppa:deadsnakes/ppa`) before the line above.
 
-Python **3.10** specifically — `feature_step/pyproject.toml` pins
-`python = ">=3.10,<3.11"`.
+Why each: `build-essential` gives the compiler, and `python3.10-dev` gives
+`Python.h` — P4J and mhps are Cython extensions built from source and fail at
+compile time without the headers. The Dockerfile does not install them because
+it starts `FROM python:3.10`, where they are already present; that is exactly
+the difference between the image and a bare host.
+
+On **Linux x86-64 nothing from `LOCAL_DEV_NOTES.md` applies** — that document
+describes arm64/macOS workarounds (the `-march=x86-64-v3` flag, the `fastavro`
+wheel). On the target platform the original code builds as-is.
 
 ## 3. Install
 
-Order matters; this mirrors `feature_step/Dockerfile`, which is the authority.
+Poetry creates and manages the project's virtualenv, so there is no venv to make
+by hand — but Poetry itself must not be installed with a bare `pip install`:
+Debian 12 and Ubuntu 23.04+ refuse it with `externally-managed-environment`
+(PEP 668). Give it its own venv, then pin the interpreter Poetry uses.
 
 ```bash
-cd feature_step
-pip install poetry
+python3 -m venv ~/.venvs/poetry
+~/.venvs/poetry/bin/pip install poetry
+export PATH="$HOME/.venvs/poetry/bin:$PATH"      # add to ~/.bashrc to persist
+export POETRY_VIRTUALENVS_IN_PROJECT=true        # .venv beside the code, as the Dockerfile does
 
-# The C extensions need these present BEFORE they build. Cython is pinned:
-# modern Cython fails on P4J/mhps.
+cd feature_step
+poetry env use python3.10                        # NOT whatever python3 happens to be
+poetry env info --path                           # -> .../feature_step/.venv
+```
+
+Then the install, in this order — it mirrors `feature_step/Dockerfile`, which is
+the authority. The C extensions need setuptools/Cython/numpy present **before**
+they build, and Cython is pinned because modern Cython fails on P4J and mhps.
+
+```bash
 poetry run python -m pip install setuptools wheel Cython==0.29.36 numpy
 poetry run python -m pip install ../mhps
 poetry run python -m pip install -r ../P4J/requirements.txt
-
 poetry install --without=test --no-root   # add --with=test to run the suite
 ```
 
-Verify the interpreter resolves the offline package:
+Check the interpreter resolves the offline package and the compiled extensions:
 
 ```bash
-poetry run python -c "from features.offline import db; print(db.SCHEMA)"
+poetry run python -c "import P4J, mhps; from features.offline import db; print(db.SCHEMA)"
 # -> multisurvey_ztf
 ```
+
+`offline_setup.py` (§5) checks the same imports and fails loudly if either
+extension did not build, so a broken compile surfaces before the oid list is
+materialized rather than in the first worker.
 
 ## 4. Database credentials
 
