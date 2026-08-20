@@ -80,3 +80,16 @@ def test_render_seed_sql_seeds_every_version():
     for version_id, version_name in FEATURE_VERSION_LUT.items():
         assert f"({version_id}, '{version_name}', 0, 0)" in sql
     assert "ON CONFLICT (version_id, sid) DO NOTHING;" in sql
+
+
+def test_version_ids_follow_the_production_numbering_convention():
+    """version_id must start at 1, never 0 — that is what production assigns.
+
+    `features.database.get_or_create_version_id` inserts
+    COALESCE(MAX(version_id), 0) + 1, so on an empty table the first version is
+    1. The column has no default or sequence in either schema, so the number is
+    whatever the inserter supplies: a seed that hand-writes 0 (as ours did)
+    makes the same version_name resolve to a different id per schema, and every
+    cross-schema comparison by version_id silently compares the wrong versions.
+    """
+    assert min(FEATURE_VERSION_LUT) >= 1

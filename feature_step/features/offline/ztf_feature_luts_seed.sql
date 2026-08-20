@@ -12,11 +12,11 @@
 
 -- ---------------------------------------------------------------------------
 -- 1. feature_version_lut  (version_id namespaced by sid, lookups are by version_name)
---    NOTE: seeded as version_id=0 to match the fixture. To follow the production
---    get_or_create convention (starts at 1), change BOTH this and FEATURE_VERSION_LUT.
+--    NOTE: ids follow the production get_or_create convention (start at 1),
+--    so the same version_name resolves to the same id here and in multisurvey.
 -- ---------------------------------------------------------------------------
 INSERT INTO multisurvey_ztf.feature_version_lut (version_id, version_name, sid, tid) VALUES
-(0, '27.5.7a31', 0, 0)
+(1, '27.5.7a31', 0, 0)
 ON CONFLICT (version_id, sid) DO NOTHING;
 
 -- ---------------------------------------------------------------------------

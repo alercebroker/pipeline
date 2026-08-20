@@ -150,8 +150,14 @@ FEATURE_NAME_LUT = {
 # {version_id: version_name}. Mirrors production's feature.version = the single
 # feature-step package version (version("feature-step")). Update when the
 # package version that produced these features changes.
+# version_id starts at 1, matching what production actually assigns:
+# features.database.get_or_create_version_id inserts COALESCE(MAX(version_id), 0) + 1,
+# and the column has no default or sequence, so the number is whatever the inserter
+# supplies. Seeding 0 here (as the first version of this fixture did) made the same
+# version_name resolve to 0 in multisurvey_ztf and 1 in multisurvey — invalidating
+# every cross-schema comparison keyed on version_id.
 FEATURE_VERSION_LUT = {
-    0: '27.5.7a31',
+    1: '27.5.7a31',
 }
 
 
@@ -202,8 +208,8 @@ def render_seed_sql() -> str:
         "",
         "-- ---------------------------------------------------------------------------",
         "-- 1. feature_version_lut  (version_id namespaced by sid, lookups are by version_name)",
-        "--    NOTE: seeded as version_id=0 to match the fixture. To follow the production",
-        "--    get_or_create convention (starts at 1), change BOTH this and FEATURE_VERSION_LUT.",
+        "--    NOTE: ids follow the production get_or_create convention (start at 1),",
+        "--    so the same version_name resolves to the same id here and in multisurvey.",
         "-- ---------------------------------------------------------------------------",
         f"INSERT INTO {SCHEMA}.feature_version_lut (version_id, version_name, sid, tid) VALUES",
     ]

@@ -262,7 +262,7 @@ must be edited — in the schema-authority library, not by the offline tooling:
 | LUT | PK (`index_elements`) | Current state | What's left |
 |---|---|---|---|
 | `feature_name_lut` | `(feature_id, sid)` | **127 ZTF rows seeded** (`sid = 0, tid = 0`, `feature_id` 0–126) alongside the prior 146 LSST `sid = 1` rows | **Done** — seeded via `ztf_feature_luts_seed.sql`, re-derived in **extractor emission order** and including the 4 `*_mjd_ref` reference-epoch features. Band-less names (`feature_id` namespaced by `sid`, restarts at 0; band lives in `feature.band`). Back-port to authority file pending. |
-| `feature_version_lut` | `(version_id, sid)` | **1 ZTF row seeded** (`version_id = 0`, `version_name = 27.5.7a31`, `sid = 0, tid = 0`) | **Done** — same seed file. `version_id = 0` matches the fixture; production's `get_or_create` starts at 1 — adopting that means changing **both** the SQL and `FEATURE_VERSION_LUT`. |
+| `feature_version_lut` | `(version_id, sid)` | **1 ZTF row seeded** (`version_id = 1`, `version_name = 27.5.7a31`, `sid = 0, tid = 0`) | **Done** — same seed file. Renumbered 0 → 1 on 2026-08-20 to match what production actually assigns (`get_or_create_version_id` inserts `COALESCE(MAX(version_id), 0) + 1`, so the first version is 1, never 0). The column has **no default or sequence** in either schema, so the id is whatever the inserter supplies — seeding 0 had made `27.5.7a31 / sid = 0` resolve to **0 here and 1 in `multisurvey`**, which silently invalidates any cross-schema comparison keyed on `version_id`. Free to fix because `multisurvey_ztf.feature` was still empty. |
 | `classifier` | `(classifier_id)` | ids 1–4 stamp **+ ids 5–9 BHRF** (flat + top + 3 branches, `classifier_version = "2.1.0"`, `tid = 0`) | **Done** — seeded via `ztf_classifier_taxonomy_seed.sql`. Back-port to authority file pending. |
 | `taxonomy` | `(class_id, classifier_id)` | flat stamp taxonomy **+ 45 BHRF rows** (21+3+6+6+9; `class_id` per-classifier 0-indexed, `order = class_id`; transient uses **`SESN`**) | **Done** — same seed file. Back-port pending. |
 
@@ -504,9 +504,19 @@ flowchart TD
   | `classifier` | ids 1–4 stamp + **5–9 BHRF** | stops at **id 2** |
   | `taxonomy` BHRF | 45 rows | **0** (its stamp rows already reference a `classifier_id 3` absent from its own `classifier` block) |
 
-  Two consequences: a **fresh deploy or staging DB comes up without the ZTF LUTs**,
-  so `feature_writer` / `probability_writer` fail there on the FK; and the file no
-  longer describes reality.
+  Two consequences: a **fresh deploy or staging DB comes up without the ZTF LUTs**;
+  and the file no longer describes reality.
+
+  ⚠ That first consequence is **worse than a crash**: verified 2026-08-20, neither
+  `<schema>.feature` nor `<schema>.probability` carries a single FK or CHECK
+  constraint, so the writers do **not** fail on a LUT-less DB — they write
+  correctly-shaped rows whose `feature_id` / `version` / `class_id` resolve to
+  nothing, and the database accepts them. Nothing downstream flags it. This is why
+  the writers resolve their ids **from the DB** (`db.fetch_feature_name_lut`,
+  `db.fetch_feature_version_id`, `db.fetch_taxonomy_maps`) rather than from the
+  local fixture, and why `fetch_feature_version_id` raises `LookupError` instead
+  of returning the fixture's `-1` sentinel: refusing the id is the only thing that
+  stops the write.
 
   **The renumbering hazard — why order matters.** `classifier_id` is assigned by
   hand in that list. This checkout ends at id 2, so "just continuing the list" would
