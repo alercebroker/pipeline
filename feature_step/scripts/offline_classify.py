@@ -20,6 +20,7 @@ import argparse
 import os
 
 from features.offline.classify import load_squidward_model, classify_oid_for_save
+from features.offline.classifier_taxonomy_lut import CLASSIFIER_VERSION
 from features.offline import db, probability_writer, xmatch
 
 DEFAULT_CREDENTIALS = str(PIPE / "feature_step" / "features" / "offline" / "credentials.json")
@@ -97,7 +98,8 @@ def main():
         taxonomy_maps = db.fetch_taxonomy_maps(args.credentials,
                                                probability_writer.CLASSIFIER_IDS)
         rows = probability_writer.build_probability_rows(result, args.oid, lastmjd,
-                                                         taxonomy_maps, version=version)
+                                                         taxonomy_maps,
+                                                         version=CLASSIFIER_VERSION)
         write_creds = args.write_credentials or args.credentials
         outcome = probability_writer.write_probabilities(
             rows, write_creds, execute=args.execute)

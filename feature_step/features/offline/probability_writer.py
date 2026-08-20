@@ -23,12 +23,26 @@ CLASSIFIER_IDS = [5, 6, 7, 8, 9]
 
 
 def classifier_version_to_smallint(version: str) -> int:
-    """'2.1.0' -> 210 (production rule). Strips a '_suffix' on the patch part."""
+    """'2.1.0' -> 210 (production rule). Strips a '_suffix' on the patch part.
+
+    Raises ValueError on anything else. Returning a 0 sentinel here is not safe:
+    <schema>.probability has no FK or CHECK on classifier_version, so the row is
+    accepted and the whole run is stamped with a version nothing can resolve.
+    """
     parts = version.split(".")
-    if len(parts) == 3:
-        parts[-1] = parts[-1].split("_")[0]
+    if len(parts) != 3:
+        raise ValueError(
+            f"classifier version {version!r} is not MAJOR.MINOR.PATCH — refusing to "
+            "stamp probabilities with an unresolvable version"
+        )
+    parts[-1] = parts[-1].split("_")[0]
+    try:
         return int("".join(parts))
-    return 0
+    except ValueError:
+        raise ValueError(
+            f"classifier version {version!r} is not MAJOR.MINOR.PATCH — refusing to "
+            "stamp probabilities with an unresolvable version"
+        ) from None
 
 
 def _iter_frames(output_dto):

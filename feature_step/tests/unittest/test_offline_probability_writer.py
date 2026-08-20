@@ -38,7 +38,20 @@ def test_version_to_smallint():
     assert pw.classifier_version_to_smallint("2.1.0") == 210
     assert pw.classifier_version_to_smallint("1.0.4") == 104
     assert pw.classifier_version_to_smallint("2.1.0_rc1") == 210  # patch suffix stripped
-    assert pw.classifier_version_to_smallint("weird") == 0
+
+
+def test_classifier_version_refuses_an_unparseable_version():
+    """Returning 0 silently mislabels every row of the run.
+
+    <schema>.probability has no FK or CHECK on classifier_version, so a 0 is
+    accepted and stored. It happened for real: the CLI passed the version the
+    model pickle self-reports ("no_version"), which has no 3 parts, so 45 rows
+    were written as version 0 while the batch runner wrote 210 for the same
+    model. Refusing is what keeps the two paths from disagreeing.
+    """
+    import pytest
+    with pytest.raises(ValueError, match="no_version"):
+        pw.classifier_version_to_smallint("no_version")
 
 
 def test_classifier_ids_constant():
