@@ -1,0 +1,720 @@
+#!/usr/bin/env python
+"""Batched, multi-process offline runner: oids -> features + BHRF probabilities.
+
+The per-oid path (`classify.classify_oid`) is the *validated* one, but it drives
+every reader one oid at a time: 4 single-oid SQL queries plus one Xwave HTTP
+round trip per object. The end-to-end benchmark put ~68% of the 2.30 s/oid in
+those round trips and only ~0.58 s in actual compute. This runner keeps the
+compute path byte-identical and batches everything around it.
+
+Two levels of batching, which do different jobs:
+
+  * work unit (--unit-size, default 5000 oids) -- the CHECKPOINT granularity.
+    One unit produces one parquet shard plus one manifest, written atomically
+    (.tmp then os.replace). A completed unit is never redone on a rerun.
+  * minibatch (--minibatch, default 500 oids) -- the ROUND-TRIP granularity.
+    One minibatch = 4 SQL queries and 1 Xwave call for all 500 oids, instead of
+    2000 queries and 500 calls. 500 matches xmatch.DEFAULT_BATCH_SIZE.
+
+Units are contiguous oid ranges, deliberately NOT n_det strata: stratifying by
+light-curve length makes the long units stragglers and leaves most cores idle at
+the tail. Contiguous ranges give every unit the same expected cost for free.
+
+Parallelism is processes, not threads (feature extraction is CPU-bound Python /
+numba, so the GIL would serialize threads). Note the two traps this script
+handles for you:
+
+  * BLAS/OpenMP/JAX each spawn N threads PER process, so N processes give N^2
+    threads fighting over N cores. The env vars at the top of this file pin them
+    to 1 and MUST be set before numpy is imported.
+  * with --start-method fork (the default, Linux) the BHRF model is loaded once
+    in the parent and shared copy-on-write. Under spawn each worker loads its
+    own copy of the pickle.
+
+Failures are isolated per oid and per unit: a bad object is recorded and skipped,
+and a unit that dies (e.g. Xwave down) is simply not marked done, so rerunning
+the same command picks it up. Xwave/DB errors are retried with backoff rather
+than silently degraded -- a missing AllWISE crossmatch changes the predicted
+class, so falling back to "no WISE" would quietly corrupt results.
+
+Output is parquet shards. Loading them into the DB is a separate, deliberate
+step (bulk COPY), not something this runner does per oid.
+
+Typical use:
+
+    export MODEL_PATH=https://alerce-models.s3.amazonaws.com/squidward/2.1.0/hierarchical_random_forest_model.pkl
+    export XMATCH_URL=http://127.0.0.1:8081
+
+    # 1. materialize the oid list once (n_det >= 6 -> ~7.45M of the 130M)
+    python feature_step/scripts/offline_run_batch.py --min-n-det 6 \
+        --save-oids feature_step/features/offline/oids/run_ndet6.npy --plan-only
+
+    # 2. scaling probe: where does throughput stop scaling?
+    python feature_step/scripts/offline_run_batch.py \
+        --oid-file feature_step/features/offline/oids/run_ndet6.npy \
+        --out-dir /data/bhrf_run --workers 16 --max-units 16
+
+    # 3. the real run (resumable: rerun the same command after any interruption)
+    python feature_step/scripts/offline_run_batch.py \
+        --oid-file feature_step/features/offline/oids/run_ndet6.npy \
+        --out-dir /data/bhrf_run --workers 64
+"""
+# --- thread pinning: MUST happen before numpy/BLAS/JAX are imported ---
+import os
+
+for _var in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS",
+             "NUMEXPR_NUM_THREADS", "VECLIB_MAXIMUM_THREADS"):
+    os.environ.setdefault(_var, "1")
+os.environ.setdefault("JAX_PLATFORMS", "cpu")
+
+import argparse
+import hashlib
+import json
+import multiprocessing as mp
+import platform
+import signal
+import sys
+import time
+from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
+from concurrent.futures.process import BrokenProcessPool
+from importlib.metadata import PackageNotFoundError, version as _pkg_version
+from pathlib import Path
+
+PIPE = Path(__file__).resolve().parents[2]   # .../pipeline
+for _p in (PIPE / "feature_step", PIPE / "lc_classifier", PIPE / "libs" / "idmapper",
+           PIPE / "libs" / "apf", PIPE / "libs" / "xmatch_client",
+           PIPE / "alerce_classifiers"):
+    sys.path.insert(0, str(_p))
+
+import numpy as np
+import pandas as pd
+from sqlalchemy import text
+
+
+def _silence_library_warnings() -> None:
+    """Mute the known-noisy pandas/numpy deprecations from lc_classifier and the
+    Squidward mapper. They fire per extractor per object, so over millions of
+    oids they are gigabytes of log that hide the lines an operator needs. Scoped
+    to these two categories only -- --warnings turns them back on."""
+    import warnings
+    warnings.filterwarnings("ignore", category=FutureWarning)
+    warnings.filterwarnings("ignore", message="Polyfit may be poorly conditioned")
+
+from features.offline import db, xmatch
+from features.offline.classify import classify_astro_object, load_squidward_model
+from features.offline.classifier_taxonomy_lut import CLASSIFIER_VERSION
+from features.offline.feature_lut import default_version_name
+from features.offline.lc_features import compute_astro_object
+from features.offline.message import build_message
+from features.offline.probability_writer import CLASSIFIER_IDS, build_probability_rows
+from features.utils.parsers import prepare_ao_features_for_db
+
+DEFAULT_CREDENTIALS = str(PIPE / "feature_step" / "features" / "offline" / "credentials.json")
+SID_ZTF = 0
+
+# Worker-process singletons, built once by _init_worker and reused for every unit
+# that process handles. Under fork these are inherited from the parent (so the
+# model pickle is shared copy-on-write); under spawn each worker builds its own.
+_W: dict = {}
+
+
+# --------------------------------------------------------------------------- #
+#  oid selection
+# --------------------------------------------------------------------------- #
+def physical_cores() -> int:
+    """Physical cores, NOT os.cpu_count().
+
+    os.cpu_count() reports hardware threads: on a dual-socket EPYC 7662 with SMT2
+    that is 256 for 128 real cores, so sizing the pool from it oversubscribes
+    2:1. Feature extraction is CPU-bound with the BLAS threads already pinned to
+    1, so the second hyperthread of a core buys almost nothing and the extra
+    context switching costs. Count distinct (physical id, core id) pairs.
+    """
+    try:
+        cores, phys, core = set(), None, None
+        with open("/proc/cpuinfo", encoding="utf-8") as f:
+            for line in f:
+                if line.startswith("physical id"):
+                    phys = line.split(":")[1].strip()
+                elif line.startswith("core id"):
+                    core = line.split(":")[1].strip()
+                elif not line.strip() and phys is not None and core is not None:
+                    cores.add((phys, core))
+                    phys = core = None
+        if phys is not None and core is not None:
+            cores.add((phys, core))
+        if cores:
+            return len(cores)
+    except OSError:
+        pass   # not Linux, or /proc unavailable
+    return os.cpu_count() or 4
+
+
+def default_workers() -> int:
+    """Leave two cores for the parent, the DB driver and the OS."""
+    return max(1, physical_cores() - 2)
+
+
+def default_start_method() -> str:
+    """fork on Linux, spawn on macOS.
+
+    fork is what makes the model shareable copy-on-write, so it is the right
+    choice for the real (Linux) run. On macOS it is not merely discouraged: a
+    forked child here dies with SIGSEGV before running a single line of Python,
+    because the parent has already initialised numpy/Accelerate and Apple's BLAS
+    is not fork-safe. Measured on this repo: fork -> exitcode -11 whether or not
+    the model is preloaded; spawn -> clean. It is also INTERMITTENT, so a fork
+    run that passes a smoke test can still die in production.
+    """
+    return "spawn" if platform.system() == "Darwin" else "fork"
+
+
+def select_oids(credentials: str, min_n_det: int, limit=None) -> np.ndarray:
+    """oids of <schema>.object with n_det >= min_n_det, ascending.
+
+    Ascending order is what makes the contiguous work units cheap: a unit's 500
+    oids land on adjacent index pages instead of scattering across the heap.
+    """
+    sql = f"""
+        SELECT oid FROM {db.SCHEMA}.object
+        WHERE sid = :sid AND n_det >= :min_n_det
+        ORDER BY oid
+    """
+    if limit:
+        sql += " LIMIT :limit"
+    params = {"sid": db.SID, "min_n_det": min_n_det}
+    if limit:
+        params["limit"] = limit
+    engine = db._make_engine(credentials)
+    with engine.connect() as conn:
+        conn = conn.execution_options(stream_results=True)
+        chunks = [c["oid"].to_numpy(dtype=np.int64)
+                  for c in pd.read_sql_query(text(sql), conn, params=params,
+                                             chunksize=1_000_000)]
+    return np.concatenate(chunks) if chunks else np.empty(0, dtype=np.int64)
+
+
+def load_oids(path: str) -> np.ndarray:
+    p = Path(path)
+    if p.suffix == ".npy":
+        return np.load(p).astype(np.int64)
+    return np.loadtxt(p, dtype=np.int64, ndmin=1)
+
+
+def make_units(oids: np.ndarray, unit_size: int) -> list:
+    """Split the (sorted) oid array into contiguous work units."""
+    return [(i, oids[s:s + unit_size])
+            for i, s in enumerate(range(0, len(oids), unit_size))]
+
+
+# --------------------------------------------------------------------------- #
+#  batched fetch
+# --------------------------------------------------------------------------- #
+def _by_oid(frame: pd.DataFrame) -> tuple:
+    """(  {oid: sub-frame},  empty-frame-with-the-right-columns  ).
+
+    The empty frame is the stand-in for oids the query returned nothing for; it
+    keeps build_message / the parser on the same code path as the single-oid
+    reader, which always hands them a frame rather than None.
+    """
+    if frame is None or len(frame) == 0:
+        empty = frame if frame is not None else pd.DataFrame()
+        return {}, empty
+    return ({int(k): v for k, v in frame.groupby("oid", sort=False)},
+            frame.iloc[0:0])
+
+
+def _retry(fn, attempts: int, what: str, base_sleep: float = 2.0):
+    """Run fn with exponential backoff; re-raise the last error if all fail.
+
+    Deliberately raises instead of degrading: an empty AllWISE frame is a valid
+    -- but WRONG -- input that silently changes the predicted class.
+    """
+    for attempt in range(1, attempts + 1):
+        try:
+            return fn()
+        except Exception as exc:
+            if attempt == attempts:
+                raise
+            wait = base_sleep * 2 ** (attempt - 1)
+            print(f"  [pid {os.getpid()}] {what} failed ({type(exc).__name__}: {exc}); "
+                  f"retry {attempt}/{attempts - 1} in {wait:.0f}s", flush=True)
+            time.sleep(wait)
+    raise AssertionError("unreachable")
+
+
+def fetch_minibatch(oids: list, cfg: dict) -> dict:
+    """One round of batched reads for `oids`: 4 SQL queries, 1 Xwave call.
+
+    Returns {oid: (message, refs, allwise)} for the oids that have detections;
+    oids with no detections are absent (nothing to classify).
+    """
+    cred, retries = cfg["credentials"], cfg["retries"]
+
+    dets_by, dets_empty = _by_oid(_retry(
+        lambda: db.fetch_detections(cred, oids), retries, "detections"))
+    forced_by, forced_empty = _by_oid(_retry(
+        lambda: db.fetch_forced_photometry(cred, oids), retries, "forced"))
+    ps1_by, ps1_empty = _by_oid(_retry(
+        lambda: db.fetch_ps1(cred, oids), retries, "ps1"))
+    refs_by, refs_empty = _by_oid(_retry(
+        lambda: db.fetch_references(cred, oids), retries, "references"))
+
+    # Messages first: the crossmatch cone centre is the message's meanra/meandec,
+    # so it can only be built after the detections are assembled.
+    messages = {}
+    for oid in oids:
+        dets = dets_by.get(oid)
+        if dets is None or len(dets) == 0:
+            continue  # no detections -> nothing to classify
+        messages[oid] = build_message(oid, dets, forced_by.get(oid, forced_empty),
+                                      ps1_by.get(oid, ps1_empty))
+
+    # One crossmatch call for the whole minibatch (vs one per oid).
+    allwise_by, allwise_empty = {}, pd.DataFrame(columns=["oid", "W1", "W2", "W3", "W4"])
+    if messages:
+        if cfg["xmatch_url"]:
+            mb_oids = list(messages)
+            ras = [messages[o]["meanra"] for o in mb_oids]
+            decs = [messages[o]["meandec"] for o in mb_oids]
+            matches = _retry(
+                lambda: xmatch.compute_matches(mb_oids, ras, decs,
+                                               base_url=cfg["xmatch_url"]),
+                retries, "xmatch")
+            allwise_by, _ = _by_oid(xmatch.matches_to_allwise_df(matches))
+        else:
+            allwise_by, _ = _by_oid(_retry(
+                lambda: db.fetch_allwise(cred, oids), retries, "allwise"))
+
+    return {oid: (msg, refs_by.get(oid, refs_empty),
+                  allwise_by.get(oid, allwise_empty))
+            for oid, msg in messages.items()}
+
+
+# --------------------------------------------------------------------------- #
+#  per-oid compute (unchanged from the validated single-oid path)
+# --------------------------------------------------------------------------- #
+def process_oid(oid: int, message: dict, refs, allwise, cfg: dict):
+    """-> (probability_rows, feature_rows | None); (None, None) if unclassifiable."""
+    ao = compute_astro_object(message, refs, allwise, cfg["min_detections"],
+                              preprocessor=_W["preprocessor"], extractor=_W["extractor"])
+    if ao is None:
+        return None, None
+
+    dto = classify_astro_object(ao, message, _W["model"])
+    # build_message emits forced epochs inside `detections` (forced=True), so this
+    # max is already max(detections, forced) -- same value as classify._lc_lastmjd.
+    mjds = [d["mjd"] for d in message["detections"]]
+    lastmjd = max(mjds) if mjds else None
+    prob_rows = build_probability_rows(dto, oid, lastmjd, _W["taxonomy"],
+                                       version=CLASSIFIER_VERSION, sid=SID_ZTF)
+
+    feat_rows = None
+    if cfg["features"]:
+        # Reuse the AstroObject we already extracted rather than calling
+        # compute_db_features, which would run the whole extractor a second time.
+        feat_rows = prepare_ao_features_for_db(ao, _W["feature_lut"])
+        feat_rows = feat_rows.copy()
+        feat_rows["oid"] = int(oid)
+        feat_rows["sid"] = SID_ZTF
+        feat_rows["version"] = _W["feature_version_id"]
+        feat_rows = feat_rows.drop(columns=["name"])[
+            ["oid", "sid", "feature_id", "band", "version", "value"]]
+    return prob_rows, feat_rows
+
+
+# --------------------------------------------------------------------------- #
+#  worker
+# --------------------------------------------------------------------------- #
+def _init_worker(cfg: dict):
+    # Ctrl-C is handled by the parent; workers must not each raise their own.
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    from lc_classifier.features.composites.ztf import ZTFFeatureExtractor
+    from lc_classifier.features.preprocess.ztf import ZTFLightcurvePreprocessor
+
+    if not cfg["warnings"]:
+        _silence_library_warnings()
+    _W["cfg"] = cfg
+    # Built once per process: the extractor is heavy, and numba/jax pay their JIT
+    # on first use, so per-unit construction would dominate a short unit.
+    _W["preprocessor"] = ZTFLightcurvePreprocessor(drop_bogus=True)
+    _W["extractor"] = ZTFFeatureExtractor()
+    # Under fork the parent's already-loaded model is inherited (copy-on-write);
+    # under spawn there is nothing to inherit, so load it here.
+    _W["model"] = _MODEL if _MODEL is not None else load_squidward_model()[0]
+    _W["taxonomy"] = db.fetch_taxonomy_maps(cfg["credentials"], CLASSIFIER_IDS,
+                                            schema=cfg["schema"])
+    # Both ids come from cfg, where main() resolved them against the DB once
+    # (see the preflight there) -- never from the local fixture.
+    _W["feature_lut"] = cfg.get("feature_lut")
+    _W["feature_version_id"] = cfg.get("feature_version_id")
+
+
+def process_unit(unit) -> dict:
+    """Run one work unit end to end and write its shard. Returns a manifest dict."""
+    index, oids = unit
+    cfg = _W["cfg"]
+    out_dir = Path(cfg["out_dir"])
+    t0 = time.perf_counter()
+
+    oids = [int(o) for o in oids]
+    prob_rows, feat_frames = [], []
+    n_ok = n_skipped = n_errors = 0
+    errors = []   # capped sample for the manifest; n_errors is the true count
+
+    for start in range(0, len(oids), cfg["minibatch"]):
+        mb = oids[start:start + cfg["minibatch"]]
+        # A failure here aborts the UNIT (not the run): the unit stays unmarked
+        # and a rerun picks it up, rather than writing a shard with a silent hole.
+        inputs = fetch_minibatch(mb, cfg)
+        for oid in mb:
+            got = inputs.get(oid)
+            if got is None:
+                n_skipped += 1
+                continue
+            try:
+                p_rows, f_rows = process_oid(oid, *got, cfg)
+            except Exception as exc:
+                n_errors += 1
+                if len(errors) < 20:
+                    errors.append({"oid": oid, "error": f"{type(exc).__name__}: {exc}"})
+                n_skipped += 1
+                continue
+            if not p_rows:
+                n_skipped += 1
+                continue
+            prob_rows.extend(p_rows)
+            if f_rows is not None and len(f_rows):
+                feat_frames.append(f_rows)
+            n_ok += 1
+
+    _write_shard(out_dir / "probabilities" / f"unit_{index:07d}.parquet",
+                 pd.DataFrame(prob_rows))
+    if cfg["features"]:
+        _write_shard(out_dir / "features" / f"unit_{index:07d}.parquet",
+                     pd.concat(feat_frames, ignore_index=True) if feat_frames
+                     else pd.DataFrame(columns=["oid", "sid", "feature_id",
+                                                "band", "version", "value"]))
+
+    manifest = {
+        "unit": index, "oid_lo": oids[0], "oid_hi": oids[-1], "n_oids": len(oids),
+        "n_ok": n_ok, "n_skipped": n_skipped, "n_errors": n_errors,
+        "prob_rows": len(prob_rows),
+        "feat_rows": int(sum(len(f) for f in feat_frames)),
+        "elapsed_s": round(time.perf_counter() - t0, 2),
+        "errors": errors,
+    }
+    _write_json(out_dir / "manifests" / f"unit_{index:07d}.json", manifest)
+    return manifest
+
+
+def run_fingerprint(oids: np.ndarray, unit_size: int) -> dict:
+    """Identify the (oid list, unit size) a set of shards belongs to.
+
+    A unit index only means something relative to a specific oid array: unit 37
+    IS oids[185000:190000]. Resuming against a DIFFERENT array -- a changed
+    --min-n-det, or a re-SELECT after the table grew -- silently maps finished
+    indices onto different oids, skipping objects that were never processed.
+    The digest makes that mismatch loud instead of silent.
+    """
+    return {
+        "n_oids": int(len(oids)),
+        "unit_size": int(unit_size),
+        "oid_sha1": hashlib.sha1(np.ascontiguousarray(oids).tobytes()).hexdigest(),
+        "oid_lo": int(oids[0]) if len(oids) else None,
+        "oid_hi": int(oids[-1]) if len(oids) else None,
+    }
+
+
+def check_or_write_fingerprint(out_dir: Path, fp: dict, force: bool) -> None:
+    """Refuse to resume a run whose oid list no longer matches these shards."""
+    path = out_dir / "run.json"
+    if not path.exists():
+        _write_json(path, fp)
+        return
+    old = json.loads(path.read_text())
+    if old == fp:
+        return
+    diff = {k: (old.get(k), fp.get(k)) for k in fp if old.get(k) != fp.get(k)}
+    msg = ("\nREFUSING TO RESUME: this output directory was built from a "
+           "different oid list.\n"
+           f"  {out_dir}\n"
+           + "".join(f"  {k}: stored={o!r} now={n!r}\n" for k, (o, n) in diff.items())
+           + "  Unit indices from the stored run point at different oids now, so\n"
+             "  resuming would skip objects that were never processed.\n"
+             "  Fix: pass the SAME --oid-file used before (that is what --save-oids\n"
+             "  is for), or use a fresh --out-dir. --force-resume overrides.\n")
+    if not force:
+        raise SystemExit(msg)
+    print(msg + "  --force-resume given; continuing anyway.\n")
+    _write_json(path, fp)
+
+
+def clean_stale_tmp(out_dir: Path) -> int:
+    """Remove .tmp files left by a hard kill. They are never read (the atomic
+    rename means only the final name is visible), but they accumulate."""
+    n = 0
+    for pattern in ("*/*.parquet.tmp", "*/*.json.tmp"):
+        for stale in out_dir.glob(pattern):
+            stale.unlink()
+            n += 1
+    return n
+
+
+def _write_shard(path: Path, frame: pd.DataFrame) -> None:
+    """Atomic parquet write: a crash mid-write can never leave a half shard that
+    a later run would mistake for finished output."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".parquet.tmp")
+    frame.to_parquet(tmp, index=False)
+    os.replace(tmp, path)
+
+
+def _write_json(path: Path, payload: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(payload))
+    os.replace(tmp, path)   # the manifest is the done-marker, so it lands LAST
+
+
+# --------------------------------------------------------------------------- #
+#  main
+# --------------------------------------------------------------------------- #
+_MODEL = None
+
+
+def main():
+    ap = argparse.ArgumentParser(
+        description="Batched multi-process offline feature + BHRF classification runner.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    src = ap.add_mutually_exclusive_group(required=True)
+    src.add_argument("--min-n-det", type=int,
+                     help="select oids from <schema>.object with n_det >= this.")
+    src.add_argument("--oid-file", help="read oids from a .npy or newline .txt file.")
+    ap.add_argument("--save-oids", help="write the selected oid array to this .npy.")
+    ap.add_argument("--limit", type=int, help="cap the selection (calibration runs).")
+    ap.add_argument("--out-dir", help="output root for shards + manifests.")
+    ap.add_argument("--workers", type=int, default=default_workers(),
+                    help="worker processes. Default is PHYSICAL cores - 2 "
+                         "(%(default)s here); os.cpu_count() would count "
+                         "hyperthreads and oversubscribe a CPU-bound run.")
+    ap.add_argument("--unit-size", type=int, default=5000,
+                    help="oids per work unit = checkpoint granularity.")
+    ap.add_argument("--minibatch", type=int, default=xmatch.DEFAULT_BATCH_SIZE,
+                    help="oids per batched DB/Xwave round trip.")
+    ap.add_argument("--max-units", type=int, help="stop after N units (scaling probe).")
+    ap.add_argument("--min-detections", type=int, default=1)
+    ap.add_argument("--features", action="store_true",
+                    help="also write feature shards (~199 rows/oid).")
+    ap.add_argument("--retries", type=int, default=4,
+                    help="attempts per DB/Xwave call before failing the unit.")
+    ap.add_argument("--credentials", default=DEFAULT_CREDENTIALS)
+    ap.add_argument("--schema", default=db.SCHEMA)
+    ap.add_argument("--xmatch-url", default=os.getenv("XMATCH_URL", ""),
+                    dest="xmatch_url",
+                    help="Xwave URL; empty falls back to the (ZTF-empty) DB read.")
+    ap.add_argument("--start-method", default=default_start_method(),
+                    choices=["fork", "spawn"],
+                    help="fork shares the loaded model copy-on-write (Linux); "
+                         "spawn reloads it per worker but is the only safe "
+                         "option on macOS. Default: %(default)s on this host.")
+    ap.add_argument("--stall-timeout", type=float, default=1800.0,
+                    help="abort if no unit completes for this many seconds.")
+    ap.add_argument("--force-resume", action="store_true",
+                    help="resume even if the oid list no longer matches the "
+                         "shards already in --out-dir (dangerous: unit indices "
+                         "would point at different oids).")
+    ap.add_argument("--warnings", action="store_true",
+                    help="keep pandas/numpy deprecation warnings (off: they are "
+                         "per-object and drown a large run's log).")
+    ap.add_argument("--plan-only", action="store_true",
+                    help="select oids, report the plan, write --save-oids, and exit.")
+    args = ap.parse_args()
+
+    # Progress on a multi-hour run is usually watched through a redirected log,
+    # where Python's default block buffering would hold it back for minutes.
+    sys.stdout.reconfigure(line_buffering=True)
+
+    # --- oid selection -----------------------------------------------------
+    t0 = time.perf_counter()
+    if args.oid_file:
+        oids = load_oids(args.oid_file)
+        print(f"loaded {len(oids):,} oids from {args.oid_file}")
+    else:
+        print(f"selecting oids with n_det >= {args.min_n_det} ...")
+        oids = select_oids(args.credentials, args.min_n_det, args.limit)
+        print(f"selected {len(oids):,} oids in {time.perf_counter() - t0:.1f}s")
+    if args.limit:
+        oids = oids[:args.limit]
+    oids = np.sort(oids)
+
+    if args.save_oids:
+        Path(args.save_oids).parent.mkdir(parents=True, exist_ok=True)
+        np.save(args.save_oids, oids)
+        print(f"saved oid array -> {args.save_oids}")
+
+    units = make_units(oids, args.unit_size)
+    print(f"host: {physical_cores()} physical cores / {os.cpu_count()} hw threads, "
+          f"start-method={args.start_method}")
+    print(f"plan: {len(oids):,} oids -> {len(units):,} units of {args.unit_size} "
+          f"({args.minibatch}-oid minibatches, {args.workers} workers)")
+    if args.plan_only:
+        return 0
+    if not args.out_dir:
+        ap.error("--out-dir is required unless --plan-only")
+
+    # --- resume: a unit with a manifest is done ----------------------------
+    # The manifest is written LAST (after both shards), so its presence means the
+    # unit's output is complete. A unit killed mid-flight leaves no manifest and
+    # is simply redone -- recovery is per UNIT, never per worker or per core.
+    out_dir = Path(args.out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    check_or_write_fingerprint(out_dir, run_fingerprint(oids, args.unit_size),
+                               args.force_resume)
+    stale = clean_stale_tmp(out_dir)
+    if stale:
+        print(f"cleaned {stale} stale .tmp file(s) from an interrupted run")
+    done = {int(p.stem.split("_")[1])
+            for p in (out_dir / "manifests").glob("unit_*.json")}
+    todo = [u for u in units if u[0] not in done]
+    if done:
+        print(f"resume: {len(done):,} units already done, {len(todo):,} to go")
+    if args.max_units:
+        todo = todo[:args.max_units]
+        print(f"--max-units: running {len(todo)} unit(s) this pass")
+    if not todo:
+        print("nothing to do.")
+        return 0
+
+    cfg = {
+        "credentials": args.credentials, "schema": args.schema,
+        "xmatch_url": args.xmatch_url or None, "out_dir": str(out_dir),
+        "minibatch": args.minibatch, "min_detections": args.min_detections,
+        "features": args.features, "retries": args.retries,
+        "warnings": args.warnings,
+    }
+    # --- feature LUT ids: resolved against the DB, once, in the parent ----
+    # <schema>.feature has NO foreign key to feature_name_lut / feature_version_lut,
+    # so ids taken from the local fixture are never validated by the database: a
+    # fixture that drifted would stamp millions of rows with ids that resolve to
+    # something else, and nothing would reject them. Resolving here also fails the
+    # run BEFORE forking N workers, with the real error instead of a
+    # BrokenProcessPool from N initializers raising at once.
+    if args.features:
+        try:
+            fver = _pkg_version("feature-step")
+        except PackageNotFoundError:
+            fver = default_version_name()   # running from source, not installed
+        cfg["feature_lut"] = db.fetch_feature_name_lut(args.credentials,
+                                                       schema=args.schema)
+        cfg["feature_version_id"] = db.fetch_feature_version_id(
+            args.credentials, fver, schema=args.schema)
+        print(f"feature LUT from DB: {len(cfg['feature_lut'])} names; "
+              f"version {fver} -> id {cfg['feature_version_id']}")
+
+    if not args.warnings:
+        _silence_library_warnings()   # the parent loads the model + logs too
+
+    # --- load the model in the PARENT so fork shares it copy-on-write ------
+    global _MODEL
+    if args.start_method == "fork":
+        # Only worth doing under fork: spawn cannot inherit it, so preloading
+        # here would just cost the parent a copy nobody uses.
+        print("loading BHRF model in the parent (shared copy-on-write by fork)...")
+        _MODEL, mname, mversion = load_squidward_model()
+        print(f"  model: {mname} version={mversion}")
+
+    # Drop the parent's pooled connections: psycopg2 sockets are not fork-safe,
+    # and a child must never inherit one. (db keys its engine cache by pid, so
+    # children build their own regardless -- this just closes the parent's.)
+    db.dispose_engines()
+
+    ctx = mp.get_context(args.start_method)
+    n_units = len(todo)
+    t_run = time.perf_counter()
+    agg = {"n_ok": 0, "n_skipped": 0, "n_errors": 0, "prob_rows": 0, "feat_rows": 0}
+    n_failed = 0
+
+    # ProcessPoolExecutor, NOT multiprocessing.Pool. When a worker dies abruptly
+    # (a segfault in a native library, the OOM killer), Pool silently starts a
+    # replacement and keeps doing so forever -- a run can spin all night, print
+    # nothing, and finish nothing. The executor raises BrokenProcessPool instead,
+    # which turns that silent hang into an immediate, diagnosable failure.
+    try:
+        with ProcessPoolExecutor(max_workers=args.workers, mp_context=ctx,
+                                 initializer=_init_worker, initargs=(cfg,)) as ex:
+            futures = {ex.submit(process_unit, u): u[0] for u in todo}
+            pending, i = set(futures), 0
+            last_progress = time.monotonic()
+            while pending:
+                finished, pending = wait(pending, timeout=args.stall_timeout,
+                                         return_when=FIRST_COMPLETED)
+                if not finished:
+                    stalled = time.monotonic() - last_progress
+                    print(f"WARNING: no unit completed in {stalled / 60:.1f} min "
+                          f"({len(pending)} still running)", flush=True)
+                    if stalled > args.stall_timeout:
+                        for fut in pending:
+                            fut.cancel()
+                        raise SystemExit(
+                            f"\nABORTING: stalled for {stalled / 60:.1f} min with no "
+                            f"progress. Finished units are checkpointed; rerun to "
+                            f"resume. Check the DB and the Xwave service.")
+                    continue
+                last_progress = time.monotonic()
+                for fut in finished:
+                    i += 1
+                    try:
+                        man = fut.result()
+                    except Exception as exc:
+                        # One unit failing is survivable: it stays unmarked, so a
+                        # rerun retries it. Only a broken pool is fatal.
+                        if isinstance(exc, BrokenProcessPool):
+                            raise
+                        n_failed += 1
+                        print(f"[{i}/{n_units}] unit {futures[fut]:>7} FAILED: "
+                              f"{type(exc).__name__}: {exc} -- left unmarked, "
+                              f"rerun to retry", flush=True)
+                        continue
+                    for k in agg:
+                        agg[k] += man[k]
+                    elapsed = time.perf_counter() - t_run
+                    rate = agg["n_ok"] / elapsed if elapsed else 0.0
+                    eta = (n_units - i) * (elapsed / i) if i else 0.0
+                    print(f"[{i}/{n_units}] unit {man['unit']:>7} "
+                          f"ok={man['n_ok']:>5} skip={man['n_skipped']:>4} "
+                          f"err={man['n_errors']:>3} {man['elapsed_s']:>7.1f}s | "
+                          f"{rate:6.1f} oid/s  ETA {eta / 3600:5.2f}h", flush=True)
+    except BrokenProcessPool as exc:
+        raise SystemExit(
+            f"\nABORTING: a worker process died abruptly ({exc}).\n"
+            f"  start method: {args.start_method}\n"
+            "  A worker killed before it can raise a Python exception is almost\n"
+            "  always a native crash (fork-unsafe BLAS) or the OOM killer.\n"
+            "  Try --start-method spawn, or fewer --workers if memory-bound.\n"
+            "  Finished units are checkpointed; rerun to resume.")
+    except KeyboardInterrupt:
+        print("\ninterrupted -- finished units are checkpointed; "
+              "rerun the same command to resume.")
+        return 130
+
+    elapsed = time.perf_counter() - t_run
+    print("\n" + "=" * 70)
+    print(f"  units          : {n_units:,}")
+    print(f"  classified     : {agg['n_ok']:,}")
+    print(f"  skipped        : {agg['n_skipped']:,}  (errors: {agg['n_errors']:,})")
+    if n_failed:
+        print(f"  FAILED units   : {n_failed:,}  <- left unmarked; rerun to retry")
+    print(f"  probability rows: {agg['prob_rows']:,}")
+    if args.features:
+        print(f"  feature rows   : {agg['feat_rows']:,}")
+    print(f"  elapsed        : {elapsed/3600:.2f} h "
+          f"({agg['n_ok']/elapsed if elapsed else 0:.1f} oid/s, "
+          f"{elapsed*args.workers/max(agg['n_ok'],1):.3f} core-s/oid)")
+    print(f"  output         : {out_dir}")
+    print("=" * 70)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

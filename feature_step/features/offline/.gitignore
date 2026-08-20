@@ -5,3 +5,6 @@ credentials.json
 # class_over_time/fetch_class_dates.py; the figures + README are committed.
 class_over_time/class_dates_flat.csv
 class_over_time/class_dates_top.csv
+
+# Full oid dumps (~1 GB) — regenerate with scripts/offline_dump_oids.py
+oids/
