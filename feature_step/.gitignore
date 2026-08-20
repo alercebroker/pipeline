@@ -7,3 +7,16 @@ feature_plots/
 consolidated_features/
 config2.yaml
 config.yaml
+# Local run configs — carry broker/DB credentials, never commit (see LOCAL_DEV_NOTES.md)
+local_config.yaml
+local_config_ztf.yaml
+
+# Ad-hoc xmatch scan dumps + figures (regenerate with scan_xmatch_missing.py)
+xmatch_sample.json
+xmatch_scan*.json
+xmatch_scan*.jsonl
+xmatch_tail.jsonl
+xmatch_missing_rate.png
+
+# HTML renders of the committed .md notes
+*.html

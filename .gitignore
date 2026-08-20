@@ -163,3 +163,4 @@ terraform.tfvars
 **/.direnv/
 **/nix/
 **/config.yaml
+.DS_Store
