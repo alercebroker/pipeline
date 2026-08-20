@@ -47,3 +47,23 @@ def test_work_done_now_still_counts_as_ready():
 def test_a_failed_step_blocks_the_run():
     results = [S.Result("xwave", S.FAIL, "connection refused")]
     assert S.is_ready(results) is False
+
+
+def test_missing_privileges_names_what_is_absent():
+    got = S.missing_privileges({"USAGE": True, "detection": False,
+                                "feature INSERT": True, "object": False})
+    assert got == ["detection", "object"]
+
+
+def test_nothing_missing_is_an_empty_list():
+    assert S.missing_privileges({"USAGE": True, "detection": True}) == []
+
+
+def test_the_read_check_covers_the_tables_the_run_actually_reads():
+    """The grants were issued for the three write tables and the run still could
+    not start: every input table -- detections, forced photometry, the object
+    list, the LUTs -- needs SELECT too, and nothing checked for it.
+    """
+    for t in ("detection", "forced_photometry", "object", "feature_name_lut",
+              "taxonomy", "ztf_reference"):
+        assert t in S.READ_TABLES

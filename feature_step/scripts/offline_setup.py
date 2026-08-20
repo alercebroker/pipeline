@@ -49,6 +49,16 @@ MODEL_MD5 = "95e8e9f18fde62f22025e31a88ad81fa"
 # on object_part_0 and extrapolated across the 8 hash partitions.
 DEFAULT_MIN_N_DET = 2
 
+# Every table the run reads. The grants were once issued for the three write
+# tables only and the run still could not start: without SELECT on these there
+# are no light curves, no oid list and no LUTs. Checked explicitly because a
+# missing one surfaces mid-run, per worker, as a permission error on a query.
+READ_TABLES = ("object", "detection", "ztf_detection",
+               "forced_photometry", "ztf_forced_photometry",
+               "ztf_ps1", "ztf_reference", "xmatch", "allwise",
+               "feature_name_lut", "feature_version_lut", "taxonomy")
+WRITE_TABLES = ("feature", "probability", "xmatch")
+
 OK, DONE, MISSING, FAIL = "OK", "HECHO", "FALTA", "ERROR"
 _BLOCKING = (MISSING, FAIL)
 
@@ -61,6 +71,11 @@ def is_ready(results) -> bool:
     DONE is not a blocker: it means this pass did the work.
     """
     return not any(r.status in _BLOCKING for r in results)
+
+
+def missing_privileges(privs: dict) -> list:
+    """{name: has_it} -> the names that are False, in order."""
+    return [name for name, ok in privs.items() if not ok]
 
 
 def verify_md5(path, expected: str) -> bool:
@@ -92,33 +107,46 @@ def step_imports() -> Result:
 
 
 def step_credentials(path: Path, need_write: bool) -> Result:
+    """Connect, then check every privilege the run depends on.
+
+    Reads are checked even for the write user, because one account can now do
+    the whole run and the first attempt at that failed: it had INSERT on the
+    three output tables and SELECT on nothing else, so it could not read a
+    single light curve.
+    """
     from features.offline import db
     from sqlalchemy import text
 
-    label = "write_credentials.json" if need_write else "credentials.json"
+    label = path.name
     if not path.exists():
         return Result(label, MISSING, f"crear {path} a mano (lleva password)")
     try:
         with db._make_engine(str(path)).connect() as c:
             user = c.execute(text("SELECT current_user")).scalar()
-            if not need_write:
-                return Result(label, OK, f"conecta como {user}")
-            privs = c.execute(text(
-                "SELECT has_schema_privilege(current_user, :s, 'USAGE'),"
-                "       has_table_privilege(current_user, :s || '.feature', 'INSERT'),"
-                "       has_table_privilege(current_user, :s || '.probability', 'INSERT'),"
-                "       has_table_privilege(current_user, :s || '.xmatch', 'INSERT')"),
-                {"s": db.SCHEMA}).fetchone()
+            privs = {"USAGE en el schema": c.execute(text(
+                "SELECT has_schema_privilege(current_user, :s, 'USAGE')"),
+                {"s": db.SCHEMA}).scalar()}
+            for t in READ_TABLES:
+                privs[f"SELECT {t}"] = c.execute(text(
+                    "SELECT has_table_privilege(current_user, :t, 'SELECT')"),
+                    {"t": f"{db.SCHEMA}.{t}"}).scalar()
+            if need_write:
+                for t in WRITE_TABLES:
+                    privs[f"INSERT/UPDATE {t}"] = c.execute(text(
+                        "SELECT has_table_privilege(current_user, :t, 'INSERT') "
+                        "AND has_table_privilege(current_user, :t, 'UPDATE')"),
+                        {"t": f"{db.SCHEMA}.{t}"}).scalar()
     except Exception as exc:
         return Result(label, FAIL, f"{type(exc).__name__}: {str(exc)[:120]}")
 
-    if not all(privs):
-        missing = [n for n, ok in zip(("USAGE", "feature", "probability", "xmatch"), privs)
-                   if not ok]
+    absent = missing_privileges(privs)
+    if absent:
         return Result(label, MISSING,
-                      f"{user} conecta pero le faltan permisos: {', '.join(missing)} "
+                      f"{user} conecta pero le falta: {', '.join(absent[:4])}"
+                      f"{' ...' if len(absent) > 4 else ''} "
                       "-- ver los GRANT del paso 4 del runbook")
-    return Result(label, OK, f"{user} puede escribir las 3 tablas")
+    what = "lee y escribe" if need_write else "lee"
+    return Result(label, OK, f"{user} {what} todo lo que la corrida necesita")
 
 
 def step_seeds(credentials: Path) -> Result:
@@ -211,7 +239,9 @@ def main():
                     help="catalogue cut for the oid list (default %(default)s).")
     ap.add_argument("--credentials", type=Path, default=OFFLINE / "credentials.json")
     ap.add_argument("--write-credentials", type=Path,
-                    default=OFFLINE / "write_credentials.json")
+                    default=OFFLINE / "credentials.json",
+                    help="defaults to --credentials: one account holds every "
+                         "privilege the run needs, so a second file is optional.")
     ap.add_argument("--model-path", type=Path,
                     default=Path(os.environ.get("MODEL_PATH")
                                  or "/data/models/hierarchical_random_forest_model.pkl"))
@@ -222,13 +252,20 @@ def main():
 
     print(f"setup offline ZTF -- repo {PIPE}\n")
     results = [step_imports()]
-    # The DB steps are pointless without a working read connection, so they are
-    # skipped rather than reported as a pile of derived failures.
-    read = step_credentials(args.credentials, need_write=False)
+    # One account can hold every privilege the run needs, and pointing both
+    # flags at the same file is the recommended setup -- so check it once
+    # instead of reporting the same result twice.
+    same = (args.credentials.resolve() == args.write_credentials.resolve()
+            if args.credentials.exists() and args.write_credentials.exists()
+            else False)
+    read = step_credentials(args.credentials, need_write=same)
     results.append(read)
+    if not same:
+        results.append(step_credentials(args.write_credentials, need_write=True))
+    # The remaining DB steps are pointless without a working connection, so they
+    # are skipped rather than reported as a pile of derived failures.
     if read.status == OK:
         results.append(step_seeds(args.credentials))
-    results.append(step_credentials(args.write_credentials, need_write=True))
     results.append(step_model(args.model_path, args.check_only))
     results.append(step_xmatch(args.xmatch_url))
     if read.status == OK:

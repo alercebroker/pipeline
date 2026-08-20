@@ -102,36 +102,57 @@ poetry run python -c "from features.offline import db; print(db.SCHEMA)"
 
 ## 4. Database credentials
 
-`features/offline/credentials.json` is **gitignored** and must be created by hand:
+One account does the whole run. `features/offline/credentials.json` is
+**gitignored** and must be created by hand:
 
 ```json
-{"user": "...", "password": "...", "host": "quimal-db1.alerce.online",
+{"user": "write_user", "password": "...", "host": "quimal-db1.alerce.online",
  "port": 5432, "dbname": "ztf"}
 ```
 
-Without `--load-db` the run only **reads**, so a read-only user is enough. With
-`--load-db` you need a second file for `--write-credentials`, and that user must
-hold `INSERT`/`UPDATE` on `multisurvey_ztf.feature`, `.probability` and `.xmatch`.
+Point both flags at it — `--credentials` for the reads, `--write-credentials`
+for the upserts. They are separate flags so a probe can run under a read-only
+account, not because the real run needs two files.
 
-`write_user` was granted these on 2026-08-20 (as `postgres` on quimal-db1):
+`write_user` was granted the following on 2026-08-20 (as `postgres` on
+quimal-db1, via `sudo su postgres` then `psql -d ztf`):
 
 ```sql
-GRANT USAGE ON SCHEMA multisurvey_ztf TO write_user;
+GRANT USAGE  ON SCHEMA multisurvey_ztf TO write_user;
+GRANT SELECT ON ALL TABLES IN SCHEMA multisurvey_ztf TO write_user;
 GRANT SELECT, INSERT, UPDATE ON multisurvey_ztf.feature     TO write_user;
 GRANT SELECT, INSERT, UPDATE ON multisurvey_ztf.probability TO write_user;
 GRANT SELECT, INSERT, UPDATE ON multisurvey_ztf.xmatch      TO write_user;
 ```
 
-The `USAGE` line is the one that is easy to miss: `write_user` inherits table
-grants on the `alerce` schema through `write_role` but has no `USAGE` on that
-schema, which makes them unusable — so "it already writes to `alerce`" was never
-true. Grants on the 32 + 16 partitions are deliberately NOT given: an INSERT
-routed through the partitioned parent is checked against the parent only.
+Three things that cost time to work out:
 
-Verify with:
+**`USAGE` is the one that is easy to miss.** `write_user` inherits table grants
+on the `alerce` schema through `write_role` but has no `USAGE` on that schema,
+which makes them unusable — so "it already writes to `alerce`" was never true.
+
+**The write grants alone are not enough to start.** With `INSERT` on the three
+output tables and `SELECT` on nothing else, the run cannot read a light curve,
+the object list or the LUTs. That is what the broad `SELECT` covers; reading is
+harmless and `readonly_user` already has the same reach.
+
+**The partitions are deliberately not granted.** An `INSERT` routed through the
+partitioned parent is checked against the parent only, so the 32 + 16 children
+need nothing. Writing directly to a child would fail, which is fine — the
+runner never does.
+
+`ALL TABLES IN SCHEMA` covers the tables that exist *now*. A table added later
+is not included unless you also set `ALTER DEFAULT PRIVILEGES IN SCHEMA
+multisurvey_ztf GRANT SELECT ON TABLES TO write_user;`, which this run does not
+need.
+
+`offline_setup.py` verifies all of it — every read table, every write table and
+the schema `USAGE` — and reports exactly which are absent. To check by hand:
 
 ```sql
 SELECT has_schema_privilege('write_user','multisurvey_ztf','USAGE'),
+       has_table_privilege ('write_user','multisurvey_ztf.detection','SELECT'),
+       has_table_privilege ('write_user','multisurvey_ztf.object','SELECT'),
        has_table_privilege ('write_user','multisurvey_ztf.feature','INSERT'),
        has_table_privilege ('write_user','multisurvey_ztf.probability','INSERT'),
        has_table_privilege ('write_user','multisurvey_ztf.xmatch','INSERT');
@@ -140,24 +161,10 @@ SELECT has_schema_privilege('write_user','multisurvey_ztf','USAGE'),
 The runner opens the write connection in the parent and fails there, before
 forking workers, so a wrong user costs seconds rather than a unit.
 
-Check connectivity and that the LUTs the run depends on are present:
-
-```bash
-poetry run python -c "
-from features.offline import db
-C='features/offline/credentials.json'
-print('feature names :', len(db.fetch_feature_name_lut(C)))          # 127
-print('version 27.5.7a31 ->', db.fetch_feature_version_id(C,'27.5.7a31'))  # 1
-print('taxonomy heads:', sorted(db.fetch_taxonomy_maps(C,[5,6,7,8,9])))    # [5..9]
-"
-```
-
-If any of those is empty you are pointing at a DB that was never seeded — apply
-`ztf_feature_luts_seed.sql` and `ztf_classifier_taxonomy_seed.sql` first. They are
-idempotent. Note there are **no FK constraints** on `feature`/`probability`, so a
-missing LUT does not raise on write; it silently produces rows that resolve to
-nothing. That is why the runner resolves these ids up front and refuses to start
-without them.
+There are **no FK constraints** on `feature`/`probability`, so a missing LUT
+does not raise on write; it silently produces rows that resolve to nothing.
+That is why the runner resolves those ids up front and refuses to start without
+them, and why `offline_setup.py` checks the seeds.
 
 ## 5. The model
 
@@ -239,7 +246,7 @@ poetry run python -c "import numpy as np; \
 poetry run python scripts/offline_run_batch.py \
     --oid-file /data/oids/smoke.txt --out-dir /data/bhrf_one \
     --unit-size 200 --minibatch 200 --workers 1 --features \
-    --load-db --write-credentials features/offline/write_credentials.json
+    --load-db --write-credentials features/offline/credentials.json
 # then cross-check disk against DB for that unit:
 jq '{db_prob_rows, prob_rows, db_feat_rows, feat_rows, db_xmatch_rows}' /data/bhrf_one/manifests/unit_0000000.json
 
@@ -260,7 +267,7 @@ du -sh /data/bhrf_probe2       # extrapolate: this is 640k of 26.3M oids
 poetry run python scripts/offline_run_batch.py \
     --oid-file /data/oids/run.npy \
     --out-dir /data/bhrf_run --workers 64 --features \
-    --load-db --write-credentials features/offline/write_credentials.json \
+    --load-db --write-credentials features/offline/credentials.json \
     --no-shards
 ```
 
