@@ -1,8 +1,8 @@
 """Persist offline ZTF DB-ready feature rows into <schema>.feature.
 
 Writing lives here, not in db.py (which is read-only). Takes the DataFrame
-produced by lc_features.compute_db_features and upserts it one row at a time
-via ON CONFLICT (oid, sid, feature_id, band) DO UPDATE.
+produced by lc_features.compute_db_features and upserts it in batched
+statements via ON CONFLICT (oid, sid, feature_id, band) DO UPDATE.
 """
 import logging
 from typing import Optional
@@ -11,32 +11,9 @@ import pandas as pd
 from psycopg2.extras import execute_values
 
 from features.offline import db
+from features.offline.upsert import PAGE_SIZE, assert_no_duplicate_keys
 
 log = logging.getLogger(__name__)
-
-# Rows per INSERT statement. execute_values folds this many tuples into one
-# VALUES list, so the cost is one round trip per page instead of one per row.
-PAGE_SIZE = 1000
-
-
-def _assert_no_duplicate_keys(records, key_fields, table) -> None:
-    """Refuse a batch that carries the same primary key twice.
-
-    execute_values puts many rows in ONE statement, and Postgres rejects an
-    ON CONFLICT DO UPDATE that would touch the same row twice ("cannot affect
-    row a second time"). Under the old per-row executemany this was impossible,
-    so the batching introduces the failure mode -- and it always means the
-    caller assembled the rows wrong (the same oid twice in a unit), which is
-    worth naming rather than passing to the driver.
-    """
-    seen = set()
-    for r in records:
-        key = tuple(r[f] for f in key_fields)
-        if key in seen:
-            raise ValueError(
-                f"duplicate {table} key {dict(zip(key_fields, key))} in one write batch"
-            )
-        seen.add(key)
 
 
 def _records(rows: pd.DataFrame) -> list:
@@ -68,7 +45,7 @@ def _records(rows: pd.DataFrame) -> list:
             "version": int(r["version"]),
             "value": None if value is None or pd.isna(value) else float(value),
         })
-    _assert_no_duplicate_keys(records, ("oid", "sid", "feature_id", "band"), "feature")
+    assert_no_duplicate_keys(records, ("oid", "sid", "feature_id", "band"), "feature")
     return records
 
 

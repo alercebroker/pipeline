@@ -50,10 +50,16 @@ missing AllWISE crossmatch changes the predicted class, so falling back to
 "no WISE" would quietly corrupt results.
 
 Output is parquet shards, always. --load-db additionally upserts each finished
-unit into <schema>.probability (and <schema>.feature with --features): ONE
-statement-batch per table per unit, ~2% of the unit's wall clock, not one
-transaction per oid. The write lands BEFORE the manifest, so a unit only counts
-as done once its rows are committed.
+unit into <schema>.probability, <schema>.xmatch, and <schema>.feature with
+--features: ONE statement-batch per table per unit, ~2% of the unit's wall
+clock, not one transaction per oid. The write lands BEFORE the manifest, so a
+unit only counts as done once its rows are committed.
+
+The xmatch rows are the crossmatch link the live step sends to the scribe
+(step.produce_xmatch_to_scribe). This run stands in for that step, so without
+them the objects it processes end up classified with no record of which AllWISE
+source they matched or how far away it was -- data Xwave already gave us and
+that the features were built from.
 
 --load-db is a start-of-run decision, not something to switch on midway. Resume
 skips a unit when its MANIFEST exists, never by looking at the database, so any
@@ -128,6 +134,7 @@ from features.offline.feature_lut import default_version_name
 from features.offline.lc_features import compute_astro_object
 from features.offline.message import build_message
 from features.offline.feature_writer import write_features
+from features.offline.xmatch import persist_matches
 from features.offline.probability_writer import (
     CLASSIFIER_IDS, build_probability_rows, write_probabilities)
 from features.utils.parsers import prepare_ao_features_for_db
@@ -266,11 +273,14 @@ def _retry(fn, attempts: int, what: str, base_sleep: float = 2.0):
     raise AssertionError("unreachable")
 
 
-def fetch_minibatch(oids: list, cfg: dict) -> dict:
+def fetch_minibatch(oids: list, cfg: dict) -> tuple:
     """One round of batched reads for `oids`: 4 SQL queries, 1 Xwave call.
 
-    Returns {oid: (message, refs, allwise)} for the oids that have detections;
-    oids with no detections are absent (nothing to classify).
+    Returns ({oid: (message, refs, allwise)}, matches). The first is only the
+    oids that have detections; oids with no detections are absent (nothing to
+    classify). The second is the raw Xwave match list -- empty when the AllWISE
+    frames came from the DB instead -- handed back so the caller can persist the
+    crossmatch it already paid for rather than recomputing it later.
     """
     cred, retries = cfg["credentials"], cfg["retries"]
 
@@ -295,6 +305,7 @@ def fetch_minibatch(oids: list, cfg: dict) -> dict:
 
     # One crossmatch call for the whole minibatch (vs one per oid).
     allwise_by, allwise_empty = {}, pd.DataFrame(columns=["oid", "W1", "W2", "W3", "W4"])
+    matches = []   # raw Xwave matches, handed back so the unit can persist them
     if messages:
         if cfg["xmatch_url"]:
             mb_oids = list(messages)
@@ -309,9 +320,10 @@ def fetch_minibatch(oids: list, cfg: dict) -> dict:
             allwise_by, _ = _by_oid(_retry(
                 lambda: db.fetch_allwise(cred, oids), retries, "allwise"))
 
-    return {oid: (msg, refs_by.get(oid, refs_empty),
-                  allwise_by.get(oid, allwise_empty))
-            for oid, msg in messages.items()}
+    return ({oid: (msg, refs_by.get(oid, refs_empty),
+                   allwise_by.get(oid, allwise_empty))
+             for oid, msg in messages.items()},
+            matches)
 
 
 # --------------------------------------------------------------------------- #
@@ -381,7 +393,7 @@ def process_unit(unit) -> dict:
     t0 = time.perf_counter()
 
     oids = [int(o) for o in oids]
-    prob_rows, feat_frames = [], []
+    prob_rows, feat_frames, unit_matches = [], [], []
     n_ok = n_errors = n_no_allwise = n_no_detections = n_unclassifiable = 0
     # `failed` keeps EVERY failed oid and lands in errors/unit_*.jsonl; the
     # manifest only carries a capped sample of it. The unit still completes and
@@ -393,7 +405,9 @@ def process_unit(unit) -> dict:
         mb = oids[start:start + cfg["minibatch"]]
         # A failure here aborts the UNIT (not the run): the unit stays unmarked
         # and a rerun picks it up, rather than writing a shard with a silent hole.
-        inputs = fetch_minibatch(mb, cfg)
+        inputs, mb_matches = fetch_minibatch(mb, cfg)
+        if cfg.get("load_db"):
+            unit_matches.extend(mb_matches)
         for oid in mb:
             got = inputs.get(oid)
             if got is None:
@@ -441,7 +455,7 @@ def process_unit(unit) -> dict:
     # unit stays unmarked and the rerun redoes it -- safe, because the upsert is
     # idempotent. Writing the manifest first would strand the unit as "done"
     # with nothing in the database.
-    n_db_prob = n_db_feat = 0
+    n_db_prob = n_db_feat = n_db_xmatch = 0
     if cfg.get("load_db"):
         wc = cfg["write_credentials"]
         if prob_rows:
@@ -450,6 +464,15 @@ def process_unit(unit) -> dict:
         if cfg["features"] and len(feats):
             n_db_feat = write_features(
                 feats, wc, schema=cfg["schema"], execute=True)["written"]
+        # The crossmatch link rows: in the live pipeline writing these IS the
+        # feature step's job (step.produce_xmatch_to_scribe), and this run
+        # stands in for that step. Guarded on the list being non-empty because
+        # without --xmatch-url the AllWISE frames come from the DB and there is
+        # nothing to write -- persist_matches([]) would open a connection per
+        # unit to do nothing.
+        if unit_matches:
+            n_db_xmatch = persist_matches(
+                unit_matches, wc, schema=cfg["schema"], execute=True)["written"]
 
     # Also before the manifest: its presence must mean the error list is complete.
     _write_jsonl(out_dir / "errors" / f"unit_{index:07d}.jsonl", failed)
@@ -466,6 +489,7 @@ def process_unit(unit) -> dict:
         "prob_rows": len(prob_rows),
         "feat_rows": int(sum(len(f) for f in feat_frames)),
         "db_prob_rows": n_db_prob, "db_feat_rows": n_db_feat,
+        "db_xmatch_rows": n_db_xmatch,
         "elapsed_s": round(time.perf_counter() - t0, 2),
         "errors": failed[:20],   # sample; errors/unit_*.jsonl has all of them
     }
@@ -733,7 +757,8 @@ def main():
     t_run = time.perf_counter()
     agg = {"n_ok": 0, "n_skipped": 0, "n_errors": 0, "n_no_allwise": 0,
            "n_no_detections": 0, "n_unclassifiable": 0,
-           "prob_rows": 0, "feat_rows": 0, "db_prob_rows": 0, "db_feat_rows": 0}
+           "prob_rows": 0, "feat_rows": 0, "db_prob_rows": 0, "db_feat_rows": 0,
+           "db_xmatch_rows": 0}
     n_failed = 0
 
     # ProcessPoolExecutor, NOT multiprocessing.Pool. When a worker dies abruptly
@@ -820,7 +845,7 @@ def main():
         print(f"  feature rows   : {agg['feat_rows']:,}")
     if args.load_db:
         print(f"  upserted to DB : {agg['db_prob_rows']:,} probability, "
-              f"{agg['db_feat_rows']:,} feature")
+              f"{agg['db_feat_rows']:,} feature, {agg['db_xmatch_rows']:,} xmatch")
     print(f"  elapsed        : {elapsed/3600:.2f} h "
           f"({agg['n_ok']/elapsed if elapsed else 0:.1f} oid/s, "
           f"{elapsed*args.workers/max(agg['n_ok'],1):.3f} core-s/oid)")

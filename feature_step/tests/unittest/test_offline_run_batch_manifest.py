@@ -21,15 +21,21 @@ sys.path.insert(0, str(PIPE / "feature_step" / "scripts"))
 import offline_run_batch as R
 
 
-def _inputs(oids, with_allwise):
-    """{oid: (message, refs, allwise)} — allwise empty for the oids without one."""
+def _inputs(oids, with_allwise, matches=None):
+    """({oid: (message, refs, allwise)}, matches) — allwise empty where absent.
+
+    fetch_minibatch returns the raw Xwave matches beside the inputs so the unit
+    can persist the crossmatch link rows it already paid for.
+    """
     cols = ["oid", "W1", "W2", "W3", "W4"]
     out = {}
     for oid in oids:
         allwise = (pd.DataFrame([{"oid": oid, "W1": 1.0, "W2": 2.0, "W3": 3.0, "W4": 4.0}])
                    if oid in with_allwise else pd.DataFrame(columns=cols))
         out[oid] = ({"oid": oid}, pd.DataFrame(), allwise)
-    return out
+    if matches is None:
+        matches = [{"oid": str(o)} for o in oids if o in with_allwise]
+    return out, matches
 
 
 def test_manifest_counts_oids_with_no_allwise_match(monkeypatch, tmp_path):
@@ -169,6 +175,8 @@ def test_load_db_writes_both_tables_and_records_the_counts(monkeypatch, tmp_path
         seen.update(prob=(len(rows), creds, kw.get("execute"))), {"written": len(rows)})[1])
     monkeypatch.setattr(R, "write_features", lambda frame, creds, **kw: (
         seen.update(feat=(len(frame), creds, kw.get("execute"))), {"written": len(frame)})[1])
+    monkeypatch.setattr(R, "persist_matches",
+                        lambda matches, creds, **kw: {"written": len(matches)})
 
     manifest = R.process_unit((0, [1, 2, 3]))
 
@@ -214,3 +222,66 @@ def test_a_failed_db_load_leaves_the_unit_unmarked(monkeypatch, tmp_path):
         R.process_unit((0, [1, 2]))
 
     assert not (tmp_path / "manifests" / "unit_0000000.json").exists()
+
+
+def test_load_db_persists_the_units_crossmatch_in_one_call(monkeypatch, tmp_path):
+    """The crossmatch is the feature step's own output, and we already paid for it.
+
+    In the live pipeline the step produces the xmatch to the scribe, which upserts
+    <schema>.xmatch. Offline we replace that step, so dropping the matches would
+    leave 7.45M objects classified with no record of which AllWISE source they
+    were matched against, or how far away it was. One call per unit, like the
+    other two tables -- not one per minibatch and not one per oid.
+    """
+    cfg = _cfg_db(tmp_path)
+    cfg["minibatch"] = 2                       # 4 oids -> 2 minibatches
+    monkeypatch.setattr(R, "_W", {"cfg": cfg})
+    monkeypatch.setattr(R, "fetch_minibatch",
+                        lambda mb, cfg: _inputs(mb, with_allwise=set(mb)))
+    monkeypatch.setattr(R, "process_oid", lambda oid, *a, **k: ([{"oid": oid}], None))
+    monkeypatch.setattr(R, "write_probabilities",
+                        lambda rows, creds, **kw: {"written": len(rows)})
+
+    seen = []
+    monkeypatch.setattr(R, "persist_matches", lambda matches, creds, **kw: (
+        seen.append((len(matches), creds, kw.get("execute"))), {"written": len(matches)})[1])
+
+    manifest = R.process_unit((0, [1, 2, 3, 4]))
+
+    assert seen == [(4, "write-creds", True)]   # ONE call, both minibatches in it
+    assert manifest["db_xmatch_rows"] == 4
+
+
+def test_no_crossmatch_write_when_load_db_is_off(monkeypatch, tmp_path):
+    monkeypatch.setattr(R, "_W", {"cfg": _cfg(tmp_path)})
+    monkeypatch.setattr(R, "fetch_minibatch",
+                        lambda mb, cfg: _inputs(mb, with_allwise=set(mb)))
+    monkeypatch.setattr(R, "process_oid", lambda oid, *a, **k: ([{"oid": oid}], None))
+
+    def _boom(*a, **k):
+        raise AssertionError("must not touch the DB without --load-db")
+    monkeypatch.setattr(R, "persist_matches", _boom)
+
+    assert R.process_unit((0, [1, 2]))["db_xmatch_rows"] == 0
+
+
+def test_no_crossmatch_write_when_the_run_reads_allwise_from_the_db(monkeypatch, tmp_path):
+    """Without --xmatch-url there are no matches to persist.
+
+    persist_matches([]) would still open a connection to write nothing, once per
+    unit for the whole run.
+    """
+    cfg = _cfg_db(tmp_path)
+    cfg["xmatch_url"] = None
+    monkeypatch.setattr(R, "_W", {"cfg": cfg})
+    monkeypatch.setattr(R, "fetch_minibatch",
+                        lambda mb, cfg: _inputs(mb, with_allwise=set(mb), matches=[]))
+    monkeypatch.setattr(R, "process_oid", lambda oid, *a, **k: ([{"oid": oid}], None))
+    monkeypatch.setattr(R, "write_probabilities",
+                        lambda rows, creds, **kw: {"written": len(rows)})
+
+    def _boom(*a, **k):
+        raise AssertionError("nothing to persist; must not connect")
+    monkeypatch.setattr(R, "persist_matches", _boom)
+
+    assert R.process_unit((0, [1, 2]))["db_xmatch_rows"] == 0

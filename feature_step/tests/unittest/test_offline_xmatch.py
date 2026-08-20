@@ -129,29 +129,55 @@ def test_build_xmatch_rows_non_allwise_catid_is_unknown():
     assert rows[0]["catid"] == -999
 
 
-class _RecordingConn:
-    def __init__(self):
-        self.calls = []
+class _FakeCursor:
+    def __enter__(self):
+        return self
 
-    def execute(self, sql, records):
-        self.calls.append((sql, records))
+    def __exit__(self, *a):
+        return False
+
+
+class _FakeRaw:
+    """Stands in for the psycopg2 connection taken from the pool."""
+
+    def __init__(self, owner):
+        self.owner = owner
+
+    def cursor(self):
+        return _FakeCursor()
+
+    def commit(self):
+        self.owner.commits += 1
+
+    def rollback(self):
+        self.owner.rollbacks += 1
+
+    def close(self):
+        self.owner.closed += 1
 
 
 class _FakeEngine:
     def __init__(self):
-        self.conn = _RecordingConn()
+        self.calls = []          # one entry per execute_values call
+        self.commits = self.rollbacks = self.closed = 0
 
-    def begin(self):
-        conn = self.conn
+    def raw_connection(self):
+        return _FakeRaw(self)
 
-        class _Ctx:
-            def __enter__(self_):
-                return conn
 
-            def __exit__(self_, *a):
-                return False
+def _capture(engine):
+    """Replacement for execute_values that records (sql, tuples, page_size)."""
+    def _execute_values(cur, sql, argslist, page_size=None, **kw):
+        engine.calls.append((str(sql), list(argslist), page_size))
+    return _execute_values
 
-        return _Ctx()
+
+def _patch_engine(monkeypatch):
+    from features.offline import db
+    fake = _FakeEngine()
+    monkeypatch.setattr(db, "_make_engine", lambda _c: fake)
+    monkeypatch.setattr(xmatch, "execute_values", _capture(fake))
+    return fake
 
 
 def test_persist_matches_dry_run_counts_and_does_not_connect(monkeypatch):
@@ -164,34 +190,84 @@ def test_persist_matches_dry_run_counts_and_does_not_connect(monkeypatch):
     assert result == {"executed": False, "would_write": 1}
 
 
+def test_persist_matches_sends_every_row_in_one_batched_statement(monkeypatch):
+    """One execute_values call for the whole unit, not a round trip per match.
+
+    A work unit produces ~4.3k link rows; the per-row executemany this replaced
+    cost ~8.5 ms each, which would have made persisting the crossmatch cost more
+    than the 19k feature rows and the 225k probability rows combined.
+    """
+    fake = _patch_engine(monkeypatch)
+    matches = [_match(36028941624528297 + i, 12.0, 11.0, 9.0, 7.0,
+                      match_id=f"J{i}", distance=0.3) for i in range(2500)]
+
+    result = xmatch.persist_matches(matches, write_credentials="creds",
+                                    schema="multisurvey_ztf", execute=True)
+
+    assert result == {"executed": True, "written": 2500}
+    assert len(fake.calls) == 1
+    sql, tuples, page_size = fake.calls[0]
+    assert "multisurvey_ztf.xmatch" in sql
+    assert "VALUES %s" in sql
+    assert "ON CONFLICT (oid, sid, catid)" in sql
+    assert "DO UPDATE SET" in sql
+    assert page_size and page_size > 1
+    assert len(tuples) == 2500
+    assert fake.commits == 1 and fake.closed == 1
+
+
 def test_persist_matches_execute_upserts_native_types(monkeypatch):
-    fake = _FakeEngine()
-    from features.offline import db
-    monkeypatch.setattr(db, "_make_engine", lambda _c: fake)
+    fake = _patch_engine(monkeypatch)
 
     result = xmatch.persist_matches(
         [_match(36028941624528297, 12.0, 11.0, 9.0, 7.0, match_id="J190248", distance=0.33)],
         write_credentials="creds", schema="multisurvey_ztf", execute=True)
 
     assert result == {"executed": True, "written": 1}
-    assert len(fake.conn.calls) == 1
-    sql, records = fake.conn.calls[0]
-    sql_str = str(sql)
-    assert "multisurvey_ztf.xmatch" in sql_str
-    assert "ON CONFLICT (oid, sid, catid)" in sql_str
-    assert "DO UPDATE SET" in sql_str
-    r0 = records[0]
+    oid, sid, catid, oid_catalog, dist = fake.calls[0][1][0]
     # native types, big oid preserved (not float)
-    assert r0["oid"] == 36028941624528297 and isinstance(r0["oid"], int)
-    assert isinstance(r0["sid"], int) and isinstance(r0["catid"], int)
-    assert r0["oid_catalog"] == "J190248" and r0["dist"] == pytest.approx(0.33)
+    assert oid == 36028941624528297 and isinstance(oid, int)
+    assert isinstance(sid, int) and isinstance(catid, int)
+    assert oid_catalog == "J190248" and dist == pytest.approx(0.33)
+
+
+def test_persist_matches_keeps_the_nearest_of_two_counterparts(monkeypatch, caplog):
+    """Xwave can return two counterparts for one oid inside the same cone.
+
+    Both collapse to the same (oid, sid, catid), and Postgres refuses to touch a
+    row twice in one ON CONFLICT statement. Raising would wedge the unit for
+    good -- it fails, the rerun recomputes the same matches and fails again --
+    so collapse to the nearest, which is what the old per-row path ended up
+    storing anyway, and say so in the log.
+    """
+    import logging
+    fake = _patch_engine(monkeypatch)
+    dup = [_match(100, 1.0, 1.0, 1.0, 1.0, match_id="far", distance=0.9),
+           _match(100, 1.0, 1.0, 1.0, 1.0, match_id="near", distance=0.2),
+           _match(101, 1.0, 1.0, 1.0, 1.0, match_id="other", distance=0.5)]
+
+    with caplog.at_level(logging.WARNING, logger="features.offline.xmatch"):
+        result = xmatch.persist_matches(dup, write_credentials="creds", execute=True)
+
+    assert result == {"executed": True, "written": 2}
+    by_oid = {t[0]: t for t in fake.calls[0][1]}
+    assert by_oid[100][3] == "near" and by_oid[100][4] == pytest.approx(0.2)
+    assert by_oid[101][3] == "other"
+    assert any("counterpart" in r.getMessage() for r in caplog.records)
+
+
+def test_persist_matches_dedupe_applies_to_the_dry_run_too(monkeypatch):
+    """would_write has to be the number that will actually land, or the dry run
+    is not a preview of anything."""
+    dup = [_match(100, 1.0, 1.0, 1.0, 1.0, match_id="a", distance=0.9),
+           _match(100, 1.0, 1.0, 1.0, 1.0, match_id="b", distance=0.2)]
+    assert xmatch.persist_matches(dup, execute=False) == {"executed": False,
+                                                          "would_write": 1}
 
 
 def test_persist_matches_drops_null_dist_or_catalog(monkeypatch, caplog):
     import logging
-    fake = _FakeEngine()
-    from features.offline import db
-    monkeypatch.setattr(db, "_make_engine", lambda _c: fake)
+    fake = _patch_engine(monkeypatch)
 
     good = _match(100, 1.0, 1.0, 1.0, 1.0, match_id="ok", distance=0.2)
     no_dist = _match(101, 1.0, 1.0, 1.0, 1.0, match_id="x", distance=None)
@@ -200,19 +276,23 @@ def test_persist_matches_drops_null_dist_or_catalog(monkeypatch, caplog):
         result = xmatch.persist_matches([good, no_dist, no_cat],
                                         write_credentials="creds", execute=True)
     assert result == {"executed": True, "written": 1}
-    records = fake.conn.calls[0][1]
-    assert [r["oid"] for r in records] == [100]
+    assert [t[0] for t in fake.calls[0][1]] == [100]
     assert any("NULL dist/oid_catalog" in r.getMessage() for r in caplog.records)
 
 
+def test_persist_matches_empty_execute_makes_no_call(monkeypatch):
+    fake = _patch_engine(monkeypatch)
+    result = xmatch.persist_matches([], write_credentials="creds", execute=True)
+    assert result == {"executed": True, "written": 0}
+    assert fake.calls == []
+
+
 def test_persist_matches_default_schema_is_db_schema(monkeypatch):
-    fake = _FakeEngine()
-    from features.offline import db
-    monkeypatch.setattr(db, "_make_engine", lambda _c: fake)
+    fake = _patch_engine(monkeypatch)
     xmatch.persist_matches([_match(100, 1.0, 1.0, 1.0, 1.0)],
                            write_credentials="creds", execute=True)  # no schema=
     from features.offline import db as _db
-    assert f"{_db.SCHEMA}.xmatch" in str(fake.conn.calls[0][0])
+    assert f"{_db.SCHEMA}.xmatch" in fake.calls[0][0]
 
 
 def test_resolve_url_prefers_arg_then_env(monkeypatch):

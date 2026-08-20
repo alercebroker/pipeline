@@ -55,7 +55,7 @@ def main():
     batched = {}
     for s in range(0, len(oids), args.minibatch):
         mb = oids[s:s + args.minibatch]
-        for oid, (msg, refs, allwise) in R.fetch_minibatch(mb, cfg).items():
+        for oid, (msg, refs, allwise) in R.fetch_minibatch(mb, cfg)[0].items():
             ao = R.compute_astro_object(msg, refs, allwise, 1,
                                         preprocessor=R._W["preprocessor"],
                                         extractor=R._W["extractor"])

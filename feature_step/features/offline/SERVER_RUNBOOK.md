@@ -6,9 +6,15 @@ a full offline run over `multisurvey_ztf`. For what the pipeline *does*, read
 
 **What the run produces:** parquet shards on local disk — probability rows always,
 feature rows with `--features`. With `--load-db` it *also* upserts each finished
-unit into `<schema>.probability` (and `<schema>.feature`), one batched statement
-per table per unit. The shards stay the primary output either way; the database
-load is opt-in so a probe run cannot touch production.
+unit into `<schema>.probability`, `<schema>.xmatch` and (with `--features`)
+`<schema>.feature`, one batched statement per table per unit. The shards stay
+the primary output either way; the database load is opt-in so a probe run cannot
+touch production.
+
+`xmatch` is in that list because writing the crossmatch link is the *feature
+step's* job in the live pipeline; this run replaces that step. It is skipped
+when `--xmatch-url` is empty, since then the AllWISE frames were read from the
+DB and there is nothing new to record.
 
 **Decide `--load-db` before the first unit runs.** Resume skips a unit when its
 manifest exists — it never looks at the database. Turning the flag on halfway
@@ -81,12 +87,32 @@ Without `--load-db` the run only **reads**, so a read-only user is enough. With
 `--load-db` you need a second file for `--write-credentials`, and that user must
 hold `INSERT`/`UPDATE` on `multisurvey_ztf.feature` and `.probability`.
 
-**This is the open blocker.** `write_user` has no grants on `multisurvey_ztf` —
-only on `alerce`. Every write validated so far went through the `alerce`
-superuser. Before the run, either get the grants for a scoped user or decide
-deliberately to run as `alerce`. The runner opens the write connection in the
-parent and fails there, before forking workers, so a wrong user costs seconds
-rather than a unit.
+`write_user` was granted these on 2026-08-20 (as `postgres` on quimal-db1):
+
+```sql
+GRANT USAGE ON SCHEMA multisurvey_ztf TO write_user;
+GRANT SELECT, INSERT, UPDATE ON multisurvey_ztf.feature     TO write_user;
+GRANT SELECT, INSERT, UPDATE ON multisurvey_ztf.probability TO write_user;
+GRANT SELECT, INSERT, UPDATE ON multisurvey_ztf.xmatch      TO write_user;
+```
+
+The `USAGE` line is the one that is easy to miss: `write_user` inherits table
+grants on the `alerce` schema through `write_role` but has no `USAGE` on that
+schema, which makes them unusable — so "it already writes to `alerce`" was never
+true. Grants on the 32 + 16 partitions are deliberately NOT given: an INSERT
+routed through the partitioned parent is checked against the parent only.
+
+Verify with:
+
+```sql
+SELECT has_schema_privilege('write_user','multisurvey_ztf','USAGE'),
+       has_table_privilege ('write_user','multisurvey_ztf.feature','INSERT'),
+       has_table_privilege ('write_user','multisurvey_ztf.probability','INSERT'),
+       has_table_privilege ('write_user','multisurvey_ztf.xmatch','INSERT');
+```
+
+The runner opens the write connection in the parent and fails there, before
+forking workers, so a wrong user costs seconds rather than a unit.
 
 Check connectivity and that the LUTs the run depends on are present:
 
@@ -183,7 +209,7 @@ poetry run python scripts/offline_run_batch.py \
     --out-dir /data/bhrf_one --workers 4 --max-units 1 --features \
     --load-db --write-credentials features/offline/write_credentials.json
 # then cross-check disk against DB for that unit:
-jq '.db_prob_rows, .prob_rows, .db_feat_rows, .feat_rows' /data/bhrf_one/manifests/unit_0000000.json
+jq '{db_prob_rows, prob_rows, db_feat_rows, feat_rows, db_xmatch_rows}' /data/bhrf_one/manifests/unit_0000000.json
 
 # 3. scaling probe: measure throughput, disk per unit, and the no-AllWISE rate
 poetry run python scripts/offline_run_batch.py \
@@ -238,9 +264,11 @@ Watch two numbers in the summary:
   "unclassifiable", which are expected outcomes and not worth chasing.
 
 With `--load-db` the summary also prints `upserted to DB`, and each manifest
-carries `db_prob_rows` / `db_feat_rows` beside `prob_rows` / `feat_rows`. Those
-pairs matching is the only check that disk and database agree; they are written
-in the same manifest precisely so the comparison needs no query.
+carries `db_prob_rows` / `db_feat_rows` / `db_xmatch_rows` beside `prob_rows` /
+`feat_rows`. Those pairs matching is the only check that disk and database
+agree; they are written in the same manifest precisely so the comparison needs
+no query. `db_xmatch_rows` has no disk counterpart — the crossmatch is not
+sharded — so it is the only record that the link rows were written at all.
 
 Interrupting is safe. Finished units are checkpointed and the same command
 resumes; the fingerprint in `run.json` refuses a resume against a different oid
@@ -264,9 +292,8 @@ not match the original shards. That is the guard working, not an obstacle.
 
 | Gap | Consequence |
 |---|---|
-| **No write grants on `multisurvey_ztf` for a scoped user** (§4). | `--load-db` has to run as the `alerce` superuser until that is resolved. |
 | **`--load-db` never exercised over a real work unit.** Fake engines and one oid only. | Step 2 of §8 exists to close this; do not skip it. |
 | **No parquet → DB backfill loader.** `--load-db` writes during the run; there is nothing that loads shards afterwards. | Units finished before the flag was turned on can only be redone into a fresh `--out-dir`. |
 | `main()` returns 0 even when units failed. | A supervisor or cron reads the run as successful; check `FAILED units` in the summary or count `errors/*.jsonl`. |
-| `multisurvey_ztf.allwise` is empty. | `XMATCH_URL` is mandatory (§6), and the features written cannot be recomputed from the DB alone. |
+| `multisurvey_ztf.allwise` is empty. | `XMATCH_URL` is mandatory (§6). `--load-db` writes the `xmatch` link rows, but with no catalog rows to join against, the features still cannot be recomputed from the DB alone. |
 | Objects with no AllWISE counterpart are indistinguishable from never-crossmatched ones in the stored data. | Only the per-unit `n_no_allwise` count records the difference. |

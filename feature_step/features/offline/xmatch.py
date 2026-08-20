@@ -16,7 +16,7 @@ against Xwave. This module wraps that call and converts its result into the same
 `_xmatches`/`compute_astro_object` path is unchanged.
 
 Persistence differs from the live step: we do NOT send to scribe. Instead we save
-directly to the DB (see `persist_matches`, currently a placeholder).
+directly to the DB with write-capable credentials (`persist_matches`).
 
 Xwave URL: not committed to the repo (injected via secret at deploy time). Pass
 it explicitly or via the `XMATCH_URL` env var.
@@ -26,7 +26,9 @@ import os
 
 import numpy as np
 import pandas as pd
-from sqlalchemy import text
+from psycopg2.extras import execute_values
+
+from features.offline.upsert import PAGE_SIZE
 
 log = logging.getLogger(__name__)
 
@@ -198,7 +200,33 @@ def _xmatch_records(rows):
     if dropped:
         log.warning("Dropping %d xmatch row(s) with NULL dist/oid_catalog "
                     "(both are NOT NULL in %s.xmatch)", dropped, "multisurvey_ztf")
-    return records
+    return _nearest_per_key(records)
+
+
+def _nearest_per_key(records):
+    """Collapse rows sharing (oid, sid, catid), keeping the smallest `dist`.
+
+    Xwave can return more than one counterpart for an oid inside the same cone.
+    Postgres refuses to touch a row twice in one ON CONFLICT statement, so the
+    batch has to be unique -- but raising would wedge the work unit for good:
+    it fails, the rerun recomputes the same matches and fails identically. The
+    nearest is also what the old per-row path left behind, since each row
+    overwrote the previous one.
+
+    Unlike feature/probability, where a repeated key means the caller assembled
+    the batch wrong and `upsert.assert_no_duplicate_keys` is right to raise,
+    here the repetition comes from an external service.
+    """
+    best = {}
+    for r in records:
+        key = (r["oid"], r["sid"], r["catid"])
+        if key not in best or r["dist"] < best[key]["dist"]:
+            best[key] = r
+    if len(best) != len(records):
+        log.warning("Collapsed %d xmatch row(s) to the nearest counterpart: "
+                    "Xwave returned more than one match for the same "
+                    "(oid, sid, catid)", len(records) - len(best))
+    return list(best.values())
 
 
 def _db_allwise(credentials_json, oids):
@@ -256,17 +284,29 @@ def persist_matches(matches, write_credentials=None, schema=None, execute=False)
         return {"executed": False, "would_write": n}
 
     # schema is a trusted operator-supplied identifier (db.SCHEMA env / CLI), not
-    # user input — same f-string convention as db.py's read queries. Mirrors
-    # scribe_multisurvey XmatchCommand.db_operation.
-    sql = text(
-        f"INSERT INTO {schema}.xmatch (oid, sid, catid, oid_catalog, dist, created_date) "
-        "VALUES (:oid, :sid, :catid, :oid_catalog, :dist, now()) "
+    # user input -- same f-string convention as db.py's read queries. Mirrors
+    # scribe_multisurvey XmatchCommand.db_operation. created_date is left to the
+    # column default so an upsert never rewrites the original insertion date.
+    sql = (
+        f"INSERT INTO {schema}.xmatch (oid, sid, catid, oid_catalog, dist) "
+        "VALUES %s "
         "ON CONFLICT (oid, sid, catid) "
         "DO UPDATE SET oid_catalog = EXCLUDED.oid_catalog, dist = EXCLUDED.dist, "
         "updated_date = now()"
     )
+    rows_out = [(r["oid"], r["sid"], r["catid"], r["oid_catalog"], r["dist"])
+                for r in records]
+
     engine = db._make_engine(write_credentials)
-    with engine.begin() as conn:
-        if records:
-            conn.execute(sql, records)
+    raw = engine.raw_connection()
+    try:
+        if rows_out:
+            with raw.cursor() as cur:
+                execute_values(cur, sql, rows_out, page_size=PAGE_SIZE)
+        raw.commit()
+    except Exception:
+        raw.rollback()
+        raise
+    finally:
+        raw.close()
     return {"executed": True, "written": n}
