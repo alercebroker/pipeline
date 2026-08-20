@@ -497,6 +497,22 @@ def process_unit(unit) -> dict:
     return manifest
 
 
+def exit_code(n_failed_units: int, n_oid_errors: int) -> int:
+    """Process exit status for a finished run.
+
+    Non-zero when UNITS were lost: those oids produced nothing and the only
+    thing that recovers them is somebody rerunning the command, which a
+    supervisor or cron entry will never do if the run reports success.
+
+    Per-oid errors deliberately do NOT fail the run. At 26M objects a handful
+    of bad ones is an expected outcome; they are counted, named in
+    errors/unit_*.jsonl and retried explicitly (SERVER_RUNBOOK.md §10). Folding
+    them in would make the exit code non-zero on essentially every run, which
+    is the same as having no exit code at all.
+    """
+    return 1 if n_failed_units else 0
+
+
 def run_fingerprint(oids: np.ndarray, unit_size: int) -> dict:
     """Identify the (oid list, unit size) a set of shards belongs to.
 
@@ -855,7 +871,7 @@ def main():
           f"{elapsed*args.workers/max(agg['n_ok'],1):.3f} core-s/oid)")
     print(f"  output         : {out_dir}")
     print("=" * 70)
-    return 0
+    return exit_code(n_failed, agg["n_errors"])
 
 
 if __name__ == "__main__":

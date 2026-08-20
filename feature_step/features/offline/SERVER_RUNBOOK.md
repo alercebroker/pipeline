@@ -284,6 +284,13 @@ Watch two numbers in the summary:
 - **`errors`** — now reported separately from "no detections" and
   "unclassifiable", which are expected outcomes and not worth chasing.
 
+**Exit code:** 0 only when no unit was lost. Per-oid errors do *not* fail the
+run — at this scale a handful of bad objects is expected, they are named in
+`errors/unit_*.jsonl`, and folding them in would make the code non-zero on
+essentially every run. A lost unit is different: it produced nothing, and the
+only thing that recovers it is somebody rerunning the command. Ctrl-C exits
+130, a worker dying abruptly exits non-zero with a diagnosis.
+
 With `--load-db` the summary also prints `upserted to DB`, and each manifest
 carries `db_prob_rows` / `db_feat_rows` / `db_xmatch_rows` beside `prob_rows` /
 `feat_rows`. Those pairs matching is the only check that disk and database
@@ -315,6 +322,5 @@ not match the original shards. That is the guard working, not an obstacle.
 |---|---|
 | **`--load-db` never exercised over a real work unit.** Fake engines and one oid only. | Step 2 of §8 exists to close this; do not skip it. |
 | **No parquet → DB backfill loader.** `--load-db` writes during the run; there is nothing that loads shards afterwards. | Units finished before the flag was turned on can only be redone into a fresh `--out-dir`. |
-| `main()` returns 0 even when units failed. | A supervisor or cron reads the run as successful; check `FAILED units` in the summary or count `errors/*.jsonl`. |
 | `multisurvey_ztf.allwise` is empty. | `XMATCH_URL` is mandatory (§6). `--load-db` writes the `xmatch` link rows, but with no catalog rows to join against, the features still cannot be recomputed from the DB alone. |
 | Objects with no AllWISE counterpart are indistinguishable from never-crossmatched ones in the stored data. | Only the per-unit `n_no_allwise` count records the difference. |

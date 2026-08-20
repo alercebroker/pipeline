@@ -285,3 +285,28 @@ def test_no_crossmatch_write_when_the_run_reads_allwise_from_the_db(monkeypatch,
     monkeypatch.setattr(R, "persist_matches", _boom)
 
     assert R.process_unit((0, [1, 2]))["db_xmatch_rows"] == 0
+
+
+def test_failed_units_make_the_run_exit_non_zero():
+    """A run that lost units is not a successful run.
+
+    Returning 0 regardless is what lets a supervisor, a cron entry or a CI step
+    read a run that dropped half its units as clean. The units are recoverable
+    -- they were left unmarked, so a rerun redoes them -- but only if somebody
+    is told to rerun.
+    """
+    assert R.exit_code(n_failed_units=3, n_oid_errors=0) != 0
+
+
+def test_a_clean_run_exits_zero():
+    assert R.exit_code(n_failed_units=0, n_oid_errors=0) == 0
+
+
+def test_per_oid_errors_alone_do_not_fail_the_run():
+    """Individual bad objects are an expected outcome at this scale.
+
+    They are counted, named in errors/unit_*.jsonl and retried explicitly; a
+    handful out of 26M must not mark the whole run as failed, or the exit code
+    stops meaning anything.
+    """
+    assert R.exit_code(n_failed_units=0, n_oid_errors=250) == 0
