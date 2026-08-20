@@ -352,3 +352,52 @@ def fetch_taxonomy_maps(credentials_json: str, classifier_ids: list,
         for row in conn.execute(sql, {"cids": _py_oids(classifier_ids)}).mappings():
             maps.setdefault(int(row["classifier_id"]), {})[row["class_name"]] = int(row["class_id"])
     return maps
+
+
+def fetch_feature_name_lut(credentials_json: str, sid: int = SID,
+                           schema: Optional[str] = None) -> dict:
+    """Return {feature_id: feature_name} from <schema>.feature_name_lut.
+
+    The authoritative name -> id mapping for writing features, and a drop-in for
+    feature_lut.load_feature_name_lut (same {id: name} shape). Prefer this over
+    the fixture: <schema>.feature has NO foreign key to the LUT, so a fixture
+    that has drifted from the DB writes correctly-shaped rows whose feature_id
+    means something else, and nothing rejects them. Read-only.
+    """
+    schema = schema or SCHEMA
+    engine = _make_engine(credentials_json)
+    # schema is trusted operator input (env / CLI), same f-string convention as
+    # the other readers; sid is bound.
+    sql = text(
+        f"SELECT feature_id, feature_name FROM {schema}.feature_name_lut "
+        "WHERE sid = :sid ORDER BY feature_id"
+    )
+    with engine.connect() as conn:
+        return {int(r["feature_id"]): r["feature_name"]
+                for r in conn.execute(sql, {"sid": sid}).mappings()}
+
+
+def fetch_feature_version_id(credentials_json: str, version_name: str, sid: int = SID,
+                             schema: Optional[str] = None) -> int:
+    """Return the smallint version_id of `version_name` from <schema>.feature_version_lut.
+
+    Raises LookupError when the version is absent. That is deliberate: the
+    fixture path returns -1 and only logs, and since <schema>.feature has no FK,
+    the DB would accept -1 and every row written in that run would be stamped
+    with a version nothing can resolve. Refusing the id is what stops the write.
+    """
+    schema = schema or SCHEMA
+    engine = _make_engine(credentials_json)
+    sql = text(
+        f"SELECT version_id FROM {schema}.feature_version_lut "
+        "WHERE version_name = :version_name AND sid = :sid"
+    )
+    with engine.connect() as conn:
+        version_id = conn.execute(
+            sql, {"version_name": version_name, "sid": sid}).scalar()
+    if version_id is None:
+        raise LookupError(
+            f"feature version {version_name!r} (sid={sid}) is not in "
+            f"{schema}.feature_version_lut — seed it before writing features"
+        )
+    return int(version_id)

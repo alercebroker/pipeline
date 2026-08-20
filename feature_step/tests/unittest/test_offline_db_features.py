@@ -74,3 +74,26 @@ def test_compute_db_features_falls_back_when_package_not_installed(monkeypatch):
     out = lc_features.compute_db_features({"oid": 1}, None, None, feature_name_lut={0: "Amplitude"})
     assert seen["v"] == "FALLBACK_VER"   # used the fallback, not a crash
     assert (out["version"] == 3).all()
+
+
+def test_compute_db_features_uses_injected_version_id_without_the_fixture(monkeypatch):
+    """A caller that resolved the id against the DB must bypass the fixture.
+
+    <schema>.feature has no FK to feature_version_lut, so a fixture that drifted
+    from the DB would stamp every row with a version that resolves to something
+    else — and nothing would reject it. When version_id is supplied, the fixture
+    reverse-map must not be consulted at all.
+    """
+    feats = pd.DataFrame({"name": ["Amplitude"], "fid": ["g"], "value": [0.5]})
+    ao = types.SimpleNamespace(features=feats)
+    monkeypatch.setattr(lc_features, "compute_astro_object", lambda *a, **k: ao)
+
+    def _boom(_v):
+        raise AssertionError("fixture version_name_to_id must not be consulted")
+    monkeypatch.setattr(lc_features, "version_name_to_id", _boom)
+
+    out = lc_features.compute_db_features(
+        {"oid": 1}, None, None, feature_name_lut={0: "Amplitude"}, version_id=4
+    )
+
+    assert (out["version"] == 4).all()

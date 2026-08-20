@@ -16,7 +16,10 @@ for p in (PIPE / "feature_step", PIPE / "lc_classifier", PIPE / "libs" / "idmapp
 
 import argparse
 
+from importlib.metadata import PackageNotFoundError, version as _pkg_version
+
 from features.offline import db, lc_features, feature_writer
+from features.offline.feature_lut import default_version_name
 from features.offline.message import build_message
 
 DEFAULT_CREDENTIALS = str(PIPE / "feature_step" / "features" / "offline" / "credentials.json")
@@ -65,8 +68,23 @@ def main():
     message = build_message(oid, dets, forced, ps1)
     print(f"message: {len(message['detections'])} detections")
 
+    # Both LUT ids come from the DB, not the local fixture: <schema>.feature has
+    # no FK to the LUTs, so a drifted fixture writes rows whose feature_id /
+    # version resolve to something else and nothing rejects them (FLOW.md §3d).
+    fver = args.feature_version
+    if fver is None:
+        try:
+            fver = _pkg_version("feature-step")
+        except PackageNotFoundError:
+            fver = default_version_name()   # running from source, not installed
+    feature_lut = db.fetch_feature_name_lut(credentials)
+    version_id = db.fetch_feature_version_id(credentials, fver)
+    print(f"feature LUT from DB: {len(feature_lut)} names; "
+          f"version {fver} -> id {version_id}")
+
     features = lc_features.compute_db_features(message, refs, allwise,
-                                               version_name=args.feature_version)
+                                               feature_name_lut=feature_lut,
+                                               version_id=version_id)
     if features is None or len(features) == 0:
         print("\nFAIL: empty DB-ready features frame")
         sys.exit(1)

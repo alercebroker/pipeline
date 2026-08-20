@@ -96,7 +96,7 @@ def compute_features(message: dict, references_db, allwise, min_detections: int 
 
 def compute_db_features(message: dict, references_db, allwise, min_detections: int = 1,
                         preprocessor=None, extractor=None, feature_name_lut=None,
-                        version_name=None):
+                        version_name=None, version_id=None):
     """Per-oid path -> DB-ready feature rows, following the production save rules.
 
     Returns a DataFrame with exactly the `feature` table columns
@@ -106,11 +106,17 @@ def compute_db_features(message: dict, references_db, allwise, min_detections: i
     NaN-inclusive frame for classification.
 
     `version` mirrors production: it is the single `feature-step` package
-    version (`version("feature-step")`), mapped to a smallint via the fixture's
-    FEATURE_VERSION_LUT — NOT the per-module ao.features["version"] column.
-    If `feature-step` is not installed (offline-from-source), it falls back to
-    the fixture's pinned version (`default_version_name`).
-    Override `version_name` for tests.
+    version (`version("feature-step")`), mapped to a smallint — NOT the
+    per-module ao.features["version"] column.
+
+    Pass `version_id` (and a DB-sourced `feature_name_lut`) to resolve both ids
+    against the database — `db.fetch_feature_version_id` / `db.fetch_feature_name_lut`
+    — which is what any caller that WRITES must do: <schema>.feature has no FK to
+    the LUTs, so ids taken from the local fixture are never validated by the DB
+    and a drifted fixture writes rows that mean something else (FLOW.md §3d).
+    Without `version_id` it falls back to the fixture reverse-map, and to the
+    fixture's pinned version when `feature-step` is not installed
+    (offline-from-source). Override `version_name` for tests.
     """
     ao = compute_astro_object(message, references_db, allwise, min_detections,
                               preprocessor=preprocessor, extractor=extractor)
@@ -120,17 +126,19 @@ def compute_db_features(message: dict, references_db, allwise, min_detections: i
     lut = feature_name_lut if feature_name_lut is not None else load_feature_name_lut()
     rows = prepare_ao_features_for_db(ao, lut)  # [name, value, band, feature_id]
 
-    if version_name is None:
-        try:
-            version_name = _pkg_version("feature-step")
-        except PackageNotFoundError:
-            # Offline runs from source (package not installed) -> use the pinned
-            # fixture version instead of crashing.
-            version_name = default_version_name()
+    if version_id is None:
+        if version_name is None:
+            try:
+                version_name = _pkg_version("feature-step")
+            except PackageNotFoundError:
+                # Offline runs from source (package not installed) -> use the
+                # pinned fixture version instead of crashing.
+                version_name = default_version_name()
+        version_id = version_name_to_id(version_name)
 
     rows = rows.copy()
     rows["oid"] = int(message["oid"])
     rows["sid"] = SID_ZTF
-    rows["version"] = version_name_to_id(version_name)
+    rows["version"] = version_id
     rows = rows.drop(columns=["name"])
     return rows[["oid", "sid", "feature_id", "band", "version", "value"]]
