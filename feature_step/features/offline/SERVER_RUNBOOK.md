@@ -16,9 +16,12 @@ step's* job in the live pipeline; this run replaces that step. It is skipped
 when `--xmatch-url` is empty, since then the AllWISE frames were read from the
 DB and there is nothing new to record.
 
-**Decide `--load-db` before the first unit runs.** Resume skips a unit when its
-manifest exists — it never looks at the database. Turning the flag on halfway
-through leaves every already-finished unit on disk and permanently unloaded (§11).
+**Do not change `--load-db` within one `--out-dir`.** Resume skips a unit when
+its manifest exists and never looks at the database, so units finished while the
+flag was off stay on disk and are never loaded — and no loader exists to pick
+them up later (§11). Switching between *different* `--out-dir`s is fine and is
+what the probes do: a fresh directory has no manifests, so the real run simply
+redoes those oids.
 
 **Shortcut:** `scripts/offline_setup.py` runs §3–§8's setup steps for you — it
 checks what is already in place, downloads the model, verifies its md5, and
@@ -229,11 +232,18 @@ poetry run python scripts/offline_run_batch.py \
 # then cross-check disk against DB for that unit:
 jq '{db_prob_rows, prob_rows, db_feat_rows, feat_rows, db_xmatch_rows}' /data/bhrf_one/manifests/unit_0000000.json
 
-# 3. scaling probe: measure throughput, disk per unit, and the no-AllWISE rate
+# 3a. quick probe (~10 min): 64 small units over 16 workers, so there is a real
+#     queue (4 units each) and the first checkpoint lands in minutes.
 poetry run python scripts/offline_run_batch.py \
-    --oid-file /data/oids/run.npy \
-    --out-dir /data/bhrf_probe --workers 16 --max-units 16 --features
-du -sh /data/bhrf_probe        # extrapolate: this is 80k of 26.3M oids
+    --oid-file /data/oids/run.npy --out-dir /data/bhrf_probe1 \
+    --unit-size 500 --max-units 64 --workers 16 --features
+du -sh /data/bhrf_probe1
+
+# 3b. full width, only once 3a looks sane: 128 real units over 64 workers.
+poetry run python scripts/offline_run_batch.py \
+    --oid-file /data/oids/run.npy --out-dir /data/bhrf_probe2 \
+    --unit-size 5000 --max-units 128 --workers 64 --features
+du -sh /data/bhrf_probe2       # extrapolate: this is 640k of 26.3M oids
 
 # 4. the real run — rerun the SAME command after any interruption to resume
 poetry run python scripts/offline_run_batch.py \
@@ -254,7 +264,25 @@ on the children. Repeat it there anyway — it is also the first real test of th
 Run it under `tmux`/`screen` or `nohup`: it is a multi-hour job, and a dropped
 SSH session kills the parent.
 
-**Size the disk from step 2, not from arithmetic.** Order of magnitude: ~45
+Two probes, not one, because a small *fraction* of the catalogue is not the
+same as a short run. `--max-units` truncates the unit list, but a unit is one
+worker's task and its oids run in series inside it: 16 units of 5000 over 16
+workers is one unit per worker, so the wall clock is however long 5000 objects
+take back to back — an hour or more — while measuring nothing about queueing,
+because no worker ever picks up a second unit. 3a fixes both by shrinking the
+unit rather than the unit count.
+
+Neither probe passes `--load-db`: a scaling test has no business writing to
+production. Each needs its own `--out-dir` because `--unit-size` is part of the
+`run.json` fingerprint, and neither leaves anything the real run will trip over
+— it starts in a fresh directory and redoes those oids.
+
+What to read off them: **oid/s**, the **total RSS** across workers (the risk
+that ends a run — the 1.7 GB model is shared copy-on-write under `fork`, and if
+that sharing degrades it becomes one copy per worker), **disk per unit**, and
+the **no-AllWISE rate**.
+
+**Size the disk from the probes, not from arithmetic.** Order of magnitude: ~45
 probability rows and ~193 feature rows per object, so ~1.2e9 and ~5.1e9 rows
 respectively across the run. `--features` is opt-in for exactly this reason.
 
