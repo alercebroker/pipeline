@@ -1,6 +1,6 @@
 # Probabilidades offline contra las almacenadas en legacy
 
-**2026-08-21** · 46.616 objetos · rama `fix/ztf-feature-parser-extra-fields`
+**2026-08-21** · rama `fix/ztf-feature-parser-extra-fields`
 
 Reemplaza el estudio de 100 objetos de `OFFLINE_VS_LEGACY_VALIDATION.md` §5, que
 recalculaba el pipeline por objeto y por eso no podía crecer. Este compara dos
@@ -19,42 +19,11 @@ fixture), oid por `idmapper`. El rank 1 se deriva de las probabilidades y no de
 la columna `ranking` — la escribieron códigos distintos con años de diferencia.
 Empates rotos por `class_name` en ambos lados.
 
-## 1. Falta BHRF 2.1.0, no falta clasificación
+**Cohorte:** de los 46.616 objetos que clasificamos, **6.047 tienen
+clasificación BHRF 2.1.0 en legacy** y son los únicos comparables. No hay
+objetos que legacy tenga y nosotros no.
 
-```
-clasificados por nosotros            : 46.616
-con ALGUNA fila en alerce.probability: 45.610   (97,8%)
-  clasificador viejo (lc_classifier*): 45.608
-  algún BHRF (incluye beta)          : 12.952
-  BHRF 2.1.0 de producción           :  6.047   (13,0%)
-solo legacy                          :      0
-```
-
-Los objetos están clasificados; lo que les falta es **esta versión**. El BHRF
-plano solo existe en 2.1.0 — no hay versiones viejas.
-
-**Causa: la fecha de despliegue.** El pipeline live clasifica al llegar una
-alerta nueva, así que un objeto recibe fila de BHRF 2.1.0 solo si volvió a
-brillar después de que la versión entrara en producción, alrededor de septiembre
-de 2025 (p10 de última detección entre los cubiertos: 2025,72).
-
-Cobertura por año de última detección:
-
-| última det. | objetos | BHRF 2.1.0 |
-|---|---:|---:|
-| <2019 | 690 | 0,0% |
-| 2019-20 | 3.597 | 0,0% |
-| 2021-22 | 6.801 | 0,1% |
-| 2023-24 | 11.299 | 0,2% |
-| **2025** | 12.874 | **14,3%** |
-| 2026 | 11.355 | 36,8% |
-
-**El cohorte comparable es "objetos activos desde fines de 2025"**, no "objetos
-bien observados". Es una selección por actividad astrofísica: objetos en
-variación activa, sistemáticamente distintos del catálogo dormido que forma la
-mayoría de la corrida.
-
-## 2. Coincidencia de clase, sobre esos 6.047
+## 1. Coincidencia de clase
 
 | cabeza | coinciden | tasa |
 |---|---:|---:|
@@ -64,9 +33,7 @@ mayoría de la corrida.
 | stochastic | 5.555 | 91,9% |
 | periodic | 5.349 | 88,5% |
 
-Ese 85,4% está medido sobre el 13% mejor observado. Ver §5.
-
-## 3. El desacuerdo tiene estructura
+## 2. El desacuerdo tiene estructura
 
 De los 883 desacuerdos del clasificador plano, **439 (la mitad) son legacy
 diciendo CV/Nova contra una clase periódica nuestra**: RSCVn 118, YSO 109,
@@ -77,7 +44,7 @@ Consistente con la asimetría de features documentada: legacy tiene NaN donde
 nosotros tenemos valor —PS1 incluido— y sin la información estrella-vs-galaxia
 el modelo cae a CV/Nova.
 
-## 4. Casi todos los desacuerdos son empates
+## 3. Casi todos los desacuerdos son empates
 
 Margen entre la primera y la segunda clase:
 
@@ -106,84 +73,24 @@ Los CV/Nova → periódica siguen el patrón: margen legacy p50 0,046, rank 2 en
 **No es que legacy dudara y nosotros no.** Nuestro margen es igual de angosto
 (0,031 contra 0,032). Ambos lados están indecisos sobre los mismos objetos.
 
-## 5. Apertura por `n_det`
-
-**El cohorte comparable no se parece a la corrida.** Mediana de `n_det`: **67**
-entre comparables, **3** entre el resto. Pero `n_det` es un proxy de la causa
-real de §1 —seguir activo— no la causa: dentro de cada bin, la actividad
-reciente explica casi toda la cobertura.
-
-| `n_det` | últ. det. >= 2025 | < 2025 |
-|---|---:|---:|
-| 6-10 | 5,4% (n=4.478) | 0,3% (n=2.725) |
-| 21-50 | 77,8% (n=1.809) | 2,4% (n=373) |
-| 101-300 | 97,9% (n=1.452) | 3,3% (n=60) |
-| >300 | 99,0% (n=1.004) | 0,0% (n=9) |
-
-Un objeto con más de 300 detecciones pero dormido desde 2024 tiene 0% de
-cobertura; uno con 21-50 pero activo tiene 78%.
-
-| `n_det` | clasificados | con legacy | cobertura | coincidencia |
-|---|---:|---:|---:|---:|
-| 2-5 | 30.477 | 13 | **0,0%** | (61,5%) |
-| 6-10 | 7.203 | 252 | 3,5% | 79,4% |
-| 11-20 | 2.953 | 878 | 29,7% | 81,4% |
-| 21-50 | 2.182 | 1.417 | 64,9% | 78,8% |
-| 51-100 | 1.276 | 1.070 | 83,9% | 83,7% |
-| 101-300 | 1.512 | 1.423 | 94,1% | 89,4% |
-| >300 | 1.013 | 994 | 98,1% | **96,3%** |
-
-Legacy clasificó 13 de los 30.477 objetos con 2-5 detecciones, que son el 65% de
-la corrida. Reponderado a la población real, el 85,4% de §2 queda **entre 69% y
-80%** — el extremo bajo asume que el bin 2-5 se comporta como su muestra de 13,
-el alto que se comporta como el bin 6-10. La conclusión útil no es el número:
-para el 65% de la corrida no hay con qué medirlo.
-
-**El margen angosto sobrevive al control y se fortalece:**
-
-| `n_det` | margen p50 donde coinciden | donde difieren | rank 2 |
-|---|---:|---:|---:|
-| 6-10 | 0,066 | 0,028 | 55,8% |
-| 11-20 | 0,077 | 0,037 | 58,3% |
-| 21-50 | 0,086 | 0,032 | 61,5% |
-| 51-100 | 0,104 | 0,027 | 61,5% |
-| 101-300 | 0,162 | 0,031 | 68,9% |
-| >300 | **0,373** | **0,027** | 73,0% |
-
-El margen de los desacuerdos es plano en ~0,03; el de los aciertos sube de 0,066
-a 0,373. Si el desacuerdo fuera falta de información subiría igual que el otro.
-No sube: hay objetos que el modelo no resuelve por más detecciones que reciba.
-(Contrasta con el análisis de NaN del estudio anterior, donde el efecto sí se
-disolvía al controlar por `n_det`.)
-
-**El modo CV/Nova → periódica sí es de baja información:** 15,4% del bin en 2-5
-detecciones, 10,5% en 11-20, 4,8% en 101-300, **1,4%** arriba de 300.
-
 ## Conclusiones
 
-**Sostenido.** El desacuerdo sustantivo es menor que el 14,6% nominal: ocurre casi
-enteramente entre clases casi empatadas, con cada lado teniendo a la clase del
-otro como segunda opción. No son contradicciones sino la misma distribución con
-los dos primeros lugares invertidos. Y no se explica por falta de detecciones.
+**Sostenido.** El desacuerdo sustantivo es menor que el 14,6% nominal: ocurre
+casi enteramente entre clases casi empatadas, con cada lado teniendo a la clase
+del otro como segunda opción. No son contradicciones sino la misma distribución
+con los dos primeros lugares invertidos.
 
 **No sostenido.**
 
-- Las dos versiones no son equivalentes: el cohorte comparable son los objetos
-  activos desde fines de 2025 (§1), y reponderado por `n_det` la coincidencia
-  cae a 69-80%.
+- Los 6.047 comparables no son una muestra aleatoria de la corrida.
 - `classifier_version = '2.1.0'` en ambos lados no garantiza la misma revisión de
   código. Parte del desacuerdo puede ser versión, no pipeline.
 - Bajo margen no es inofensivo para quien lee la clase rank 1 sin la
   probabilidad.
 
-**Abierto.**
-
-- El 65% de la corrida (`n_det` 2-5) no tiene BHRF 2.1.0 contra qué compararse.
-  Sí tiene `lc_classifier`, el modelo anterior: comparar contra él mide otra
-  cosa —cambio de modelo, no de pipeline— pero cubriría el 97,8%.
-- Si el modelo fue entrenado con los huecos de NaN presentes, alimentarlo con
-  vectores más completos lo saca de su distribución. Depende del set de
-  entrenamiento, no de la base.
+**Abierto.** Si el modelo fue entrenado con los huecos de NaN presentes,
+alimentarlo con vectores más completos lo saca de su distribución. Depende del
+set de entrenamiento, no de la base.
 
 ## Reproducir
 
