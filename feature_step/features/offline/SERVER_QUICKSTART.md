@@ -47,6 +47,10 @@ chmod 600 features/offline/credentials.json
 poetry run python scripts/offline_setup.py --check-only     # what is missing, changes nothing
 poetry run python scripts/offline_setup.py                  # ...and fixes what it can
 
+# 6b — point the loader at the model setup just downloaded. Everything from
+#      here on loads the pickle, and none of it falls back to a default.
+export MODEL_PATH=$PWD/features/offline/models/hierarchical_random_forest_model.pkl
+
 # 7 — three verifications. Each has caught a real defect; minutes each.
 poetry run python scripts/offline_verify_model_features.py --smoke                    # all 199 features produced
 poetry run python scripts/offline_verify_taxonomy.py                                  # seeded taxonomy == the pickle's
@@ -78,6 +82,7 @@ poetry run python scripts/offline_estimate.py $RUN/bhrf_probe1 \
 
 # 11 — the run. Under tmux: it takes days, and a dropped SSH session kills the parent.
 tmux new -s bhrf
+export MODEL_PATH=$PWD/features/offline/models/hierarchical_random_forest_model.pkl
 poetry run python scripts/offline_run_batch.py \
     --oid-file features/offline/oids/run.npy --out-dir $RUN/bhrf_run \
     --workers 64 --features \
@@ -114,6 +119,7 @@ that could pick them up.
 | `poetry run python --version` says 3.12 | `poetry env use python3.10` was skipped. Everything after it will fail with unrelated-looking errors. |
 | `ModuleNotFoundError: No module named 'wget'` | `poetry install` did not finish. It is a dependency of `alerce_classifiers`, pulled in by the path dep. Re-run step 4's `poetry install` and read its output; `poetry run python -m pip install wget` unblocks you meanwhile. |
 | `cannot import name '_safe_tags' from 'sklearn.utils._tags'` | `poetry.lock` installed scikit-learn 1.7.2. `imbalanced-learn` needs `_safe_tags`, removed in 1.6. Run the pin in step 4. |
-| setup reports `Permission denied: '/data'` | A stale `MODEL_PATH` is exported in your shell. `unset MODEL_PATH`, or point it at the repo path in step 7. `/data` is root-owned. |
+| setup reports `Permission denied: '/data'` | A stale `MODEL_PATH` is exported in your shell. `unset MODEL_PATH`, then re-export it as in step 6b. `/data` is root-owned. |
+| `MODEL_PATH env var is required to load the model` | Step 6b was skipped, or you are in a shell that never had it — a fresh `tmux` window included. |
 | setup reports missing privileges | See the `GRANT`s in §4 of the runbook. `USAGE` on the schema is separate from the table grants and its absence makes them dead. |
 | `no AllWISE` far above ~14% | Xwave is returning empty, not the sky. Check §6 of the runbook before trusting the classifications. |

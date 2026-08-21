@@ -311,6 +311,10 @@ def main():
     ready = is_ready(results)
     print("\n" + "=" * 70)
     if ready:
+        # The loader reads MODEL_PATH and has no default, so every script from
+        # here on dies without it. Printing it beats sending the operator back
+        # to the runbook for one line -- and a fresh tmux window needs it again.
+        print(f"  export MODEL_PATH={args.model_path}")
         print("  listo para correr. El comando esta en el paso 8 del SERVER_RUNBOOK.md")
     else:
         print("  NO listo. Resolver lo marcado arriba y volver a correr este script.")
