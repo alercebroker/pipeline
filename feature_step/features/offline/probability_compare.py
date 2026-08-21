@@ -209,3 +209,70 @@ def rank1_agreement(ours: pd.DataFrame, legacy: pd.DataFrame) -> tuple[pd.DataFr
         "n_only_legacy": int((merged["_merge"] == "right_only").sum()),
     }
     return both, summary
+
+
+def _ranked(long: pd.DataFrame, side: str) -> pd.DataFrame:
+    """Add a per-(oid, classifier) dense rank by probability descending.
+
+    Ties break on class_name so both sides order an ambiguous pair the same way
+    (see _rank1); otherwise the rank a class gets would depend on row order.
+    """
+    df = long.sort_values(["oid", "classifier_name", "probability", "class_name"],
+                          ascending=[True, True, False, True], kind="mergesort").copy()
+    df[f"rank_{side}"] = df.groupby(["oid", "classifier_name"]).cumcount() + 1
+    return df.rename(columns={"probability": f"prob_{side}"})
+
+
+def borderline_report(ours: pd.DataFrame, legacy: pd.DataFrame) -> pd.DataFrame:
+    """Per (oid, classifier): how decided each side was, and where the other
+    side's winner sat in this side's ranking.
+
+    Both frames are long rows [oid, classifier_name, class_name, probability]
+    covering ALL classes, not just rank 1 -- the margin cannot be recovered from
+    the winner alone.
+
+    A rank-1 flip across a 0.002 gap and one across a 0.85 gap are not the same
+    event; `margin_*` separates them. `rank_of_ours_in_legacy` answers the
+    question a flip actually raises: was our class legacy's close second, or
+    something it had ranked last? A class the other side never scored yields NaN
+    rather than 0.0 -- "never considered" is a different claim from "ruled out".
+
+    Returns one row per (oid, classifier_name) with columns [class_ours,
+    class_legacy, prob_ours, prob_legacy, margin_ours, margin_legacy,
+    rank_of_ours_in_legacy, prob_legacy_for_our_class, rank_of_legacy_in_ours,
+    prob_ours_for_legacy_class, agree].
+    """
+    ro, rl = _ranked(ours, "ours"), _ranked(legacy, "legacy")
+
+    def _margin(df, side):
+        top2 = df[df[f"rank_{side}"] <= 2]
+        p = top2.pivot_table(index=["oid", "classifier_name"], columns=f"rank_{side}",
+                             values=f"prob_{side}", aggfunc="first")
+        # A single-class head has no second place; the winner is unopposed.
+        second = p[2] if 2 in p.columns else 0.0
+        return (p[1] - second).rename(f"margin_{side}")
+
+    win_o = ro[ro["rank_ours"] == 1].set_index(["oid", "classifier_name"])
+    win_l = rl[rl["rank_legacy"] == 1].set_index(["oid", "classifier_name"])
+
+    out = pd.DataFrame({
+        "class_ours": win_o["class_name"], "prob_ours": win_o["prob_ours"],
+    }).join(pd.DataFrame({
+        "class_legacy": win_l["class_name"], "prob_legacy": win_l["prob_legacy"],
+    }), how="inner")
+    out = out.join(_margin(ro, "ours")).join(_margin(rl, "legacy"))
+
+    # Locate each side's winner in the other side's ranking.
+    li = rl.set_index(["oid", "classifier_name", "class_name"])[["rank_legacy", "prob_legacy"]]
+    oi = ro.set_index(["oid", "classifier_name", "class_name"])[["rank_ours", "prob_ours"]]
+    key_o = pd.MultiIndex.from_arrays(
+        [out.index.get_level_values(0), out.index.get_level_values(1), out["class_ours"]])
+    key_l = pd.MultiIndex.from_arrays(
+        [out.index.get_level_values(0), out.index.get_level_values(1), out["class_legacy"]])
+    out["rank_of_ours_in_legacy"] = li["rank_legacy"].reindex(key_o).to_numpy()
+    out["prob_legacy_for_our_class"] = li["prob_legacy"].reindex(key_o).to_numpy()
+    out["rank_of_legacy_in_ours"] = oi["rank_ours"].reindex(key_l).to_numpy()
+    out["prob_ours_for_legacy_class"] = oi["prob_ours"].reindex(key_l).to_numpy()
+
+    out["agree"] = out["class_ours"] == out["class_legacy"]
+    return out.reset_index()
