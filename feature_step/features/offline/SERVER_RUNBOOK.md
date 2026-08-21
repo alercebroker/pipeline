@@ -195,16 +195,24 @@ them, and why `offline_setup.py` checks the seeds.
 Download once, verify the md5, point `MODEL_PATH` at it. The location does not
 matter:
 
+`offline_setup.py` (§5) does this for you, into `features/offline/models/`
+(gitignored). By hand, anywhere you can write:
+
 ```bash
-mkdir -p /data/models
-curl -o /data/models/hierarchical_random_forest_model.pkl \
+mkdir -p features/offline/models
+curl -o features/offline/models/hierarchical_random_forest_model.pkl \
   https://alerce-models.s3.amazonaws.com/squidward/2.1.0/hierarchical_random_forest_model.pkl
 
-md5sum /data/models/hierarchical_random_forest_model.pkl
+md5sum features/offline/models/hierarchical_random_forest_model.pkl
 # must be 95e8e9f18fde62f22025e31a88ad81fa  (1,720,755,396 bytes)
 
-export MODEL_PATH=/data/models/hierarchical_random_forest_model.pkl
+export MODEL_PATH=$PWD/features/offline/models/hierarchical_random_forest_model.pkl
 ```
+
+The defaults deliberately live beside the code rather than under `/data`: that
+path is root-owned on a normal host, and the run needs nothing that requires
+root. Put the model and the oid list on a bigger volume if you have one — both
+are just paths.
 
 **Use a local file, not the URL.** A URL `MODEL_PATH` is downloaded into
 `/tmp/SquidwardFeaturesClassifier/` and whatever already sits there is reused —
@@ -255,42 +263,50 @@ poetry run python scripts/offline_verify_batch_equivalence.py --n 12 --min-n-det
 
 ## 8. The run
 
+The commands below write shards and oid lists under `$RUN`. Point it anywhere
+you can write — nothing here needs root:
+
+```bash
+export RUN=$HOME/bhrf          # or a data volume, if you have one
+mkdir -p $RUN/oids
+```
+
 ```bash
 # 1. materialize the oid list once (n_det >= 2 -> ~26.3M of the 130M).
 #    offline_setup.py already did this; the explicit form is here for a
 #    different cut (n_det >= 6 keeps ~7.5M, n_det >= 20 keeps ~2.5M).
 poetry run python scripts/offline_run_batch.py --min-n-det 2 \
-    --save-oids /data/oids/run.npy --plan-only
+    --save-oids $RUN/oids/run.npy --plan-only
 
 # 2. a small unit against the real database — the first end-to-end write.
 #    --unit-size, NOT --max-units: a unit is one worker's task and is never split
 #    across cores, so a default 5000-oid unit is 5000 objects in series.
 poetry run python -c "import numpy as np; \
-    np.savetxt('/data/oids/smoke.txt', np.load('/data/oids/run.npy')[:200], fmt='%d')"
+    np.savetxt('$RUN/oids/smoke.txt', np.load('$RUN/oids/run.npy')[:200], fmt='%d')"
 poetry run python scripts/offline_run_batch.py \
-    --oid-file /data/oids/smoke.txt --out-dir /data/bhrf_one \
+    --oid-file $RUN/oids/smoke.txt --out-dir $RUN/bhrf_one \
     --unit-size 200 --minibatch 200 --workers 1 --features \
     --load-db --write-credentials features/offline/credentials.json
 # then cross-check disk against DB for that unit:
-jq '{db_prob_rows, prob_rows, db_feat_rows, feat_rows, db_xmatch_rows}' /data/bhrf_one/manifests/unit_0000000.json
+jq '{db_prob_rows, prob_rows, db_feat_rows, feat_rows, db_xmatch_rows}' $RUN/bhrf_one/manifests/unit_0000000.json
 
 # 3a. quick probe (~10 min): 64 small units over 16 workers, so there is a real
 #     queue (4 units each) and the first checkpoint lands in minutes.
 poetry run python scripts/offline_run_batch.py \
-    --oid-file /data/oids/run.npy --out-dir /data/bhrf_probe1 \
+    --oid-file $RUN/oids/run.npy --out-dir $RUN/bhrf_probe1 \
     --unit-size 500 --max-units 64 --workers 16 --features
-du -sh /data/bhrf_probe1
+du -sh $RUN/bhrf_probe1
 
 # 3b. full width, only once 3a looks sane: 128 real units over 64 workers.
 poetry run python scripts/offline_run_batch.py \
-    --oid-file /data/oids/run.npy --out-dir /data/bhrf_probe2 \
+    --oid-file $RUN/oids/run.npy --out-dir $RUN/bhrf_probe2 \
     --unit-size 5000 --max-units 128 --workers 64 --features
-du -sh /data/bhrf_probe2       # extrapolate: this is 640k of 26.3M oids
+du -sh $RUN/bhrf_probe2       # extrapolate: this is 640k of 26.3M oids
 
 # 4. the real run — rerun the SAME command after any interruption to resume
 poetry run python scripts/offline_run_batch.py \
-    --oid-file /data/oids/run.npy \
-    --out-dir /data/bhrf_run --workers 64 --features \
+    --oid-file $RUN/oids/run.npy \
+    --out-dir $RUN/bhrf_run --workers 64 --features \
     --load-db --write-credentials features/offline/credentials.json \
     --no-shards
 ```
@@ -322,8 +338,8 @@ counts and the worker's peak RSS in its manifest, and `offline_estimate.py`
 turns those into a projection for the real run:
 
 ```bash
-poetry run python scripts/offline_estimate.py /data/bhrf_probe1 \
-    --oid-file /data/oids/run.npy --workers 64
+poetry run python scripts/offline_estimate.py $RUN/bhrf_probe1 \
+    --oid-file $RUN/oids/run.npy --workers 64
 ```
 
 ```
@@ -372,7 +388,7 @@ all workers share one copy-on-write model.
 Per-unit progress goes to stdout; the durable record is on disk:
 
 ```
-/data/bhrf_run/
+$RUN/bhrf_run/
 ├─ probabilities/unit_NNNNNNN.parquet   # absent with --no-shards
 ├─ features/unit_NNNNNNN.parquet        # absent with --no-shards
 ├─ errors/unit_NNNNNNN.jsonl      # only for units that hit per-oid failures
@@ -415,9 +431,9 @@ A per-oid failure does not kill its unit — but the unit then completes and mar
 itself done, so a plain rerun will never revisit it. Retry them explicitly:
 
 ```bash
-cat /data/bhrf_run/errors/*.jsonl | jq -r .oid > /data/oids/retry.txt
+cat $RUN/bhrf_run/errors/*.jsonl | jq -r .oid > $RUN/oids/retry.txt
 poetry run python scripts/offline_run_batch.py \
-    --oid-file /data/oids/retry.txt --out-dir /data/bhrf_run-retry --features
+    --oid-file $RUN/oids/retry.txt --out-dir $RUN/bhrf_run-retry --features
 ```
 
 A separate `--out-dir` is required: the oid list differs, so the fingerprint will

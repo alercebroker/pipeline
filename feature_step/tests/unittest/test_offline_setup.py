@@ -67,3 +67,34 @@ def test_the_read_check_covers_the_tables_the_run_actually_reads():
     for t in ("detection", "forced_photometry", "object", "feature_name_lut",
               "taxonomy", "ztf_reference"):
         assert t in S.READ_TABLES
+
+
+def test_a_step_that_raises_becomes_a_failed_row_not_a_traceback():
+    """The script exists to report what is wrong; a traceback reports one thing
+    and abandons every check after it.
+
+    Real case: MODEL_PATH defaulted under /data, which was not writable, so the
+    model step raised PermissionError and the oid list, Xwave and the seeds were
+    never reported at all.
+    """
+    def _boom():
+        raise PermissionError("[Errno 13] Permission denied: '/data'")
+
+    got = S.safe_step("modelo BHRF 2.1.0", _boom)
+    assert got.status == S.FAIL
+    assert got.name == "modelo BHRF 2.1.0"
+    assert "Permission denied" in got.detail
+
+
+def test_a_step_that_succeeds_passes_its_result_through():
+    ok = S.Result("modelo", S.OK, "ya estaba")
+    assert S.safe_step("modelo", lambda: ok) is ok
+
+
+def test_default_paths_never_require_root():
+    """Both defaults live beside the code, which is writable by whoever cloned
+    it. /data was invented and is root-owned on a normal host."""
+    assert "/data" not in str(S.DEFAULT_MODEL_PATH)
+    assert "/data" not in str(S.DEFAULT_OID_FILE)
+    assert str(S.DEFAULT_MODEL_PATH).startswith(str(S.OFFLINE))
+    assert str(S.DEFAULT_OID_FILE).startswith(str(S.OFFLINE))

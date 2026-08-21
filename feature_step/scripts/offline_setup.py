@@ -45,6 +45,13 @@ MODEL_URL = ("https://alerce-models.s3.amazonaws.com/squidward/2.1.0/"
              "hierarchical_random_forest_model.pkl")
 MODEL_MD5 = "95e8e9f18fde62f22025e31a88ad81fa"
 
+# Both big artefacts default beside the code, which whoever cloned the repo can
+# write. An earlier default put the model under /data, which is root-owned on a
+# normal host: the script did not report that, it crashed trying to mkdir it.
+# Both are gitignored. Override either with the flags, or MODEL_PATH.
+DEFAULT_MODEL_PATH = OFFLINE / "models" / "hierarchical_random_forest_model.pkl"
+DEFAULT_OID_FILE = OFFLINE / "oids" / "run.npy"
+
 # n_det >= 2 keeps ~26.3M of the 130M objects (>= 6 would keep ~7.5M). Measured
 # on object_part_0 and extrapolated across the 8 hash partitions.
 DEFAULT_MIN_N_DET = 2
@@ -71,6 +78,19 @@ def is_ready(results) -> bool:
     DONE is not a blocker: it means this pass did the work.
     """
     return not any(r.status in _BLOCKING for r in results)
+
+
+def safe_step(name: str, fn):
+    """Run a step; turn any unexpected error into a reported row.
+
+    The script's whole job is to say what is wrong. A step that raises reports
+    exactly one problem and abandons every check after it -- which is how a
+    non-writable MODEL_PATH hid the state of the oid list, Xwave and the seeds.
+    """
+    try:
+        return fn()
+    except Exception as exc:
+        return Result(name, FAIL, f"{type(exc).__name__}: {str(exc)[:140]}")
 
 
 def missing_privileges(privs: dict) -> list:
@@ -243,34 +263,40 @@ def main():
                     help="defaults to --credentials: one account holds every "
                          "privilege the run needs, so a second file is optional.")
     ap.add_argument("--model-path", type=Path,
-                    default=Path(os.environ.get("MODEL_PATH")
-                                 or "/data/models/hierarchical_random_forest_model.pkl"))
-    ap.add_argument("--oid-file", type=Path, default=OFFLINE / "oids" / "run.npy")
+                    default=Path(os.environ.get("MODEL_PATH") or DEFAULT_MODEL_PATH),
+                    help="default: %(default)s (gitignored).")
+    ap.add_argument("--oid-file", type=Path, default=DEFAULT_OID_FILE,
+                    help="default: %(default)s (gitignored).")
     ap.add_argument("--xmatch-url", default=os.environ.get("XMATCH_URL")
                     or X.DEFAULT_XMATCH_URL)
     args = ap.parse_args()
 
     print(f"setup offline ZTF -- repo {PIPE}\n")
-    results = [step_imports()]
+    results = [safe_step("dependencias", step_imports)]
     # One account can hold every privilege the run needs, and pointing both
     # flags at the same file is the recommended setup -- so check it once
     # instead of reporting the same result twice.
     same = (args.credentials.resolve() == args.write_credentials.resolve()
             if args.credentials.exists() and args.write_credentials.exists()
             else False)
-    read = step_credentials(args.credentials, need_write=same)
+    read = safe_step(args.credentials.name,
+                     lambda: step_credentials(args.credentials, need_write=same))
     results.append(read)
     if not same:
-        results.append(step_credentials(args.write_credentials, need_write=True))
+        results.append(safe_step(
+            args.write_credentials.name,
+            lambda: step_credentials(args.write_credentials, need_write=True)))
     # The remaining DB steps are pointless without a working connection, so they
     # are skipped rather than reported as a pile of derived failures.
     if read.status == OK:
-        results.append(step_seeds(args.credentials))
-    results.append(step_model(args.model_path, args.check_only))
-    results.append(step_xmatch(args.xmatch_url))
+        results.append(safe_step("LUTs sembrados",
+                                 lambda: step_seeds(args.credentials)))
+    results.append(safe_step("modelo BHRF 2.1.0",
+                             lambda: step_model(args.model_path, args.check_only)))
+    results.append(safe_step("Xwave", lambda: step_xmatch(args.xmatch_url)))
     if read.status == OK:
-        results.append(step_oids(args.credentials, args.oid_file,
-                                 args.min_n_det, args.check_only))
+        results.append(safe_step("lista de oids", lambda: step_oids(
+            args.credentials, args.oid_file, args.min_n_det, args.check_only)))
 
     width = max(len(r.name) for r in results)
     print()

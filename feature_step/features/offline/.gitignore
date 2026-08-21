@@ -10,3 +10,6 @@ class_over_time/class_dates_top.csv
 
 # Full oid dumps (~1 GB) — regenerate with scripts/offline_dump_oids.py
 oids/
+
+# The BHRF model pickle (1.7 GB) — download it, never commit it
+models/
