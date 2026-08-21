@@ -30,6 +30,9 @@ poetry run python -m pip install setuptools wheel Cython==0.29.36 numpy
 poetry run python -m pip install ../mhps
 poetry run python -m pip install -r ../P4J/requirements.txt
 poetry install --without=test --no-root
+# poetry.lock says scikit-learn 1.7.2; alerce_classifiers asks for ~1.4.2 and
+# imbalanced-learn imports _safe_tags, gone since 1.6. The lock wins, so undo it.
+poetry run python -m pip install "scikit-learn==1.4.2"
 poetry run python -c "import P4J, mhps; from features.offline import db; print(db.SCHEMA)"
 
 # 5 — credentials. The only manual step: it carries a password, so it is neither
@@ -110,6 +113,7 @@ that could pick them up.
 | `error: externally-managed-environment` | `pip install poetry` run globally. Use the venv in step 3. |
 | `poetry run python --version` says 3.12 | `poetry env use python3.10` was skipped. Everything after it will fail with unrelated-looking errors. |
 | `ModuleNotFoundError: No module named 'wget'` | `poetry install` did not finish. It is a dependency of `alerce_classifiers`, pulled in by the path dep. Re-run step 4's `poetry install` and read its output; `poetry run python -m pip install wget` unblocks you meanwhile. |
+| `cannot import name '_safe_tags' from 'sklearn.utils._tags'` | `poetry.lock` installed scikit-learn 1.7.2. `imbalanced-learn` needs `_safe_tags`, removed in 1.6. Run the pin in step 4. |
 | setup reports `Permission denied: '/data'` | A stale `MODEL_PATH` is exported in your shell. `unset MODEL_PATH`, or point it at the repo path in step 7. `/data` is root-owned. |
 | setup reports missing privileges | See the `GRANT`s in §4 of the runbook. `USAGE` on the schema is separate from the table grants and its absence makes them dead. |
 | `no AllWISE` far above ~14% | Xwave is returning empty, not the sky. Check §6 of the runbook before trusting the classifications. |
