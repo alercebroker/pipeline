@@ -19,16 +19,40 @@ fixture), oid por `idmapper`. El rank 1 se deriva de las probabilidades y no de
 la columna `ranking` — la escribieron códigos distintos con años de diferencia.
 Empates rotos por `class_name` en ambos lados.
 
-## 1. Legacy cubre el 13% de la población
+## 1. Falta BHRF 2.1.0, no falta clasificación
 
 ```
-clasificados por nosotros : 46.616
-con probabilidad legacy   :  6.047   (13,0%)
-solo legacy               :      0
+clasificados por nosotros            : 46.616
+con ALGUNA fila en alerce.probability: 45.610   (97,8%)
+  clasificador viejo (lc_classifier*): 45.608
+  algún BHRF (incluye beta)          : 12.952
+  BHRF 2.1.0 de producción           :  6.047   (13,0%)
+solo legacy                          :      0
 ```
 
-No hay un solo objeto que legacy tenga y nosotros no. La corrida no reproduce un
-catálogo: lo llena.
+Los objetos están clasificados; lo que les falta es **esta versión**. El BHRF
+plano solo existe en 2.1.0 — no hay versiones viejas.
+
+**Causa: la fecha de despliegue.** El pipeline live clasifica al llegar una
+alerta nueva, así que un objeto recibe fila de BHRF 2.1.0 solo si volvió a
+brillar después de que la versión entrara en producción, alrededor de septiembre
+de 2025 (p10 de última detección entre los cubiertos: 2025,72).
+
+Cobertura por año de última detección:
+
+| última det. | objetos | BHRF 2.1.0 |
+|---|---:|---:|
+| <2019 | 690 | 0,0% |
+| 2019-20 | 3.597 | 0,0% |
+| 2021-22 | 6.801 | 0,1% |
+| 2023-24 | 11.299 | 0,2% |
+| **2025** | 12.874 | **14,3%** |
+| 2026 | 11.355 | 36,8% |
+
+**El cohorte comparable es "objetos activos desde fines de 2025"**, no "objetos
+bien observados". Es una selección por actividad astrofísica: objetos en
+variación activa, sistemáticamente distintos del catálogo dormido que forma la
+mayoría de la corrida.
 
 ## 2. Coincidencia de clase, sobre esos 6.047
 
@@ -85,7 +109,19 @@ Los CV/Nova → periódica siguen el patrón: margen legacy p50 0,046, rank 2 en
 ## 5. Apertura por `n_det`
 
 **El cohorte comparable no se parece a la corrida.** Mediana de `n_det`: **67**
-entre comparables, **3** entre el resto.
+entre comparables, **3** entre el resto. Pero `n_det` es un proxy de la causa
+real de §1 —seguir activo— no la causa: dentro de cada bin, la actividad
+reciente explica casi toda la cobertura.
+
+| `n_det` | últ. det. >= 2025 | < 2025 |
+|---|---:|---:|
+| 6-10 | 5,4% (n=4.478) | 0,3% (n=2.725) |
+| 21-50 | 77,8% (n=1.809) | 2,4% (n=373) |
+| 101-300 | 97,9% (n=1.452) | 3,3% (n=60) |
+| >300 | 99,0% (n=1.004) | 0,0% (n=9) |
+
+Un objeto con más de 300 detecciones pero dormido desde 2024 tiene 0% de
+cobertura; uno con 21-50 pero activo tiene 78%.
 
 | `n_det` | clasificados | con legacy | cobertura | coincidencia |
 |---|---:|---:|---:|---:|
@@ -132,8 +168,9 @@ los dos primeros lugares invertidos. Y no se explica por falta de detecciones.
 
 **No sostenido.**
 
-- Las dos versiones no son equivalentes: el cohorte comparable es el 13% mejor
-  observado, y reponderado la coincidencia cae a 69-80%.
+- Las dos versiones no son equivalentes: el cohorte comparable son los objetos
+  activos desde fines de 2025 (§1), y reponderado por `n_det` la coincidencia
+  cae a 69-80%.
 - `classifier_version = '2.1.0'` en ambos lados no garantiza la misma revisión de
   código. Parte del desacuerdo puede ser versión, no pipeline.
 - Bajo margen no es inofensivo para quien lee la clase rank 1 sin la
@@ -141,8 +178,9 @@ los dos primeros lugares invertidos. Y no se explica por falta de detecciones.
 
 **Abierto.**
 
-- El 65% de la corrida (`n_det` 2-5) no tiene validación posible contra legacy.
-  Requiere otra vía: consistencia interna, catálogos externos o inspección.
+- El 65% de la corrida (`n_det` 2-5) no tiene BHRF 2.1.0 contra qué compararse.
+  Sí tiene `lc_classifier`, el modelo anterior: comparar contra él mide otra
+  cosa —cambio de modelo, no de pipeline— pero cubriría el 97,8%.
 - Si el modelo fue entrenado con los huecos de NaN presentes, alimentarlo con
   vectores más completos lo saca de su distribución. Depende del set de
   entrenamiento, no de la base.
