@@ -1,8 +1,10 @@
 # Server runbook — offline ZTF features + BHRF classification at scale
 
 Everything that has to happen on a **freshly cloned repo** to get from nothing to
-a full offline run over `multisurvey_ztf`. For what the pipeline *does*, read
-[`FLOW.md`](./FLOW.md); this file is only the operational sequence.
+a full offline run over `multisurvey_ztf`, and why each step is the way it is.
+For the commands alone, with one line each, use
+[`SERVER_QUICKSTART.md`](./SERVER_QUICKSTART.md). For what the pipeline *does*,
+read [`FLOW.md`](./FLOW.md).
 
 **What the run produces:** parquet shards on local disk — probability rows always,
 feature rows with `--features`. With `--load-db` it *also* upserts each finished
