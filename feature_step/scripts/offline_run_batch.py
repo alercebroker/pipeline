@@ -202,16 +202,28 @@ def default_start_method() -> str:
 def select_oids(credentials: str, min_n_det: int, limit=None) -> np.ndarray:
     """oids of <schema>.object with n_det >= min_n_det, ascending.
 
-    Ascending order is what makes the contiguous work units cheap: a unit's 500
-    oids land on adjacent index pages instead of scattering across the heap.
+    Ascending order is load-bearing twice: it is what makes the contiguous work
+    units cheap (a unit's oids land on adjacent index pages instead of
+    scattering across the heap), and it is what makes the run fingerprint
+    reproducible, so a rerun resumes instead of starting over.
+
+    numpy does the sorting, not Postgres. The only index that serves the filter
+    is on n_det, so a full cut (n_det >= 2, ~26M rows) plans as a bitmap heap
+    scan over the 8 partitions followed by an external sort -- which roughly
+    doubles the cost of the query. Sorting 26M int64 client-side is 212 MB and a
+    couple of seconds.
+
+    With a limit it is the other way round: ORDER BY oid LIMIT n walks the
+    (oid, sid) primary key in order and stops at n, touching nothing else. It
+    also has to stay, because it is what makes "the first n oids" mean the same
+    thing on every run -- the verification scripts compare across runs.
     """
     sql = f"""
         SELECT oid FROM {db.SCHEMA}.object
         WHERE sid = :sid AND n_det >= :min_n_det
-        ORDER BY oid
     """
     if limit:
-        sql += " LIMIT :limit"
+        sql += " ORDER BY oid LIMIT :limit"
     params = {"sid": db.SID, "min_n_det": min_n_det}
     if limit:
         params["limit"] = limit
@@ -221,7 +233,11 @@ def select_oids(credentials: str, min_n_det: int, limit=None) -> np.ndarray:
         chunks = [c["oid"].to_numpy(dtype=np.int64)
                   for c in pd.read_sql_query(text(sql), conn, params=params,
                                              chunksize=1_000_000)]
-    return np.concatenate(chunks) if chunks else np.empty(0, dtype=np.int64)
+    if not chunks:
+        return np.empty(0, dtype=np.int64)
+    out = np.concatenate(chunks)
+    out.sort()
+    return out
 
 
 def load_oids(path: str) -> np.ndarray:

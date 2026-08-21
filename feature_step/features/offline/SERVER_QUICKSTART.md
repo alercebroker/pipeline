@@ -109,5 +109,7 @@ that could pick them up.
 | `Python.h: No such file or directory` while building mhps | `python3.10-dev` missing. `build-essential` gives the compiler, not the headers. |
 | `error: externally-managed-environment` | `pip install poetry` run globally. Use the venv in step 3. |
 | `poetry run python --version` says 3.12 | `poetry env use python3.10` was skipped. Everything after it will fail with unrelated-looking errors. |
+| `ModuleNotFoundError: No module named 'wget'` | `poetry install` did not finish. It is a dependency of `alerce_classifiers`, pulled in by the path dep. Re-run step 4's `poetry install` and read its output; `poetry run python -m pip install wget` unblocks you meanwhile. |
+| setup reports `Permission denied: '/data'` | A stale `MODEL_PATH` is exported in your shell. `unset MODEL_PATH`, or point it at the repo path in step 7. `/data` is root-owned. |
 | setup reports missing privileges | See the `GRANT`s in §4 of the runbook. `USAGE` on the schema is separate from the table grants and its absence makes them dead. |
 | `no AllWISE` far above ~14% | Xwave is returning empty, not the sky. Check §6 of the runbook before trusting the classifications. |

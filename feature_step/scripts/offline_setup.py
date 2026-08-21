@@ -242,7 +242,12 @@ def step_oids(credentials: Path, out: Path, min_n_det: int, check_only: bool) ->
     oids = R.select_oids(str(credentials), min_n_det)
     out.parent.mkdir(parents=True, exist_ok=True)
     tmp = out.with_suffix(".npy.tmp")
-    np.save(tmp, oids)
+    # Through a file handle on purpose: np.save(path) appends ".npy" unless the
+    # name already ends in it, so passing the staging name writes
+    # "run.npy.tmp.npy" and the rename below finds nothing -- throwing away the
+    # scan that just took an hour.
+    with open(tmp, "wb") as fh:
+        np.save(fh, oids)
     os.replace(tmp, out)
     return Result("lista de oids", DONE, f"{len(oids):,} oids (n_det >= {min_n_det}) -> {out}")
 

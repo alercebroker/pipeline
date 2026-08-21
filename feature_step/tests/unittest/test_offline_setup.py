@@ -98,3 +98,26 @@ def test_default_paths_never_require_root():
     assert "/data" not in str(S.DEFAULT_OID_FILE)
     assert str(S.DEFAULT_MODEL_PATH).startswith(str(S.OFFLINE))
     assert str(S.DEFAULT_OID_FILE).startswith(str(S.OFFLINE))
+
+
+def test_the_oid_list_lands_where_the_run_will_look_for_it(tmp_path, monkeypatch):
+    """np.save appends .npy unless the name already ends in it.
+
+    The write is staged through a temporary file so an interrupted scan cannot
+    leave a half-written list behind that the next pass would trust. Name that
+    file `run.npy.tmp` and numpy silently writes `run.npy.tmp.npy` instead, so
+    the rename finds nothing and an hour of scanning `object` is thrown away.
+    """
+    import types
+    import numpy as np
+
+    stub = types.ModuleType("offline_run_batch")
+    stub.select_oids = lambda credentials, min_n_det: np.array([7, 11, 13], dtype=np.int64)
+    monkeypatch.setitem(sys.modules, "offline_run_batch", stub)
+
+    out = tmp_path / "oids" / "run.npy"
+    res = S.step_oids(tmp_path / "credentials.json", out, 2, check_only=False)
+
+    assert res.status == S.DONE
+    assert np.load(out).tolist() == [7, 11, 13]
+    assert sorted(p.name for p in out.parent.iterdir()) == ["run.npy"]
