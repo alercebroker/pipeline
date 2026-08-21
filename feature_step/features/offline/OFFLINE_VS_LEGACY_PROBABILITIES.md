@@ -45,10 +45,8 @@ séptimo de la población.
 
 Esto condiciona todo lo que sigue. Los 6.047 no son una muestra aleatoria de los
 46.616 — son los que legacy alcanzó a clasificar, y legacy clasificó lo que
-estaba bien observado. El estudio anterior ya había mostrado que la coincidencia
-depende fuerte de `n_det` (66,7% entre 1-20 detecciones, 100% arriba de 300), así
-que las tasas de abajo son probablemente **optimistas** respecto de lo que
-pasaría si legacy hubiera clasificado todo. Queda por medir.
+estaba bien observado. El sesgo está medido en el hallazgo 5 y es severo: la
+mediana de `n_det` es 67 entre los comparables y 3 entre el resto.
 
 ## Hallazgo 2: la coincidencia de clase
 
@@ -124,6 +122,79 @@ patrón:** margen legacy p50 = 0,046, nuestra clase era su rank 2 en el 61,0% de
 los casos, y la probabilidad que legacy le daba a nuestra clase tenía mediana
 0,118 contra un ganador que apenas superaba eso.
 
+## Hallazgo 5: apertura por `n_det`
+
+**El cohorte comparable no se parece a la población de la corrida.**
+
+| `n_det` | clasificados | con legacy | cobertura |
+|---|---:|---:|---:|
+| 2-5 | 30.477 | 13 | **0,0%** |
+| 6-10 | 7.203 | 252 | 3,5% |
+| 11-20 | 2.953 | 878 | 29,7% |
+| 21-50 | 2.182 | 1.417 | 64,9% |
+| 51-100 | 1.276 | 1.070 | 83,9% |
+| 101-300 | 1.512 | 1.423 | 94,1% |
+| >300 | 1.013 | 994 | 98,1% |
+
+Mediana de `n_det`: **67** entre los comparables, **3** entre el resto. Legacy
+clasificó el 98% de los objetos bien observados y 13 de los 30.477 que tienen
+entre 2 y 5 detecciones — y esos 30.477 son el 65% de la corrida.
+
+**La coincidencia sube con `n_det`:**
+
+| `n_det` | comparados | coinciden | tasa |
+|---|---:|---:|---:|
+| 2-5 | 13 | 8 | 61,5% |
+| 6-10 | 252 | 200 | 79,4% |
+| 11-20 | 878 | 715 | 81,4% |
+| 21-50 | 1.417 | 1.116 | 78,8% |
+| 51-100 | 1.070 | 896 | 83,7% |
+| 101-300 | 1.423 | 1.272 | 89,4% |
+| >300 | 994 | 957 | **96,3%** |
+
+Reponderando las tasas por bin a la población real de la corrida, el 85,4% del
+hallazgo 2 cae a algo **entre 69% y 80%**: el extremo bajo asume que los objetos
+de 2-5 detecciones se comportan como su propia muestra de 13, el alto que se
+comportan como el bin de 6-10. La conclusión útil no es el número sino que para
+el 65% de la corrida no hay con qué medirlo.
+
+**El margen angosto sobrevive al control por `n_det` — y se fortalece:**
+
+| `n_det` | margen p50 legacy donde coinciden | donde difieren | nuestra clase era su rank 2 |
+|---|---:|---:|---:|
+| 6-10 | 0,066 | 0,028 | 55,8% |
+| 11-20 | 0,077 | 0,037 | 58,3% |
+| 21-50 | 0,086 | 0,032 | 61,5% |
+| 51-100 | 0,104 | 0,027 | 61,5% |
+| 101-300 | 0,162 | 0,031 | 68,9% |
+| >300 | **0,373** | **0,027** | 73,0% |
+
+El margen de los desacuerdos es plano en ~0,03 en todos los bins. Lo que crece
+con `n_det` es la confianza donde los dos lados coinciden: de 0,066 a 0,373. En
+objetos con más de 300 detecciones, los aciertos salen con 13,8 veces más margen
+que los desacuerdos.
+
+Esto descarta la explicación simple. Si el desacuerdo fuera solo falta de
+información, su margen debería subir con `n_det` igual que el de los aciertos. No
+sube. Hay un subconjunto de objetos que el modelo no resuelve por más
+detecciones que reciba, y ahí es donde las dos versiones se cruzan. (Contrasta
+con el análisis de NaN del estudio anterior, donde el efecto sí se disolvía al
+controlar por `n_det`.)
+
+**El modo de falla CV/Nova → periódica sí es de baja información:**
+
+| `n_det` | casos | % del bin |
+|---|---:|---:|
+| 2-5 | 2 | 15,4% |
+| 6-10 | 26 | 10,3% |
+| 11-20 | 92 | 10,5% |
+| 21-50 | 181 | 12,8% |
+| 51-100 | 95 | 8,9% |
+| 101-300 | 69 | 4,8% |
+| >300 | 14 | **1,4%** |
+
+Se desvanece cuando hay datos: del 15,4% del bin más pobre al 1,4% del más rico.
+
 ## Qué concluir, y qué no
 
 **Sí se puede concluir** que el 14,6% de desacuerdo del clasificador plano
@@ -135,8 +206,9 @@ dos primeros invertido.
 
 **No se puede concluir** que las dos versiones sean equivalentes:
 
-- El cohorte comparable es el 13% mejor observado. Falta medir el sesgo por
-  `n_det`.
+- El cohorte comparable es el 13% mejor observado (hallazgo 5). Reponderada a
+  la población real, la coincidencia del clasificador plano está entre 69% y
+  80%, y para el 65% de la corrida no hay con qué medirla.
 - `classifier_version = '2.1.0'` en ambos lados no garantiza la misma revisión de
   código. Parte del desacuerdo puede ser diferencia de versión, no de pipeline.
 - Que el desacuerdo sea de bajo margen no lo vuelve inofensivo para un usuario
