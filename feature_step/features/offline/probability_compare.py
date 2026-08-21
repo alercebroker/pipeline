@@ -149,3 +149,63 @@ def compare_probability_frames(
         "passed": passed,
     }
     return merged, summary
+
+
+def _rank1(long: pd.DataFrame, prob_col: str) -> pd.DataFrame:
+    """One row per (oid, classifier_name): the top-probability class.
+
+    `ranking` is ignored on purpose. The two tables were written years apart by
+    different code, and a ranking convention that differs between them would
+    silently decide the comparison. Ties break on class_name ascending so the
+    same tie resolves the same way on both sides regardless of row order.
+    """
+    ordered = long.sort_values(
+        ["oid", "classifier_name", "probability", "class_name"],
+        ascending=[True, True, False, True], kind="mergesort",
+    )
+    top = ordered.groupby(["oid", "classifier_name"], as_index=False).first()
+    return top.rename(columns={"class_name": f"class_{prob_col}",
+                               "probability": f"prob_{prob_col}"})[
+        ["oid", "classifier_name", f"class_{prob_col}", f"prob_{prob_col}"]
+    ]
+
+
+def rank1_agreement(ours: pd.DataFrame, legacy: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
+    """Rank-1 agreement between two stored probability tables, over many oids.
+
+    Both frames are long rows [oid, classifier_name, class_name, probability,
+    ranking] -- ours read from <schema>.probability, legacy from
+    alerce.probability, already translated to the shared string vocabulary.
+
+    Only (oid, classifier_name) pairs present on BOTH sides are scored: legacy
+    has no row for objects it never classified, and counting those as
+    disagreements would report a defect where there is nothing to compare.
+
+    Returns (per_oid, summary). per_oid has one row per scored pair with columns
+    [oid, classifier_name, class_ours, class_legacy, prob_ours, prob_legacy,
+    agree]. summary carries per-classifier {n_both, n_agree, rate} plus the
+    unmatched counts.
+    """
+    a = _rank1(ours, "ours")
+    b = _rank1(legacy, "legacy")
+    merged = pd.merge(a, b, on=["oid", "classifier_name"], how="outer", indicator=True)
+
+    both = merged[merged["_merge"] == "both"].drop(columns=["_merge"]).reset_index(drop=True)
+    both["agree"] = both["class_ours"] == both["class_legacy"]
+
+    by_classifier = {}
+    for cname, grp in both.groupby("classifier_name"):
+        n_both = int(len(grp))
+        n_agree = int(grp["agree"].sum())
+        by_classifier[str(cname)] = {
+            "n_both": n_both, "n_agree": n_agree,
+            "rate": (n_agree / n_both) if n_both else 0.0,
+        }
+
+    summary = {
+        "by_classifier": by_classifier,
+        "n_scored": int(len(both)),
+        "n_only_ours": int((merged["_merge"] == "left_only").sum()),
+        "n_only_legacy": int((merged["_merge"] == "right_only").sum()),
+    }
+    return both, summary
