@@ -917,7 +917,14 @@ def main():
           f"errors: {agg['n_errors']:,})")
     if agg["n_errors"]:
         print(f"  -> retry them  : cat {out_dir}/errors/*.jsonl | jq -r .oid > retry.txt")
-    _asked = agg["n_ok"] + agg["n_errors"]
+    # n_no_allwise is counted BEFORE the unclassifiable check (see process_unit),
+    # so every oid that reached the cone search is in it -- including the ones
+    # process_oid later drops for too few real detections. Dividing by
+    # n_ok + n_errors alone therefore inflates the rate by the unclassifiable
+    # fraction: at 25% unclassifiable it reported 20.1% where the true rate was
+    # 15.0%, i.e. an Xwave problem that was not there. The denominator is every
+    # oid the crossmatch was actually asked about.
+    _asked = agg["n_ok"] + agg["n_errors"] + agg["n_unclassifiable"]
     print(f"  no AllWISE     : {agg['n_no_allwise']:,}"
           f"  ({100 * agg['n_no_allwise'] / _asked if _asked else 0:.1f}% of the oids "
           f"the crossmatch was asked about; ~14% expected)")
