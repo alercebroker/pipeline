@@ -73,9 +73,16 @@ def unclassified_oids(out_dir: Path, oid_file: str, n_units: int, seed: int):
 
 
 def detection_counts(oids: np.ndarray, credentials: str) -> dict:
-    """oid -> raw detection rows. Oids absent from the result have zero."""
+    """oid -> (raw detection rows, best rb). Oids absent have zero rows.
+
+    max(rb) is the one that says WHY an object with detections still classified
+    nothing. Every non-forced epoch below RB_THRESHOLD is discarded, so an
+    object survives only if its best epoch clears the bar: max(rb) is exactly
+    the margin by which it failed. Far below the threshold is a genuine
+    artifact scoring low at every epoch; just below it is a borderline object
+    the cut is deciding."""
     query = sa.text(f"""
-        SELECT d.oid AS oid, count(*) AS n
+        SELECT d.oid AS oid, count(*) AS n, max(z.rb) AS best_rb
         FROM {db.SCHEMA}.detection d
         JOIN {db.SCHEMA}.ztf_detection z
           ON d.oid = z.oid AND d.measurement_id = z.measurement_id
@@ -86,15 +93,16 @@ def detection_counts(oids: np.ndarray, credentials: str) -> dict:
     with engine.connect() as conn:
         for start in range(0, len(oids), CHUNK):
             chunk = [int(o) for o in oids[start:start + CHUNK]]
-            for oid, n in conn.execute(query, {"oids": chunk, "sid": db.SID}):
-                counts[oid] = n
+            for oid, n, best_rb in conn.execute(query, {"oids": chunk,
+                                                        "sid": db.SID}):
+                counts[oid] = (n, best_rb)
     return counts
 
 
 def histogram(oids: np.ndarray, counts: dict) -> None:
     tally = {label: 0 for _, label in BUCKETS}
     for oid in oids:
-        n = counts.get(int(oid), 0)
+        n = counts.get(int(oid), (0, None))[0]
         for hi, label in BUCKETS:
             if n <= hi:
                 tally[label] += 1
@@ -113,7 +121,50 @@ def histogram(oids: np.ndarray, counts: dict) -> None:
     print(f"  <= 2 rows                : {few:,} ({100*few/total:.1f}%)")
     tail = total - sum(tally[l] for l in ("0", "1", "2", "3", "4", "5"))
     print(f"  6 or more rows           : {tail:,} ({100*tail/total:.1f}%)"
-          f"  <- these lost everything to the rb cut; chase this if it is large")
+          f"  <- these lost everything to the rb cut")
+    best_rb_histogram(oids, counts)
+
+
+RB_THRESHOLD = 0.55      # lc_classifier.features.core.base.discard_bogus_detections
+RB_BANDS = [(0.05, "< 0.05"), (0.15, "0.05-0.15"), (0.25, "0.15-0.25"),
+            (0.35, "0.25-0.35"), (0.45, "0.35-0.45"), (0.50, "0.45-0.50"),
+            (RB_THRESHOLD, "0.50-0.55")]
+
+
+def best_rb_histogram(oids: np.ndarray, counts: dict) -> None:
+    """How badly did each skipped object miss the rb cut?
+
+    Restricted to objects with >= 6 detections: with one or two epochs, losing
+    them all to the cut is unremarkable, so the question only has teeth where
+    the object had plenty of chances to clear it."""
+    best = [counts[int(o)][1] for o in oids
+            if counts.get(int(o), (0, None))[0] >= 6
+            and counts[int(o)][1] is not None]
+    if not best:
+        print("\n  (no skipped object with >= 6 detections in this sample)")
+        return
+    tally = {label: 0 for _, label in RB_BANDS}
+    over = 0
+    for rb in best:
+        if rb >= RB_THRESHOLD:      # should be impossible: it would have survived
+            over += 1
+            continue
+        for hi, label in RB_BANDS:
+            if rb < hi:
+                tally[label] += 1
+                break
+    total = len(best)
+    print(f"\n  best rb of the {total:,} skipped objects with >= 6 detections")
+    print(f"  (threshold is {RB_THRESHOLD}; far below = genuine artifact, "
+          f"just below = borderline)")
+    for _, label in RB_BANDS:
+        n = tally[label]
+        if n:
+            print(f"  {label:>10} {n:>9,} {100 * n / total:6.1f}%  "
+                  f"{'#' * int(50 * n / total)}")
+    if over:
+        print(f"  {'>= 0.55':>10} {over:>9,}  <- IMPOSSIBLE: these should have "
+              f"classified. Investigate.")
 
 
 def main() -> int:
