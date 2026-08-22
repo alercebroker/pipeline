@@ -17,9 +17,21 @@ That message says a stall happened; it cannot say what kind. This reads the
     once. These have opposite fixes, and the abort message distinguishes
     neither.
   * Was the box the problem? Workers report peak_rss_mb, but a worker only ever
-    sees its own. The run's cost is that times --workers, which is what pushes a
-    host into swap -- where every worker crawls at once, no unit completes for
-    30 minutes, and the DB afterwards looks perfectly innocent.
+    sees its own. NOTE that under --start-method fork the model is loaded in the
+    parent and shared copy-on-write, so these do NOT add up across workers:
+    compare the total against `sar -r`, never peak_rss_mb x --workers.
+
+Two things the manifests cannot show you, so do not read them as absent:
+
+  * THE FATAL GAP IS NOT IN THE GAP LIST. Gaps are measured between two
+    completions. The stall that triggered the abort ends in the abort, not in a
+    manifest, so it leaves no interval to measure -- it shows up only as the
+    final silence, printed separately below.
+  * THE TAIL IS A SHUTDOWN DRAIN. The abort raises SystemExit from inside the
+    `with ProcessPoolExecutor(...)` block, so __exit__ runs shutdown(wait=True)
+    and every already-running worker runs to completion, writing its manifest
+    AFTER the abort message printed. Completions in the last bucket are
+    therefore not progress the parent ever observed.
 
 Reads nothing but the out-dir: no DB, no network, no imports beyond the stdlib,
 so it runs on the server against a dead run without reconstructing its
@@ -61,7 +73,9 @@ def hhmmss(epoch: float) -> str:
 
 def report_gaps(rows: list) -> None:
     """The stall itself: the longest silences between two completions."""
-    print("\n=== largest gaps between completions (the stall is here) ===")
+    print("\n=== largest gaps BETWEEN completions ===")
+    print("  (the gap that triggered the abort is NOT here -- it ends in the")
+    print("   abort, not in a manifest. It is the 'final silence' above.)")
     gaps = sorted(((rows[i + 1]["_mtime"] - rows[i]["_mtime"], i)
                    for i in range(len(rows) - 1)), reverse=True)
     for gap, i in gaps[:8]:
@@ -83,6 +97,19 @@ def report_throughput(rows: list) -> None:
         print(f"  {hhmmss(t0 + key * BUCKET_S)}  {n:>5}  {'#' * min(n, 60)}")
 
 
+def report_tail(rows: list) -> None:
+    """The last completions, with the delay before each.
+
+    Read bottom-up: the run's real death is above the point where these turn
+    into the shutdown drain (units that were already running when the parent
+    gave up and are merely finishing)."""
+    print("\n=== last 15 completions (inter-arrival) ===")
+    for i in range(max(1, len(rows) - 15), len(rows)):
+        delta = (rows[i]["_mtime"] - rows[i - 1]["_mtime"]) / 60
+        print(f"  {hhmmss(rows[i]['_mtime'])}  unit {rows[i]['unit']:>7}  "
+              f"+{delta:6.1f} min  elapsed_s={rows[i]['elapsed_s']:>8.1f}")
+
+
 def report_unit_cost(rows: list, workers: int) -> None:
     """Head vs tail of the run: were units themselves getting more expensive?
 
@@ -98,13 +125,14 @@ def report_unit_cost(rows: list, workers: int) -> None:
     worst = max(rows, key=lambda m: m["peak_rss_mb"])
     print(f"  peak_rss_mb    first {mean(head, 'peak_rss_mb'):9.0f}    "
           f"last {mean(tail, 'peak_rss_mb'):9.0f}")
-    # A worker only ever sees its own RSS. The number that decides whether the
-    # host swaps is this one, and nothing in the run ever prints it.
-    print(f"  worst worker   unit {worst['unit']} at {worst['peak_rss_mb']:.0f} MB"
-          f"  ->  x{workers} workers = "
-          f"{workers * worst['peak_rss_mb'] / 1024:.1f} GB resident, worst case")
-    print("  (compare against `free -g`: if that exceeds RAM the box swapped, "
-          "every worker crawls at once, and the DB looks innocent afterwards)")
+    print(f"  worst worker   unit {worst['unit']} at {worst['peak_rss_mb']:.0f} MB")
+    # Deliberately NOT multiplied by --workers. Under fork the model and every
+    # page untouched since the fork are shared, so per-worker RSS double-counts
+    # heavily; x126 overstated one real run by 3.7x (662 GB predicted, 177 GB
+    # actual). Only the host can answer this, so point at the host.
+    print(f"  do NOT multiply by {workers}: under --start-method fork these "
+          f"share pages copy-on-write.")
+    print("  the real number is `sar -r` (kbmemused) and `free -g` during the run.")
 
 
 def report_db(rows: list) -> None:
@@ -174,9 +202,11 @@ def main() -> int:
     print(f"first finished  : {stamp(t0)}")
     print(f"last finished   : {stamp(t_last)}   <- progress stopped here")
     print(f"span            : {(t_last - t0) / 3600:.2f} h")
-    print(f"silent since    : {(time.time() - t_last) / 60:.1f} min")
+    print(f"final silence   : {(time.time() - t_last) / 60:.1f} min and counting"
+          f"  <- the stall that aborted the run lives HERE, not in the gap list")
 
     report_gaps(rows)
+    report_tail(rows)
     report_throughput(rows)
     report_unit_cost(rows, args.workers)
     report_db(rows)
