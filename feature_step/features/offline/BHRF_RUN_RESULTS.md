@@ -127,7 +127,60 @@ The comparable figure is in §1 of the same note: the WISE features in `27.5.6`
 is the population no-WISE rate. **25.14% falls inside that band.** No Xwave
 problem is indicated.
 
-## 5. Conclusions
+## 5. Coverage window — what the oid list is a snapshot of
+
+**The selection carries no date filter.** `select_oids` is
+
+```sql
+SELECT oid FROM multisurvey_ztf.object WHERE sid = :sid AND n_det >= :min_n_det
+```
+
+(`offline_run_batch.py:222`), and `offline_setup.py` materializes it once into
+`features/offline/oids/run.npy` (`step_oids`, lines 231-252). Nothing rewrites
+that file afterwards, and `run.json` pins its SHA-1, so the run covers exactly
+"whatever satisfied `n_det >= 2` in `object` the moment that file was built" —
+a snapshot, not a window. Objects that cross the threshold later are simply not
+in it, and nothing in the run reports their absence.
+
+Three facts bound what that snapshot contains. All are read from the database,
+not from the run.
+
+**The data horizon is 2026-08-14.** Over the classified objects, `lastmjd` runs
+from **58270.17 (2018-06-01)** to **61266.52 (2026-08-14)**. No detection after
+2026-08-14 informed any prediction here.
+
+**The `object` table stopped receiving rows on the same date.** On
+`object_part_0`, `max(created_date)` for eligible objects is **2026-08-14**, and
+the daily counts fall away to nothing before it (2,915 on 08-05, 279 on 08-12,
+51 on 08-13, 10 on 08-14, none after). Note `created_date` marks when the row
+entered *this* table, not when the object was discovered — the oldest is
+2026-06-08, which is when the table was populated, so it dates ingestion and
+nothing else.
+
+**The snapshot has not drifted.** Eligible objects (`n_det >= 2`) in
+`object_part_0` number 3,281,362; scaled by the 8 hash partitions that is
+**~26,250,896**, against the run's **26,262,154**. The 11,258 gap is +0.043%,
+inside the imbalance between hash partitions.
+
+So the exact build date of `run.npy` does not materially change coverage: the
+source table has been static since 2026-08-14, and a list selected today would
+be the same list to within a rounding error. To record the timestamp anyway, on
+the run host:
+
+```bash
+stat -c '%n  modified:%y' $RUN/oids/run.npy
+```
+
+**What this means for the predictions.** They describe the ZTF catalogue as of
+**2026-08-14**. They stay complete only while `object` stays static; once
+ingestion resumes, objects reaching `n_det >= 2` after that date are outside
+this run and nothing here will flag them. Picking them up means a fresh oid list
+and a fresh `--out-dir` — the `run.json` fingerprint deliberately refuses to
+resume an existing output directory against a changed list
+(`offline_run_batch.py:589`), because reusing unit indices across two different
+oid arrays would silently skip objects.
+
+## 6. Conclusions
 
 1. **The run ended well.** 5,253/5,253 units complete, 26,262,154/26,262,154
    objects processed, 0 unit failures, 0 per-oid errors.
@@ -140,6 +193,9 @@ problem is indicated.
 4. **The crossmatch behaved normally**, at 74.86% AllWISE match rate.
 5. **No rerun is needed.** No units are unmarked, so rerunning the step 11
    command would report `nothing to do.`
+6. **Coverage is current as of 2026-08-14** and has not drifted: the eligible
+   set today matches the run's oid list to within 0.043%, because `object` has
+   received no rows since that date.
 
 ## Caveats on the printed summary
 
