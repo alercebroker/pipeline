@@ -51,12 +51,22 @@ run is *above* both the WISE-present baseline (0.2%) and the WISE-blanked one
 moves Transient by +5.3 points, so no amount of WISE effect produces 11.6% from a
 0.2% baseline.
 
-The likely cause is the population: `n_det >= 2` admits objects with almost no
-light curve, and a sparse light curve is what a transient looks like. That is
-consistent with the NaN rates in `DB_STATS.md` — `MHPS_*` is missing for 91% of
-objects, `Rcs`/`Skew`/`Std` for 89% — all features that need a populated curve.
-**This is a hypothesis, not a verified result.** The check that would settle it is
-the Transient share as a function of `n_det`; it has not been run.
+The cause is the cut this run classified on. `n_det >= 2` admits objects with
+almost no light curve, and a sparse light curve is what a transient looks like —
+so a higher Transient share is the expected consequence of predicting over this
+population, not a defect. Every prior measurement was taken on a better-observed
+set: the ablation sample required a stored `27.5.6` vector, and the database
+figure is dominated by objects the live pipeline had already seen many times.
+
+The NaN rates in `DB_STATS.md` show the same population from the feature side —
+`MHPS_*` missing for 91% of objects, `Rcs`/`Skew`/`Std` for 89%, all of them
+features that need a populated curve.
+
+Worth stating plainly for anyone using these predictions: **the Transient share
+here is a property of the `n_det >= 2` cut and should not be compared against
+numbers measured on brighter cuts.** Quantifying it — Transient share as a
+function of `n_det` — would need a join of `object.n_det` against `probability`
+and has not been run.
 
 ## Flat head
 
@@ -87,5 +97,8 @@ The Periodic/Stochastic split is restored and the leaf-level collapse into
 CV/Nova and YSO did not occur, so the predictions in the database are not
 affected by the WISE-null bias that motivated the investigation.
 
-The elevated Transient share is a separate, open question. It is not a WISE
-effect, and it is the one number here that no prior measurement anticipates.
+The elevated Transient share is not a WISE effect and not a defect: it follows
+from classifying the `n_det >= 2` population, which is far sparser than any set
+the earlier numbers were measured on. It does mean these predictions carry a
+Transient fraction that is not comparable to the note's baselines, and that
+distinction matters more than its size.
