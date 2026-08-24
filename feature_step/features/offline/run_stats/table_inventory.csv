@@ -1,0 +1,5 @@
+table_name,partitions,approx_rows,total_size
+feature,32,1416441923.0,123 GB
+object,8,175327.0,55 GB
+probability,16,2288530237.0,399 GB
+xmatch,1,19657945.0,2489 MB
