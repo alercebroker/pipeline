@@ -1,50 +1,49 @@
 #!/usr/bin/env python
-"""Build the oid list for a TAIL run: what the completed run does not cover.
+"""Build the oid list for a TAIL run: the objects with data past a given date.
 
 The full run (SERVER_QUICKSTART.md step 11) was driven by a frozen snapshot of
 the catalogue -- `features/offline/oids/run.npy`, materialized once by
 `offline_setup.py` and pinned by SHA-1 in `<out-dir>/run.json`
-(BHRF_RUN_RESULTS.md §5). `select_oids` carries no date filter, so the run
-misses two different things, and they need two different queries:
+(BHRF_RUN_RESULTS.md §5). `select_oids` carries no date filter, so anything the
+telescope produced after that snapshot is missing from the run: objects that did
+not exist yet, and objects that DID exist and kept being detected, whose
+`feature` and `probability` rows were computed from a shorter light curve and
+are now stale.
 
-  new       oids over the cut that are not in the baseline array -- objects that
-            did not exist, or had not reached `n_det >= 2`, when it was built.
-            Answered by a diff against a fresh full selection.
+This asks the catalogue one question -- **what has data past date X** -- and
+writes the answer as the `.npy` that `offline_run_batch.py --oid-file` consumes:
 
-  changed   objects the run DID process whose light curve has grown since. Their
-            rows in `feature` and `probability` were computed from a shorter
-            curve and are stale. Answered by `object.lastmjd > <date>`, which is
-            an index scan (`ix_object_lastmjd`) and therefore minutes, not the
-            hour the full selection takes.
+    SELECT oid FROM <schema>.object
+    WHERE sid = 0 AND n_det >= 2 AND lastmjd > :since
 
-Reprocessing either is safe: `feature`, `probability` and `xmatch` all write
-ON CONFLICT ... DO UPDATE, so a second pass overwrites its own rows.
+That rides `ix_object_lastmjd`, so for a recent date it is an index scan of
+minutes rather than the hour a full-catalogue selection costs. The run's data
+horizon was MJD 61266.52 (2026-08-14), which makes `--since-mjd 61266.52`
+exactly "everything the run could not have seen".
 
-WHICH DATE SIGNAL
-    --since-mjd / --since-date filter `object.lastmjd`, the MJD of the last
-    detection: "objects observed again after that date". This is the one to use.
-    The run's data horizon was MJD 61266.52 (2026-08-14), so
-    `--since-mjd 61266.52` is exactly "everything the run could not have seen".
+Reprocessing an object the run already covered is safe: `feature`, `probability`
+and `xmatch` all write ON CONFLICT ... DO UPDATE, so a second pass overwrites its
+own rows.
 
-    --updated-since filters `object.updated_date` instead, the day the row was
-    last written by the magstats scribe. It catches late-arriving data whose MJD
-    is OLD (a backfill), which the lastmjd filter cannot see. It costs a
-    sequential scan of the 8 partitions -- the column is a `Date` with no index
-    -- and it is NULL for any row never updated since insert. Use it in addition
-    to a lastmjd filter when you suspect a backfill, not instead of it.
+TWO OPTIONAL REFINEMENTS
+    --updated-since filters `object.updated_date` -- the day the magstats scribe
+    last wrote the row -- and is OR-ed with the lastmjd filter. It is the only
+    way to see a backfill: data that arrived recently but whose MJD is old, which
+    `lastmjd` cannot detect. It costs a sequential scan of the 8 partitions (the
+    column is a `Date` with no index) and is NULL for rows never updated since
+    insert, so it is an addition to a lastmjd filter, not a replacement.
 
-    --drop-covered then does the exact per-object check: it reads back
-    `probability.lastmjd` -- the MJD the run actually classified each object at
-    -- and drops the candidates whose stored value already covers their current
-    lastmjd. Cheap (hash index on `probability.oid`, and only over candidates),
-    but it can drop an object whose forced photometry extended past its last
-    detection, so it is off by default. Off, the tail is a superset; on, it is
-    tighter and may miss those.
+    --drop-covered reads back `probability.lastmjd` -- the MJD the run actually
+    classified each object at -- and drops the candidates whose stored value
+    already covers their current lastmjd. Cheap (hash index on
+    `probability.oid`, and only over the candidates), but it can drop an object
+    whose forced photometry extended past its last detection, so it is off by
+    default. Off, the tail is a superset; on, it is tighter and may miss those.
 
-    python scripts/offline_tail_oids.py --dry-run --run-dir $RUN/bhrf_run
+    python scripts/offline_tail_oids.py --dry-run --since-mjd 61266.52
     python scripts/offline_tail_oids.py --since-mjd 61266.52 --out $RUN/oids/tail.npy
-    python scripts/offline_tail_oids.py --since-date 2026-08-14 --no-full-diff \
-        --out $RUN/oids/tail.npy          # minutes: index scan only, no full scan
+    python scripts/offline_tail_oids.py --since-date 2026-08-14 \
+        --run-dir $RUN/bhrf_run --out $RUN/oids/tail.npy
 
 The tail is a DIFFERENT oid array, so it needs a fresh --out-dir: unit index N
 means `oids[N*unit_size:...]` of one specific array, and `run.json` refuses a
@@ -66,7 +65,6 @@ PIPE = Path(__file__).resolve().parents[2]  # .../pipeline
 for _p in (PIPE / "feature_step", PIPE / "lc_classifier", PIPE / "libs" / "idmapper",
            PIPE / "libs" / "xmatch_client", PIPE / "alerce_classifiers"):
     sys.path.insert(0, str(_p))
-sys.path.insert(0, str(Path(__file__).resolve().parent))  # offline_run_batch
 
 from features.offline import db  # noqa: E402
 from features.offline.probability_writer import CLASSIFIER_IDS  # noqa: E402
@@ -74,9 +72,8 @@ from features.offline.probability_writer import CLASSIFIER_IDS  # noqa: E402
 OFFLINE = PIPE / "feature_step" / "features" / "offline"
 DEFAULT_CREDENTIALS = str(OFFLINE / "credentials.json")
 DEFAULT_BASELINE = str(OFFLINE / "oids" / "run.npy")
-# Same default as offline_setup.py: the baseline was built with n_det >= 2, and
-# diffing against a list built with a different cut compares two different
-# questions.
+# Same default as offline_setup.py. The cut is what makes an object eligible at
+# all; a tail built with a different one is not comparable to the run's list.
 DEFAULT_MIN_N_DET = 2
 # oids per probability lookup. The index is a hash on oid, so this is one index
 # probe per oid either way; the batch size only trades round trips for the size
@@ -107,12 +104,10 @@ def select_changed(credentials: str, min_n_det: int, since_mjd=None,
                    updated_since=None) -> pd.DataFrame:
     """(oid, lastmjd) for objects over the cut that moved after the given point.
 
-    Two filters, OR-ed by the caller running whichever were asked for:
-
       lastmjd > :since       -- served by ix_object_lastmjd. For a recent date
                                 this is a handful of index pages; for an old one
                                 the planner flips to a seq scan, which is correct
-                                but costs what the full selection costs.
+                                but costs what a full selection costs.
       updated_date > :day    -- no index on the column, so always a seq scan of
                                 the 8 partitions. It is the only way to see a
                                 backfill of old-MJD detections.
@@ -131,9 +126,6 @@ def select_changed(credentials: str, min_n_det: int, since_mjd=None,
                 SELECT oid, lastmjd FROM {db.SCHEMA}.object
                 WHERE sid = :sid AND n_det >= :min_n_det AND updated_date > :day
             """, {"sid": db.SID, "min_n_det": min_n_det, "day": updated_since}))
-    if not out:
-        return pd.DataFrame({"oid": np.empty(0, np.int64),
-                             "lastmjd": np.empty(0, np.float64)})
     changed = pd.concat(out, ignore_index=True).drop_duplicates("oid")
     changed["oid"] = changed["oid"].astype(np.int64)
     return changed.sort_values("oid", ignore_index=True)
@@ -144,12 +136,12 @@ def stored_probability_lastmjd(credentials: str, oids: np.ndarray) -> pd.DataFra
 
     `probability_writer` stores the light curve's lastmjd on every row it writes,
     so this is what the run SAW, per object -- the only exact answer to "is this
-    object's classification stale", and it needs no assumption about when the
-    run happened or what the catalogue looked like then.
+    object's classification stale", and it needs no assumption about when the run
+    happened or what the catalogue looked like then.
 
     max() over the five BHRF classifier ids: all five frames of one object are
     written in the same pass with the same value, so the max is that value and
-    survives an object that is missing a sub-classifier's rows.
+    survives an object missing a sub-classifier's rows.
     """
     engine = db._make_engine(credentials)
     frames = []
@@ -188,8 +180,9 @@ def check_baseline_fingerprint(baseline: np.ndarray, run_dir: Path) -> str:
     """Confirm this .npy is the array the finished run actually consumed.
 
     Nothing else ties them together: run.npy is a plain file that could have been
-    rebuilt, and a rebuilt baseline makes the diff silently too small -- objects
-    the run never processed would look like objects it did.
+    rebuilt. Here it only labels the tail (new vs already-processed), so a
+    mismatch mislabels rather than mis-selects -- but a mislabelled tail is how
+    you conclude the run covered something it did not.
     """
     path = run_dir / "run.json"
     if not path.exists():
@@ -202,20 +195,13 @@ def check_baseline_fingerprint(baseline: np.ndarray, run_dir: Path) -> str:
         "\nBASELINE MISMATCH: the .npy is not the list that run produced.\n"
         f"  baseline : {len(baseline):,} oids, sha1={got}\n"
         f"  {path}: {fp.get('n_oids'):,} oids, sha1={want}\n"
-        "  Diffing against the wrong baseline gives the wrong tail. Use the\n"
-        "  run.npy that built this run, or drop --run-dir to skip the check.\n")
+        "  Use the run.npy that built this run, or drop --run-dir to skip the check.\n")
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--credentials", default=DEFAULT_CREDENTIALS)
-    ap.add_argument("--baseline", default=DEFAULT_BASELINE,
-                    help="the oid .npy the completed run consumed.")
-    ap.add_argument("--run-dir",
-                    help="the finished --out-dir; verifies the baseline against its run.json.")
-    ap.add_argument("--min-n-det", type=int, default=DEFAULT_MIN_N_DET,
-                    help="must be the cut the baseline was built with (default 2).")
     since = ap.add_mutually_exclusive_group()
     since.add_argument("--since-mjd", type=float,
                        help="objects with object.lastmjd > this (the run's horizon: 61266.52).")
@@ -224,13 +210,16 @@ def main():
     ap.add_argument("--updated-since",
                     help="also objects with object.updated_date > YYYY-MM-DD (seq scan; "
                          "catches backfills of old-MJD data).")
+    ap.add_argument("--min-n-det", type=int, default=DEFAULT_MIN_N_DET,
+                    help="the eligibility cut, same as the run's (default 2).")
     ap.add_argument("--drop-covered", action="store_true",
                     help="drop candidates whose stored probability.lastmjd already "
                          "covers their current lastmjd.")
-    ap.add_argument("--no-full-diff", action="store_true", dest="no_full_diff",
-                    help="skip the full-catalogue selection; find new oids only among "
-                         "the changed ones. Minutes instead of an hour, and misses a "
-                         "new object whose detections are all older than --since.")
+    ap.add_argument("--baseline", default=DEFAULT_BASELINE,
+                    help="the run's oid .npy; only labels the tail as new vs "
+                         "already-processed. Skipped if the file is absent.")
+    ap.add_argument("--run-dir",
+                    help="the finished --out-dir; verifies the baseline against its run.json.")
     ap.add_argument("--out", default=str(OFFLINE / "oids" / "tail.npy"),
                     help="where to write the tail array (.npy).")
     ap.add_argument("--dry-run", action="store_true",
@@ -241,77 +230,57 @@ def main():
     if args.since_date:
         since_mjd = mjd_from_date(dt.date.fromisoformat(args.since_date))
         print(f"--since-date {args.since_date} -> MJD {since_mjd:.1f}")
-    if since_mjd is None and args.updated_since is None and args.no_full_diff:
-        ap.error("--no-full-diff needs --since-mjd/--since-date or --updated-since: "
-                 "without a date filter and without the full selection there is "
-                 "nothing to diff.")
+    if since_mjd is None and args.updated_since is None:
+        ap.error("need a date: --since-mjd, --since-date or --updated-since. "
+                 "The run's data horizon was --since-mjd 61266.52 (2026-08-14).")
 
-    baseline = np.load(args.baseline).astype(np.int64)
-    baseline.sort()
-    print(f"baseline: {len(baseline):,} oids from {args.baseline}")
-    fp_note = "not checked (no --run-dir)"
-    if args.run_dir:
-        fp_note = check_baseline_fingerprint(baseline, Path(args.run_dir))
-        print(f"          {fp_note}")
+    # --- the tail: everything with data past the date -----------------------
+    what = []
+    if since_mjd is not None:
+        what.append(f"lastmjd > {since_mjd}")
+    if args.updated_since:
+        what.append(f"updated_date > {args.updated_since} (seq scan, slower)")
+    print(f"selecting {db.SCHEMA}.object where n_det >= {args.min_n_det} "
+          f"and {' or '.join(what)} ...", flush=True)
+    changed = select_changed(args.credentials, args.min_n_det, since_mjd,
+                             args.updated_since)
+    print(f"changed:  {len(changed):,} objects with data past the date")
 
-    # --- changed: the objects whose light curve moved -----------------------
-    changed = pd.DataFrame({"oid": np.empty(0, np.int64),
-                            "lastmjd": np.empty(0, np.float64)})
     n_covered = 0
-    if since_mjd is not None or args.updated_since:
-        what = []
-        if since_mjd is not None:
-            what.append(f"lastmjd > {since_mjd}")
-        if args.updated_since:
-            what.append(f"updated_date > {args.updated_since} (seq scan, slower)")
-        print(f"selecting objects with {' or '.join(what)} ...", flush=True)
-        changed = select_changed(args.credentials, args.min_n_det, since_mjd,
-                                 args.updated_since)
-        print(f"changed:  {len(changed):,} objects moved")
-        if args.drop_covered and len(changed):
-            print("reading back probability.lastmjd for those oids ...", flush=True)
-            changed, n_covered = drop_covered(args.credentials, changed)
-            print(f"          {n_covered:,} already classified at or past their "
-                  f"current lastmjd -> dropped, {len(changed):,} left")
+    if args.drop_covered and len(changed):
+        print("reading back probability.lastmjd for those oids ...", flush=True)
+        changed, n_covered = drop_covered(args.credentials, changed)
+        print(f"          {n_covered:,} already classified at or past their current "
+              f"lastmjd -> dropped, {len(changed):,} left")
 
-    changed_oids = changed["oid"].to_numpy(dtype=np.int64)
-    changed_oids.sort()
-    in_base = np.isin(changed_oids, baseline, assume_unique=True)
-    updated = changed_oids[in_base]        # processed before, now stale
-    new = changed_oids[~in_base]           # never processed, and recently active
+    tail = np.sort(changed["oid"].to_numpy(dtype=np.int64))
 
-    # --- new: the full-catalogue diff ---------------------------------------
-    n_current = n_gone = None
-    if not args.no_full_diff:
-        import offline_run_batch as R
-        print(f"selecting oids with n_det >= {args.min_n_det} from {db.SCHEMA}.object "
-              "(a scan of the table, takes a while) ...", flush=True)
-        current = R.select_oids(args.credentials, args.min_n_det)
-        n_current = len(current)
-        print(f"current:  {n_current:,} oids over the cut")
-        new = np.union1d(new, np.setdiff1d(current, baseline, assume_unique=True))
-        # Baseline oids no longer over the cut. Should be zero -- n_det only grows
-        # and rows are not deleted -- so a non-zero count means the baseline was
-        # built against a different table state, and that is worth saying.
-        n_gone = int(len(np.setdiff1d(baseline, current, assume_unique=True)))
-        if n_gone:
-            print(f"WARNING:  {n_gone:,} baseline oids are no longer over the cut")
+    # --- label it against the run's list ------------------------------------
+    # Nothing here changes the tail. It answers "how much of this did the run
+    # never see at all", which is the difference between a tail that refreshes
+    # stale classifications and one that is mostly objects born since.
+    baseline_note, n_new, n_updated = "not read", None, None
+    if Path(args.baseline).exists():
+        baseline = np.load(args.baseline).astype(np.int64)
+        baseline.sort()
+        baseline_note = f"{len(baseline):,} oids from {args.baseline}"
+        if args.run_dir:
+            baseline_note += " -- " + check_baseline_fingerprint(baseline, Path(args.run_dir))
+        in_base = np.isin(tail, baseline, assume_unique=True)
+        n_new, n_updated = int((~in_base).sum()), int(in_base.sum())
+        print(f"baseline: {baseline_note}")
+        print(f"          {n_new:,} never processed, {n_updated:,} processed before "
+              "(light curve grew)")
+    else:
+        print(f"baseline: {args.baseline} not found -- tail not labelled")
 
-    print(f"new:      {len(new):,} oids never processed")
-    print(f"updated:  {len(updated):,} oids processed before, light curve grew")
-
-    tail = np.union1d(new, updated).astype(np.int64)
-    print(f"tail:     {len(tail):,} oids")
+    print(f"tail:     {len(tail):,} oids to process")
 
     report = {
         "schema": db.SCHEMA, "min_n_det": args.min_n_det,
-        "baseline": os.path.abspath(args.baseline), "baseline_n": int(len(baseline)),
-        "baseline_sha1": sha1_of(baseline), "baseline_check": fp_note,
         "since_mjd": since_mjd, "updated_since": args.updated_since,
         "drop_covered": bool(args.drop_covered), "n_covered_dropped": n_covered,
-        "full_diff": not args.no_full_diff, "current_n": n_current, "n_gone": n_gone,
-        "n_changed": int(len(changed_oids)),
-        "n_new": int(len(new)), "n_updated": int(len(updated)),
+        "baseline": baseline_note, "n_new": n_new, "n_updated": n_updated,
         "n_tail": int(len(tail)), "tail_sha1": sha1_of(tail),
         "out": os.path.abspath(args.out),
     }
@@ -320,8 +289,7 @@ def main():
         print("\n--dry-run: nothing written\n" + json.dumps(report, indent=2))
         return 0
     if not len(tail):
-        print("\nnothing to do: the catalogue has not moved since the baseline. "
-              "Nothing written.")
+        print("\nnothing to do: no object has data past that date. Nothing written.")
         return 0
 
     out = Path(args.out)
