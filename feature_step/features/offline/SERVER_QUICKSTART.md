@@ -124,24 +124,34 @@ that could pick them up.
 | setup reports missing privileges | See the `GRANT`s in §4 of the runbook. `USAGE` on the schema is separate from the table grants and its absence makes them dead. |
 | `no AllWISE` far above ~14% | Xwave is returning empty, not the sky. Check §6 of the runbook before trusting the classifications. |
 
-## Step 12 — the tail run (what the full run did not cover)
+## Step 12 — the tail run (what the full run does not cover)
 
-`run.npy` is a **snapshot**, not a window: `select_oids` has no date filter, so
-objects that entered `object` or crossed the `n_det` cut after that file was
-built are absent from the run and nothing reports their absence
-([`BHRF_RUN_RESULTS.md` §5](./BHRF_RUN_RESULTS.md)). To process only those,
-diff the catalogue against the baseline and run the difference.
+`run.npy` is a **snapshot**, not a window ([`BHRF_RUN_RESULTS.md`
+§5](./BHRF_RUN_RESULTS.md)), so the run misses two different things and they
+need two different queries:
+
+* **new** — objects absent from `run.npy`: they did not exist, or had not
+  reached `n_det >= 2`, when the file was built. Found by diffing a fresh full
+  selection against the baseline. One scan of `object`, ~an hour.
+* **changed** — objects the run *did* process whose light curve has grown since.
+  Their `feature` and `probability` rows were computed from a shorter curve and
+  are stale. Found with `object.lastmjd > <date>`, which rides
+  `ix_object_lastmjd` and takes minutes.
+
+`offline_tail_oids.py` produces both, unions them, and writes the `.npy` that
+`offline_run_batch.py --oid-file` consumes.
 
 ```bash
-# 12a — what the tail would be. Queries the DB, writes nothing. Two table scans
-#       if --since-date is given, one if not.
-poetry run python scripts/offline_tail_oids.py --dry-run --run-dir $RUN/bhrf_run
+# 12a — what the tail would be. Queries, writes nothing. 61266.52 is the run's
+#       data horizon: everything past it is data the run could not have seen.
+poetry run python scripts/offline_tail_oids.py --dry-run \
+    --run-dir $RUN/bhrf_run --since-mjd 61266.52
 
 # 12b — the list. --run-dir checks run.npy against the finished run's run.json
-#       fingerprint: diffing against a rebuilt baseline gives the wrong tail.
+#       fingerprint: a rebuilt baseline gives the wrong tail, silently.
 poetry run python scripts/offline_tail_oids.py \
     --baseline features/offline/oids/run.npy --run-dir $RUN/bhrf_run \
-    --out $RUN/oids/tail.npy
+    --since-mjd 61266.52 --out $RUN/oids/tail.npy
 
 # 12c — the run. A FRESH --out-dir, and no --max-units.
 export MODEL_PATH=$PWD/features/offline/models/hierarchical_random_forest_model.pkl
@@ -151,24 +161,44 @@ poetry run python scripts/offline_run_batch.py \
     --load-db --write-credentials features/offline/credentials.json --no-shards
 ```
 
-**New objects, or also updated ones?** By default the tail is *new* oids only —
-over the cut today, absent from the baseline. Objects the run already processed
-whose light curve has since grown carry stale features and probabilities, and
-they are a different (much larger) set. Add `--since-date 2026-08-14` — the
-run's data horizon — to fold in every baseline oid with `object.lastmjd` past
-that date. Reprocessing them is safe: `feature`, `probability` and `xmatch` all
-write `ON CONFLICT ... DO UPDATE`, so the second pass overwrites its own rows.
+**Which date signal.** `--since-mjd` / `--since-date` filter `object.lastmjd`,
+the MJD of the last *detection* — "observed again after that date". That is the
+one to use, and the run's horizon (MJD 61266.52 = 2026-08-14) is the date that
+makes the tail exactly "what the run could not have seen".
+
+`--updated-since YYYY-MM-DD` filters `object.updated_date` instead, the day the
+magstats scribe last wrote the row. It is the only way to see a **backfill** —
+data that arrived recently but whose MJD is old, which the `lastmjd` filter
+cannot detect. It costs a sequential scan (the column is a `Date` with no index)
+and is NULL for rows never updated since insert, so use it *in addition to* a
+lastmjd filter when you suspect one, not instead of it.
+
+**`--drop-covered` is the exact check.** `probability.lastmjd` stores the MJD
+the run classified each object at, so `object.lastmjd > probability.lastmjd` is
+per-object truth about staleness, with no assumption about dates. The lookup
+rides the hash index on `probability.oid` and only touches the candidates, so it
+is cheap. It is off by default because `probability.lastmjd` is
+`max(detections, forced photometry)` while `object.lastmjd` counts detections
+only: an object whose forced photometry runs past its last detection can be
+dropped even though a new detection arrived. Off, the tail is a superset; on, it
+is tighter and may miss those.
+
+**`--no-full-diff` makes it minutes.** It skips the full-catalogue selection and
+takes new oids from the changed set alone. What it misses is a new object all of
+whose detections predate `--since` — a backfilled object. Fine for a daily tail,
+not for the first one after a long gap.
+
+**Reprocessing is safe.** `feature`, `probability` and `xmatch` all write
+`ON CONFLICT ... DO UPDATE`, so a second pass over an object overwrites its rows
+rather than duplicating them. Objects the run skipped as *unclassifiable* (6.9M
+of them) have no `probability` row at all; they are kept by `--drop-covered`
+precisely because new detections may have pushed them over the threshold.
+
+**`--min-n-det` must match the baseline's cut** (default 2, same as
+`offline_setup.py`). A different value compares two different questions.
 
 **The fresh `--out-dir` is not optional.** Unit index N means
 `oids[N*unit_size : (N+1)*unit_size]` of *one specific array*. Pointing the tail
-at `$RUN/bhrf_run` makes `run.json` refuse the resume (correctly) — and
+at `$RUN/bhrf_run` makes `run.json` refuse the resume (correctly), and
 `--force-resume` there would mark tail units as done against the full run's
 indices.
-
-**`--min-n-det` must match the baseline's cut.** The default is 2, the same as
-`offline_setup.py`. A different value compares two different questions and the
-diff is meaningless.
-
-**If step 12a reports `0 new`, stop.** `object` had received no rows since
-2026-08-14 as of the run; an empty tail means the table still has not moved, and
-the script writes nothing rather than leaving an empty list behind.
