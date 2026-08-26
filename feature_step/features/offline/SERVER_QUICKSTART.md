@@ -123,3 +123,52 @@ that could pick them up.
 | `MODEL_PATH env var is required to load the model` | Step 6b was skipped, or you are in a shell that never had it — a fresh `tmux` window included. |
 | setup reports missing privileges | See the `GRANT`s in §4 of the runbook. `USAGE` on the schema is separate from the table grants and its absence makes them dead. |
 | `no AllWISE` far above ~14% | Xwave is returning empty, not the sky. Check §6 of the runbook before trusting the classifications. |
+
+## Step 12 — the tail run (what the full run did not cover)
+
+`run.npy` is a **snapshot**, not a window: `select_oids` has no date filter, so
+objects that entered `object` or crossed the `n_det` cut after that file was
+built are absent from the run and nothing reports their absence
+([`BHRF_RUN_RESULTS.md` §5](./BHRF_RUN_RESULTS.md)). To process only those,
+diff the catalogue against the baseline and run the difference.
+
+```bash
+# 12a — what the tail would be. Queries the DB, writes nothing. Two table scans
+#       if --since-date is given, one if not.
+poetry run python scripts/offline_tail_oids.py --dry-run --run-dir $RUN/bhrf_run
+
+# 12b — the list. --run-dir checks run.npy against the finished run's run.json
+#       fingerprint: diffing against a rebuilt baseline gives the wrong tail.
+poetry run python scripts/offline_tail_oids.py \
+    --baseline features/offline/oids/run.npy --run-dir $RUN/bhrf_run \
+    --out $RUN/oids/tail.npy
+
+# 12c — the run. A FRESH --out-dir, and no --max-units.
+export MODEL_PATH=$PWD/features/offline/models/hierarchical_random_forest_model.pkl
+poetry run python scripts/offline_run_batch.py \
+    --oid-file $RUN/oids/tail.npy --out-dir $RUN/bhrf_tail \
+    --workers 64 --features \
+    --load-db --write-credentials features/offline/credentials.json --no-shards
+```
+
+**New objects, or also updated ones?** By default the tail is *new* oids only —
+over the cut today, absent from the baseline. Objects the run already processed
+whose light curve has since grown carry stale features and probabilities, and
+they are a different (much larger) set. Add `--since-date 2026-08-14` — the
+run's data horizon — to fold in every baseline oid with `object.lastmjd` past
+that date. Reprocessing them is safe: `feature`, `probability` and `xmatch` all
+write `ON CONFLICT ... DO UPDATE`, so the second pass overwrites its own rows.
+
+**The fresh `--out-dir` is not optional.** Unit index N means
+`oids[N*unit_size : (N+1)*unit_size]` of *one specific array*. Pointing the tail
+at `$RUN/bhrf_run` makes `run.json` refuse the resume (correctly) — and
+`--force-resume` there would mark tail units as done against the full run's
+indices.
+
+**`--min-n-det` must match the baseline's cut.** The default is 2, the same as
+`offline_setup.py`. A different value compares two different questions and the
+diff is meaningless.
+
+**If step 12a reports `0 new`, stop.** `object` had received no rows since
+2026-08-14 as of the run; an empty tail means the table still has not moved, and
+the script writes nothing rather than leaving an empty list behind.
