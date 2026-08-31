@@ -564,21 +564,18 @@ class ProbabilityArchivalCommand(Command):
                 row["classifier_version_id"],
                 row["class_id"],
             )
-            if key not in dedup or row["lastmjd"] > dedup[key]["lastmjd"]:
+            # Stamp classifiers archive the FIRST stamp, so keep the earliest
+            # alert in the batch and never overwrite an existing row.
+            if key not in dedup or row["lastmjd"] < dedup[key]["lastmjd"]:
                 dedup[key] = row
 
         records = list(dedup.values())
 
         stmt = insert(ProbabilityArchive)
-        upsert = stmt.on_conflict_do_update(
+        insert_only = stmt.on_conflict_do_nothing(
             constraint="pk_probability_archive",
-            set_={
-                "probability": stmt.excluded.probability,
-                "ranking": stmt.excluded.ranking,
-                "update_date": func.now(),
-            },
         )
-        session.connection().execute(upsert, records)
+        session.connection().execute(insert_only, records)
 
 
 class ProbabilityCommand(Command):
