@@ -65,7 +65,7 @@ class TestFilterMessagesBadOid:
     # digits, so its validity rests on a producer convention, not the wire
     # format. Records with these oids deserialize fine and then crash int().
     # One such message must not take down the whole batch (design §8): drop
-    # it here, before it ever reaches _collapse_by_oid.
+    # it here, before it ever reaches collapse_by_oid.
     @pytest.mark.parametrize("bad_oid", ["ZTF21abcdefg", "", "1e5"])
     def test_drops_messages_with_unparseable_oid(self, bad_oid):
         kept = input_dto.filter_messages([message(oid=bad_oid)])
@@ -77,8 +77,8 @@ class TestFilterMessagesBadOid:
         kept = input_dto.filter_messages(msgs)
 
         assert [m["oid"] for m in kept] == ["2"]
-        frame = input_dto.build_features_frame(kept)
-        lastmjd = input_dto.lastmjd_by_oid(kept)
+        frame = input_dto.build_features_frame(input_dto.collapse_by_oid(kept))
+        lastmjd = input_dto.lastmjd_by_oid(input_dto.collapse_by_oid(kept))
         assert list(frame.index) == [2]
         assert 2 in lastmjd
 
@@ -100,7 +100,7 @@ class TestBuildFeaturesFrame:
             message(oid="67890", features={"a": 3.0, "b": 4.0}),
         ]
 
-        frame = input_dto.build_features_frame(msgs)
+        frame = input_dto.build_features_frame(input_dto.collapse_by_oid(msgs))
 
         assert list(frame.index) == [12345, 67890]
         assert frame.index.name == "oid"
@@ -108,12 +108,12 @@ class TestBuildFeaturesFrame:
         assert frame.loc[67890, "a"] == 3.0
 
     def test_oid_is_cast_to_int_not_left_as_string(self):
-        frame = input_dto.build_features_frame([message(oid="12345")])
+        frame = input_dto.build_features_frame(input_dto.collapse_by_oid([message(oid="12345")]))
         assert frame.index[0] == 12345
         assert not isinstance(frame.index[0], str)
 
     def test_empty_batch_gives_an_empty_frame(self):
-        frame = input_dto.build_features_frame([])
+        frame = input_dto.build_features_frame(input_dto.collapse_by_oid([]))
         assert isinstance(frame, pd.DataFrame)
         assert len(frame) == 0
         assert frame.index.name == "oid"
@@ -129,7 +129,7 @@ class TestBuildFeaturesFrame:
             message(oid="2", features={"a": 3.0}),
         ]
 
-        frame = input_dto.build_features_frame(msgs)
+        frame = input_dto.build_features_frame(input_dto.collapse_by_oid(msgs))
 
         assert list(frame.index) == [1, 2]
         assert frame.loc[1, "a"] == 2.0  # last message wins
@@ -138,19 +138,19 @@ class TestBuildFeaturesFrame:
 class TestLastmjdByOid:
     def test_max_mjd_over_detections(self):
         msgs = [message(oid="1", detections=[detection(60000.0), detection(60010.5)])]
-        assert input_dto.lastmjd_by_oid(msgs) == {1: 60010.5}
+        assert input_dto.lastmjd_by_oid(input_dto.collapse_by_oid(msgs)) == {1: 60010.5}
 
     def test_forced_photometry_counts_toward_lastmjd(self):
         msgs = [message(oid="1", detections=[detection(60000.0), detection(60020.0, forced=True)])]
-        assert input_dto.lastmjd_by_oid(msgs) == {1: 60020.0}
+        assert input_dto.lastmjd_by_oid(input_dto.collapse_by_oid(msgs)) == {1: 60020.0}
 
     def test_no_jd_offset_is_subtracted(self):
         msgs = [message(oid="1", detections=[detection(60000.0)])]
-        assert input_dto.lastmjd_by_oid(msgs)[1] == pytest.approx(60000.0)
+        assert input_dto.lastmjd_by_oid(input_dto.collapse_by_oid(msgs))[1] == pytest.approx(60000.0)
 
     def test_message_without_detections_is_absent(self):
         msgs = [message(oid="1", detections=[]), message(oid="2")]
-        assert input_dto.lastmjd_by_oid(msgs) == {2: 60000.0}
+        assert input_dto.lastmjd_by_oid(input_dto.collapse_by_oid(msgs)) == {2: 60000.0}
 
     def test_none_mjd_is_skipped(self):
         msgs = [
@@ -159,7 +159,7 @@ class TestLastmjdByOid:
                 detections=[detection(60000.0), {"mjd": None, "forced": False, "candid": "c", "oid": "1"}],
             )
         ]
-        assert input_dto.lastmjd_by_oid(msgs) == {1: 60000.0}
+        assert input_dto.lastmjd_by_oid(input_dto.collapse_by_oid(msgs)) == {1: 60000.0}
 
     @pytest.mark.parametrize("bad_mjd", [float("nan"), float("inf")])
     def test_nan_mjd_does_not_leak_through_regardless_of_order(self, bad_mjd):
@@ -170,7 +170,7 @@ class TestLastmjdByOid:
         # accepted by Postgres double precision and would win the scribe's
         # highest-lastmjd dedup forever.
         msgs = [message(oid="1", detections=[detection(bad_mjd), detection(60000.0)])]
-        assert input_dto.lastmjd_by_oid(msgs) == {1: 60000.0}
+        assert input_dto.lastmjd_by_oid(input_dto.collapse_by_oid(msgs)) == {1: 60000.0}
 
     def test_oids_with_no_usable_mjd_are_logged_once_per_batch(self, caplog):
         # A batch-wide flood of per-message warnings would bury the signal in
@@ -179,7 +179,7 @@ class TestLastmjdByOid:
         msgs = [message(oid="1", detections=[]), message(oid="2", detections=[])]
 
         with caplog.at_level("WARNING"):
-            result = input_dto.lastmjd_by_oid(msgs)
+            result = input_dto.lastmjd_by_oid(input_dto.collapse_by_oid(msgs))
 
         assert result == {}
         warnings = [r for r in caplog.records if r.levelname == "WARNING"]
@@ -190,16 +190,17 @@ class TestLastmjdByOid:
 class TestDuplicateOidConsistency:
     def test_features_and_lastmjd_derive_from_the_same_winning_message(self):
         # The winning message for oid 7 (last by arrival order) has an empty
-        # detections list. build_features_frame and lastmjd_by_oid must agree
-        # on which message won: the emitted row must not pair the winner's
-        # features with the loser's stale lastmjd.
+        # detections list. Both derive from ONE collapse — the way step.execute
+        # calls them — so the emitted row cannot pair the winner's features with
+        # the loser's stale lastmjd.
         msgs = [
             message(oid="7", features={"a": 1.0}, detections=[detection(60000.0)]),
             message(oid="7", features={"a": 2.0}, detections=[]),
         ]
 
-        frame = input_dto.build_features_frame(msgs)
-        lastmjd = input_dto.lastmjd_by_oid(msgs)
+        collapsed = input_dto.collapse_by_oid(msgs)
+        frame = input_dto.build_features_frame(collapsed)
+        lastmjd = input_dto.lastmjd_by_oid(collapsed)
 
         assert frame.loc[7, "a"] == 2.0  # winner's features
         assert 7 not in lastmjd  # winner has no detections -> absent, not msg1's stale value
@@ -209,7 +210,7 @@ class TestCreateInputDto:
     def test_features_only_dto(self):
         pytest.importorskip("alerce_classifiers.base.factories")
 
-        dto = input_dto.create_input_dto([message(oid="1", features={"a": 1.0})])
+        dto = input_dto.create_input_dto(input_dto.collapse_by_oid([message(oid="1", features={"a": 1.0})]))
 
         assert list(dto.features.index) == [1]
         assert len(dto.detections) == 0

@@ -50,14 +50,14 @@ def filter_messages(messages: list, min_detections=None) -> list:
     return kept
 
 
-def _collapse_by_oid(messages: list) -> dict:
+def collapse_by_oid(messages: list) -> dict:
     """{oid: winning message}, one pass, oid cast to int.
 
     Two messages for one oid in a batch are an update, not a duplicate.
     feature_step produces keyed by `str(oid)`, so they land on one partition in
     offset order and the last by arrival is the newest — that is why it wins.
 
-    `build_features_frame` and `lastmjd_by_oid` both derive from this so they
+    Called once per batch; every consumer below takes the result, so they
     cannot disagree about which message won for a given oid.
     """
     collapsed = {}
@@ -66,7 +66,7 @@ def _collapse_by_oid(messages: list) -> dict:
     return collapsed
 
 
-def build_features_frame(messages: list) -> pd.DataFrame:
+def build_features_frame(collapsed: dict) -> pd.DataFrame:
     """One row per distinct oid, indexed by the bigint oid, columns = feature names.
 
     The multisurvey feature_step already emits the bigint masterid in `oid` (the
@@ -77,12 +77,11 @@ def build_features_frame(messages: list) -> pd.DataFrame:
     contract: two rows for one oid would collide on the probability primary key,
     and the scribe's highest-lastmjd dedup cannot break a tie of equal lastmjd.
     """
-    if not messages:
+    if not collapsed:
         frame = pd.DataFrame()
         frame.index.name = "oid"
         return frame
 
-    collapsed = _collapse_by_oid(messages)
     frame = pd.DataFrame(
         [message["features"] for message in collapsed.values()],
         index=list(collapsed.keys()),
@@ -91,7 +90,7 @@ def build_features_frame(messages: list) -> pd.DataFrame:
     return frame
 
 
-def lastmjd_by_oid(messages: list) -> dict:
+def lastmjd_by_oid(collapsed: dict) -> dict:
     """{oid: max detection mjd} for the same winning message as build_features_frame.
 
     Already MJD — do NOT subtract 2400000.5. `detections` carries forced
@@ -101,7 +100,6 @@ def lastmjd_by_oid(messages: list) -> dict:
     Non-finite mjds are filtered before `max`, not left for it to resolve: `max`
     is order-sensitive with NaN (`max(nan, x)` is `nan`, `max(x, nan)` is `x`).
     """
-    collapsed = _collapse_by_oid(messages)
     lastmjd = {}
     missing_oids = []
     for oid, message in collapsed.items():
@@ -127,9 +125,9 @@ def lastmjd_by_oid(messages: list) -> dict:
     return lastmjd
 
 
-def create_input_dto(messages: list):
+def create_input_dto(collapsed: dict):
     """Features-only InputDTO for the batch."""
     from alerce_classifiers.base.factories import input_dto_factory
 
     empty = pd.DataFrame()
-    return input_dto_factory(empty, empty, build_features_frame(messages), empty, empty)
+    return input_dto_factory(empty, empty, build_features_frame(collapsed), empty, empty)

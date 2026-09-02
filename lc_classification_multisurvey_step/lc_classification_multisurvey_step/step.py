@@ -18,7 +18,7 @@ from apf.core.step import GenericStep
 from alerce_classifiers.base.dto import OutputDTO
 
 from .db.db import PSQLConnection, resolve_classifiers
-from .input_dto import create_input_dto, filter_messages, lastmjd_by_oid
+from .input_dto import collapse_by_oid, create_input_dto, filter_messages, lastmjd_by_oid
 from .output_parser import MultisurveyOutputParser
 from .probabilities import build_probability_rows, head_names
 
@@ -72,8 +72,12 @@ class LateClassifierMultisurvey(GenericStep):
         if not kept:
             return self._empty_output(), {}
 
+        # Collapsed once here so the features frame and the lastmjd map cannot
+        # disagree about which message won for a duplicated oid.
+        collapsed = collapse_by_oid(kept)
+
         try:
-            dto = create_input_dto(kept)
+            dto = create_input_dto(collapsed)
         except Exception as error:
             self.logger.error("Error building the input DTO")
             self.logger.error(error)
@@ -89,7 +93,7 @@ class LateClassifierMultisurvey(GenericStep):
         if output_dto is None:
             return self._empty_output(), {}
 
-        return output_dto, lastmjd_by_oid(kept)
+        return output_dto, lastmjd_by_oid(collapsed)
 
     def post_execute(self, result: Tuple[OutputDTO, dict]) -> Tuple[OutputDTO, dict]:
         """Build the probability rows, then write them to the scribe."""
