@@ -21,7 +21,12 @@ def set_logger(settings):
 
 def step_creator():
     if os.getenv("CONFIG_FROM_YAML", False):
-        settings = config_from_yaml_file("/config/config.yaml")
+        # CONFIG_YAML_PATH lets a local run point at a checked-out yaml, the way
+        # feature_step/scripts/run_step.py does. The default is the path the
+        # chart mounts the ConfigMap at, so the container is unaffected.
+        settings = config_from_yaml_file(
+            os.getenv("CONFIG_YAML_PATH", "/config/config.yaml")
+        )
     else:
         from settings import config
 

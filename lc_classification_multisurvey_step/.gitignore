@@ -7,3 +7,4 @@ htmlcov/
 config.yaml
 config.yml
 config.*.yaml
+local_config*.yaml
