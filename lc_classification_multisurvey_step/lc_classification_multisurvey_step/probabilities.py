@@ -1,12 +1,9 @@
 """BHRF OutputDTO -> scribe-ready probability rows.
 
-Ported from the offline reference `features/offline/probability_writer.py`, with
-two deliberate changes (design doc §5):
-
-  - the offline builder is strictly per-oid and raises on a multi-row frame; this
-    one is batched, so it melts by oid;
-  - offline pins `CLASSIFIER_IDS = [5..9]`; here the ids come from the database
-    and only the head *names* are pinned (design doc §6).
+Ported from the offline `features/offline/probability_writer.py` with two
+changes (design doc §5): this one is batched (offline raises on a multi-row
+frame), and the classifier ids come from the database instead of offline's
+pinned `CLASSIFIER_IDS = [5..9]` — only the head *names* are pinned (§6).
 
 Pure: no database, no alerce_classifiers, no apf. `output_dto` is duck-typed —
 anything with `.probabilities` and `.hierarchical` works.
@@ -84,21 +81,16 @@ def build_probability_rows(
 ) -> list:
     """Batched BHRF OutputDTO -> scribe-ready probability row dicts (all 5 heads).
 
-    Parameters
-    ----------
-    output_dto : anything with `.probabilities` and `.hierarchical`, or None.
-    Caller contract: each head's frame must have a unique oid index. Duplicate
-    oids are not collapsed here and would emit rows colliding on the probability
-    primary key; de-duplication happens upstream when the features frame is built.
-    lastmjd_map : {oid: lastmjd}. An oid missing from it, or mapped to NaN, is
-        dropped from every head and logged once — `probability.lastmjd` is NOT
-        NULL.
-    classifier_ids : {classifier_name: classifier_id}, from the DB (design §6.1).
-    taxonomy_maps : {classifier_id: {class_name: class_id}}, from the DB.
+    Caller contract: each head's frame must have a unique oid index — duplicates
+    are not collapsed here and would collide on the probability primary key.
+    De-duplication happens upstream, in `input_dto.build_features_frame`.
 
-    Per design §8, problems detectable only per-batch are logged and drop the
-    affected (oid, head) rows rather than killing the batch. Startup problems are
-    the caller's job (`db.resolve_classifiers`).
+    `lastmjd_map` is {oid: lastmjd}; an oid missing from it is dropped from every
+    head, since `probability.lastmjd` is NOT NULL. `classifier_ids` and
+    `taxonomy_maps` come from the DB via `db.resolve_classifiers` (design §6.1).
+
+    Per design §8, per-batch problems drop the affected (oid, head) rows and are
+    logged rather than killing the batch.
     """
     if output_dto is None or output_dto.probabilities is None:
         return []
@@ -106,14 +98,9 @@ def build_probability_rows(
     version_smallint = classifier_version_to_smallint(version)
     rows = []
 
-    # `lastmjd_map` is the same object for all five heads, so an oid it cannot
-    # supply a usable `lastmjd` for is a batch-wide fact, not a per-head one.
-    # Resolved and logged once here; the per-head filter below only applies it.
-    # Computed inside the loop this emitted the identical oid list five times
-    # for one problem — the same reasoning §8 gives for hoisting the unknown-
-    # class check out of the per-oid loop, one level up.
-    # A NaN maps the same as a missing key: `probability.lastmjd` is NOT NULL,
-    # so both are unusable (§8).
+    # Batch-wide, not per-head: `lastmjd_map` is the same object for all five, so
+    # this is resolved and logged once and the per-head filter below only applies
+    # it. Inside the loop it logged the identical oid list five times.
     unusable_lastmjd = _oids_without_lastmjd(output_dto, lastmjd_map, base_name)
     if unusable_lastmjd:
         log.error(
@@ -158,19 +145,13 @@ def build_probability_rows(
             )
             continue
 
-        # NaN probabilities, on the same policy as `output_parser.parse` — the
-        # other consumer of these exact frames. `how="all"` first, not "any": an
-        # oid with a NaN in only *some* classes still has a valid winner and
-        # keeps it, ranking among the classes it does have; only an oid scored
-        # entirely NaN loses this head. Both are logged once per head, never per
-        # oid — a per-oid line is a thousand lines a batch.
-        #
-        # This is not cosmetic: `rank()` propagates NaN and the `.astype(int)`
-        # below then raises IntCastingNaNError, killing a whole batch over what
-        # §8 says should cost only the affected rows. Latent today, since
-        # `RandomForestPreprocessor.preprocess_features` fills NaNs before the
-        # model sees them, but it is the one place the two consumers of these
-        # frames would otherwise disagree about what is survivable.
+        # NaN probabilities, same policy as `output_parser.parse` — the other
+        # consumer of these frames. `how="all"`, not "any": an oid with a NaN in
+        # only some classes keeps its winner and ranks among the classes it has;
+        # only an oid scored entirely NaN loses the head. Not cosmetic: `rank()`
+        # propagates NaN and the `.astype(int)` below then raises
+        # IntCastingNaNError, killing the batch over what §8 says should cost
+        # only these rows. Logged once per head, never per oid.
         scored = frame.dropna(how="all")
         unscored = len(frame) - len(scored)
         if unscored:

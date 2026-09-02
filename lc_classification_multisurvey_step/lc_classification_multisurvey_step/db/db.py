@@ -1,15 +1,12 @@
 """Read-only database access for the multisurvey LC classification step.
 
-Two queries, both run once at startup: classifier names -> ids, and classifier
-ids -> {class_name: class_id}. The step never writes to the database; the scribe
-owns the probability upsert (design doc §2, decision 3).
+Two queries, both run once at startup by `resolve_classifiers`, which also
+enforces the §8 fail-fast assertions: classifier names -> ids, and classifier
+ids -> {class_name: class_id}. The step never writes; the scribe owns the
+probability upsert (design doc §2, decision 3).
 
-`resolve_classifiers` is the startup entry point: it runs both queries and
-enforces the design doc's §8 fail-fast assertions before the step is allowed
-to start.
-
-Unlike stamp_classifier_2025_multisurvey_step's reader, neither query swallows
-exceptions: an unreachable database must not look like an unseeded table.
+Unlike the stamp step's reader, neither query swallows exceptions: an
+unreachable database must not look like an unseeded table.
 """
 import logging
 from contextlib import contextmanager
@@ -27,13 +24,10 @@ log = logging.getLogger(__name__)
 def get_db_url(config: dict) -> URL:
     """Build the connection URL, escaping the credentials.
 
-    `URL.create` rather than f-string interpolation (which the sibling step
-    still uses) because the password is not URL-safe in general: an `@` in it
-    ends the userinfo early, so psycopg2 would try to resolve everything after
-    it as the host, and `/`, `:`, `?` and `#` corrupt the URL in related ways.
-    A password is a secret, not an identifier, so nothing constrains its
-    alphabet. `URL.create` escapes each component instead of pasting them
-    together, and never renders the password in `repr()`.
+    `URL.create`, not the f-string the sibling steps use: a password has no
+    constrained alphabet, and an `@` in it ends the userinfo early so psycopg2
+    resolves the rest as the host (`/`, `:`, `?`, `#` corrupt it similarly).
+    `URL.create` escapes each component and never renders the password in repr.
     """
     return URL.create(
         drivername="postgresql",
@@ -142,11 +136,10 @@ def resolve_classifiers(classifier_names: list, model_version: str, psql_connect
 
     Returns ({classifier_name: classifier_id}, {classifier_id: {class_name: class_id}}).
 
-    Implements the design doc's §8 startup assertions. All five raise: an
-    unparseable, unseeded, partially-seeded, ambiguous or version-skewed
-    classifier/taxonomy is a deploy error, and a step that started anyway would
-    silently drop every probability it produced or write it against the wrong
-    classifier.
+    The five §8 startup assertions, all fatal: an unparseable, unseeded,
+    partially-seeded, ambiguous or version-skewed classifier/taxonomy is a deploy
+    error, and a step that started anyway would drop every probability or write
+    it against the wrong classifier.
 
       1. MODEL_VERSION parses to a non-zero version smallint (here)
       2. every head name resolved to a row          (here)

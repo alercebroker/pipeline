@@ -37,21 +37,12 @@ def config():
         "SCHEMA_PATH": os.getenv("SCRIBE_SCHEMA_PATH", scribe_schema_path),
     }
 
-    # No downstream producer until design §9 lands. The payload `output_parser`
-    # emits is an explicit placeholder: there is no
-    # schemas/lc_classification_multisurvey_step/*.avsc for it and nothing should
-    # be pointed at that topic until the schema is designed. So the switch to
-    # turn a real producer on deliberately does not exist yet.
-    #
-    # Offering it would be worse than withholding it. A KafkaProducer needs a
-    # SCHEMA_PATH (apf `producers/kafka.py` reads config["SCHEMA_PATH"]
-    # unconditionally), and there is no schema to point it at — so the only
-    # config this step could build would raise KeyError('SCHEMA_PATH') inside
-    # __init__, crashlooping the pod before it consumes anything, with a message
-    # naming neither the step nor the variable the operator set. An operator who
-    # finds PRODUCER_SERVER in settings.py has been promised something that
-    # cannot work. Without it, apf falls back to its DefaultProducer and the step
-    # simply produces nothing downstream, which is the intended §9 behaviour.
+    # No downstream producer until design §9 lands: there is no
+    # schemas/lc_classification_multisurvey_step/*.avsc, and a KafkaProducer
+    # would raise KeyError('SCHEMA_PATH') in __init__ and crashloop the pod. Left
+    # empty, apf falls back to its DefaultProducer and nothing is produced
+    # downstream, which is the intended §9 behaviour. Hence no PRODUCER_SERVER
+    # switch: it could not work.
     PRODUCER_CONFIG = {}
 
     METRICS_CONFIG = {}

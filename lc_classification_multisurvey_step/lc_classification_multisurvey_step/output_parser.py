@@ -1,12 +1,10 @@
-"""PLACEHOLDER downstream producer payload.
+"""PLACEHOLDER downstream producer payload — design doc §9.
 
-Decision 5 of the design doc is "new multisurvey output schema", but its shape is
-deferred — see §9. This emits a minimal per-oid message (oid, classifier name and
-version, and the top-ranked class per head) so the step's produce stage is wired
-end to end. It is NOT a contract: no schemas/lc_classification_multisurvey_step/
-avsc exists, and nothing downstream should be pointed at this topic until the
-schema is designed. Deferring is safe because the scribe is the real output path
-(decision 3).
+Emits a minimal per-oid message (oid, classifier name and version, top-ranked
+class per head) so the produce stage is wired end to end. NOT a contract: no
+schemas/lc_classification_multisurvey_step/*.avsc exists and nothing should be
+pointed at this topic until §9 lands. Safe to defer because the scribe is the
+real output path (decision 3).
 
 Duck-typed over the OutputDTO like probabilities.py, so it needs no
 alerce_classifiers import.
@@ -49,11 +47,9 @@ class MultisurveyOutputParser:
         if len(model_output.probabilities) == 0:
             return KafkaOutput([])
 
-        # Rank each head once for the whole frame. The per-oid form (a .loc plus
+        # Rank each head once for the whole frame: the per-oid form (a .loc plus
         # an idxmax per oid per head) costs ~24x more on a 1000-object batch
-        # (344 ms vs 15 ms, same output).
-        # Logged once per head, never per oid: a per-oid line is a thousand
-        # lines a batch.
+        # (344 ms vs 15 ms, same output). Logged once per head, never per oid.
         heads = []
         for name, frame in iter_head_frames(model_output, base_name):
             # A head that scored nobody is routine (no oid took that branch),
@@ -61,8 +57,7 @@ class MultisurveyOutputParser:
             if frame is None or frame.shape[0] == 0:
                 continue
             # Rows but no classes is not routine. The dropna below would empty
-            # this frame anyway; the explicit guard is here to name the case and
-            # say so, rather than let a broken head vanish quietly.
+            # the frame anyway; this guard is here to name the case in the log.
             if frame.shape[1] == 0:
                 log.warning(
                     "head '%s': frame has no classes; dropping the head for all %d oids "
@@ -72,8 +67,7 @@ class MultisurveyOutputParser:
                 )
                 continue
             # An oid scored entirely NaN has no argmax: pandas 2 returns NaN (an
-            # opaque KeyError downstream) and pandas 3 raises for the whole head.
-            # Dropping those rows leaves just those oids uncovered by this head.
+            # opaque KeyError downstream), pandas 3 raises for the whole head.
             # how="all", not "any": an oid with a NaN in only some classes still
             # has a valid winner and must keep it.
             scored = frame.dropna(how="all")
@@ -90,7 +84,7 @@ class MultisurveyOutputParser:
             if frame.shape[0] == 0:
                 continue
             # Plain dicts, not Series: the per-oid lookup below is then a hash
-            # rather than a pandas label lookup, which is ~4x cheaper again.
+            # rather than a pandas label lookup, ~4x cheaper again.
             heads.append(
                 (name, frame.idxmax(axis=1).to_dict(), frame.max(axis=1).to_dict())
             )

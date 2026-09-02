@@ -36,15 +36,10 @@ class LateClassifierMultisurvey(GenericStep):
         self.sid = int(model_config.get("SID", 0))
         self.min_detections = model_config.get("MIN_DETECTIONS")
 
-        # Startup, in order: names -> ids, then ids -> taxonomy. Both are
-        # read-only and cached; the connection is not used again. Any of the four
-        # §8 assertions failing raises here and the step refuses to start.
-        #
-        # NullPool because this connection serves exactly two queries and is then
-        # idle for the life of the consumer. With the default QueuePool the
-        # startup checkout is returned to the pool rather than closed, holding an
-        # idle Postgres connection per replica against max_connections for
-        # nothing. correction_multisurvey_step/step.py does the same.
+        # Two read-only startup queries, then the connection is idle for the life
+        # of the consumer — hence NullPool, so no idle Postgres connection is held
+        # per replica (correction_multisurvey_step does the same). Any §8
+        # assertion failing raises here and the step refuses to start.
         self.db = PSQLConnection(config["PSQL_CONFIG"], poolclass="NullPool")
         self.classifier_ids, self.taxonomy_maps = resolve_classifiers(
             head_names(self.classifier_name), self.model_version, self.db
@@ -118,14 +113,10 @@ class LateClassifierMultisurvey(GenericStep):
         Envelope matches stamp_classifier_2025_multisurvey_step and is accepted by
         scribe_multisurvey's `decode.command_factory` (design doc §7).
 
-        No explicit flush here. apf's `_post_produce` drains every producer it
-        finds on the step before the consumer offset is committed, and the
-        `KafkaProducer.flush` it calls honours `FLUSH_TIMEOUT` and raises
-        `BufferError` rather than committing over undelivered writes. Reaching
-        past it to `self.scribe_producer.producer.flush()` — as the older sibling
-        steps do — bypasses both guards: it ignores `FLUSH_TIMEOUT`, blocks for
-        the full `message.timeout.ms` when the broker is down, and reports the
-        outage as a `post_execute` error.
+        No explicit flush: apf's `_post_produce` drains every producer before the
+        offset is committed, honouring FLUSH_TIMEOUT. Do not reach past it to
+        `self.scribe_producer.producer.flush()` as the sibling steps do — that
+        blocks for the full `message.timeout.ms` when the broker is down.
         """
         if not rows:
             return
@@ -146,10 +137,8 @@ class LateClassifierMultisurvey(GenericStep):
         ).value
 
     def tear_down(self):
-        # No `else: self.consumer.__del__()`. `__del__` and `teardown` are defined
-        # only on KafkaConsumer, so the sibling steps' else-branch raises
-        # AttributeError on a JSON/AVRO replay consumer, which `_tear_down`
-        # re-raises before `_write_success()` runs. Nothing is lost by omitting
-        # it: KafkaConsumer.__del__ only calls teardown() anyway.
+        # No `else: self.consumer.__del__()`: that branch raises AttributeError on
+        # a JSON/AVRO replay consumer, and KafkaConsumer.__del__ only calls
+        # teardown() anyway.
         if isinstance(self.consumer, KafkaConsumer):
             self.consumer.teardown()
