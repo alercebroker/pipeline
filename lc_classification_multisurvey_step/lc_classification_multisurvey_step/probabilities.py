@@ -13,7 +13,6 @@ import logging
 log = logging.getLogger(__name__)
 
 DEFAULT_CLASSIFIER_NAME = "lc_classifier_BHRF_forced_phot"
-DEFAULT_CLASSIFIER_VERSION = "2.1.0"
 
 # Positional against the model's hierarchical output; pinned, not configurable.
 HEAD_SUFFIXES = ("", "_top", "_transient", "_stochastic", "_periodic")
@@ -54,19 +53,18 @@ def _oids_without_lastmjd(output_dto, lastmjd_map: dict, base_name: str) -> set:
     NULL, so neither can be written (design §8). Scanned across the union of the
     heads because a child head can carry an oid the flat head does not.
     """
-    unusable = set()
+    oids = set()
     for _, frame in iter_head_frames(output_dto, base_name):
         if frame is None or len(frame) == 0:
             continue
-        for oid in frame.index.astype("int64"):
-            oid = int(oid)
-            if oid in unusable:
-                continue
-            value = lastmjd_map.get(oid)
-            # `value != value` is the NaN test; it holds for no other float.
-            if value is None or value != value:
-                unusable.add(oid)
-    return unusable
+        oids.update(int(oid) for oid in frame.index.astype("int64"))
+
+    # `value != value` is the NaN test; it holds for no other float.
+    return {
+        oid
+        for oid in oids
+        if lastmjd_map.get(oid) is None or lastmjd_map[oid] != lastmjd_map[oid]
+    }
 
 
 def build_probability_rows(
@@ -76,7 +74,7 @@ def build_probability_rows(
     taxonomy_maps: dict,
     *,
     base_name: str = DEFAULT_CLASSIFIER_NAME,
-    version: str = DEFAULT_CLASSIFIER_VERSION,
+    version: str,
     sid: int = 0,
 ) -> list:
     """Batched BHRF OutputDTO -> scribe-ready probability row dicts (all 5 heads).

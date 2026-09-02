@@ -8,7 +8,6 @@ def squidward_params(model_class: str):
         "CLASS": model_class,
         "CLASS_MAPPER": os.getenv("CLASS_MAPPER"),
         "PARAMS": {"model_path": os.getenv("MODEL_PATH")},
-        "NAME": model_class.split(".")[-1],
         "VERSION": os.getenv("MODEL_VERSION", "2.1.0"),
         "CLASSIFIER_NAME": os.getenv("CLASSIFIER_NAME", "lc_classifier_BHRF_forced_phot"),
         "SID": int(os.getenv("SID", 0)),
