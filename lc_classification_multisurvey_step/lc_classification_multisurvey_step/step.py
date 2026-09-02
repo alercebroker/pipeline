@@ -22,18 +22,6 @@ from .input_dto import create_input_dto, filter_messages, lastmjd_by_oid
 from .output_parser import MultisurveyOutputParser
 from .probabilities import build_probability_rows, head_names
 
-# Consecutive dropped batches before the log escalates to CRITICAL.
-#
-# Dropping a bad batch is what design §8 asks for, but every drop still commits
-# its offset, so a *persistent* fault — a broken lazy import inside
-# `create_input_dto`, say — consumes the topic at full speed, writes nothing,
-# and still reports healthy. One poison batch is routine and must not page
-# anyone; this many in a row is systemic and needs a human before the backlog
-# has to be replayed. At the default `consume.messages` of 100 this is ~500
-# objects discarded, which is small enough to catch early and large enough that
-# a single bad batch or a brief blip never trips it.
-CONSECUTIVE_DROP_ALERT = 5
-
 
 class LateClassifierMultisurvey(GenericStep):
     """BHRF classification over the multisurvey feature stream."""
@@ -72,145 +60,55 @@ class LateClassifierMultisurvey(GenericStep):
 
         self.step_parser = MultisurveyOutputParser()
 
-        # Batches dropped back-to-back; see CONSECUTIVE_DROP_ALERT.
-        self._consecutive_drops = 0
-        # Whether the batch in flight has already been dropped; see `pre_execute`.
-        self._batch_dropped = False
-
     @staticmethod
     def _empty_output() -> OutputDTO:
         return OutputDTO(pd.DataFrame(), {"top": pd.DataFrame(), "children": {}})
 
-    def pre_execute(self, messages: List[dict]) -> List[dict]:
-        """Passthrough; the batch marker for the drop accounting is set here.
-
-        The counter has to be reset by a batch that got all the way through, not
-        by one that merely got out of `execute`: with the reset sitting at the end
-        of `execute`, a fault in `post_execute` or `pre_produce` would be counted
-        and then immediately un-counted by the next batch's successful `execute`,
-        so the escalation could never fire for the very stages this marker was
-        added to cover. `pre_produce` clears the counter instead, and only if this
-        flag is still false. apf calls `pre_execute` first for every batch.
-        """
-        self._batch_dropped = False
-        return messages
-
-    def _record_drop(self, what: str, error: Exception) -> None:
-        """Log an unexpected failure and count it against the drop budget (§8).
-
-        The caller then yields whatever "nothing" means for its stage, so the step
-        produces nothing, commits, and moves on. Letting the exception escape
-        instead would only log and re-raise (apf `core/step.py`), exiting the
-        process with the offset uncommitted — Kafka then redelivers the same
-        batch, which fails identically, and the partition stalls forever on one
-        poison message.
-
-        The cost of that trade is that a *persistent* fault is silent: offsets
-        keep advancing and the step looks healthy. The drop counter and the
-        escalation below exist to make that visible, and are the reason dropping
-        is safe. This method must never raise — it runs on the path that already
-        failed — so the metric is best-effort.
-        """
-        self._batch_dropped = True
-        self._consecutive_drops += 1
-        self.logger.error(f"{what} for this batch, dropping it: {error}")
-        self.logger.error(traceback.format_exc())
-
+    def predict(self, model_input) -> OutputDTO | None:
         try:
-            # One label for every drop site, not one per stage: an operator wants
-            # a single "this step is discarding batches" series to alert on, and
-            # `what` already names the stage in the log line above.
-            self.metrics.exceptions.labels("execute_drop").inc()
-        except Exception:
-            # Telemetry must never be the thing that kills a batch.
-            self.logger.warning("Could not record the dropped-batch metric", exc_info=True)
-
-        if self._consecutive_drops >= CONSECUTIVE_DROP_ALERT:
-            self.logger.critical(
-                f"{self._consecutive_drops} consecutive batches dropped and their "
-                "offsets committed: this topic is being consumed and discarded, and "
-                "the step will keep reporting healthy. Output is being lost; the "
-                "skipped batches need a replay once the cause is fixed."
-            )
-
-    def _drop_batch(self, what: str, error: Exception) -> Tuple[OutputDTO, dict]:
-        """`_record_drop` plus the empty result the pre-produce stages return."""
-        self._record_drop(what, error)
-        return self._empty_output(), {}
+            return self.model.predict(model_input)
+        except Exception as error:
+            self.logger.error(error)
+            self.logger.error(traceback.format_exc())
 
     def execute(self, messages: List[dict]) -> Tuple[OutputDTO, dict]:
-        try:
-            kept = filter_messages(messages, self.min_detections)
-        except Exception as error:
-            return self._drop_batch("Filtering failed", error)
-
+        kept = filter_messages(messages, self.min_detections)
         self.logger.info(f"Classifying {len(kept)}/{len(messages)} messages")
         if not kept:
-            # A normal outcome, not a drop: nothing in the batch was classifiable.
-            # `_batch_dropped` stays false, so `pre_produce` clears the counter.
             return self._empty_output(), {}
 
         try:
             dto = create_input_dto(kept)
         except Exception as error:
-            return self._drop_batch("Building the input DTO failed", error)
+            self.logger.error("Error building the input DTO")
+            self.logger.error(error)
+            self.logger.error(traceback.format_exc())
+            return self._empty_output(), {}
 
-        # Deliberately unguarded: `can_predict` is null checks over the features
-        # frame and has no failure mode of its own.
         can_predict, reason = self.model.can_predict(dto)
         if not can_predict:
             self.logger.warning(f"Model cannot predict this batch: {reason}")
             return self._empty_output(), {}
 
-        try:
-            output_dto = self.model.predict(dto)
-        except Exception as error:
-            return self._drop_batch("Prediction failed", error)
+        output_dto = self.predict(dto)
+        if output_dto is None:
+            return self._empty_output(), {}
 
-        try:
-            lastmjd_map = lastmjd_by_oid(kept)
-        except Exception as error:
-            return self._drop_batch("Computing lastmjd failed", error)
-
-        return output_dto, lastmjd_map
+        return output_dto, lastmjd_by_oid(kept)
 
     def post_execute(self, result: Tuple[OutputDTO, dict]) -> Tuple[OutputDTO, dict]:
-        """Build the probability rows, then write them to the scribe.
-
-        The two halves are wrapped differently on purpose — see below. apf
-        re-raises from `_post_execute` and that call is not inside a `try` in
-        `start()`, so anything that escapes here exits the process with the offset
-        uncommitted, which is the permanent partition stall `_drop_batch` exists
-        to prevent.
-        """
+        """Build the probability rows, then write them to the scribe."""
         output_dto, lastmjd_map = result
 
-        try:
-            rows = build_probability_rows(
-                output_dto,
-                lastmjd_map,
-                self.classifier_ids,
-                self.taxonomy_maps,
-                base_name=self.classifier_name,
-                version=self.model_version,
-                sid=self.sid,
-            )
-        except Exception as error:
-            # Guarded, on the same reasoning as `execute`'s guards: this is
-            # deterministic pure computation over the batch, so a fault is
-            # reproduced exactly on every redelivery and the partition stalls
-            # forever. Dropping is the only outcome that makes progress.
-            return self._drop_batch("Building the probability rows failed", error)
-
-        # Deliberately NOT guarded, and this asymmetry is the point: everything
-        # above is pure computation, `produce_scribe` is I/O. A broker fault is
-        # typically transient, so letting it propagate leaves the offset
-        # uncommitted and the batch is retried — correct at-least-once behaviour,
-        # and exactly what apf's flush guard in `_post_produce` is for. Swallowing
-        # it would silently lose scribe writes, which is strictly worse than a
-        # stall: the scribe is this step's real output (design §2, decision 3), so
-        # a dropped write is data that no replay knows to go back for. Do not
-        # "complete" the guard by wrapping this call.
+        rows = build_probability_rows(
+            output_dto,
+            lastmjd_map,
+            self.classifier_ids,
+            self.taxonomy_maps,
+            base_name=self.classifier_name,
+            version=self.model_version,
+            sid=self.sid,
+        )
         self.produce_scribe(rows)
         return result
 
@@ -243,32 +141,9 @@ class LateClassifierMultisurvey(GenericStep):
 
     def pre_produce(self, result: Tuple[OutputDTO, dict]):
         # PLACEHOLDER downstream payload — design doc §9.
-        try:
-            payload = self.step_parser.parse(
-                result[0], base_name=self.classifier_name, version=self.model_version
-            ).value
-        except Exception as error:
-            # Guarded for the same reason as `build_probability_rows`: pure
-            # deterministic computation, so apf re-raising from `_pre_produce`
-            # (also outside any `try` in `start()`) would stall the partition on a
-            # fault that repeats identically forever.
-            #
-            # The empty list is what "produce nothing" means at this stage: apf's
-            # `produce()` iterates whatever it is given, so `[]` emits no messages
-            # and, with no PRODUCER_CONFIG, the DefaultProducer is a no-op anyway.
-            #
-            # Note the scribe write in `post_execute` has already succeeded by
-            # now, so a drop here loses only the §9 placeholder, which nothing
-            # consumes. It still counts against the budget: a persistent parse
-            # fault is a real bug and the counter is what surfaces it.
-            self._record_drop("Parsing the downstream payload failed", error)
-            payload = []
-
-        # Last stage the step guards, so this is where a clean batch clears the
-        # counter — see `pre_execute` for why it cannot be done in `execute`.
-        if not self._batch_dropped:
-            self._consecutive_drops = 0
-        return payload
+        return self.step_parser.parse(
+            result[0], base_name=self.classifier_name, version=self.model_version
+        ).value
 
     def tear_down(self):
         # No `else: self.consumer.__del__()`. `__del__` and `teardown` are defined
