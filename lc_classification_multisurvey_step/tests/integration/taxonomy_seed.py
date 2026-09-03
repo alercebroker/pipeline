@@ -17,6 +17,13 @@ produce nothing: that hierarchy is stale (it lists SNIbc/SNIIb and RRL, while
 2.1.0 emits SESN and RRLab/RRLc).
 
 Regenerate with `scripts/dump_model_taxonomy.py` after any model bump.
+
+Checked against live `multisurvey_ztf` on 2026-09-03: classifier ids 5-9, the
+five names, `classifier_version` 2.1.0 and `tid` 0 all match, and every head's
+class names, `order` and `class_id` values are identical to the ones below. So
+this is not merely a plausible local stand-in — a row built against this seed
+carries the same `class_id` it would in production, and the §8 startup
+assertions resolve there exactly as they do here.
 """
 from lc_classification_multisurvey_step.probabilities import (
     DEFAULT_CLASSIFIER_NAME,
