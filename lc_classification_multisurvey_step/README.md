@@ -60,24 +60,34 @@ rows to compare against; there is no filter on feature completeness, so the set
 spans 19 to 189 of the model's 199 features and exercises the NaN handling on
 real sparsity. It is drawn evenly from all 32 `feature` partitions.
 
-2026-09-03: 44640 rows over 992 objects. The row sets are identical — the step
-writes exactly what production wrote, no more and no fewer. 989 of 992 objects
-match to 1.1e-16, and 4959 of 4960 (oid, head) pairs pick the same top class.
-This is also the only test that melts a realistic batch — 992 oids at once,
-where the offline reference raises on a multi-row frame and the synthetic
-harness only reaches five.
+2026-09-03: 44640 rows over 992 objects, **all matching exactly** — same
+probabilities, same rankings, same top class, and the row sets are identical, so
+the step writes exactly what production wrote, no more and no fewer. This is
+also the only test that melts a realistic batch — 992 oids at once, where the
+offline reference raises on a multi-row frame and the synthetic harness only
+reaches five.
 
-Three objects differ, by 0.010, 0.008 and 0.006, and are listed as
-`KNOWN_DIVERGENT` in the test with the evidence. Briefly: not sparsity (objects
-with 28 of 199 features match to 1e-16, these carry 124–184), not new photometry
-(`probability.lastmjd` equals their last detection mjd), not duplicate feature
-rows (no object has any). The deltas are 5, 4 and 3 times `1/500`, the vote
-quantum of a 500-estimator forest — a marginally different input, not different
-code, which would move every object. `feature.updated_date` has only day
-resolution, so a same-day recompute after the classification is indistinguishable
-from one before it; that remains unproven. The tests assert the deviating set is
-*exactly* those three, so a new divergence fails and so does one of these
-disappearing.
+### Superseded feature rows
+
+Reaching exact equality needed one rule, in `_current_features`: keep only the
+rows carrying each object's most recent `updated_date`.
+
+`feature` is upserted `ON CONFLICT (oid, sid, feature_id, band) DO UPDATE ...
+updated_date = now()`, so a pass only touches the rows it computed. A feature
+computed in an earlier pass but *not* produced by the latest one keeps its old
+row, its old value and its old date, while its ~190 siblings move on. The
+classifier, working from that latest computation, saw NaN for it — so reading
+the row back as a value feeds the model something production never had.
+
+Three of the 992 objects carried exactly that (3–4 rows dated a day before the
+rest), and they were the only three whose recomputed probabilities disagreed.
+With the superseded rows dropped, every object matches.
+
+This is a property of the table, not of this test: **anything** that
+reconstructs a feature vector from `feature` has to apply the same rule, or it
+silently mixes two generations of a computation. It is easy to miss because
+`updated_date` is a DATE — same-day generations are indistinguishable — and
+because `probability` carries no timestamp at all to compare against.
 
 Reading features back out of the database needs a name translation, and getting
 it wrong is silent — around 31 of the 199 features land as NaN and the model

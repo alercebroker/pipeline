@@ -19,9 +19,14 @@ This is also the only test that melts a realistic batch -- 992 oids in one call.
 The offline reference the code was ported from raises on a multi-row frame, and
 the synthetic harness only reaches five.
 
-2026-09-03: 44640 rows. Row sets identical. 989 of 992 objects match to 1.1e-16
-(one float64 epsilon); 4959 of 4960 (oid, head) pairs pick the same top class.
-The three exceptions are recorded in KNOWN_DIVERGENT below.
+2026-09-03: 44640 rows over 992 objects, all matching exactly -- same
+probabilities, same rankings, same top class everywhere. Same features and the
+same model, so nothing less than exact would be acceptable.
+
+Getting there needed one thing beyond reading the rows: `_current_features`
+below drops feature rows superseded by a later computation. Three objects
+carried a handful of rows a day older than their siblings, and those three were
+the only ones whose probabilities disagreed.
 """
 import gzip
 import json
@@ -48,35 +53,6 @@ ZTF_SID = 0
 # recomputation is float64; anything this small is the cast, not a difference.
 PROBABILITY_TOLERANCE = 1e-7
 
-# Three objects whose stored probabilities differ from a recomputation on their
-# current features, by 0.010, 0.008 and 0.006.
-#
-# Not sparsity: objects with 28 of 199 features present match to 1e-16, while
-# these carry 124, 180 and 184. Not stale features either, in the sense that is
-# checkable -- `probability.lastmjd` equals the object's last detection mjd, so
-# no new photometry arrived after the classification -- and not duplicate
-# feature rows, which no object in the fixture has.
-#
-# What they look like is a handful of trees voting differently: the deltas are
-# 5, 4 and 3 times 1/500, the vote quantum of a 500-estimator forest. That is
-# what a marginally different input does, not what different code does, which
-# would move every object. `feature.updated_date` is a DATE, so features
-# recomputed later on the same day as the classification are indistinguishable
-# from ones written before it, and that remains the untested explanation.
-#
-# They are kept in the fixture rather than filtered out, and the tests assert
-# the deviating set is exactly this one: a new divergence fails, and so does one
-# of these disappearing, either of which is worth looking at.
-KNOWN_DIVERGENT = {
-    36028933559737010,
-    36028933559737043,
-    36028933559737056,
-}
-
-# The single (oid, head) pair where the two sides name a different top class.
-# Head 9 is `_periodic`; the object is one of KNOWN_DIVERGENT.
-KNOWN_TOP_CLASS_DISAGREEMENT = {(36028933559737056, 9)}
-
 pytestmark = pytest.mark.skipif(
     not os.getenv("MODEL_PATH"),
     reason=(
@@ -101,6 +77,29 @@ def _model_column(lut_name: str, band: int) -> str:
     """
     name = lut_name.replace("-", "_").replace("/", "_")
     return f"{name}_{band}" if band else name
+
+
+def _current_features(entry: dict) -> list:
+    """(name, band, value) for the rows the object's newest computation produced.
+
+    `feature` is upserted with ON CONFLICT (oid, sid, feature_id, band) DO UPDATE
+    ... updated_date = now(), so a pass only touches the rows it computed. A
+    feature produced in an earlier pass but not in the latest one keeps its old
+    row, old value and old date while every sibling row moves on -- and the
+    classifier, working from that latest computation, saw NaN for it. Reading
+    such a row back as a value feeds the model something production never had.
+
+    Three of the 992 objects in this fixture carry exactly that: 3 or 4 rows
+    dated a day before the other ~190, and they were the only three whose
+    recomputed probabilities disagreed with the stored ones. Dropping the
+    superseded rows is what makes the comparison a like-for-like one.
+    """
+    latest = max(updated for _, _, _, updated in entry["features"])
+    return [
+        (name, band, value)
+        for name, band, value, updated in entry["features"]
+        if updated == latest
+    ]
 
 
 @pytest.fixture(scope="module")
@@ -135,7 +134,8 @@ def replayed(examples) -> tuple:
     collapsed = {}
     for entry in objects:
         values = {
-            _model_column(name, band): value for name, band, value in entry["features"]
+            _model_column(name, band): value
+            for name, band, value in _current_features(entry)
         }
         # Exactly the frame a message would produce: every column the model asks
         # for, NaN where the object has no row -- which is the null the Kafka
@@ -207,7 +207,7 @@ def test_every_recomputed_row_exists_in_production(replayed):
 
 
 def test_probabilities_and_rankings_match_production(replayed):
-    """Row-for-row equality, except for the objects documented above."""
+    """Row-for-row equality. Same features and same model, so nothing less."""
     rows, stored = replayed
 
     deviating = {
@@ -216,17 +216,11 @@ def test_probabilities_and_rankings_match_production(replayed):
         if abs(stored[(row["oid"], row["classifier_id"], row["class_id"])][0] - row["probability"])
         > PROBABILITY_TOLERANCE
     }
-    assert deviating == KNOWN_DIVERGENT
+    assert deviating == set()
 
-    # Ranking is dense *within a head*, so one differing probability reshuffles
-    # the ranks of every other class in that head -- including rows whose own
-    # value still matches to 1e-7. A divergent object is therefore excluded
-    # whole, not row by row. For every other object a ranking difference has no
-    # such excuse and would be a real bug in how `build_probability_rows` ranks.
     rank_mismatches = [
         ((row["oid"], row["classifier_id"], row["class_id"]), stored_ranking, row["ranking"])
         for row in rows
-        if row["oid"] not in KNOWN_DIVERGENT
         for stored_ranking in [stored[(row["oid"], row["classifier_id"], row["class_id"])][1]]
         if stored_ranking != row["ranking"]
     ]
@@ -253,6 +247,7 @@ def test_top_class_matches_production(replayed):
         (key, probability) for key, (probability, _) in stored.items()
     )
 
-    assert computed.keys() == expected.keys()
-    disagreements = {key for key in computed if computed[key] != expected[key]}
-    assert disagreements == KNOWN_TOP_CLASS_DISAGREEMENT
+    assert computed == expected
+    assert len(computed) == len(examples_objects := set(row["oid"] for row in rows)) * len(
+        taxonomy_seed.classifier_ids()
+    ), f"expected one call per head for each of {len(examples_objects)} objects"

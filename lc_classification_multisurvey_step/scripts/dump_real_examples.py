@@ -15,6 +15,15 @@ Features are stored as the database spells them -- (feature_name, band, value)
 straight from `feature_name_lut` -- not pre-translated to the model's column
 names. The translation is the subtle part (hyphens, slashes, the band-12 pair),
 so it belongs in the code under test rather than baked into the fixture.
+
+`updated_date` is carried per row, because it is not decoration. The upsert is
+ON CONFLICT (oid, sid, feature_id, band) DO UPDATE ... updated_date = now(), so
+it only touches rows the newest computation produced: a feature computed in an
+earlier pass but not in the latest one keeps its old row, old value and old
+date, while every other row for that object moves on. Such a row is a leftover
+from a superseded computation -- the classifier saw NaN for it -- so the test
+keeps only each object's most recent date. Recorded rather than filtered here so
+the evidence stays in the fixture.
 """
 import argparse
 import gzip
@@ -99,7 +108,7 @@ def candidate_oids(connection, wanted: int, partitions: int, per_partition: int)
 
 def dump(connection, oids: list) -> dict:
     features_statement = text(
-        "SELECT f.oid, l.feature_name, f.band, f.value "
+        "SELECT f.oid, l.feature_name, f.band, f.value, f.updated_date "
         "FROM feature f JOIN feature_name_lut l "
         "  ON l.feature_id = f.feature_id AND l.sid = f.sid "
         "WHERE f.sid = :sid AND f.oid IN :oids"
@@ -120,7 +129,8 @@ def dump(connection, oids: list) -> dict:
             features_statement, {"sid": ZTF_SID, "oids": oids}
         ).mappings():
             objects[int(row["oid"])]["features"].append(
-                [row["feature_name"], int(row["band"]), row["value"]]
+                [row["feature_name"], int(row["band"]), row["value"],
+                 str(row["updated_date"])]
             )
 
         for row in session.execute(
