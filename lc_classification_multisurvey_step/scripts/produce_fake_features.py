@@ -21,7 +21,12 @@ import sys
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 PACKAGE_PATH = os.path.abspath(os.path.join(SCRIPT_PATH, ".."))
-sys.path.append(PACKAGE_PATH)
+# insert(0), not append as run_step.py does: `tests` is a generic top-level
+# package name and `alerce_classifiers` -- which has to be on PYTHONPATH to run
+# the model -- ships one of its own. Appending puts this step's `tests` second
+# and the import resolves to theirs, with a ModuleNotFoundError for
+# `tests.integration`.
+sys.path.insert(0, PACKAGE_PATH)
 
 from apf.producers import KafkaSchemalessProducer  # noqa: E402
 
