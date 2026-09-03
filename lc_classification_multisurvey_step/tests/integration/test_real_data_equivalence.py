@@ -1,63 +1,54 @@
-"""Real features from the live database, through the step, against the stored rows.
+"""100 real objects, replayed through the step, against production's own rows.
 
-The local harness proves the wiring but cannot say the port classifies
-*correctly*: its features are random floats and its seed is a local copy. This
-test closes that gap by taking objects that production has already classified,
-recomputing their probabilities through the step's own path, and requiring the
-result to match what is in `multisurvey_ztf.probability` exactly.
+The synthetic harness proves the wiring but says nothing about whether the port
+classifies *correctly*: its features are random floats. This takes objects the
+production pipeline has already classified, recomputes their probabilities
+through the step's own path, and requires every row to match what is stored in
+`multisurvey_ztf.probability`.
 
-Opt-in, because it needs three things CI does not have: the VPN, read access to
-the live database, and the BHRF pickle.
+The objects live in `data/real_examples.json.gz`, dumped by
+`scripts/dump_real_examples.py`, so this needs neither the VPN nor database
+credentials -- only `MODEL_PATH`. Regenerate the fixture after a model bump or a
+change to the feature set.
 
-    REAL_DB_CONFIG=$(pwd)/local_config.yaml \\
-    MODEL_PATH=/path/to/model/2.1.0 \\
-    python -m pytest tests/integration/test_real_data_equivalence.py -v
+This is also the only test that exercises the batch path at a realistic size:
+`build_probability_rows` melts 100 oids at once, which the offline reference it
+was ported from cannot do at all (it raises on a multi-row frame), and which the
+synthetic harness only reaches with five.
 
-`REAL_DB_CONFIG` is a yaml with a `PSQL_CONFIG` block -- the local run config
-already has one -- so no credentials live in this repo.
-
-First run, 2026-09-03: 225 rows over 5 objects, max |Δp| = 1.1e-16 (one float64
-epsilon), every `ranking` and every top-1 class identical.
+First run, 2026-09-03: 4500 rows over 100 objects, max |Δp| = 0, every ranking
+and every top-1 class identical.
 """
+import gzip
+import json
 import os
+import pathlib
 
 import pandas as pd
 import pytest
-import yaml
-from sqlalchemy import bindparam, text
 
-from lc_classification_multisurvey_step.db.db import PSQLConnection, resolve_classifiers
 from lc_classification_multisurvey_step.input_dto import create_input_dto
 from lc_classification_multisurvey_step.probabilities import (
     build_probability_rows,
-    head_names,
+    classifier_version_to_smallint,
 )
 
-CONFIG_ENV = "REAL_DB_CONFIG"
-BASE_NAME = "lc_classifier_BHRF_forced_phot"
-MODEL_VERSION = "2.1.0"
+from . import taxonomy_seed
+
+FIXTURE = pathlib.Path(__file__).parent / "data" / "real_examples.json.gz"
+BASE_NAME = taxonomy_seed.DEFAULT_CLASSIFIER_NAME
+MODEL_VERSION = taxonomy_seed.CLASSIFIER_VERSION
 ZTF_SID = 0
 
-# Picked because each has a full feature vector and all five heads already
-# written. They are only a starting point: if production stops carrying them the
-# test skips and names them, rather than failing as though the code broke.
-OIDS = [
-    36028933559740357,
-    36028933559743251,
-    36028933559736997,
-    36028933559739832,
-    36028933559741025,
-]
-
-# One float64 epsilon is what an exact recomputation costs; anything above this
-# is a real difference, not arithmetic.
-PROBABILITY_TOLERANCE = 1e-12
+# `probability.probability` is REAL, so the stored value is float32 while the
+# recomputation is float64; anything this small is the cast, not a difference.
+PROBABILITY_TOLERANCE = 1e-7
 
 pytestmark = pytest.mark.skipif(
-    not (os.getenv(CONFIG_ENV) and os.getenv("MODEL_PATH")),
+    not os.getenv("MODEL_PATH"),
     reason=(
-        f"needs {CONFIG_ENV} (a yaml with a PSQL_CONFIG block, e.g. local_config.yaml) "
-        "and MODEL_PATH, plus the VPN for the live database"
+        "MODEL_PATH is unset; this replays real objects through the real BHRF "
+        "2.1.0 model, which is not in this repo"
     ),
 )
 
@@ -70,83 +61,36 @@ def _model_column(lut_name: str, band: int) -> str:
     means band-agnostic, 1 is g, 2 is r, and 12 is the (g,r) pair -- so
     `g-r_mean` at band 12 is the model's `g_r_mean_12`.
 
-    Getting this wrong is silent: ~31 of the 199 features land as NaN and the
-    model returns plausible but different probabilities.
+    Kept here, applied to the fixture's raw database spellings, rather than baked
+    into the fixture: getting it wrong is silent -- around 31 of the 199 features
+    land as NaN and the model returns plausible but different probabilities -- so
+    it is worth having under test.
     """
     name = lut_name.replace("-", "_").replace("/", "_")
     return f"{name}_{band}" if band else name
 
 
-def _features_by_oid(connection, oids: list) -> dict:
-    """{oid: {model column: value}} for the ZTF features stored for these objects."""
-    statement = text(
-        "SELECT f.oid, l.feature_name, f.band, f.value "
-        "FROM feature f JOIN feature_name_lut l "
-        "  ON l.feature_id = f.feature_id AND l.sid = f.sid "
-        "WHERE f.sid = :sid AND f.oid IN :oids"
-    ).bindparams(bindparam("oids", expanding=True))
-
-    features: dict = {}
-    with connection.session() as session:
-        rows = session.execute(statement, {"sid": ZTF_SID, "oids": oids}).mappings()
-        for row in rows:
-            column = _model_column(row["feature_name"], row["band"])
-            features.setdefault(int(row["oid"]), {})[column] = row["value"]
-    return features
-
-
-def _stored_probabilities(connection, oids: list, classifier_ids: list) -> tuple:
-    """({(oid, classifier_id, class_id): (probability, ranking)}, {oid: lastmjd})."""
-    statement = text(
-        "SELECT oid, classifier_id, class_id, probability, ranking, lastmjd "
-        "FROM probability WHERE oid IN :oids AND classifier_id IN :classifier_ids"
-    ).bindparams(
-        bindparam("oids", expanding=True),
-        bindparam("classifier_ids", expanding=True),
-    )
-
-    stored: dict = {}
-    lastmjd: dict = {}
-    with connection.session() as session:
-        rows = session.execute(
-            statement, {"oids": oids, "classifier_ids": classifier_ids}
-        ).mappings()
-        for row in rows:
-            oid = int(row["oid"])
-            key = (oid, int(row["classifier_id"]), int(row["class_id"]))
-            stored[key] = (float(row["probability"]), int(row["ranking"]))
-            lastmjd[oid] = float(row["lastmjd"])
-    return stored, lastmjd
-
-
 @pytest.fixture(scope="module")
-def live_db():
-    with open(os.environ[CONFIG_ENV]) as handle:
-        config = yaml.safe_load(handle)
-    return PSQLConnection(config["PSQL_CONFIG"], poolclass="NullPool")
-
-
-@pytest.fixture(scope="module")
-def recomputed(live_db):
-    """The step's own path over real features: (rows, stored, classifier_ids)."""
-    classifier_ids, taxonomy_maps = resolve_classifiers(
-        head_names(BASE_NAME), MODEL_VERSION, live_db
-    )
-    stored, lastmjd = _stored_probabilities(
-        live_db, OIDS, list(classifier_ids.values())
-    )
-    features = _features_by_oid(live_db, OIDS)
-
-    starved = [oid for oid in OIDS if oid not in features or oid not in lastmjd]
-    if starved:
+def examples() -> dict:
+    if not FIXTURE.exists():
         pytest.skip(
-            f"objects {starved} no longer have both features and BHRF probability "
-            "rows in the live database; refresh OIDS with objects that do"
+            f"{FIXTURE.name} is missing; regenerate it with "
+            "REAL_DB_CONFIG=... python scripts/dump_real_examples.py"
         )
+    with gzip.open(FIXTURE, "rt", encoding="utf-8") as handle:
+        return json.load(handle)
 
-    # Exactly the frame `build_features_frame` would produce from a message: one
-    # row per oid, one column per feature the model asks for, and NaN where the
-    # object has no row -- which is the null the Kafka message would carry.
+
+@pytest.fixture(scope="module")
+def replayed(examples) -> tuple:
+    """(computed rows, stored rows keyed by (oid, classifier_id, class_id)).
+
+    One model load and one batch for the whole fixture -- the step classifies a
+    batch in a single call, and loading the pickle per test would cost 1.6 GB
+    each time.
+    """
+    objects = examples["objects"]
+
     model_features = list(
         pd.read_pickle(
             os.path.join(
@@ -154,9 +98,24 @@ def recomputed(live_db):
             )
         )["feature_list"]
     )
-    collapsed = {
-        oid: {"features": {name: features[oid].get(name) for name in model_features}}
-        for oid in OIDS
+
+    collapsed = {}
+    for entry in objects:
+        values = {
+            _model_column(name, band): value for name, band, value in entry["features"]
+        }
+        # Exactly the frame a message would produce: every column the model asks
+        # for, NaN where the object has no row -- which is the null the Kafka
+        # message carries for a feature that was not computed.
+        collapsed[int(entry["oid"])] = {
+            "features": {name: values.get(name) for name in model_features}
+        }
+
+    lastmjd = {int(entry["oid"]): entry["lastmjd"] for entry in objects}
+    stored = {
+        (int(entry["oid"]), classifier_id, class_id): (probability, ranking)
+        for entry in objects
+        for classifier_id, class_id, probability, ranking in entry["probabilities"]
     }
 
     from alerce_classifiers.squidward.mapper import SquidwardMapper
@@ -170,20 +129,35 @@ def recomputed(live_db):
     rows = build_probability_rows(
         output_dto,
         lastmjd,
-        classifier_ids,
-        taxonomy_maps,
+        taxonomy_seed.classifier_ids(BASE_NAME),
+        taxonomy_seed.taxonomy_maps(BASE_NAME),
         base_name=BASE_NAME,
         version=MODEL_VERSION,
         sid=ZTF_SID,
     )
-    return rows, stored, classifier_ids
+    return rows, stored
 
 
-def test_every_recomputed_row_exists_in_the_database(recomputed):
-    """No row the step would write is absent from what production already wrote."""
-    rows, stored, classifier_ids = recomputed
+def test_the_fixture_is_what_it_claims(examples):
+    """Guard the inputs, so a bad dump cannot look like a passing comparison."""
+    objects = examples["objects"]
+    assert len(objects) == 100
 
-    assert rows, "the step produced no rows for objects the database has classified"
+    # All five heads for every object, or the row-count assertions below would
+    # pass while silently covering less than they claim.
+    for entry in objects:
+        assert len(entry["probabilities"]) == taxonomy_seed.CLASSES_PER_OID
+        heads = {classifier_id for classifier_id, _, _, _ in entry["probabilities"]}
+        assert heads == set(taxonomy_seed.classifier_ids().values())
+        assert entry["classifier_version"] == classifier_version_to_smallint(
+            MODEL_VERSION
+        )
+
+    assert len({entry["oid"] for entry in objects}) == 100
+
+
+def test_every_recomputed_row_exists_in_production(replayed):
+    rows, stored = replayed
 
     orphans = [
         (row["oid"], row["classifier_id"], row["class_id"])
@@ -191,46 +165,42 @@ def test_every_recomputed_row_exists_in_the_database(recomputed):
         if (row["oid"], row["classifier_id"], row["class_id"]) not in stored
     ]
     assert orphans == []
-
-    # Both sides cover the same ground: every stored row was also recomputed.
-    assert len(rows) == len(stored)
-    assert {row["classifier_id"] for row in rows} == set(classifier_ids.values())
+    assert len(rows) == len(stored) == 100 * taxonomy_seed.CLASSES_PER_OID
 
 
-def test_probabilities_and_rankings_match_the_database(recomputed):
-    """The port reproduces production's numbers, not merely plausible ones."""
-    rows, stored, _ = recomputed
+def test_probabilities_and_rankings_match_production(replayed):
+    rows, stored = replayed
 
     worst = 0.0
+    worst_key = None
     rank_mismatches = []
     for row in rows:
         key = (row["oid"], row["classifier_id"], row["class_id"])
         stored_probability, stored_ranking = stored[key]
-        worst = max(worst, abs(stored_probability - row["probability"]))
+        difference = abs(stored_probability - row["probability"])
+        if difference > worst:
+            worst, worst_key = difference, key
         if stored_ranking != row["ranking"]:
             rank_mismatches.append((key, stored_ranking, row["ranking"]))
 
-    assert worst <= PROBABILITY_TOLERANCE, f"max |Δp| = {worst:.3e}"
+    assert worst <= PROBABILITY_TOLERANCE, f"max |Δp| = {worst:.3e} at {worst_key}"
     assert rank_mismatches == []
 
 
-def test_top_class_matches_the_database(recomputed):
-    """The classification itself agrees, per object and per head."""
-    rows, stored, _ = recomputed
+def test_top_class_matches_production(replayed):
+    """The classification itself agrees, for every object and every head."""
+    rows, stored = replayed
 
-    def top_by_head(items):
+    def top_by_head(triples):
         best: dict = {}
-        for (oid, classifier_id, class_id), probability in items:
+        for (oid, classifier_id, class_id), probability in triples:
             key = (oid, classifier_id)
             if key not in best or probability > best[key][1]:
                 best[key] = (class_id, probability)
         return {key: value[0] for key, value in best.items()}
 
     computed = top_by_head(
-        (
-            (row["oid"], row["classifier_id"], row["class_id"]),
-            row["probability"],
-        )
+        ((row["oid"], row["classifier_id"], row["class_id"]), row["probability"])
         for row in rows
     )
     expected = top_by_head(
@@ -238,3 +208,4 @@ def test_top_class_matches_the_database(recomputed):
     )
 
     assert computed == expected
+    assert len(computed) == 100 * len(taxonomy_seed.classifier_ids())

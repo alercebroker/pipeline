@@ -107,6 +107,19 @@ def classifier_rows(base_name: str = DEFAULT_CLASSIFIER_NAME) -> list:
     ]
 
 
+def taxonomy_maps(base_name: str = DEFAULT_CLASSIFIER_NAME) -> dict:
+    """{classifier_id: {class_name: class_id}}, as `db.resolve_classifiers` returns it.
+
+    Lets a test build probability rows without a database. Sound only because
+    this seed was checked against live and matches it exactly (see the module
+    docstring) -- otherwise the ids here would be fiction.
+    """
+    maps: dict = {}
+    for row in taxonomy_rows(base_name):
+        maps.setdefault(row["classifier_id"], {})[row["class_name"]] = row["class_id"]
+    return maps
+
+
 def taxonomy_rows(base_name: str = DEFAULT_CLASSIFIER_NAME) -> list:
     ids = classifier_ids(base_name)
     rows = []

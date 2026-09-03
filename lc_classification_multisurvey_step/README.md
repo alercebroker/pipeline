@@ -43,15 +43,29 @@ production pipeline has already classified, recomputes their probabilities
 through the step's own path, and requires the result to match the rows in
 `multisurvey_ztf.probability`.
 
-    REAL_DB_CONFIG=$(pwd)/local_config.yaml \
     MODEL_PATH=/path/to/model/2.1.0 \
     python -m pytest tests/integration/test_real_data_equivalence.py -v
 
-`REAL_DB_CONFIG` points at any yaml with a `PSQL_CONFIG` block — the local run
-config already has one — so no credentials live in this repo. It needs the VPN.
+The objects live in `tests/integration/data/real_examples.json.gz` (100 of them,
+230 KiB), so the test needs neither the VPN nor credentials — only the model.
+Regenerate the fixture after a model bump or a change to the feature set:
 
-First run, 2026-09-03: 225 rows over 5 objects, max `|Δp|` = 1.1e-16 (one
-float64 epsilon), every `ranking` and every top-1 class identical.
+    REAL_DB_CONFIG=$(pwd)/local_config.yaml python scripts/dump_real_examples.py
+
+`REAL_DB_CONFIG` points at any yaml with a `PSQL_CONFIG` block — the local run
+config already has one — so no credentials live in this repo.
+
+2026-09-03: 4500 rows over 100 objects, max `|Δp|` = 0, every `ranking` and
+every top-1 class identical. This is also the only test that melts a realistic
+batch — 100 oids at once, where the offline reference raises on a multi-row
+frame and the synthetic harness only reaches five.
+
+What the fixture covers, and does not: 11 of the 21 flat classes appear as a
+top-1 winner, `lastmjd` spans 682 days, and objects carry 190–205 of the 199
+features. No object in it classifies as **Transient** at the top head (88
+Periodic, 12 Stochastic), and none is feature-sparse, since the dump filters on
+`>= 190` features. Every head's probabilities are still compared for every
+object — the gap is in the class mix, not in which code runs.
 
 Reading features back out of the database needs a name translation, and getting
 it wrong is silent — around 31 of the 199 features land as NaN and the model
