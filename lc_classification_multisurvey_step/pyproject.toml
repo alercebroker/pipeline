@@ -26,6 +26,9 @@ psycopg2-binary = "^2.9.6"
 [tool.poetry.group.test.dependencies]
 pytest = "^7.2.0"
 pytest-cov = "^4.0.0"
+# Brings up tests/integration/docker-compose.yml (kafka + postgres) for the
+# local-pipeline tests, as scribe_multisurvey does.
+pytest-docker = "^1.0.1"
 
 [tool.poetry.group.dev.dependencies]
 black = "~=23.0"

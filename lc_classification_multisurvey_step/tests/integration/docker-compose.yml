@@ -1,0 +1,48 @@
+# Kafka and Postgres for tests/integration/test_local_pipeline.py.
+#
+# NOT the bitnami+zookeeper pair the other steps use. `bitnamilegacy/kafka:3.3.1`
+# is published for linux/amd64 only, and under emulation on an arm64 Mac the JVM
+# dies during startup inside its own lambda bytecode generator:
+#
+#   java.lang.IllegalArgumentException
+#     at jdk.internal.org.objectweb.asm.ByteVector.putUTF8
+#     at java.lang.invoke.InvokerBytecodeGenerator.generateCustomizedCode
+#   [KafkaServer id=1] Fatal error ... Halting Kafka.
+#
+# Zookeeper and Postgres still come up, so the symptom is not "kafka failed" but
+# a fixture timing out against a broker that is not there. `apache/kafka` is
+# multi-arch, so it runs natively on both the laptop and CI. It is also KRaft,
+# which is why there is no zookeeper service here.
+services:
+  kafka:
+    image: apache/kafka:3.7.1
+    hostname: kafka
+    environment:
+      - KAFKA_NODE_ID=1
+      - KAFKA_PROCESS_ROLES=broker,controller
+      - KAFKA_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      # The clients connect from the host, and the broker hands this address back
+      # in its metadata, so it must be the host's view -- not the service name.
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://127.0.0.1:9092
+      - KAFKA_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      - KAFKA_CONTROLLER_QUORUM_VOTERS=1@localhost:9093
+      - KAFKA_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+      - KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
+      - KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1
+      # Single broker: without this, the first consumer waits out the default
+      # 3s rebalance delay on every group it joins.
+      - KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS=0
+      - CLUSTER_ID=5L6g3nShT-eMCtK--X86sw
+    ports:
+      - "9092:9092"
+
+  postgres:
+    image: postgres:16.11
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
