@@ -34,6 +34,34 @@ one single-oid `OutputDTO` through both row builders. It cannot cover the
 multi-oid melt path, because the offline reference raises on a multi-row frame
 by design.
 
+### Against real data
+
+The synthetic harness below proves the wiring; it cannot say the port
+classifies *correctly*, because its features are random floats. That is what
+`tests/integration/test_real_data_equivalence.py` is for: it takes objects the
+production pipeline has already classified, recomputes their probabilities
+through the step's own path, and requires the result to match the rows in
+`multisurvey_ztf.probability`.
+
+    REAL_DB_CONFIG=$(pwd)/local_config.yaml \
+    MODEL_PATH=/path/to/model/2.1.0 \
+    python -m pytest tests/integration/test_real_data_equivalence.py -v
+
+`REAL_DB_CONFIG` points at any yaml with a `PSQL_CONFIG` block — the local run
+config already has one — so no credentials live in this repo. It needs the VPN.
+
+First run, 2026-09-03: 225 rows over 5 objects, max `|Δp|` = 1.1e-16 (one
+float64 epsilon), every `ranking` and every top-1 class identical.
+
+Reading features back out of the database needs a name translation, and getting
+it wrong is silent — around 31 of the 199 features land as NaN and the model
+returns plausible but different probabilities. `feature_name_lut` spells colours
+with hyphens (`W1-W2`) and ratios with slashes (`Power_rate_1/2`) where the
+model's `feature_list` uses underscores, and `band` 12 is the (g,r) pair, so
+`g-r_mean` at band 12 is the model's `g_r_mean_12`. The step itself is
+unaffected: its features arrive in the Kafka message, and
+`features_record_ztf.avsc` already uses the model's spelling.
+
 ## Running the step without an upstream
 
 The multisurvey `feature_step` lives on another branch and its topic is empty,
