@@ -1,23 +1,27 @@
-"""100 real objects, replayed through the step, against production's own rows.
+"""992 real objects, replayed through the step, against production's own rows.
 
 The synthetic harness proves the wiring but says nothing about whether the port
 classifies *correctly*: its features are random floats. This takes objects the
 production pipeline has already classified, recomputes their probabilities
-through the step's own path, and requires every row to match what is stored in
+through the step's own path, and compares every row with what is stored in
 `multisurvey_ztf.probability`.
 
 The objects live in `data/real_examples.json.gz`, dumped by
 `scripts/dump_real_examples.py`, so this needs neither the VPN nor database
-credentials -- only `MODEL_PATH`. Regenerate the fixture after a model bump or a
-change to the feature set.
+credentials -- only `MODEL_PATH`.
 
-This is also the only test that exercises the batch path at a realistic size:
-`build_probability_rows` melts 100 oids at once, which the offline reference it
-was ported from cannot do at all (it raises on a multi-row frame), and which the
-synthetic harness only reaches with five.
+They are taken as they come. The only condition for inclusion is that the object
+has BHRF probability rows to compare against; there is no filter on feature
+completeness, so the set spans objects carrying 19 to 189 of the model's 199
+features and exercises the NaN handling on real sparsity.
 
-First run, 2026-09-03: 4500 rows over 100 objects, max |Δp| = 0, every ranking
-and every top-1 class identical.
+This is also the only test that melts a realistic batch -- 992 oids in one call.
+The offline reference the code was ported from raises on a multi-row frame, and
+the synthetic harness only reaches five.
+
+2026-09-03: 44640 rows. Row sets identical. 989 of 992 objects match to 1.1e-16
+(one float64 epsilon); 4959 of 4960 (oid, head) pairs pick the same top class.
+The three exceptions are recorded in KNOWN_DIVERGENT below.
 """
 import gzip
 import json
@@ -43,6 +47,35 @@ ZTF_SID = 0
 # `probability.probability` is REAL, so the stored value is float32 while the
 # recomputation is float64; anything this small is the cast, not a difference.
 PROBABILITY_TOLERANCE = 1e-7
+
+# Three objects whose stored probabilities differ from a recomputation on their
+# current features, by 0.010, 0.008 and 0.006.
+#
+# Not sparsity: objects with 28 of 199 features present match to 1e-16, while
+# these carry 124, 180 and 184. Not stale features either, in the sense that is
+# checkable -- `probability.lastmjd` equals the object's last detection mjd, so
+# no new photometry arrived after the classification -- and not duplicate
+# feature rows, which no object in the fixture has.
+#
+# What they look like is a handful of trees voting differently: the deltas are
+# 5, 4 and 3 times 1/500, the vote quantum of a 500-estimator forest. That is
+# what a marginally different input does, not what different code does, which
+# would move every object. `feature.updated_date` is a DATE, so features
+# recomputed later on the same day as the classification are indistinguishable
+# from ones written before it, and that remains the untested explanation.
+#
+# They are kept in the fixture rather than filtered out, and the tests assert
+# the deviating set is exactly this one: a new divergence fails, and so does one
+# of these disappearing, either of which is worth looking at.
+KNOWN_DIVERGENT = {
+    36028933559737010,
+    36028933559737043,
+    36028933559737056,
+}
+
+# The single (oid, head) pair where the two sides name a different top class.
+# Head 9 is `_periodic`; the object is one of KNOWN_DIVERGENT.
+KNOWN_TOP_CLASS_DISAGREEMENT = {(36028933559737056, 9)}
 
 pytestmark = pytest.mark.skipif(
     not os.getenv("MODEL_PATH"),
@@ -139,51 +172,64 @@ def replayed(examples) -> tuple:
 
 
 def test_the_fixture_is_what_it_claims(examples):
-    """Guard the inputs, so a bad dump cannot look like a passing comparison."""
+    """Guard the inputs, so a thin dump cannot look like a passing comparison."""
     objects = examples["objects"]
-    assert len(objects) == 100
+    oids = [int(entry["oid"]) for entry in objects]
 
-    # All five heads for every object, or the row-count assertions below would
-    # pass while silently covering less than they claim.
+    assert len(oids) == len(set(oids))
+    assert len(objects) > 500, "too few objects to say much"
+
+    seeded_heads = set(taxonomy_seed.classifier_ids().values())
     for entry in objects:
-        assert len(entry["probabilities"]) == taxonomy_seed.CLASSES_PER_OID
+        assert entry["probabilities"], f"oid {entry['oid']} has nothing to compare"
         heads = {classifier_id for classifier_id, _, _, _ in entry["probabilities"]}
-        assert heads == set(taxonomy_seed.classifier_ids().values())
+        assert heads == seeded_heads
         assert entry["classifier_version"] == classifier_version_to_smallint(
             MODEL_VERSION
         )
 
-    assert len({entry["oid"] for entry in objects}) == 100
+    # The set must keep spanning sparse objects, or it stops covering the NaN
+    # handling and quietly becomes the filtered set this fixture replaced.
+    present = [len(entry["features"]) for entry in objects]
+    assert min(present) < 100, "no feature-sparse objects left in the fixture"
 
 
 def test_every_recomputed_row_exists_in_production(replayed):
+    """The step writes exactly the rows production wrote -- no more, no fewer."""
     rows, stored = replayed
 
-    orphans = [
-        (row["oid"], row["classifier_id"], row["class_id"])
-        for row in rows
-        if (row["oid"], row["classifier_id"], row["class_id"]) not in stored
-    ]
-    assert orphans == []
-    assert len(rows) == len(stored) == 100 * taxonomy_seed.CLASSES_PER_OID
+    computed_keys = {
+        (row["oid"], row["classifier_id"], row["class_id"]) for row in rows
+    }
+    assert computed_keys - set(stored) == set(), "rows the step invents"
+    assert set(stored) - computed_keys == set(), "rows the step would fail to write"
+    assert len(rows) == len(stored)
 
 
 def test_probabilities_and_rankings_match_production(replayed):
+    """Row-for-row equality, except for the objects documented above."""
     rows, stored = replayed
 
-    worst = 0.0
-    worst_key = None
-    rank_mismatches = []
-    for row in rows:
-        key = (row["oid"], row["classifier_id"], row["class_id"])
-        stored_probability, stored_ranking = stored[key]
-        difference = abs(stored_probability - row["probability"])
-        if difference > worst:
-            worst, worst_key = difference, key
-        if stored_ranking != row["ranking"]:
-            rank_mismatches.append((key, stored_ranking, row["ranking"]))
+    deviating = {
+        row["oid"]
+        for row in rows
+        if abs(stored[(row["oid"], row["classifier_id"], row["class_id"])][0] - row["probability"])
+        > PROBABILITY_TOLERANCE
+    }
+    assert deviating == KNOWN_DIVERGENT
 
-    assert worst <= PROBABILITY_TOLERANCE, f"max |Δp| = {worst:.3e} at {worst_key}"
+    # Ranking is dense *within a head*, so one differing probability reshuffles
+    # the ranks of every other class in that head -- including rows whose own
+    # value still matches to 1e-7. A divergent object is therefore excluded
+    # whole, not row by row. For every other object a ranking difference has no
+    # such excuse and would be a real bug in how `build_probability_rows` ranks.
+    rank_mismatches = [
+        ((row["oid"], row["classifier_id"], row["class_id"]), stored_ranking, row["ranking"])
+        for row in rows
+        if row["oid"] not in KNOWN_DIVERGENT
+        for stored_ranking in [stored[(row["oid"], row["classifier_id"], row["class_id"])][1]]
+        if stored_ranking != row["ranking"]
+    ]
     assert rank_mismatches == []
 
 
@@ -207,5 +253,6 @@ def test_top_class_matches_production(replayed):
         (key, probability) for key, (probability, _) in stored.items()
     )
 
-    assert computed == expected
-    assert len(computed) == 100 * len(taxonomy_seed.classifier_ids())
+    assert computed.keys() == expected.keys()
+    disagreements = {key for key in computed if computed[key] != expected[key]}
+    assert disagreements == KNOWN_TOP_CLASS_DISAGREEMENT

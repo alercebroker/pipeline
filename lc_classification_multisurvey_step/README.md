@@ -46,26 +46,38 @@ through the step's own path, and requires the result to match the rows in
     MODEL_PATH=/path/to/model/2.1.0 \
     python -m pytest tests/integration/test_real_data_equivalence.py -v
 
-The objects live in `tests/integration/data/real_examples.json.gz` (100 of them,
-230 KiB), so the test needs neither the VPN nor credentials — only the model.
+The objects live in `tests/integration/data/real_examples.json.gz` (992 of them,
+1.5 MiB), so the test needs neither the VPN nor credentials — only the model.
 Regenerate the fixture after a model bump or a change to the feature set:
 
-    REAL_DB_CONFIG=$(pwd)/local_config.yaml python scripts/dump_real_examples.py
+    REAL_DB_CONFIG=$(pwd)/local_config.yaml python scripts/dump_real_examples.py --count 1000
 
 `REAL_DB_CONFIG` points at any yaml with a `PSQL_CONFIG` block — the local run
 config already has one — so no credentials live in this repo.
 
-2026-09-03: 4500 rows over 100 objects, max `|Δp|` = 0, every `ranking` and
-every top-1 class identical. This is also the only test that melts a realistic
-batch — 100 oids at once, where the offline reference raises on a multi-row
-frame and the synthetic harness only reaches five.
+Objects are taken as they come. The only condition is that the object has BHRF
+rows to compare against; there is no filter on feature completeness, so the set
+spans 19 to 189 of the model's 199 features and exercises the NaN handling on
+real sparsity. It is drawn evenly from all 32 `feature` partitions.
 
-What the fixture covers, and does not: 11 of the 21 flat classes appear as a
-top-1 winner, `lastmjd` spans 682 days, and objects carry 190–205 of the 199
-features. No object in it classifies as **Transient** at the top head (88
-Periodic, 12 Stochastic), and none is feature-sparse, since the dump filters on
-`>= 190` features. Every head's probabilities are still compared for every
-object — the gap is in the class mix, not in which code runs.
+2026-09-03: 44640 rows over 992 objects. The row sets are identical — the step
+writes exactly what production wrote, no more and no fewer. 989 of 992 objects
+match to 1.1e-16, and 4959 of 4960 (oid, head) pairs pick the same top class.
+This is also the only test that melts a realistic batch — 992 oids at once,
+where the offline reference raises on a multi-row frame and the synthetic
+harness only reaches five.
+
+Three objects differ, by 0.010, 0.008 and 0.006, and are listed as
+`KNOWN_DIVERGENT` in the test with the evidence. Briefly: not sparsity (objects
+with 28 of 199 features match to 1e-16, these carry 124–184), not new photometry
+(`probability.lastmjd` equals their last detection mjd), not duplicate feature
+rows (no object has any). The deltas are 5, 4 and 3 times `1/500`, the vote
+quantum of a 500-estimator forest — a marginally different input, not different
+code, which would move every object. `feature.updated_date` has only day
+resolution, so a same-day recompute after the classification is indistinguishable
+from one before it; that remains unproven. The tests assert the deviating set is
+*exactly* those three, so a new divergence fails and so does one of these
+disappearing.
 
 Reading features back out of the database needs a name translation, and getting
 it wrong is silent — around 31 of the 199 features land as NaN and the model

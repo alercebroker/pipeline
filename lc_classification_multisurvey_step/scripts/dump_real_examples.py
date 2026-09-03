@@ -29,8 +29,12 @@ from lc_classification_multisurvey_step.db.db import PSQLConnection
 
 ZTF_SID = 0
 BHRF_IDS = [5, 6, 7, 8, 9]
-CLASSES_PER_OID = 45  # 21 + 3 + 6 + 6 + 9, all five heads
-MIN_FEATURES = 190  # of the model's 199; the rest are legitimately absent
+
+# The only condition, and it is not a quality filter: an object with no BHRF
+# probability rows has nothing to compare against. Everything else is taken as
+# it comes -- notably objects with a sparse feature vector, which are the ones
+# that exercise the NaN handling, and which an earlier version of this script
+# wrongly excluded with a minimum-feature-count filter.
 
 OUTPUT = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
@@ -43,12 +47,16 @@ OUTPUT = os.path.join(
 
 
 def candidate_oids(connection, wanted: int, partitions: int, per_partition: int) -> list:
-    """Objects with a nearly complete feature vector and all five heads written.
+    """Objects that have ZTF features and BHRF probabilities, taken as they come.
 
     Sampled per partition rather than grouped over the whole `feature` table,
-    which is partitioned by hash of oid and far too large to aggregate.
+    which is partitioned by hash of oid and far too large to aggregate. The walk
+    spreads over every partition and takes an even share from each, so the set
+    is not drawn from one corner of the table.
     """
-    chosen = []
+    chosen: list = []
+    share = max(1, wanted // max(1, partitions))
+
     with connection.session() as session:
         for part in range(partitions):
             if len(chosen) >= wanted:
@@ -66,42 +74,25 @@ def candidate_oids(connection, wanted: int, partitions: int, per_partition: int)
             if not sample:
                 continue
 
-            rich = [
+            classified = [
                 int(row[0])
                 for row in session.execute(
                     text(
-                        "SELECT oid FROM feature WHERE sid = :sid AND oid IN :oids "
-                        "GROUP BY oid HAVING count(*) >= :minimum"
-                    ).bindparams(bindparam("oids", expanding=True)),
-                    {"sid": ZTF_SID, "oids": sample, "minimum": MIN_FEATURES},
-                )
-            ]
-            if not rich:
-                continue
-
-            complete = [
-                int(row[0])
-                for row in session.execute(
-                    text(
-                        "SELECT oid FROM probability WHERE oid IN :oids "
-                        "AND classifier_id IN :classifier_ids "
-                        "GROUP BY oid HAVING count(*) = :expected"
+                        "SELECT DISTINCT oid FROM probability WHERE oid IN :oids "
+                        "AND classifier_id IN :classifier_ids"
                     ).bindparams(
                         bindparam("oids", expanding=True),
                         bindparam("classifier_ids", expanding=True),
                     ),
-                    {
-                        "oids": rich,
-                        "classifier_ids": BHRF_IDS,
-                        "expected": CLASSES_PER_OID,
-                    },
+                    {"oids": sample, "classifier_ids": BHRF_IDS},
                 )
             ]
+            take = classified[: share if len(chosen) + share < wanted else wanted - len(chosen)]
             print(
                 f"  partition {part}: sampled {len(sample)}, "
-                f"{len(rich)} with >={MIN_FEATURES} features, {len(complete)} fully classified"
+                f"{len(classified)} with BHRF rows, taking {len(take)}"
             )
-            chosen.extend(complete)
+            chosen.extend(take)
 
     return sorted(set(chosen))[:wanted]
 
