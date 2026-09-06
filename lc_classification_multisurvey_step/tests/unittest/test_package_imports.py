@@ -16,7 +16,6 @@ import pytest
 PURE_MODULES = [
     "lc_classification_multisurvey_step.probabilities",
     "lc_classification_multisurvey_step.input_dto",
-    "lc_classification_multisurvey_step.output_parser",
     "lc_classification_multisurvey_step.db.db",
 ]
 
