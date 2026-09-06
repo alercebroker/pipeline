@@ -93,6 +93,10 @@ def build_features_frame(collapsed: dict) -> pd.DataFrame:
 def lastmjd_by_oid(collapsed: dict) -> dict:
     """{oid: max detection mjd} for the same winning message as build_features_frame.
 
+    Raises if any oid is left with no usable mjd: `probability.lastmjd` is NOT
+    NULL, so such an object could never be written, and the step must not
+    quietly lose it.
+
     Already MJD — do NOT subtract 2400000.5. `detections` carries forced
     photometry too, so this is the max over both, matching offline
     `classify._lc_lastmjd`.
@@ -117,10 +121,10 @@ def lastmjd_by_oid(collapsed: dict) -> dict:
             continue
         lastmjd[oid] = max(mjds)
     if missing_oids:
-        log.warning(
-            "%d oid(s) have no usable detection mjd; they will produce no rows: %s",
-            len(missing_oids),
-            missing_oids,
+        # The schema types every detection mjd as a non-nullable double, so an
+        # oid with none is a broken producer, not a condition to skip (design §8).
+        raise ValueError(
+            f"{len(missing_oids)} oid(s) have no usable detection mjd: {missing_oids}"
         )
     return lastmjd
 

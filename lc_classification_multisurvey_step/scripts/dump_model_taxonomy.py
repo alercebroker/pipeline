@@ -3,8 +3,8 @@
 `tests/integration/taxonomy_seed.py` holds a copy of this, because the tests must
 be able to seed a database without loading a 1.6 GB pickle. Re-run this after a
 model bump and paste the result into `HEAD_CLASSES` there; if the two ever
-disagree, `build_probability_rows` logs the drifted class names and drops the
-whole head, which the integration tests see as a short row count.
+disagree, `build_probability_rows` raises naming the drifted class names and the
+step crashes on its first batch.
 
     python scripts/dump_model_taxonomy.py /path/to/model/2.1.0
 

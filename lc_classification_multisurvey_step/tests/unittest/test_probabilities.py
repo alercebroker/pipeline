@@ -196,23 +196,18 @@ class TestBuildProbabilityRows:
 
         assert {r["classifier_id"] for r in rows} == {50}
 
-    def test_unknown_class_drops_the_whole_head(self, caplog):
+    def test_unknown_class_raises_naming_the_head_and_the_class(self):
         dto = make_dto(
             flat=frame([1, 2], {"SNIa": [0.5, 0.5], "Nonsense": [0.5, 0.5]}),
             top=frame([1, 2], {"Transient": [1.0, 1.0]}),
         )
 
-        with caplog.at_level("ERROR"):
-            rows = build(dto, {1: 1.0, 2: 2.0})
-
-        # an unknown class name is frame-wide: the flat head is dropped entirely, top survives
-        assert {r["classifier_id"] for r in rows} == {60}
-        assert len(rows) == 2
-        assert "Nonsense" in caplog.text
+        with pytest.raises(ValueError, match=r"'base'.*Nonsense"):
+            build(dto, {1: 1.0, 2: 2.0})
 
     def test_known_classes_keep_every_oid(self):
-        # Counterpart to the test above: with no unknown class name, the head
-        # drop must not fire for anyone.
+        # Counterpart to the test above: with no unknown class name nothing raises
+        # and every oid is emitted.
         dto = make_dto(flat=frame([1, 2], {"SNIa": [0.5, 0.5], "AGN": [0.5, 0.5]}))
 
         rows = build(dto, {1: 1.0, 2: 2.0})
@@ -220,107 +215,47 @@ class TestBuildProbabilityRows:
         assert {r["oid"] for r in rows} == {1, 2}
         assert len(rows) == 4
 
-    def test_oid_without_lastmjd_is_dropped_and_logged(self, caplog):
+    def test_oid_without_lastmjd_raises_naming_it(self):
         dto = make_dto(flat=frame([1, 2], {"SNIa": [1.0, 1.0]}))
 
-        with caplog.at_level("ERROR"):
-            rows = build(dto, {1: 1.0})
+        with pytest.raises(ValueError, match=r"lastmjd.*\[2\]"):
+            build(dto, {1: 1.0})
 
-        assert {r["oid"] for r in rows} == {1}
-        assert "2" in caplog.text
-
-    def test_missing_lastmjd_is_logged_once_for_the_batch_not_once_per_head(self, caplog):
-        # lastmjd_map is the same for all five heads, so the missing set is a
-        # batch-wide fact: computing it inside the head loop logs the identical
-        # oid list five times for one problem.
-        dto = make_dto(
-            flat=frame([1, 2], {"SNIa": [1.0, 1.0]}),
-            top=frame([1, 2], {"Transient": [1.0, 1.0]}),
-            transient=frame([1, 2], {"SNIa": [1.0, 1.0]}),
-            stochastic=frame([1, 2], {"AGN": [1.0, 1.0]}),
-            periodic=frame([1, 2], {"LPV": [1.0, 1.0]}),
-        )
-
-        with caplog.at_level("ERROR"):
-            rows = build(dto, {1: 100.0})
-
-        lastmjd_lines = [r for r in caplog.records if "lastmjd" in r.getMessage()]
-        assert len(lastmjd_lines) == 1
-        # ...and the drop itself still applies to every head.
-        assert {r["oid"] for r in rows} == {1}
-        assert len(rows) == 5
-
-    def test_head_with_no_taxonomy_map_is_dropped_and_logged(self, caplog):
+    def test_head_with_no_taxonomy_map_raises(self):
+        # resolve_classifiers guarantees a map per head at startup, so a miss here
+        # is a bug; plain indexing surfaces it as a KeyError on the id.
         dto = make_dto(flat=frame([1], {"SNIa": [1.0]}), top=frame([1], {"Transient": [1.0]}))
         taxonomy = {50: TAXONOMY[50]}  # no map for the top head's id
 
-        with caplog.at_level("ERROR"):
-            rows = p.build_probability_rows(
+        with pytest.raises(KeyError, match="60"):
+            p.build_probability_rows(
                 dto, {1: 1.0}, IDS, taxonomy, base_name="base", version="2.1.0"
             )
 
-        assert {r["classifier_id"] for r in rows} == {50}
-        assert "60" in caplog.text
-
-    def test_head_with_no_resolved_id_is_dropped_and_logged(self, caplog):
+    def test_head_with_no_resolved_id_raises(self):
         dto = make_dto(flat=frame([1], {"SNIa": [1.0]}), top=frame([1], {"Transient": [1.0]}))
         ids = {NAMES[0]: 50}  # top head never resolved
 
-        with caplog.at_level("ERROR"):
-            rows = p.build_probability_rows(
+        with pytest.raises(KeyError, match=NAMES[1]):
+            p.build_probability_rows(
                 dto, {1: 1.0}, ids, TAXONOMY, base_name="base", version="2.1.0"
             )
 
-        assert {r["classifier_id"] for r in rows} == {50}
-        assert NAMES[1] in caplog.text
+    @pytest.mark.parametrize(
+        "flat",
+        [
+            {"SNIa": [0.7], "AGN": [float("nan")], "LPV": [0.3]},  # one NaN class
+            {"SNIa": [float("nan")], "AGN": [float("nan")]},  # whole row NaN
+        ],
+        ids=["partial", "all"],
+    )
+    def test_nan_probability_raises_naming_the_oid(self, flat):
+        # BHRF has no path to a NaN probability (sklearn 1.4 forests take NaN
+        # features natively), so one is a model fault and must stop the step.
+        dto = make_dto(flat=frame([1], flat), top=frame([1], {"Transient": [1.0]}))
 
-    def test_partial_nan_row_keeps_its_valid_classes_and_ranks_among_them(self):
-        # Same policy as output_parser.parse's `how="all"`: an oid with a NaN in
-        # only some classes still has a valid winner and keeps it.
-        dto = make_dto(flat=frame([1], {"SNIa": [0.7], "AGN": [float("nan")], "LPV": [0.3]}))
-
-        rows = build(dto, {1: 100.0})
-
-        assert {r["class_id"] for r in rows} == {TAXONOMY[50]["SNIa"], TAXONOMY[50]["LPV"]}
-        rank_by_class = {r["class_id"]: r["ranking"] for r in rows}
-        assert rank_by_class[TAXONOMY[50]["SNIa"]] == 1
-        assert rank_by_class[TAXONOMY[50]["LPV"]] == 2
-
-    def test_all_nan_row_is_dropped_for_that_head_only(self):
-        nan = float("nan")
-        dto = make_dto(
-            flat=frame([1, 2], {"SNIa": [nan, 0.6], "AGN": [nan, 0.4]}),
-            top=frame([1, 2], {"Transient": [1.0, 1.0]}),
-        )
-
-        rows = build(dto, {1: 100.0, 2: 200.0})
-
-        # oid 1 has no flat-head rows, but keeps the top head; oid 2 is untouched.
-        assert {(r["oid"], r["classifier_id"]) for r in rows} == {
-            (1, 60), (2, 50), (2, 60),
-        }
-
-    def test_every_oid_all_nan_drops_the_head_without_raising(self):
-        nan = float("nan")
-        dto = make_dto(
-            flat=frame([1, 2], {"SNIa": [nan, nan], "AGN": [nan, nan]}),
-            top=frame([1, 2], {"Transient": [1.0, 1.0]}),
-        )
-
-        rows = build(dto, {1: 100.0, 2: 200.0})
-
-        assert {r["classifier_id"] for r in rows} == {60}
-
-    def test_nan_probabilities_are_logged_once_per_head_not_once_per_oid(self, caplog):
-        nan = float("nan")
-        dto = make_dto(flat=frame([1, 2, 3], {"SNIa": [nan] * 3, "AGN": [nan] * 3}))
-
-        with caplog.at_level("WARNING"):
-            build(dto, {1: 1.0, 2: 2.0, 3: 3.0})
-
-        nan_lines = [r for r in caplog.records if "NaN" in r.getMessage()]
-        assert len(nan_lines) == 1
-        assert "3" in nan_lines[0].getMessage()
+        with pytest.raises(ValueError, match=r"NaN.*\[1\]"):
+            build(dto, {1: 100.0})
 
     def test_values_are_native_python_types_for_json_serialisation(self):
         import json
@@ -329,20 +264,15 @@ class TestBuildProbabilityRows:
         rows = build(dto, {1: 1.0})
         json.dumps(rows)  # numpy int64/float64 would raise here
 
-    def test_multi_oid_multi_head_with_one_head_dropped(self):
+    def test_drift_in_any_head_fails_the_whole_batch(self):
         dto = make_dto(
             flat=frame([1, 2], {"SNIa": [0.9, 0.1], "AGN": [0.1, 0.9]}),
             top=frame([1, 2], {"Transient": [0.8, 0.2], "Stochastic": [0.2, 0.8]}),
             periodic=frame([1, 2], {"LPV": [0.6, 0.4], "Unseeded": [0.4, 0.6]}),
         )
 
-        rows = build(dto, {1: 100.0, 2: 200.0})
-
-        # flat (50) and top (60) survive for both oids; periodic (90) is dropped
-        # entirely because "Unseeded" is not in its taxonomy.
-        assert {r["classifier_id"] for r in rows} == {50, 60}
-        assert len(rows) == 8
-        assert {(r["oid"], r["classifier_id"]) for r in rows} == {
-            (1, 50), (1, 60), (2, 50), (2, 60),
-        }
-        assert {r["lastmjd"] for r in rows if r["oid"] == 2} == {200.0}
+        # flat and top are fine; periodic carries a class the taxonomy has not
+        # seeded. Nothing is emitted for the batch — partial output would leave
+        # the flat head written and the periodic head silently absent.
+        with pytest.raises(ValueError, match="Unseeded"):
+            build(dto, {1: 100.0, 2: 200.0})

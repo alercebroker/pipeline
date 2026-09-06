@@ -9,11 +9,11 @@ until that lands, this module is what a local database gets seeded from.
 The class names are NOT guesses and must not be edited by hand. They were read
 off the 2.1.0 pickle itself -- `list_of_classes` for the flat head and
 `model[head].classes_` for the other four -- because the model is the only
-authority on what its frames' columns are called. `build_probability_rows` drops
-an entire head when one of its class names is absent from the taxonomy, so a
-seed assembled from the class hierarchy hardcoded in
-`alerce_classifiers/classifiers/hierarchical_random_forest.py` would silently
-produce nothing: that hierarchy is stale (it lists SNIbc/SNIIb and RRL, while
+authority on what its frames' columns are called. `build_probability_rows`
+raises when one of a head's class names is absent from the taxonomy, so a seed
+assembled from the class hierarchy hardcoded in
+`alerce_classifiers/classifiers/hierarchical_random_forest.py` would crash the
+step on its first batch: that hierarchy is stale (it lists SNIbc/SNIIb and RRL, while
 2.1.0 emits SESN and RRLab/RRLc).
 
 Regenerate with `scripts/dump_model_taxonomy.py` after any model bump.

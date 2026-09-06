@@ -141,10 +141,10 @@ credentials from the compose file:
 `_initial_data_pipeline.py` seeds classifier ids 1-4 for the stamp classifiers
 only; the five BHRF heads are not there (design §12 tracks the back-port). Until
 that lands, `taxonomy_seed.py` is the definition, and its class names were read
-off the model pickle rather than written by hand — `build_probability_rows` drops
-an entire head when one class name is missing from the taxonomy, so a seed
-guessed from the class hierarchy hardcoded in `alerce_classifiers` would produce
-nothing at all: that hierarchy is stale (it lists `SNIbc`/`SNIIb` and `RRL`,
+off the model pickle rather than written by hand — `build_probability_rows`
+raises when one class name is missing from the taxonomy, so a seed guessed from
+the class hierarchy hardcoded in `alerce_classifiers` would crash the step on
+its first batch: that hierarchy is stale (it lists `SNIbc`/`SNIIb` and `RRL`,
 while 2.1.0 emits `SESN` and `RRLab`/`RRLc`). After a model bump, regenerate:
 
     python scripts/dump_model_taxonomy.py /path/to/model/2.1.0

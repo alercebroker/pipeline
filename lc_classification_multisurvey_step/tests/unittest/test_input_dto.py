@@ -148,9 +148,12 @@ class TestLastmjdByOid:
         msgs = [message(oid="1", detections=[detection(60000.0)])]
         assert input_dto.lastmjd_by_oid(input_dto.collapse_by_oid(msgs))[1] == pytest.approx(60000.0)
 
-    def test_message_without_detections_is_absent(self):
+    def test_message_without_detections_raises(self):
+        # The schema defaults `detections` to [] but types every mjd as a
+        # non-nullable double, so an oid with no mjd at all is a broken producer.
         msgs = [message(oid="1", detections=[]), message(oid="2")]
-        assert input_dto.lastmjd_by_oid(input_dto.collapse_by_oid(msgs)) == {2: 60000.0}
+        with pytest.raises(ValueError, match=r"\[1\]"):
+            input_dto.lastmjd_by_oid(input_dto.collapse_by_oid(msgs))
 
     def test_none_mjd_is_skipped(self):
         msgs = [
@@ -165,37 +168,30 @@ class TestLastmjdByOid:
     def test_nan_mjd_does_not_leak_through_regardless_of_order(self, bad_mjd):
         # max() is order-sensitive with NaN: max(nan, 60000.0) is nan, but
         # max(60000.0, nan) is 60000.0. Neither NaN nor inf may win either way.
-        # inf is the more dangerous of the two: a NaN lastmjd gets dropped
-        # downstream by probabilities.py's isna() check, but an inf lastmjd is
-        # accepted by Postgres double precision and would win the scribe's
-        # highest-lastmjd dedup forever.
+        # inf is the more dangerous of the two: it is accepted by Postgres
+        # double precision and would win the scribe's highest-lastmjd dedup
+        # forever.
         msgs = [message(oid="1", detections=[detection(bad_mjd), detection(60000.0)])]
         assert input_dto.lastmjd_by_oid(input_dto.collapse_by_oid(msgs)) == {1: 60000.0}
 
-    def test_oids_with_no_usable_mjd_are_logged_once_per_batch(self, caplog):
-        # A batch-wide flood of per-message warnings would bury the signal in
-        # exactly the incident the log exists to diagnose (see probabilities.py's
-        # equivalent aggregation for the same reasoning).
+    def test_oids_with_no_usable_mjd_raise_naming_all_of_them(self):
+        # One raise for the batch naming every offending oid, so an operator in
+        # a crashloop sees the whole set rather than the first one.
         msgs = [message(oid="1", detections=[]), message(oid="2", detections=[])]
 
-        with caplog.at_level("WARNING"):
-            result = input_dto.lastmjd_by_oid(input_dto.collapse_by_oid(msgs))
-
-        assert result == {}
-        warnings = [r for r in caplog.records if r.levelname == "WARNING"]
-        assert len(warnings) == 1
-        assert "1" in warnings[0].message and "2" in warnings[0].message
+        with pytest.raises(ValueError, match=r"2 oid.*\[1, 2\]"):
+            input_dto.lastmjd_by_oid(input_dto.collapse_by_oid(msgs))
 
 
 class TestDuplicateOidConsistency:
     def test_features_and_lastmjd_derive_from_the_same_winning_message(self):
-        # The winning message for oid 7 (last by arrival order) has an empty
-        # detections list. Both derive from ONE collapse — the way step.execute
+        # Two messages for oid 7 carry different features AND different
+        # detections. Both structures derive from ONE collapse — the way the step
         # calls them — so the emitted row cannot pair the winner's features with
         # the loser's stale lastmjd.
         msgs = [
             message(oid="7", features={"a": 1.0}, detections=[detection(60000.0)]),
-            message(oid="7", features={"a": 2.0}, detections=[]),
+            message(oid="7", features={"a": 2.0}, detections=[detection(60005.0)]),
         ]
 
         collapsed = input_dto.collapse_by_oid(msgs)
@@ -203,7 +199,7 @@ class TestDuplicateOidConsistency:
         lastmjd = input_dto.lastmjd_by_oid(collapsed)
 
         assert frame.loc[7, "a"] == 2.0  # winner's features
-        assert 7 not in lastmjd  # winner has no detections -> absent, not msg1's stale value
+        assert lastmjd == {7: 60005.0}  # winner's lastmjd, not msg1's stale value
 
 
 class TestCreateInputDto:

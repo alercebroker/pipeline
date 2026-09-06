@@ -1,12 +1,10 @@
 """BHRF OutputDTO -> scribe-ready probability rows.
 
 Ported from the offline `features/offline/probability_writer.py` with two
-changes (design doc §5): this one is batched (offline raises on a multi-row
+changes: this one is batched (offline raises on a multi-row
 frame), and the classifier ids come from the database instead of offline's
-pinned `CLASSIFIER_IDS = [5..9]` — only the head *names* are pinned (§6).
+pinned `CLASSIFIER_IDS = [5..9]` — only the head *names* are pinned.
 
-Pure: no database, no alerce_classifiers, no apf. `output_dto` is duck-typed —
-anything with `.probabilities` and `.hierarchical` works.
 """
 import logging
 
@@ -46,27 +44,6 @@ def iter_head_frames(output_dto, base_name: str = DEFAULT_CLASSIFIER_NAME) -> li
     ]
 
 
-def _oids_without_lastmjd(output_dto, lastmjd_map: dict, base_name: str) -> set:
-    """Oids appearing in any head that `lastmjd_map` cannot supply a usable value for.
-
-    Missing key and NaN value are the same answer: `probability.lastmjd` is NOT
-    NULL, so neither can be written (design §8). Scanned across the union of the
-    heads because a child head can carry an oid the flat head does not.
-    """
-    oids = set()
-    for _, frame in iter_head_frames(output_dto, base_name):
-        if frame is None or len(frame) == 0:
-            continue
-        oids.update(int(oid) for oid in frame.index.astype("int64"))
-
-    # `value != value` is the NaN test; it holds for no other float.
-    return {
-        oid
-        for oid in oids
-        if lastmjd_map.get(oid) is None or lastmjd_map[oid] != lastmjd_map[oid]
-    }
-
-
 def build_probability_rows(
     output_dto,
     lastmjd_map: dict,
@@ -81,14 +58,16 @@ def build_probability_rows(
 
     Caller contract: each head's frame must have a unique oid index — duplicates
     are not collapsed here and would collide on the probability primary key.
-    De-duplication happens upstream, in `input_dto.build_features_frame`.
+    De-duplication happens upstream, in `input_dto.collapse_by_oid`.
 
-    `lastmjd_map` is {oid: lastmjd}; an oid missing from it is dropped from every
-    head, since `probability.lastmjd` is NOT NULL. `classifier_ids` and
-    `taxonomy_maps` come from the DB via `db.resolve_classifiers` (design §6.1).
+    `classifier_ids` and `taxonomy_maps` come from the DB via
+    `db.resolve_classifiers` (design §6.1), which already guarantees every head
+    resolves — so they are indexed directly and a miss is a bug, not a condition.
 
-    Per design §8, per-batch problems drop the affected (oid, head) rows and are
-    logged rather than killing the batch.
+    Per design §8 this raises instead of thinning the output: a class name the
+    taxonomy does not know, a NaN probability, or an oid with no lastmjd are
+    model/taxonomy/producer faults, and a step that logged and carried on would
+    silently lose objects for the life of the deploy.
     """
     if output_dto is None or output_dto.probabilities is None:
         return []
@@ -96,73 +75,27 @@ def build_probability_rows(
     version_smallint = classifier_version_to_smallint(version)
     rows = []
 
-    # Batch-wide, not per-head: `lastmjd_map` is the same object for all five, so
-    # this is resolved and logged once and the per-head filter below only applies
-    # it. Inside the loop it logged the identical oid list five times.
-    unusable_lastmjd = _oids_without_lastmjd(output_dto, lastmjd_map, base_name)
-    if unusable_lastmjd:
-        log.error(
-            "oids %s have no usable lastmjd; dropping their rows for every head",
-            sorted(unusable_lastmjd),
-        )
-
     for classifier_name, frame in iter_head_frames(output_dto, base_name):
         if frame is None or len(frame) == 0:
             continue
 
-        classifier_id = classifier_ids.get(classifier_name)
-        if classifier_id is None:
-            log.error(
-                "no classifier_id resolved for head '%s'; dropping %d rows for this head",
-                classifier_name,
-                len(frame),
-            )
-            continue
+        classifier_id = classifier_ids[classifier_name]
+        class_id_of = taxonomy_maps[classifier_id]
 
-        class_id_of = taxonomy_maps.get(classifier_id)
-        if not class_id_of:
-            log.error(
-                "no taxonomy map for classifier_id=%s (head '%s'); dropping this head",
-                classifier_id,
-                classifier_name,
-            )
-            continue
-
-        # Class names are the frame's COLUMNS, so an unknown class name is a
-        # frame-wide model/taxonomy drift, never a per-oid condition — check once
-        # per head rather than once per oid.
+        # Class names are the frame's COLUMNS, so an unknown name is a frame-wide
+        # model/taxonomy drift, identical for every oid in the batch.
         unknown = sorted(set(frame.columns) - set(class_id_of))
         if unknown:
-            log.error(
-                "classifier_id=%s (head '%s'): class names %s absent from the taxonomy; "
-                "dropping this head for all %d oids in the batch",
-                classifier_id,
-                classifier_name,
-                unknown,
-                len(frame),
+            raise ValueError(
+                f"head '{classifier_name}' (classifier_id={classifier_id}): class names "
+                f"{unknown} are absent from the seeded taxonomy; the model and the "
+                "taxonomy table disagree"
             )
-            continue
 
-        # NaN probabilities, same policy as `output_parser.parse` — the other
-        # consumer of these frames. `how="all"`, not "any": an oid with a NaN in
-        # only some classes keeps its winner and ranks among the classes it has;
-        # only an oid scored entirely NaN loses the head. Not cosmetic: `rank()`
-        # propagates NaN and the `.astype(int)` below then raises
-        # IntCastingNaNError, killing the batch over what §8 says should cost
-        # only these rows. Logged once per head, never per oid.
-        scored = frame.dropna(how="all")
-        unscored = len(frame) - len(scored)
-        if unscored:
-            log.warning(
-                "head '%s': %d of %d oids scored entirely NaN; dropping the head "
-                "for those oids",
-                classifier_name,
-                unscored,
-                len(frame),
-            )
-        if len(scored) == 0:
-            continue
-        frame = scored
+        nan_rows = frame.isna().any(axis=1)
+        if nan_rows.any():
+            bad = sorted(int(oid) for oid in frame.index[nan_rows])
+            raise ValueError(f"head '{classifier_name}': NaN probabilities for oids {bad}")
 
         melted = (
             frame.rename_axis("oid")
@@ -171,46 +104,33 @@ def build_probability_rows(
         )
         melted["oid"] = melted["oid"].astype("int64")
 
-        nan_probability = melted["probability"].isna()
-        if nan_probability.any():
-            log.warning(
-                "head '%s': %d NaN probabilities across %d oids; dropping those "
-                "classes and ranking each oid among the ones it does have",
-                classifier_name,
-                int(nan_probability.sum()),
-                int(melted.loc[nan_probability, "oid"].nunique()),
+        missing_lastmjd = sorted(set(melted["oid"].tolist()) - set(lastmjd_map))
+        if missing_lastmjd:
+            raise ValueError(
+                f"head '{classifier_name}': no lastmjd for oids {missing_lastmjd}; "
+                "probability.lastmjd is NOT NULL"
             )
-            melted = melted[~nan_probability]
-            if melted.empty:
-                continue
 
-        # After the NaN rows are gone, so the rank never has to carry one.
         melted["ranking"] = (
             melted.groupby("oid")["probability"]
             .rank(ascending=False, method="dense")
             .astype(int)
         )
-
-        if unusable_lastmjd:
-            melted = melted[~melted["oid"].isin(unusable_lastmjd)]
-            if melted.empty:
-                continue
         melted["lastmjd"] = melted["oid"].map(lastmjd_map)
-
         melted["class_id"] = melted["class_name"].map(class_id_of)
 
-        for record in melted.to_dict("records"):
-            rows.append(
-                {
-                    "oid": int(record["oid"]),
-                    "sid": int(sid),
-                    "classifier_id": int(classifier_id),
-                    "classifier_version": int(version_smallint),
-                    "class_id": int(record["class_id"]),
-                    "probability": float(record["probability"]),
-                    "ranking": int(record["ranking"]),
-                    "lastmjd": float(record["lastmjd"]),
-                }
-            )
+        rows.extend(
+            {
+                "oid": int(record["oid"]),
+                "sid": int(sid),
+                "classifier_id": int(classifier_id),
+                "classifier_version": int(version_smallint),
+                "class_id": int(record["class_id"]),
+                "probability": float(record["probability"]),
+                "ranking": int(record["ranking"]),
+                "lastmjd": float(record["lastmjd"]),
+            }
+            for record in melted.to_dict("records")
+        )
 
     return rows
