@@ -68,18 +68,16 @@ lc_classification_multisurvey_step/
 │   ├── step.py                     # LateClassifierMultisurvey(GenericStep)
 │   ├── input_dto.py                # messages → features-only InputDTO
 │   ├── probabilities.py            # OutputDTO → scribe-ready rows (5 heads)
-│   ├── db/
-│   │   ├── __init__.py
-│   │   └── db.py                   # PSQLConnection + get_classifier_ids_by_name
-│   │                               #              + get_taxonomy_by_classifier_id
-│   └── output_parser.py            # PLACEHOLDER downstream producer
+│   └── db/
+│       ├── __init__.py
+│       └── db.py                   # PSQLConnection + get_classifier_ids_by_name
+│                                   #              + get_taxonomy_by_classifier_id
 └── tests/
     ├── __init__.py
     ├── unittest/
     │   ├── __init__.py
     │   ├── test_probabilities.py
     │   ├── test_input_dto.py
-    │   ├── test_output_parser.py
     │   ├── test_taxonomy.py
     │   └── test_package_imports.py  # the pure modules import with no
     │                                # alerce_classifiers and no apf
@@ -122,12 +120,15 @@ def squidward_params(model_class: str):
 ```
 feature_step output topic
   │
-  ├─ execute(messages)
-  │    input_dto.filter_messages(messages, min_detections)
-  │    messages → input_dto.create_input_dto(kept)       # features-only
+  ├─ pre_execute(messages)
+  │    input_dto.filter_messages(messages, min_detections)  → kept
+  │    input_dto.collapse_by_oid(kept)                       → {oid: message}
+  │
+  ├─ execute(collapsed)
+  │    collapsed → input_dto.create_input_dto(collapsed)    # features-only
   │    model.can_predict(dto)  → skip batch if False
   │    model.predict(dto)      → OutputDTO (batched, multi-oid frames)
-  │    → returns (OutputDTO, input_dto.lastmjd_by_oid(kept))
+  │    → returns (OutputDTO, input_dto.lastmjd_by_oid(collapsed))
   │
   ├─ post_execute(result)
   │    probabilities.build_probability_rows(dto, lastmjd_map, ids, taxonomy_maps, ...)
@@ -135,14 +136,13 @@ feature_step output topic
   │    produce_scribe(rows)
   │      one `update-probability` command per row → scribe_multisurvey topic
   │
-  └─ pre_produce → output_parser (PLACEHOLDER)
+  └─ pre_produce → [] (no downstream output yet, §9)
 ```
 
-`build_probability_rows` runs in `post_execute`, not `execute`: `execute`
-returns the `(OutputDTO, lastmjd_map)` pair and `post_execute` turns it into
-rows and produces them. apf runs the two unconditionally back to back, so the
-split is observational only — it keeps `execute` to "classify" and
-`post_execute` to "persist", matching the sibling steps.
+Filtering and the per-oid collapse live in `pre_execute` (apf's preprocessing
+hook), `execute` only classifies, and `post_execute` turns the model output into
+rows and produces them to the scribe — the same split as
+correction_multisurvey_step and magstats_multisurvey_step.
 
 **Startup (two reads, in order):**
 
@@ -356,23 +356,24 @@ detectable:
 
   These replace the `-1`-on-miss behaviour rather than layering on it: with the ids
   themselves coming from the DB, a name that does not resolve has no safe fallback.
-- **Per batch, skip and log.** If a class name coming out of the model is absent
-  from its head's map, log an error identifying the classifier id and class name,
-  and drop **that whole head for the batch**. Do not emit `class_id = -1`, and do
-  not kill the batch — one model/taxonomy drift should not stop the consumer.
+- **Per batch, raise.** `build_probability_rows` never thins its output. If a
+  class name coming out of the model is absent from its head's map, it raises
+  naming the head, the classifier id and the drifted names; a NaN probability
+  raises naming the oids; an oid with no `lastmjd` raises naming it. The
+  exception propagates out of `post_execute`, apf logs it and bumps the
+  exception metric, and the step dies without committing the offset.
 
-  The granularity is the head, not the oid: class names are the *columns* of a
-  head's frame, so an unknown name is a frame-wide model/taxonomy drift that is
-  identical for every oid in the batch. Checking per-oid would recompute the same
-  answer once per oid and emit one near-identical error line per oid — thousands
-  of them during exactly the incident the log exists to diagnose. Check once per
-  head, log once.
+  This deliberately reverses the earlier "drop the head and carry on" policy.
+  Each of these is a model/taxonomy/producer fault that is identical for every
+  batch after it, so a step that logged and continued would emit partial
+  output for the life of the deploy — the same silent-garbage failure the
+  startup assertions exist to prevent, arriving one batch later. Startup
+  already guarantees every head resolves to an id and a taxonomy map, so those
+  lookups are plain dict indexing with no fallback.
 
-  An oid missing from the `lastmjd` map *is* per-oid (`probability.lastmjd` is
-  NOT NULL), so those rows drop individually, with the affected oids named in one
-  log line per head. An oid whose mapped `lastmjd` is NaN drops the same way —
-  the column is NOT NULL, so a NaN is as unusable as a missing key, and the
-  vectorised `.isna()` check treats them alike deliberately.
+  The granularity of the check is still the head, not the oid: class names are
+  the *columns* of a head's frame, so an unknown name is checked once per head
+  and reported once, never once per oid.
 - **`can_predict` false** → produce nothing, log, return an empty OutputDTO,
   matching offline `classify_astro_object` and the legacy step.
 - **Messages with no features** (`msg["features"]` is `None`) are filtered out
@@ -395,14 +396,15 @@ detectable:
   whole batch — and on a Kafka consumer it re-raises on every redelivery, so the
   partition stalls rather than merely losing a message.
 - **Detections whose `mjd` is non-finite** (NaN or ±inf) are skipped when
-  `lastmjd` is computed; an oid left with no usable mjd is dropped, again with
-  one aggregated warning per batch. NaN matters because `max()` is order-
-  sensitive with it (`max(nan, x)` is `nan`, `max(x, nan)` is `x`), which would
-  otherwise make the result depend on detection ordering. `inf` matters more:
-  a NaN `lastmjd` is caught downstream by the `.isna()` check above, but an
-  `inf` is a valid `double precision` value that Postgres accepts and that then
-  wins the scribe's highest-`lastmjd` dedup permanently — no later, correct
-  message could ever displace it.
+  `lastmjd` is computed; an oid left with no usable mjd raises, naming every
+  such oid in the batch in one message. The schema types every detection `mjd`
+  as a non-nullable `double`, so an object with none is a broken producer, not
+  a state to skip. NaN matters because `max()` is order-sensitive with it
+  (`max(nan, x)` is `nan`, `max(x, nan)` is `x`), which would otherwise make the
+  result depend on detection ordering. `inf` matters more: it is a valid
+  `double precision` value that Postgres accepts and that then wins the
+  scribe's highest-`lastmjd` dedup permanently — no later, correct message
+  could ever displace it.
 - **Duplicate oids in one batch** are collapsed in a single pass that picks one
   winning message per oid — the last, by arrival order — from which *both* the
   features frame and the `lastmjd` map are derived. Two messages for the same
@@ -424,24 +426,23 @@ detectable:
   with the *loser's* timestamp. Deriving both from one collapsed mapping removes
   that class of bug by construction rather than by keeping two rules in sync.
 
-## 9. Placeholder downstream output
+## 9. No downstream output yet
 
-Decision 5 is "new multisurvey output schema", but its shape is deferred. For now:
+Decision 5 is "new multisurvey output schema", but its shape is deferred, and
+until it is designed the step produces nothing downstream:
 
-- `output_parser.py` holds a `MultisurveyOutputParser` whose `parse` returns a
-  minimal per-oid message — `{oid, classifier_name, classifier_version}` plus the
-  top-ranked class per head — and is marked `# PLACEHOLDER` with a pointer to this
-  section.
-- No `schemas/lc_classification_multisurvey_step/` Avro file is added yet.
+- `pre_produce` returns `[]`. It must not return the raw `(OutputDTO, dict)`
+  result: apf's `produce` iterates whatever it is handed as if it were messages.
+- No `schemas/lc_classification_multisurvey_step/` Avro file exists and there
+  is no `output_parser` module; an earlier placeholder parser was removed
+  rather than carried as dead code.
 - **No downstream producer is configurable.** `PRODUCER_CONFIG` is always `{}`,
-  so apf falls back to its `DefaultProducer` and the step produces nothing
-  downstream. An earlier draft gated a real producer behind `PRODUCER_SERVER`,
-  but that branch could not work: apf's `KafkaProducer.__init__` reads
-  `config["SCHEMA_PATH"]` unconditionally, and there is no schema to point it at
-  (see the bullet above), so setting `PRODUCER_SERVER` raised
-  `KeyError: 'SCHEMA_PATH'` before the step consumed anything. A switch that
-  cannot work is worse than no switch, so it was removed. Restore it together
-  with the `.avsc` when the schema is designed.
+  so apf falls back to its default producer. An earlier draft gated a real
+  producer behind `PRODUCER_SERVER`, but that branch could not work: apf's
+  `KafkaProducer.__init__` reads `config["SCHEMA_PATH"]` unconditionally, and
+  there is no schema to point it at, so setting `PRODUCER_SERVER` raised
+  `KeyError: 'SCHEMA_PATH'` before the step consumed anything. Restore the
+  switch together with the `.avsc` and a parser when the schema is designed.
 
 Deferring this is safe because decision 3 makes the scribe the real output path.
 
