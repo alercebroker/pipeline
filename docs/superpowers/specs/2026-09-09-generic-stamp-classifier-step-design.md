@@ -38,16 +38,23 @@ MODEL_CONFIG:
 
 The step does `get_class(CLASS)(**PARAMS)`. Hunter is another `CLASS`.
 
-### 2. Asteroid fallback is derived from the taxonomy
+### 2. ssObjectId alerts are a per-model policy, not a fixed taxonomy
 
 Today: `execute` hardcodes `{AGN, SN, VS, asteroid, bogus}` with
-`asteroid: 1.0` for `ssObjectId` alerts.
+`asteroid: 1.0` for `ssObjectId` alerts. That only makes sense for a
+taxonomy with an asteroid class. The hunter is binary (report or not) and
+has no such class.
 
-Proposed: build the fallback from the taxonomy already loaded by `CLS_ID`
-(or from the model's class list): every class at 0.0, the asteroid class at
-1.0. The asteroid class name is `MODEL_CONFIG.ASTEROID_CLASS`, defaulting to
-`asteroid`. If the taxonomy has no such class the step fails at startup
-rather than writing `class_id = -1` rows.
+Proposed: the step never invents probabilities. `ssObjectId` alerts are
+handled by `MODEL_CONFIG.SS_OBJECT_POLICY`:
+
+- `skip` (default): the alert is not classified, not stored, not produced.
+- `fixed_class: <name>`: emit every taxonomy class at 0.0 and `<name>` at
+  1.0. The rubin deployment sets `fixed_class: asteroid`. The step checks at
+  startup that `<name>` exists in the taxonomy loaded by `CLS_ID`.
+
+The class list for the fixed-class case comes from the taxonomy, so the
+step stops carrying any class names in code.
 
 ### 3. Canonical stamp column names, no rename flag
 
@@ -98,6 +105,10 @@ survey.
 
 ## Open points
 
+- Hunter input topic: the raw `lsst` alert stream like rubin, or a filtered
+  set of objects (for example the rubin classifier output). The second case
+  needs a different consumer adapter, which is a bigger change than listed
+  here.
 - Hunter inputs: confirm it uses the three cutouts and a subset of the
   fields already extracted, or list what is missing (change 5).
 - Hunter model artifact layout: `model.keras` plus `hparams.yaml` inside a
