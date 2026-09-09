@@ -18,8 +18,8 @@ deployment consumes. `pre_execute`, the DTO, the DB writer, the scribe
 producer, and the output schema are shared as they are.
 
 ssObjectId alerts can never reach the hunter deployment: an asteroid never
-ranks first as SN. The ss branch in `execute` stays as it is and is dead
-code for hunter.
+ranks first as SN. The step still must not carry the asteroid rule, so it
+moves to the rubin model (change 2).
 
 ## Changes
 
@@ -40,7 +40,29 @@ MODEL_CONFIG:
 
 The step does `get_class(CLASS)(**PARAMS)`.
 
-### 2. SN forwarder in the rubin deployment
+### 2. The asteroid rule moves to the rubin model
+
+Today: `execute` splits alerts into diaObject and ssObject lists, runs the
+model on the first, and hardcodes `{AGN, SN, VS, asteroid, bogus}` with
+`asteroid: 1.0` for the second. `db.py` and `_format_scribe_records`
+re-derive `oid` and `sid` from the two ids.
+
+Proposed: the step knows LSST identity and nothing about asteroids.
+
+- `pre_execute` resolves identity once per alert: `oid` is `diaObjectId`
+  or `ssObjectId`, `sid` is 1 or 2. Both go into the processed message and
+  `sid` goes into the `Features` frame of the DTO.
+- `execute` passes every alert to `model.predict` and emits one output
+  message per row the model returns. No split, no class names in the step.
+- `db.py` and the scribe formatter read `oid` and `sid` from the message.
+- `alerce_classifiers.rubin.StampClassifierModel.predict` returns asteroid
+  rows for `sid == 2` (every class at 0.0, `asteroid` at 1.0, from its
+  own `dict_mapping_classes`) and runs the network only on `sid == 1`.
+- The hunter model has no `sid` logic. It only ever receives `sid == 1`.
+
+Rubin output does not change: same rows, same probabilities, same topic.
+
+### 3. SN forwarder in the rubin deployment
 
 Today: one producer, `rubin_stamp_classifier` topic, probabilities only.
 
@@ -54,7 +76,7 @@ When absent, nothing changes. The hunter deployment does not set it.
 the processed fields (keyed by `diaSourceId`) so the forwarder can re-emit
 it without re-serializing from the DTO.
 
-### 3. Stamp column names
+### 4. Stamp column names
 
 Today: `RENAME_STAMP_COLUMNS` renames `visit_image` to `flux_Science_data`
 and so on, to match the trained rubin model's `stamps_cols`.
@@ -64,7 +86,7 @@ Proposed: the hunter model's mapper accepts the step's names
 hunter deployment runs with the flag off. The flag stays for rubin until
 its model is retrained or its mapper is updated.
 
-### 4. Model version
+### 5. Model version
 
 Today: `_get_model_version` returns `model_path.split("/")[-2]`.
 
@@ -72,7 +94,7 @@ Proposed: keep the URL convention as default, allow `MODEL_CONFIG.VERSION`
 to override it. The hunter model zip should follow `.../<version>/<file>.zip`
 anyway.
 
-### 5. Dependencies and image
+### 6. Dependencies and image
 
 - `alerce_classifiers`: new package `alerce_classifiers/hunter/` with
   `model.py`, `mapper.py`, `arch.py`, and a `hunter` extra. It may reuse the
@@ -81,7 +103,7 @@ anyway.
   Add a `hunter` group mirroring `rubin`, or one group if the deps match.
 - Dockerfile: install both groups; one image serves both deployments.
 
-### 6. Tests
+### 7. Tests
 
 Integration tests parametrize `MODEL_CONFIG` over the two models. Add a
 test that the rubin deployment forwards ranking-1 SN alerts unchanged to
