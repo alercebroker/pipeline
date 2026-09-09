@@ -1,23 +1,25 @@
-# Generic stamp classifier step (Rubin)
+# Stamp classifier step: one step, two deployments (rubin + hunter)
 
-Goal: run any stamp classifier defined in `alerce_classifiers` (first case: the
-stamp hunter) through `rubin_stamp_classifier_step` by changing config only.
-The step keeps the LSST message adapter; everything model-specific moves to
-the model package or to config.
+Goal: run the stamp hunter classifier as a second deployment of
+`rubin_stamp_classifier_step`, downstream of the rubin stamp classifier.
+The hunter model lives in `alerce_classifiers` and is selected by config.
 
-Scope: `rubin_stamp_classifier_step` and a new package in `alerce_classifiers`.
-The ZTF stamp steps are legacy and are not touched.
+## Pipeline shape
 
-## What stays as is
+```
+lsst alerts -> stamp step [rubin model] -> rubin_stamp_classifier topic (all objects)
+                                        -> sn_candidates topic (raw alert, ranking-1 SN only)
+sn_candidates -> stamp step [hunter model] -> hunter output topic + DB + scribe
+```
 
-- `pre_execute`: the LSST adapter. Extracts a superset of diaSource fields
-  plus the three cutouts. Models pick `stamps_cols` and `order_features`
-  from their own hparams.
-- Output schema: `probabilities` is a `map<string,double>`, taxonomy-agnostic.
-- DB writer, scribe producer, ranking, and taxonomy lookup: all keyed on
-  `CLS_ID` and class names.
-- Model contract: `AlerceModel` with `predict(InputDTO) -> OutputDTO`,
-  probabilities indexed by `diaObjectId`, plus `model_version`.
+The `sn_candidates` topic carries the LSST alert unchanged, same schema as
+the input. The hunter deployment therefore consumes exactly what the rubin
+deployment consumes. `pre_execute`, the DTO, the DB writer, the scribe
+producer, and the output schema are shared as they are.
+
+ssObjectId alerts can never reach the hunter deployment: an asteroid never
+ranks first as SN. The ss branch in `execute` stays as it is and is dead
+code for hunter.
 
 ## Changes
 
@@ -30,86 +32,71 @@ Proposed: same pattern as the lc classification steps.
 
 ```yaml
 MODEL_CONFIG:
-  CLASS: alerce_classifiers.rubin.StampClassifierModel
+  CLASS: alerce_classifiers.rubin.StampClassifierModel   # or the hunter class
   PARAMS:
     model_path: https://.../1.0.0/model.zip
   CLS_ID: 3
 ```
 
-The step does `get_class(CLASS)(**PARAMS)`. Hunter is another `CLASS`.
+The step does `get_class(CLASS)(**PARAMS)`.
 
-### 2. ssObjectId alerts are a per-model policy, not a fixed taxonomy
+### 2. SN forwarder in the rubin deployment
 
-Today: `execute` hardcodes `{AGN, SN, VS, asteroid, bogus}` with
-`asteroid: 1.0` for `ssObjectId` alerts. That only makes sense for a
-taxonomy with an asteroid class. The hunter is binary (report or not) and
-has no such class.
+Today: one producer, `rubin_stamp_classifier` topic, probabilities only.
 
-Proposed: the step never invents probabilities. `ssObjectId` alerts are
-handled by `MODEL_CONFIG.SS_OBJECT_POLICY`:
+Proposed: an optional second producer, `SN_FORWARD_PRODUCER_CONFIG`, with
+the LSST alert schema as `SCHEMA_PATH` and `sn_candidates` as topic. When
+configured, after prediction the step forwards the raw consumed alert for
+every object whose ranking-1 class is `SN_FORWARD_CLASS` (default `SN`).
+When absent, nothing changes. The hunter deployment does not set it.
 
-- `skip` (default): the alert is not classified, not stored, not produced.
-- `fixed_class: <name>`: emit every taxonomy class at 0.0 and `<name>` at
-  1.0. The rubin deployment sets `fixed_class: asteroid`. The step checks at
-  startup that `<name>` exists in the taxonomy loaded by `CLS_ID`.
+`pre_execute` discards the raw message today. It needs to keep it alongside
+the processed fields (keyed by `diaSourceId`) so the forwarder can re-emit
+it without re-serializing from the DTO.
 
-The class list for the fixed-class case comes from the taxonomy, so the
-step stops carrying any class names in code.
-
-### 3. Canonical stamp column names, no rename flag
+### 3. Stamp column names
 
 Today: `RENAME_STAMP_COLUMNS` renames `visit_image` to `flux_Science_data`
-and so on, to match one trained model's `stamps_cols`.
+and so on, to match the trained rubin model's `stamps_cols`.
 
-Proposed: the step always emits `science`, `reference`, `difference`. Each
-model in `alerce_classifiers` maps those to whatever its network expects
-inside its own mapper. The flag is removed. The existing rubin model gets
-the mapping in its mapper so current deployments keep working.
+Proposed: the hunter model's mapper accepts the step's names
+(`visit_image`, `difference_image`, `reference_image`) directly, so the
+hunter deployment runs with the flag off. The flag stays for rubin until
+its model is retrained or its mapper is updated.
 
-### 4. Model version comes from the model, robustly
+### 4. Model version
 
-Today: `_get_model_version` returns `model_path.split("/")[-2]`, which only
-works for `.../<version>/<file>.zip` URLs.
+Today: `_get_model_version` returns `model_path.split("/")[-2]`.
 
-Proposed: keep the URL convention as the default but let `MODEL_CONFIG.VERSION`
-override it. The step reads `self.model.model_version` as now.
+Proposed: keep the URL convention as default, allow `MODEL_CONFIG.VERSION`
+to override it. The hunter model zip should follow `.../<version>/<file>.zip`
+anyway.
 
-### 5. Metadata superset is extended only when a model needs it
-
-If hunter needs a diaSource field the adapter does not extract, add it to
-the superset in `pre_execute` with the same placeholder policy used for
-`airmass`, `magLim`, `seeing`. Models that do not list it ignore it.
-
-### 6. Dependencies and image
+### 5. Dependencies and image
 
 - `alerce_classifiers`: new package `alerce_classifiers/hunter/` with
-  `model.py`, `mapper.py`, `arch.py`, plus a `hunter` extra in
-  `pyproject.toml`. It may reuse the padding and normalization helpers in
-  `alerce_classifiers/rubin/mapper.py`.
+  `model.py`, `mapper.py`, `arch.py`, and a `hunter` extra. It may reuse the
+  padding and normalization helpers in `alerce_classifiers/rubin/mapper.py`.
 - Step `pyproject.toml`: drop the leftover `stamp_full` extra from main deps.
-  Add a `hunter` group mirroring the `rubin` group, or fold both into one
-  group if the deps are identical.
-- Dockerfile: install the group(s) needed; one image serves both models.
+  Add a `hunter` group mirroring `rubin`, or one group if the deps match.
+- Dockerfile: install both groups; one image serves both deployments.
 
-### 7. Tests
+### 6. Tests
 
-Integration tests parametrize `MODEL_CONFIG` over the two models. Each
-model needs a fixture model directory, taxonomy rows for its `CLS_ID`, and
-an assertion that the produced `probabilities` keys equal the taxonomy.
+Integration tests parametrize `MODEL_CONFIG` over the two models. Add a
+test that the rubin deployment forwards ranking-1 SN alerts unchanged to
+`sn_candidates` and forwards nothing else.
 
 ## Deployment
 
-One deployment per model: separate `CLS_ID`, consumer group, output topic,
-and `MODEL_CONFIG`. Nothing in the step assumes a single classifier per
-survey.
+Two deployments of the same image: separate consumer group, input topic,
+output topic, `CLS_ID`, and `MODEL_CONFIG`. Taxonomy rows for the hunter
+`CLS_ID` must exist in the DB before the first run.
 
 ## Open points
 
-- Hunter input topic: the raw `lsst` alert stream like rubin, or a filtered
-  set of objects (for example the rubin classifier output). The second case
-  needs a different consumer adapter, which is a bigger change than listed
-  here.
-- Hunter inputs: confirm it uses the three cutouts and a subset of the
-  fields already extracted, or list what is missing (change 5).
 - Hunter model artifact layout: `model.keras` plus `hparams.yaml` inside a
-  zip, as rubin does, or something else the loader must handle.
+  zip, as rubin does, or something the loader must handle differently.
+- Hunter metadata: confirm it uses a subset of the diaSource fields the
+  adapter already extracts. If not, extend the superset in `pre_execute`
+  with the same placeholder policy used for `airmass`, `magLim`, `seeing`.
