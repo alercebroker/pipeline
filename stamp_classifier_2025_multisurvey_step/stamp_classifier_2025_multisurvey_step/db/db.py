@@ -67,15 +67,8 @@ def store_probability(
     with psql_connection.session() as session:
         data = format_probability_records(sid, classifier_id, classifier_version, class_taxonomy, output_dto, messages_dict)
         stmt = insert(Probability)
-        insert_stmt = stmt.on_conflict_do_update(
-            index_elements=["oid", "sid", "classifier_id", "class_id"],
-            set_={
-                "probability": stmt.excluded.probability,
-                "ranking": stmt.excluded.ranking,
-                "lastmjd": stmt.excluded.lastmjd,
-                "classifier_version": stmt.excluded.classifier_version,
-            },
-            where=Probability.lastmjd > stmt.excluded.lastmjd,
+        insert_stmt = stmt.on_conflict_do_nothing(
+            constraint="pk_probability_oid_classifierid_classid",
         )
         session.execute(insert_stmt, data)
         session.commit()

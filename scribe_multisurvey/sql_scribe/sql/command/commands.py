@@ -604,6 +604,7 @@ class ProbabilityCommand(Command):
                 "probability": stmt.excluded.probability,
                 "ranking": stmt.excluded.ranking,
                 "lastmjd": stmt.excluded.lastmjd,
+                "classifier_version": stmt.excluded.classifier_version,
             },
         )
         session.connection().execute(upsert, records)
