@@ -26,6 +26,19 @@ class StampClassifierStep(GenericStep):
     Pipeline step for classifying stamps from LSST alerts.
     """
 
+    DIA_OBJECT_SID = 1
+    SS_OBJECT_SID = 2
+    # Fields of schemas/rubin_stamp_classifier_step/output.avsc
+    OUTPUT_FIELDS = (
+        "diaObjectId",
+        "ssObjectId",
+        "diaSourceId",
+        "probabilities",
+        "midpointMjdTai",
+        "ra",
+        "dec",
+    )
+
     def __init__(self, config: dict, level=logging.INFO, **step_args):
         super().__init__(config=config, level=level, **step_args)
         numexpr.utils.set_num_threads(1)
@@ -92,6 +105,14 @@ class StampClassifierStep(GenericStep):
 
             # XOR lógico: solo pasa si uno es True y el otro False
             elif obj_ok ^ src_ok:
+                # LSST identity, resolved once: diaObject -> sid 1, ssObject -> sid 2.
+                # Everything downstream (model, db, scribe) reads oid and sid.
+                if obj_ok:
+                    processed_message["oid"] = obj_id
+                    processed_message["sid"] = self.DIA_OBJECT_SID
+                else:
+                    processed_message["oid"] = src_id
+                    processed_message["sid"] = self.SS_OBJECT_SID
 
                 processed_message["midpointMjdTai"] = message["diaSource"]["midpointMjdTai"]
 
@@ -130,13 +151,12 @@ class StampClassifierStep(GenericStep):
     def _messages_to_dto(self, messages: List[dict]) -> InputDTO:
         
         df = pd.DataFrame.from_records(messages)
-        df = df.sort_values(by="midpointMjdTai").drop_duplicates(subset="diaObjectId", keep="first")
+        df = df.sort_values(by="midpointMjdTai").drop_duplicates(subset="oid", keep="first")
 
-        df.set_index("diaObjectId", inplace=True)
+        df.set_index("oid", inplace=True)
 
-        # Check if diaObjectId is unique
         if not df.index.is_unique:
-            raise ValueError("diaObjectId must be unique in the input messages")
+            raise ValueError("oid must be unique in the input messages")
 
         stamps_df = df[
             [
@@ -171,6 +191,7 @@ class StampClassifierStep(GenericStep):
                         "scienceFluxErr",
                         "seeing",
                         "snr",
+                        "sid",
                     ]
                 ]
             ),
@@ -183,48 +204,28 @@ class StampClassifierStep(GenericStep):
         self, messages: List[dict]
     ) -> Union[Iterable[Dict[str, Any]], Dict[str, Any]]:
         
-        #aqui tengo que hacer la distincion si es diaobject none o no
-        messages_to_process = [message for message in messages if message["diaObjectId"] is not None and message["diaObjectId"] != 0]
-        messages_asteroids = [message for message in messages if message["ssObjectId"] is not None and message["ssObjectId"] != 0]
-        if len(messages_to_process) > 0:
-            input_dto = self._messages_to_dto(messages_to_process)
-            output_dto: OutputDTO = self.model.predict(input_dto)
-            predicted_probabilities = output_dto.probabilities
-            #logging.info('input_dto:\n', input_dto)
-            #logging.info('predicted_probabilities:\n', predicted_probabilities)
-
-        #exit()
+        # Every alert goes to the model; what it does with sid (e.g. the
+        # asteroid rule for solar system objects) is the model's business.
+        input_dto = self._messages_to_dto(messages)
+        output_dto: OutputDTO = self.model.predict(input_dto)
+        predicted_probabilities = output_dto.probabilities
 
         output_messages = []
-        for message in messages_to_process:
-            output_message = {
-                "diaObjectId": message["diaObjectId"],
-                'ssObjectId': 0,
-                "diaSourceId": message["diaSourceId"],
-                "probabilities": predicted_probabilities.loc[
-                    message["diaObjectId"]
-                ].to_dict(),
-                "midpointMjdTai": message["midpointMjdTai"],
-                "ra": message["ra"],
-                "dec": message["dec"],
-            }
-            output_messages.append(output_message)
-
-        for message in messages_asteroids:
-            output_message = {
-                "diaObjectId": 0,
-                'ssObjectId': message["ssObjectId"],
-                "diaSourceId": message["diaSourceId"],
-                "probabilities": {'AGN': 0.0, 
-                                  'SN': 0.0, 
-                                  'VS': 0.0, 
-                                  'asteroid': 1.0, 
-                                  'bogus': 0.0,},  # All probability to asteroid class
-                "midpointMjdTai": message["midpointMjdTai"],
-                "ra": message["ra"],
-                "dec": message["dec"],
-            }
-            output_messages.append(output_message)
+        for message in messages:
+            oid, sid = message["oid"], message["sid"]
+            output_messages.append(
+                {
+                    "oid": oid,
+                    "sid": sid,
+                    "diaObjectId": oid if sid == self.DIA_OBJECT_SID else 0,
+                    "ssObjectId": oid if sid == self.SS_OBJECT_SID else 0,
+                    "diaSourceId": message["diaSourceId"],
+                    "probabilities": predicted_probabilities.loc[oid].to_dict(),
+                    "midpointMjdTai": message["midpointMjdTai"],
+                    "ra": message["ra"],
+                    "dec": message["dec"],
+                }
+            )
 
         return output_messages
 
@@ -242,8 +243,15 @@ class StampClassifierStep(GenericStep):
         # Produce to scribe
         if self.scribe_producer is not None:
             self.produce_to_scribe(messages)
-    
+
         return messages
+
+    def pre_produce(self, messages: List[dict]) -> List[dict]:
+        # oid and sid are internal; the output schema is strict about extra fields.
+        return [
+            {key: value for key, value in message.items() if key in self.OUTPUT_FIELDS}
+            for message in messages
+        ]
 
     def tear_down(self):
         if isinstance(self.consumer, KafkaConsumer):
@@ -259,18 +267,14 @@ class StampClassifierStep(GenericStep):
         for msg in predictions:
             probs = msg["probabilities"]
 
-            # select sid
-            ssid = msg.get("ssObjectId")
-            sid = 2 if ssid not in (None, 0) else 1
-
             # format the message for all ranks
             sorted_classes = sorted(probs.items(), key=lambda x: x[1], reverse=True)
 
             for rank, (class_name, prob) in enumerate(sorted_classes, start=1):
                 records.append(
                     {
-                        "oid": msg["diaObjectId"] or msg["ssObjectId"],
-                        "sid": sid,
+                        "oid": msg["oid"],
+                        "sid": msg["sid"],
                         "classifier_id": self.classifier_id,
                         "classifier_version": int(self.model.model_version.replace(".", "")),
                         "class_id": self.class_taxonomy.get(class_name, -1),

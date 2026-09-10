@@ -68,10 +68,7 @@ def _format_data(
     formated_probabilities = []
     for prediction in predictions:
         probabilities = prediction["probabilities"]
-        dia_object_id = prediction["diaObjectId"] #aqui tambien vienen los SSobjectid, los guardo en el step
-        ss_object_id = prediction["ssObjectId"]
         alert_mjd = prediction["midpointMjdTai"]
-        sid = 1 if (dia_object_id is not None and dia_object_id != 0) else 2
 
         # sort probabilities by value in descending order
         probabilities = sorted(
@@ -80,8 +77,8 @@ def _format_data(
         for i, (class_name, probability) in enumerate(probabilities):
             formated_probabilities.append(
                 {
-                    "oid": dia_object_id if dia_object_id is not None and dia_object_id != 0 else ss_object_id,
-                    "sid": sid,
+                    "oid": prediction["oid"],
+                    "sid": prediction["sid"],
                     "classifier_id": classifier_id,
                     "classifier_version": classifier_version_str_to_small_integer(
                         classifier_version

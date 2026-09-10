@@ -42,6 +42,9 @@ The step does `get_class(CLASS)(**PARAMS)`.
 
 ### 2. The asteroid rule moves to the rubin model
 
+Status: implemented 2026-09-10 (step, db/scribe formatters, `pre_produce`, and
+`alerce_classifiers.rubin.StampClassifierModel.predict`; unit tests in both repos).
+
 Today: `execute` splits alerts into diaObject and ssObject lists, runs the
 model on the first, and hardcodes `{AGN, SN, VS, asteroid, bogus}` with
 `asteroid: 1.0` for the second. `db.py` and `_format_scribe_records`

@@ -1,9 +1,10 @@
-"""Characterization tests for how the step handles ssObject (asteroid) alerts.
+"""How the step handles ssObject (solar system) alerts.
 
-These pin the behaviour that exists today, before the asteroid rule moves
-from the step into the model. They run without a database, a Kafka broker,
-or a downloaded model: the model is a stub that returns fixed probabilities
-for whatever diaObjectIds it receives.
+The step resolves LSST identity once per alert (oid, sid) and hands every
+alert to the model. It knows nothing about asteroids: the asteroid rule lives
+in the rubin model (see alerce_classifiers tests). These tests run without a
+database, a Kafka broker, or a downloaded model: the model is a stub that
+returns fixed probabilities for whatever rows it receives.
 """
 import io
 from unittest import mock
@@ -21,21 +22,26 @@ CLASSES = ["AGN", "SN", "VS", "asteroid", "bogus"]
 TAXONOMY = {name: idx + 10 for idx, name in enumerate(CLASSES)}
 MODEL_VERSION = "1.0.0"
 CLS_ID = 3
+OUTPUT_SCHEMA_FIELDS = {
+    "diaObjectId", "ssObjectId", "diaSourceId", "probabilities", "midpointMjdTai", "ra", "dec",
+}
 
 
 class StubModel:
-    """Returns the same probability row for every diaObjectId it is asked about."""
+    """Returns the same probability row for every oid it is asked about, and
+    records the (oid, sid) pairs it received."""
 
     ROW = {"AGN": 0.1, "SN": 0.6, "VS": 0.1, "asteroid": 0.1, "bogus": 0.1}
 
     def __init__(self, *args, **kwargs):
         self.dict_mapping_classes = dict(enumerate(CLASSES))
         self.model_version = MODEL_VERSION
-        self.predict_calls = []
+        self.calls = []
 
     def predict(self, input_dto) -> OutputDTO:
         index = input_dto.stamps.index
-        self.predict_calls.append(list(index))
+        sids = input_dto.features.loc[index, "sid"].tolist()
+        self.calls.append(list(zip(index.tolist(), sids)))
         probs = pd.DataFrame([self.ROW] * len(index), index=index, columns=CLASSES)
         return OutputDTO(probabilities=probs, hierarchical=None)
 
@@ -81,11 +87,13 @@ def alert(dia_object_id, ss_object_id, dia_source_id=500):
     }
 
 
-def processed(dia_object_id, ss_object_id, dia_source_id=500):
-    """A message as pre_execute emits it, without the stamps."""
+def processed(oid, sid, dia_source_id=500):
+    """A message as pre_execute emits it."""
     return {
-        "diaObjectId": dia_object_id,
-        "ssObjectId": ss_object_id,
+        "diaObjectId": oid if sid == 1 else None,
+        "ssObjectId": oid if sid == 2 else None,
+        "oid": oid,
+        "sid": sid,
         "diaSourceId": dia_source_id,
         "midpointMjdTai": 60000.5,
         "ra": 10.0,
@@ -108,13 +116,24 @@ def processed(dia_object_id, ss_object_id, dia_source_id=500):
 
 
 @pytest.mark.parametrize("dia_object_id", [None, 0])
-def test_pre_execute_keeps_ss_only_alert_with_empty_dia_object_id(step, dia_object_id):
+def test_pre_execute_resolves_ss_only_alert_as_sid_2(step, dia_object_id):
     out = step.pre_execute([alert(dia_object_id, 777)])
 
     assert len(out) == 1
-    assert out[0]["diaObjectId"] == dia_object_id
+    assert out[0]["oid"] == 777
+    assert out[0]["sid"] == 2
     assert out[0]["ssObjectId"] == 777
     assert isinstance(out[0]["visit_image"], np.ndarray)
+
+
+@pytest.mark.parametrize("ss_object_id", [None, 0])
+def test_pre_execute_resolves_dia_only_alert_as_sid_1(step, ss_object_id):
+    out = step.pre_execute([alert(123, ss_object_id)])
+
+    assert len(out) == 1
+    assert out[0]["oid"] == 123
+    assert out[0]["sid"] == 1
+    assert out[0]["diaObjectId"] == 123
 
 
 def test_pre_execute_drops_alert_with_both_ids_set(step):
@@ -126,68 +145,75 @@ def test_pre_execute_drops_alert_with_neither_id(step, ids):
     assert step.pre_execute([alert(*ids)]) == []
 
 
-# --- execute: the hardcoded asteroid row ---
+# --- execute: every alert goes to the model, identity comes back out ---
 
 
-def test_execute_gives_asteroid_full_probability_without_the_model(step):
-    out = step.execute([processed(0, 777)])
+def test_execute_hands_every_alert_to_the_model_with_its_sid(step):
+    step.execute([processed(777, 2, dia_source_id=1), processed(123, 1, dia_source_id=2)])
+
+    assert step.model.calls == [[(777, 2), (123, 1)]]
+
+
+def test_execute_output_for_ss_object_carries_model_row_and_identity(step):
+    out = step.execute([processed(777, 2)])
 
     assert out == [
         {
+            "oid": 777,
+            "sid": 2,
             "diaObjectId": 0,
             "ssObjectId": 777,
             "diaSourceId": 500,
-            "probabilities": {"AGN": 0.0, "SN": 0.0, "VS": 0.0, "asteroid": 1.0, "bogus": 0.0},
+            "probabilities": StubModel.ROW,
             "midpointMjdTai": 60000.5,
             "ra": 10.0,
             "dec": -20.0,
         }
     ]
-    assert step.model.predict_calls == []
 
 
-def test_execute_treats_none_dia_object_id_as_asteroid(step):
-    out = step.execute([processed(None, 777)])
+def test_execute_output_for_dia_object_zeroes_ss_object_id(step):
+    out = step.execute([processed(123, 1)])
 
-    assert out[0]["diaObjectId"] == 0
-    assert out[0]["ssObjectId"] == 777
-    assert out[0]["probabilities"]["asteroid"] == 1.0
-
-
-def test_execute_sends_only_dia_objects_to_the_model(step):
-    step.execute([processed(0, 777, dia_source_id=1), processed(123, 0, dia_source_id=2)])
-
-    assert step.model.predict_calls == [[123]]
-
-
-def test_execute_orders_model_rows_before_asteroid_rows(step):
-    out = step.execute([processed(0, 777, dia_source_id=1), processed(123, 0, dia_source_id=2)])
-
-    assert [m["diaSourceId"] for m in out] == [2, 1]
-    assert out[0] == {
-        "diaObjectId": 123,
-        "ssObjectId": 0,
-        "diaSourceId": 2,
-        "probabilities": StubModel.ROW,
-        "midpointMjdTai": 60000.5,
-        "ra": 10.0,
-        "dec": -20.0,
-    }
-
-
-def test_execute_zeroes_ss_object_id_on_model_rows(step):
-    out = step.execute([processed(123, None)])
-
+    assert out[0]["oid"] == 123
+    assert out[0]["sid"] == 1
+    assert out[0]["diaObjectId"] == 123
     assert out[0]["ssObjectId"] == 0
 
 
-# --- db formatter: oid and sid for asteroid predictions ---
+def test_execute_keeps_input_order(step):
+    out = step.execute([processed(777, 2, dia_source_id=1), processed(123, 1, dia_source_id=2)])
+
+    assert [m["diaSourceId"] for m in out] == [1, 2]
 
 
-def asteroid_prediction():
+def test_execute_emits_one_output_per_message_but_predicts_each_oid_once(step):
+    out = step.execute([processed(123, 1, dia_source_id=1), processed(123, 1, dia_source_id=2)])
+
+    assert step.model.calls == [[(123, 1)]]
+    assert [m["diaSourceId"] for m in out] == [1, 2]
+
+
+# --- pre_produce: only the output schema fields reach the topic ---
+
+
+def test_pre_produce_strips_internal_identity_fields(step):
+    out = step.pre_produce(step.execute([processed(777, 2)]))
+
+    assert set(out[0]) == OUTPUT_SCHEMA_FIELDS
+
+
+# --- db formatter: oid and sid come from the message ---
+
+
+def prediction(oid, sid):
+    # The formatters must read oid and sid only, so the raw id fields are
+    # deliberately uninformative here.
     return {
+        "oid": oid,
+        "sid": sid,
         "diaObjectId": 0,
-        "ssObjectId": 777,
+        "ssObjectId": 0,
         "diaSourceId": 500,
         "probabilities": {"AGN": 0.0, "SN": 0.0, "VS": 0.0, "asteroid": 1.0, "bogus": 0.0},
         "midpointMjdTai": 60000.5,
@@ -196,19 +222,18 @@ def asteroid_prediction():
     }
 
 
-def test_db_rows_for_asteroid_use_ss_object_id_and_sid_2():
-    rows = _format_data(CLS_ID, MODEL_VERSION, TAXONOMY, [asteroid_prediction()])
+def test_db_rows_take_oid_and_sid_from_the_message():
+    rows = _format_data(CLS_ID, MODEL_VERSION, TAXONOMY, [prediction(777, 2), prediction(123, 1)])
 
-    assert len(rows) == len(CLASSES)
-    assert {r["oid"] for r in rows} == {777}
-    assert {r["sid"] for r in rows} == {2}
+    assert len(rows) == 2 * len(CLASSES)
+    assert {(r["oid"], r["sid"]) for r in rows} == {(777, 2), (123, 1)}
     assert {r["classifier_id"] for r in rows} == {CLS_ID}
     assert {r["classifier_version"] for r in rows} == {100}
     assert {r["lastmjd"] for r in rows} == {60000.5}
 
 
-def test_db_rows_for_asteroid_rank_asteroid_first_then_zero_classes_in_declaration_order():
-    rows = _format_data(CLS_ID, MODEL_VERSION, TAXONOMY, [asteroid_prediction()])
+def test_db_rows_rank_asteroid_first_then_zero_classes_in_declaration_order():
+    rows = _format_data(CLS_ID, MODEL_VERSION, TAXONOMY, [prediction(777, 2)])
 
     by_rank = {r["ranking"]: (r["class_id"], r["probability"]) for r in rows}
     assert by_rank == {
@@ -220,32 +245,15 @@ def test_db_rows_for_asteroid_rank_asteroid_first_then_zero_classes_in_declarati
     }
 
 
-def test_db_rows_for_dia_object_use_dia_object_id_and_sid_1():
-    prediction = {**asteroid_prediction(), "diaObjectId": 123, "ssObjectId": 0}
-    rows = _format_data(CLS_ID, MODEL_VERSION, TAXONOMY, [prediction])
-
-    assert {r["oid"] for r in rows} == {123}
-    assert {r["sid"] for r in rows} == {1}
-
-
 # --- scribe formatter: same identity rules as the db formatter ---
 
 
-def test_scribe_records_for_asteroid_use_ss_object_id_and_sid_2(step):
-    records = step._format_scribe_records([asteroid_prediction()])
+def test_scribe_records_take_oid_and_sid_from_the_message(step):
+    records = step._format_scribe_records([prediction(777, 2), prediction(123, 1)])
 
-    assert len(records) == len(CLASSES)
-    assert {r["oid"] for r in records} == {777}
-    assert {r["sid"] for r in records} == {2}
+    assert len(records) == 2 * len(CLASSES)
+    assert {(r["oid"], r["sid"]) for r in records} == {(777, 2), (123, 1)}
     assert {r["classifier_id"] for r in records} == {CLS_ID}
     assert {r["classifier_version"] for r in records} == {100}
-    by_rank = {r["ranking"]: (r["class_id"], r["probability"]) for r in records}
+    by_rank = {r["ranking"]: (r["class_id"], r["probability"]) for r in records if r["oid"] == 777}
     assert by_rank[1] == (TAXONOMY["asteroid"], 1.0)
-
-
-def test_scribe_records_for_dia_object_use_dia_object_id_and_sid_1(step):
-    prediction = {**asteroid_prediction(), "diaObjectId": 123, "ssObjectId": 0}
-    records = step._format_scribe_records([prediction])
-
-    assert {r["oid"] for r in records} == {123}
-    assert {r["sid"] for r in records} == {1}
