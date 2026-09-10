@@ -42,8 +42,11 @@ This step is part of the ALeRCE astronomical alert broker pipeline. It processes
        SCHEMA: public
      MODEL_VERSION: "1.0.0"
      MODEL_CONFIG:
-       # MODEL_PATH: "/path/to/local/model"
-       MODEL_PATH: "https://download.my.model/model.zip"
+       CLASS: "alerce_classifiers.rubin.StampClassifierModel"
+       PARAMS:
+         # model_path: "/path/to/local/model"
+         model_path: "https://download.my.model/model.zip"
+       CLS_ID: 3
      FEATURE_FLAGS:
        USE_PROFILING: false
        PROMETHEUS: false
@@ -133,8 +136,11 @@ configYaml:
       SCHEMA: public
     MODEL_VERSION: "1.0.0"
     MODEL_CONFIG:
-      # MODEL_PATH: "/path/to/local/model"
-      MODEL_PATH: "https://download.my.model/model.zip"
+      CLASS: "alerce_classifiers.rubin.StampClassifierModel"
+      PARAMS:
+        # model_path: "/path/to/local/model"
+        model_path: "https://download.my.model/model.zip"
+      CLS_ID: 3
     FEATURE_FLAGS:
       USE_PROFILING: false
       PROMETHEUS: false

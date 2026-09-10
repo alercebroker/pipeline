@@ -14,36 +14,15 @@ import pandas as pd
 import pytest
 from astropy.io import fits
 
-from alerce_classifiers.base.dto import OutputDTO
 from rubin_stamp_classifier_step.db.db import _format_data
 from rubin_stamp_classifier_step.step import StampClassifierStep
+from tests.unit.stub_model import CLASSES, MODEL_VERSION, StubModel
 
-CLASSES = ["AGN", "SN", "VS", "asteroid", "bogus"]
 TAXONOMY = {name: idx + 10 for idx, name in enumerate(CLASSES)}
-MODEL_VERSION = "1.0.0"
 CLS_ID = 3
 OUTPUT_SCHEMA_FIELDS = {
     "diaObjectId", "ssObjectId", "diaSourceId", "probabilities", "midpointMjdTai", "ra", "dec",
 }
-
-
-class StubModel:
-    """Returns the same probability row for every oid it is asked about, and
-    records the (oid, sid) pairs it received."""
-
-    ROW = {"AGN": 0.1, "SN": 0.6, "VS": 0.1, "asteroid": 0.1, "bogus": 0.1}
-
-    def __init__(self, *args, **kwargs):
-        self.dict_mapping_classes = dict(enumerate(CLASSES))
-        self.model_version = MODEL_VERSION
-        self.calls = []
-
-    def predict(self, input_dto) -> OutputDTO:
-        index = input_dto.stamps.index
-        sids = input_dto.features.loc[index, "sid"].tolist()
-        self.calls.append(list(zip(index.tolist(), sids)))
-        probs = pd.DataFrame([self.ROW] * len(index), index=index, columns=CLASSES)
-        return OutputDTO(probabilities=probs, hierarchical=None)
 
 
 @pytest.fixture
@@ -52,10 +31,13 @@ def step():
         "CONSUMER_CONFIG": {"CLASS": "apf.core.step.DefaultConsumer"},
         "PRODUCER_CONFIG": {"CLASS": "apf.core.step.DefaultProducer"},
         "DB_CONFIG": {},
-        "MODEL_CONFIG": {"MODEL_PATH": "https://example.org/1.0.0/model.zip", "CLS_ID": CLS_ID},
+        "MODEL_CONFIG": {
+            "CLASS": "tests.unit.stub_model.StubModel",
+            "PARAMS": {"model_path": "https://example.org/1.0.0/model.zip"},
+            "CLS_ID": CLS_ID,
+        },
     }
-    with mock.patch("rubin_stamp_classifier_step.step.StampClassifierModel", StubModel), \
-         mock.patch("rubin_stamp_classifier_step.step.PSQLConnection"), \
+    with mock.patch("rubin_stamp_classifier_step.step.PSQLConnection"), \
          mock.patch("rubin_stamp_classifier_step.step.get_taxonomy_by_classifier_id", return_value=TAXONOMY):
         yield StampClassifierStep(config=config)
 

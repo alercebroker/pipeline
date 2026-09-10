@@ -85,16 +85,12 @@ configYaml:
     SCHEMA_PATH: "/schemas/scribe_step/scribe.avsc"
   MODEL_VERSION: ""
   MODEL_CONFIG:
+    # rubin: alerce_classifiers.rubin.StampClassifierModel
+    # hunter: alerce_classifiers.hunter.HunterStampClassifierModel
     CLASS: ""
-    NAME: ""
     PARAMS:
-      # model_path: ""
-      # mapper: ""
-      ## here go other settings like
-      ## header_quantiles_path: ""
-      ## feature_quantiles_path: ""
-      ## barney and toretto use path_to_model instead of model_path
-      ## path_to_model: ""
+      model_path: ""
+    CLS_ID: ""
   PYROSCOPE_SERVER: "http://pyroscope.pyroscope:4040"
   SCRIBE_PARSER_CLASS: "lc_classification.core.parsers.scribe_parser.ScribeParser"
   STEP_PARSER_CLASS: "lc_classification.core.parsers.elasticc_parser.ElasticcParser"

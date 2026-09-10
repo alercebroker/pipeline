@@ -25,6 +25,8 @@ moves to the rubin model (change 2).
 
 ### 1. Model loading is config-driven
 
+Status: implemented 2026-09-10 (step, integration test configs, README, chart values; unit tests in `tests/unit/test_model_loading.py`).
+
 Today: `step.py` imports `alerce_classifiers.rubin.StampClassifierModel`
 directly and builds it with `model_path` only.
 

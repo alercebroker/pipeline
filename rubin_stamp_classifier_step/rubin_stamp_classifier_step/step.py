@@ -16,7 +16,6 @@ from alerce_classifiers.base._types import (
     Stamps,
 )
 import json
-from alerce_classifiers.rubin import StampClassifierModel
 import pandas as pd
 
 
@@ -42,16 +41,19 @@ class StampClassifierStep(GenericStep):
     def __init__(self, config: dict, level=logging.INFO, **step_args):
         super().__init__(config=config, level=level, **step_args)
         numexpr.utils.set_num_threads(1)
-        self.model = StampClassifierModel(
-            model_path=config["MODEL_CONFIG"]["MODEL_PATH"]
-        )
+        model_cfg = config["MODEL_CONFIG"]
+        for key in ("CLASS", "CLS_ID"):
+            if key not in model_cfg:
+                raise KeyError(f"MODEL_CONFIG.{key} is required")
+
+        # The model class is config-driven: the same step runs the rubin and
+        # the hunter models, selected by MODEL_CONFIG.CLASS.
+        self.model = get_class(model_cfg["CLASS"])(**model_cfg.get("PARAMS", {}))
         self.dict_mapping_classes = self.model.dict_mapping_classes
         self.psql_connection = PSQLConnection(config["DB_CONFIG"], poolclass="NullPool")
         self.survey = self.config.get("SURVEY")
 
-        if "CLS_ID" not in config["MODEL_CONFIG"]:
-            raise KeyError("MODEL_CONFIG.CLS_ID is required")
-        self.classifier_id = config["MODEL_CONFIG"]["CLS_ID"]
+        self.classifier_id = model_cfg["CLS_ID"]
         self.rename_stamp_columns = config.get("RENAME_STAMP_COLUMNS", False)
 
         self.class_taxonomy = get_taxonomy_by_classifier_id(self.classifier_id, self.psql_connection)
