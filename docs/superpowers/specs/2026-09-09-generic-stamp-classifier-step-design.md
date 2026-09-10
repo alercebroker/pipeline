@@ -93,6 +93,11 @@ its model is retrained or its mapper is updated.
 
 ### 5. Model version
 
+Status: implemented 2026-09-10. The override key is the existing top-level
+`MODEL_VERSION` (already in every config and read the same way by the lc
+classification step), not `MODEL_CONFIG.VERSION`; an empty string means
+"use the model's". Unit tests in `tests/unit/test_model_version.py`.
+
 Today: `_get_model_version` returns `model_path.split("/")[-2]`.
 
 Proposed: keep the URL convention as default, allow `MODEL_CONFIG.VERSION`

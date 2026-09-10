@@ -50,6 +50,10 @@ class StampClassifierStep(GenericStep):
         # the hunter models, selected by MODEL_CONFIG.CLASS.
         self.model = get_class(model_cfg["CLASS"])(**model_cfg.get("PARAMS", {}))
         self.dict_mapping_classes = self.model.dict_mapping_classes
+        # The version written to the DB and scribe: the model derives it from
+        # its artifact path unless the deployment pins a non-empty MODEL_VERSION
+        # (same key the lc classification step reads).
+        self.model_version = config.get("MODEL_VERSION") or self.model.model_version
         self.psql_connection = PSQLConnection(config["DB_CONFIG"], poolclass="NullPool")
         self.survey = self.config.get("SURVEY")
 
@@ -237,7 +241,7 @@ class StampClassifierStep(GenericStep):
         store_probability(
             self.psql_connection,
             classifier_id=self.classifier_id,
-            classifier_version=self.model.model_version,
+            classifier_version=self.model_version,
             class_taxonomy = self.class_taxonomy,
             predictions=messages,
         )
@@ -278,7 +282,7 @@ class StampClassifierStep(GenericStep):
                         "oid": msg["oid"],
                         "sid": msg["sid"],
                         "classifier_id": self.classifier_id,
-                        "classifier_version": int(self.model.model_version.replace(".", "")),
+                        "classifier_version": int(self.model_version.replace(".", "")),
                         "class_id": self.class_taxonomy.get(class_name, -1),
                         "probability": prob,
                         "ranking": rank,
