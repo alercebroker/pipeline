@@ -76,6 +76,22 @@ class StampClassifierStep(GenericStep):
         else:
             logging.info("Scribe producer disabled (no config for scribe producer)")
 
+        # SN forwarder: the rubin deployment re-emits the raw LSST alert of
+        # every object whose ranking-1 class is SN_FORWARD_CLASS, so the hunter
+        # deployment consumes exactly what this one consumed. Optional: the
+        # hunter deployment does not set it.
+        forward_cfg = config.get("SN_FORWARD_PRODUCER_CONFIG")
+        self.sn_forward_producer = None
+        self.sn_forward_class = config.get("SN_FORWARD_CLASS", "SN")
+        if forward_cfg:
+            self.sn_forward_producer = get_class(forward_cfg["CLASS"])(forward_cfg)
+            logging.info(
+                f"SN forwarder enabled: ranking-1 {self.sn_forward_class!r} alerts "
+                f"go to {forward_cfg.get('TOPIC')}"
+            )
+        else:
+            logging.info("SN forwarder disabled (no SN_FORWARD_PRODUCER_CONFIG)")
+
 
     def pre_execute(self, messages: List[dict]) -> List[dict]:
         
@@ -149,6 +165,10 @@ class StampClassifierStep(GenericStep):
                 processed_message["reference_image"] = extract_image_from_fits(
                     message["cutoutTemplate"]
                 )
+
+                # The raw alert rides along (by reference) so the SN forwarder
+                # can re-emit it unchanged. pre_produce strips it.
+                processed_message["alert"] = message
 
                 processed_messages.append(processed_message)
 
@@ -230,6 +250,7 @@ class StampClassifierStep(GenericStep):
                     "midpointMjdTai": message["midpointMjdTai"],
                     "ra": message["ra"],
                     "dec": message["dec"],
+                    "alert": message["alert"],
                 }
             )
 
@@ -250,7 +271,27 @@ class StampClassifierStep(GenericStep):
         if self.scribe_producer is not None:
             self.produce_to_scribe(messages)
 
+        self.forward_sn_candidates(messages)
+
         return messages
+
+    def forward_sn_candidates(self, predictions: List[dict]):
+        """Re-emit the raw alert of every ranking-1 SN_FORWARD_CLASS object.
+
+        apf drains this producer with the others before the consumer offset is
+        committed, so nothing is flushed here.
+        """
+        if self.sn_forward_producer is None:
+            return
+
+        forwarded = 0
+        for msg in predictions:
+            probs = msg["probabilities"]
+            if max(probs, key=probs.get) != self.sn_forward_class:
+                continue
+            self.sn_forward_producer.produce(msg["alert"], key=str(msg["oid"]))
+            forwarded += 1
+        logging.info(f"Forwarded {forwarded} of {len(predictions)} alerts as SN candidates")
 
     def pre_produce(self, messages: List[dict]) -> List[dict]:
         # oid and sid are internal; the output schema is strict about extra fields.

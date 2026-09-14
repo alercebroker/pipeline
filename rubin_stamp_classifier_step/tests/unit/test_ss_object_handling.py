@@ -91,6 +91,8 @@ def processed(oid, sid, dia_source_id=500):
         "visit_image": np.ones((3, 3)),
         "difference_image": np.ones((3, 3)),
         "reference_image": np.ones((3, 3)),
+        # The raw alert rides along for the SN forwarder; irrelevant here.
+        "alert": None,
     }
 
 
@@ -150,6 +152,7 @@ def test_execute_output_for_ss_object_carries_model_row_and_identity(step):
             "midpointMjdTai": 60000.5,
             "ra": 10.0,
             "dec": -20.0,
+            "alert": None,
         }
     ]
 

@@ -40,6 +40,14 @@ This step is part of the ALeRCE astronomical alert broker pipeline. It processes
        PORT: 5432
        DB_NAME: postgres
        SCHEMA: public
+     # Optional, rubin deployment only: see "SN forwarder" below.
+     SN_FORWARD_CLASS: "SN"
+     SN_FORWARD_PRODUCER_CONFIG:
+       CLASS: "apf.producers.kafka.KafkaProducer"
+       TOPIC: sn_candidates
+       PARAMS:
+         bootstrap.servers: localhost:9092
+       SCHEMA_PATH: "/schemas/surveys/lsst_v11.1/lsst.v11_1.alert.avsc"
      MODEL_VERSION: "1.0.0"
      MODEL_CONFIG:
        CLASS: "alerce_classifiers.rubin.StampClassifierModel"
@@ -52,6 +60,15 @@ This step is part of the ALeRCE astronomical alert broker pipeline. It processes
        PROMETHEUS: false
    ```
    Adjust parameters as needed for your environment.
+
+   **SN forwarder.** When `SN_FORWARD_PRODUCER_CONFIG` is set, the step
+   re-emits the raw LSST alert of every object whose ranking-1 class is
+   `SN_FORWARD_CLASS` (default `SN`) to that producer's topic, unchanged.
+   This is how the rubin deployment feeds the hunter deployment. The alert is
+   written with the apf `KafkaProducer` (Avro container format), so the
+   consuming deployment reads the topic with the plain
+   `apf.consumers.KafkaConsumer`, not `LsstKafkaConsumer`. Leave the block out
+   in the hunter deployment.
 
 2. **Set the config path:**
    ```bash
