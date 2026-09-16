@@ -92,6 +92,11 @@ it without re-serializing from the DTO.
 
 ### 4. Stamp column names
 
+Status: implemented 2026-09-16. `alerce_classifiers.hunter.mapper` reads
+`visit_image`, `reference_image`, `difference_image` directly (science,
+template, difference order), so the hunter deployment runs with
+`RENAME_STAMP_COLUMNS: false`.
+
 Today: `RENAME_STAMP_COLUMNS` renames `visit_image` to `flux_Science_data`
 and so on, to match the trained rubin model's `stamps_cols`.
 
@@ -114,6 +119,15 @@ to override it. The hunter model zip should follow `.../<version>/<file>.zip`
 anyway.
 
 ### 6. Dependencies and image
+
+Status: implemented 2026-09-16. `alerce_classifiers/hunter/` (`arch.py`,
+`mapper.py`, `model.py`) is a PyTorch port of alerce-hunter-classifier and
+loads its `best_model.pt` (state_dict + hparams + training config) as is;
+class names are hardcoded in the model (`not_candidate`, `candidate`) since
+the artifact carries none. The `hunter` extra (torch, numpy) is added to the
+step's existing `rubin` dependency group, so one image serves both
+deployments; `stamp_full` in main deps is still to be dropped. Unit tests in
+`alerce_classifiers/tests/unit/test_hunter_{mapper,model}.py`.
 
 - `alerce_classifiers`: new package `alerce_classifiers/hunter/` with
   `model.py`, `mapper.py`, `arch.py`, and a `hunter` extra. It may reuse the

@@ -32,5 +32,6 @@ pytest = "^7.4.0"
 pytest-docker = "^1.0.1"
 pytest-cov = "^4.1.0"
 
+# One image serves the rubin and the hunter deployments (Dockerfile: --with=rubin).
 [tool.poetry.group.rubin.dependencies]
-alerce_classifiers = { path = "../alerce_classifiers", develop = true, extras = ["rubin"] }
+alerce_classifiers = { path = "../alerce_classifiers", develop = true, extras = ["rubin", "hunter"] }
