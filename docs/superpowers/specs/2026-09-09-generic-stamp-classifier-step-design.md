@@ -124,9 +124,12 @@ Status: implemented 2026-09-16. `alerce_classifiers/hunter/` (`arch.py`,
 `mapper.py`, `model.py`) is a PyTorch port of alerce-hunter-classifier and
 loads its `best_model.pt` (state_dict + hparams + training config) as is;
 class names are hardcoded in the model (`not_candidate`, `candidate`) since
-the artifact carries none. The `hunter` extra (torch, numpy) is added to the
-step's existing `rubin` dependency group, so one image serves both
-deployments; `stamp_full` in main deps is still to be dropped. Unit tests in
+the artifact carries none. The step has one optional poetry group per model
+(`rubin`: tensorflow, `hunter`: torch) and no model runtime in its main
+dependencies (`stamp_full` dropped); the Dockerfile installs the group named
+by the `model` build arg, so each deployment gets its own image
+(`rubin_stamp_classifier_step`, `hunter_stamp_classifier_step`) built from the
+same folder. Unit tests in
 `alerce_classifiers/tests/unit/test_hunter_{mapper,model}.py`.
 
 - `alerce_classifiers`: new package `alerce_classifiers/hunter/` with
@@ -134,7 +137,9 @@ deployments; `stamp_full` in main deps is still to be dropped. Unit tests in
   padding and normalization helpers in `alerce_classifiers/rubin/mapper.py`.
 - Step `pyproject.toml`: drop the leftover `stamp_full` extra from main deps.
   Add a `hunter` group mirroring `rubin`, or one group if the deps match.
-- Dockerfile: install both groups; one image serves both deployments.
+- Dockerfile: `ARG model` selects the group; one image per deployment.
+- The pods run on CPU: the hunter group pins torch to the PyTorch CPU index
+  on Linux (`+cpu` wheel, no nvidia packages); macOS keeps the PyPI wheel.
 
 ### 7. Tests
 
@@ -144,7 +149,8 @@ test that the rubin deployment forwards ranking-1 SN alerts unchanged to
 
 ## Deployment
 
-Two deployments of the same image: separate consumer group, input topic,
+Two deployments, one image each (same Dockerfile, different `model` build
+arg): separate consumer group, input topic,
 output topic, `CLS_ID`, and `MODEL_CONFIG`. Taxonomy rows for the hunter
 `CLS_ID` must exist in the DB before the first run.
 
