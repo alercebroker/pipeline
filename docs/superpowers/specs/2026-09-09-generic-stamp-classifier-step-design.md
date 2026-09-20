@@ -72,10 +72,12 @@ Rubin output does not change: same rows, same probabilities, same topic.
 Status: implemented 2026-09-14. `pre_execute` keeps the raw alert on the
 message under `alert`, `execute` copies it to the output, `post_execute`
 forwards after the scribe, `pre_produce` strips it. The forward producer is
-the apf `KafkaProducer` with the LSST alert schema, so `sn_candidates` is in
-apf container format and the hunter deployment consumes it with the plain
-`apf.consumers.KafkaConsumer`. apf drains the producer before the offset
-commit. Unit tests in `tests/unit/test_sn_forwarding.py`; the Kafka
+`KafkaSchemalessProducer` with the LSST alert schema, like every multisurvey
+topic, so the hunter deployment consumes `sn_candidates` with
+`apf.consumers.KafkaSchemalessConsumer` and the same `SCHEMA_PATH` (no
+Confluent prefix, so not `LsstKafkaConsumer`). apf drains the producer before
+the offset commit. Unit tests in `tests/unit/test_sn_forwarding.py`, one of
+them pinning the chart's producer class to the schemaless format; the Kafka
 integration test also checks the forward topic.
 
 Today: one producer, `rubin_stamp_classifier` topic, probabilities only.

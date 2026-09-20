@@ -43,7 +43,7 @@ This step is part of the ALeRCE astronomical alert broker pipeline. It processes
      # Optional, rubin deployment only: see "SN forwarder" below.
      SN_FORWARD_CLASS: "SN"
      SN_FORWARD_PRODUCER_CONFIG:
-       CLASS: "apf.producers.kafka.KafkaProducer"
+       CLASS: "apf.producers.kafka.KafkaSchemalessProducer"
        TOPIC: sn_candidates
        PARAMS:
          bootstrap.servers: localhost:9092
@@ -65,10 +65,11 @@ This step is part of the ALeRCE astronomical alert broker pipeline. It processes
    re-emits the raw LSST alert of every object whose ranking-1 class is
    `SN_FORWARD_CLASS` (default `SN`) to that producer's topic, unchanged.
    This is how the rubin deployment feeds the hunter deployment. The alert is
-   written with the apf `KafkaProducer` (Avro container format), so the
-   consuming deployment reads the topic with the plain
-   `apf.consumers.KafkaConsumer`, not `LsstKafkaConsumer`. Leave the block out
-   in the hunter deployment.
+   written with `KafkaSchemalessProducer` and the LSST alert schema, like
+   every multisurvey topic, so the hunter deployment consumes it with
+   `apf.consumers.KafkaSchemalessConsumer` and the same `SCHEMA_PATH` (not
+   `LsstKafkaConsumer`: our topic carries no Confluent prefix). Leave the
+   block out in the hunter deployment.
 
 2. **Set the config path:**
    ```bash

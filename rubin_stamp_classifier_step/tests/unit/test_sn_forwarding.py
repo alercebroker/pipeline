@@ -5,9 +5,14 @@ deployment can consume exactly what the rubin deployment consumed.
 The forwarder is optional (SN_FORWARD_PRODUCER_CONFIG). Without it the step
 behaves as before. These tests run without a database, a broker, or a model.
 """
+import io
+import math
+import os
 from unittest import mock
 
+import fastavro
 import pytest
+import yaml
 
 from rubin_stamp_classifier_step.step import StampClassifierStep
 from tests.unit.stub_model import StubModel
@@ -176,3 +181,58 @@ def test_post_execute_without_forwarder_still_works(plain_step):
 
 def test_forward_producer_is_flushed_before_commit(forwarding_step):
     assert forwarding_step.sn_forward_producer in forwarding_step._get_producers()
+
+
+# --- the deployed forwarder writes what the hunter deployment's consumer reads ---
+
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+CHART_VALUES = os.path.join(ROOT_DIR, "charts", "rubin_stamp_classifier_step", "values.yaml")
+# The recorded alerts are LSST v7.4; the schema version does not matter here,
+# only that the forwarded bytes decode schemaless against the configured one.
+LSST_SCHEMA = os.path.join(ROOT_DIR, "schemas", "surveys", "lsst", "v7_4_alert.avsc")
+RECORDED_ALERT = os.path.join(
+    os.path.dirname(__file__), "..", "integration", "data", "avro_messages", "message_0.avro"
+)
+
+
+def recorded_alert(schema):
+    with open(RECORDED_ALERT, "rb") as f:
+        raw = f.read()
+    # Strip the 5-byte Confluent wire prefix, as LsstKafkaConsumer does.
+    return fastavro.schemaless_reader(io.BytesIO(raw[5:]), schema)
+
+
+def test_chart_forwarder_writes_schemaless_avro_the_hunter_consumer_reads():
+    """The multisurvey steps consume with KafkaSchemalessConsumer and the
+    schema under schemas/, so the forwarder in the chart must write bare
+    schemaless records, not apf container files."""
+    with open(CHART_VALUES) as f:
+        chart_forwarder = yaml.safe_load(f)["configYaml"]["SN_FORWARD_PRODUCER_CONFIG"]
+    schema = fastavro.schema.load_schema(LSST_SCHEMA)
+    raw = recorded_alert(schema)
+
+    with mock.patch("apf.producers.kafka.Producer") as kafka_producer:
+        step = make_step(
+            forward_config={
+                "CLASS": chart_forwarder["CLASS"],
+                "TOPIC": FORWARD_TOPIC,
+                "PARAMS": {"bootstrap.servers": "localhost:9092"},
+                "SCHEMA_PATH": LSST_SCHEMA,
+            }
+        )
+        step.forward_sn_candidates([prediction(123, 500, "SN", raw)])
+
+    (call,) = kafka_producer.return_value.produce.call_args_list
+    forwarded = fastavro.schemaless_reader(io.BytesIO(call.kwargs["value"]), schema)
+    assert same_alert(forwarded, raw)
+
+
+def same_alert(a, b):
+    """Equality where NaN == NaN, since LSST alerts carry NaN in many fields."""
+    if isinstance(a, dict):
+        return isinstance(b, dict) and a.keys() == b.keys() and all(same_alert(a[k], b[k]) for k in a)
+    if isinstance(a, list):
+        return isinstance(b, list) and len(a) == len(b) and all(map(same_alert, a, b))
+    if isinstance(a, float) and isinstance(b, float) and math.isnan(a) and math.isnan(b):
+        return True
+    return a == b

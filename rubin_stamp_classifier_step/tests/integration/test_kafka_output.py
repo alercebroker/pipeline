@@ -61,7 +61,7 @@ step_config = {
     # The rubin deployment forwards the raw alert of ranking-1 SN objects to
     # the topic the hunter deployment consumes.
     "SN_FORWARD_PRODUCER_CONFIG": {
-        "CLASS": "apf.producers.kafka.KafkaProducer",
+        "CLASS": "apf.producers.kafka.KafkaSchemalessProducer",
         "TOPIC": sn_forward_topic,
         "PARAMS": {"bootstrap.servers": kafka_bootstrap_servers},
         "SCHEMA_PATH": lsst_schema_path,
@@ -218,7 +218,8 @@ class TestKafkaOutput(unittest.TestCase):
                     )
 
         # The forward topic holds exactly the raw alerts of the ranking-1 SN
-        # objects, in the apf container format the hunter deployment reads.
+        # objects, as schemaless records the hunter deployment decodes with
+        # KafkaSchemalessConsumer and the LSST schema.
         expected_forwarded = sorted(
             r["diaSourceId"]
             for r in execute_results
@@ -232,6 +233,7 @@ class TestKafkaOutput(unittest.TestCase):
             }
         )
         consumer.subscribe([sn_forward_topic])
+        lsst_schema = fastavro.schema.load_schema(lsst_schema_path)
         forwarded = []
         while len(forwarded) < len(expected_forwarded):
             msg = consumer.poll(5.0)
@@ -240,7 +242,7 @@ class TestKafkaOutput(unittest.TestCase):
             if msg.error():
                 print(f"Consumer error: {msg.error()}")
                 continue
-            forwarded.append(next(fastavro.reader(BytesIO(msg.value()))))
+            forwarded.append(fastavro.schemaless_reader(BytesIO(msg.value()), lsst_schema))
         consumer.close()
         self.assertEqual(
             sorted(a["diaSource"]["diaSourceId"] for a in forwarded),
