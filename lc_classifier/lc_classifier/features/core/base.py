@@ -118,11 +118,13 @@ def discard_bogus_detections(detections: List[Dict]) -> list[dict]:
             procstatus = det["procstatus"] if "procstatus" in det.keys() else None
 
         mask_rb = rb is not None and not det["forced"] and (rb < RB_THRESHOLD)
+        # procstatus may arrive as int or str; coerce before the string compare so
+        # valid forced epochs (procstatus 0 or 57) are not discarded.
         mask_procstatus = (
             procstatus is not None
             and det["forced"]
-            and (procstatus != "0")
-            and (procstatus != "57")
+            and (str(procstatus) != "0")
+            and (str(procstatus) != "57")
         )
         if mask_rb or mask_procstatus:
             bogus = True

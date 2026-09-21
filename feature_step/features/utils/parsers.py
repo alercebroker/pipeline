@@ -23,8 +23,6 @@ DETECTION_KEYS_MAP = {
     "isdiffpos": "isdiffpos",
     "forced": "forced",
     "pid": "pid",
-    "mag_corr":"magpsf_corr",
-    "e_mag_corr_ext":"sigmapsf_corr_ext",
 }
 
 def flux_err_2_mag_err(flux_err, flux):
@@ -183,8 +181,16 @@ def get_bogus_flags_for_each_detection(detections: List[Dict]):
                 value.append(None)
         bogus_flags.append(value)
 
+    # Stringify from the original values, not from the built column: procstatus
+    # may arrive as an int, and a column mixing ints with None becomes float64,
+    # so .astype(str) would render 0 as "0.0" and discard every forced epoch.
+    # Assumes procstatus is always str or int, never a genuine Python float
+    # (e.g. 0.0) -- true today since the Avro schema types it ["null","string"];
+    # a real float would still stringify as "0.0" and be wrongly discarded.
+    procstatus = [str(row[keys.index("procstatus")]) for row in bogus_flags]
+
     bogus_flags = pd.DataFrame(bogus_flags, columns=keys)
-    bogus_flags["procstatus"] = bogus_flags["procstatus"].astype(str)
+    bogus_flags["procstatus"] = procstatus
 
     return bogus_flags
 
@@ -237,48 +243,70 @@ def detections_to_astro_object(
     references_db: Optional[pd.DataFrame],
 ) -> AstroObject:
     detection_keys = [
-        "oid", #si
-        "measurement_id", #si
-        "aid", #placeholder
-        "tid", # si
-        "sid", # si
-        "pid", #si 
-        "ra", #si
-        "dec", #si
-        "mjd", #si
-        "magpsf_corr",
+        "oid",
+        "measurement_id",
+        "aid",
+        "tid",
+        "sid",
+        "pid",
+        "ra",
+        "dec",
+        "mjd",
+        "magpsf_corr",      # candidate / prv_candidate spelling
+        "mag_corr",         # forced_photometry spelling
         "sigmapsf_corr_ext",
-        "mag", #si
-        "e_mag", # si
-        "band", #si
-        "isdiffpos", #si
+        "e_mag_corr_ext",
+        "mag",
+        "e_mag",
+        "band",
+        "isdiffpos",
+        "forced",
     ]
 
+    # Forced epochs arrive inline in `detections` with a per-row `forced` flag,
+    # so this arg must be empty. A non-empty `forced` would misalign the
+    # column-wise concat of the reference/bogus frames, which are computed over
+    # `detections` alone.
+    forced = forced or []
+    if forced:
+        raise NotImplementedError(
+            "detections_to_astro_object: `forced` must be empty for ZTF; forced "
+            "epochs flow inline via the per-row `forced` flag in `detections`."
+        )
+
     values = []
-    # Process regular detections (forced=False)
     for detection in detections:
         row = [detection.get(key, None) if key != 'sid' else str(detection.get(key, None)) for key in detection_keys]
-        row.append(False)  # forced = False
-        values.append(row)
-    
-    # Process forced photometry (forced=True)
-    for detection in forced:
-        row = [detection.get(key, None) if key != 'sid' else str(detection.get(key, None)) for key in detection_keys]
-        row.append(True)  # forced = True
         values.append(row)
 
-    a = pd.DataFrame(data=values, columns=detection_keys + ['forced'])
+    a = pd.DataFrame(data=values, columns=detection_keys)
     a.fillna(value=np.nan, inplace=True)
+
+    # A record's type selects at most one spelling of the corrected magnitude --
+    # the other key is absent from its schema entirely -- so the coalesce can
+    # never have to choose. An uncorrected epoch populates neither and stays NaN.
+    # This must run before the DETECTION_KEYS_MAP rename.
+    a["magpsf_corr"] = a["magpsf_corr"].fillna(a["mag_corr"])
+    a["sigmapsf_corr_ext"] = a["sigmapsf_corr_ext"].fillna(a["e_mag_corr_ext"])
+    a.drop(columns=["mag_corr", "e_mag_corr_ext"], inplace=True)
 
     # reference_for_each_detection has distnr, rfid from dets
     reference_for_each_detection: pd.DataFrame = get_reference_for_each_detection(
         detections
     )
-    a = pd.concat([a, reference_for_each_detection], axis=1)
-
     bogus_flags_for_each_detection: pd.DataFrame = get_bogus_flags_for_each_detection(
         detections
     )
+
+    # All three frames come from the same unfiltered list in the same order, so
+    # they share a RangeIndex and concat aligns. Assert it: a length mismatch
+    # here NaN-fills distnr/rfid/rb/procstatus silently rather than failing,
+    # which is the bug this single-loop form removed.
+    assert len(a) == len(reference_for_each_detection) == len(
+        bogus_flags_for_each_detection
+    )
+
+    a = pd.concat([a, reference_for_each_detection], axis=1)
     a = pd.concat([a, bogus_flags_for_each_detection], axis=1)
 
     a.rename(columns=DETECTION_KEYS_MAP, inplace=True)
@@ -297,7 +325,7 @@ def detections_to_astro_object(
 
 
     w1 = w2 = w3 = w4 = np.nan
-    if xmatches is not None and "allwise" in xmatches.keys(): #tentativo, a revisar
+    if xmatches is not None and xmatches.get("catalog") == "allwise":
         w1 = xmatches['metadata']["w1mpro"]['Float64']
         w2 = xmatches['metadata']["w2mpro"]['Float64']
         w3 = xmatches['metadata']["w3mpro"]['Float64']
@@ -332,24 +360,29 @@ def detections_to_astro_object(
     
     last_mjd = float(max(all_mjds)) if all_mjds else np.nan
 
+    metadata_rows = [
+        ["aid", aid],
+        ["oid", oid],
+        ["W1", w1],
+        ["W2", w2],
+        ["W3", w3],
+        ["W4", w4],
+        ["sgscore1", sgscore1],
+        ["sgmag1", sgmag1],
+        ["srmag1", srmag1],
+        ["simag1", simag1],
+        ["szmag1", szmag1],
+        ["distpsnr1", distpsnr1],
+        ["last_mjd", last_mjd],
+    ]
+    # dtype=object keeps `oid`/`aid` as exact ints: ZTF multisurvey oids exceed
+    # 2**53, so a float64 column silently rounds them. None -> NaN is done here
+    # rather than with .fillna, which would downcast the column back to float64.
     metadata = pd.DataFrame(
-        [
-            ["aid", aid],
-            ["oid", oid],
-            ["W1", w1],
-            ["W2", w2],
-            ["W3", w3],
-            ["W4", w4],
-            ["sgscore1", sgscore1],
-            ["sgmag1", sgmag1],
-            ["srmag1", srmag1],
-            ["simag1", simag1],
-            ["szmag1", szmag1],
-            ["distpsnr1", distpsnr1],
-            ["last_mjd", last_mjd],
-        ],
+        [[name, np.nan if value is None else value] for name, value in metadata_rows],
         columns=["name", "value"],
-    ).fillna(value=np.nan)
+        dtype=object,
+    )
 
     new_references = get_new_references_from_message(detections)
 
@@ -405,7 +438,7 @@ def fid_mapper_for_db_lsst(band: str) -> int:
     return band_to_fid.get(band, 0)
 
 
-def prepare_ao_features_for_db(astro_object: AstroObject) -> pd.DataFrame: #esto tengo que verlo
+def prepare_ao_features_for_db(astro_object: AstroObject, feature_name_lut) -> pd.DataFrame:
     ao_features = astro_object.features[["name", "fid", "value"]].copy()
     ao_features = ao_features[ao_features["value"].notna()]
 
@@ -421,10 +454,9 @@ def prepare_ao_features_for_db(astro_object: AstroObject) -> pd.DataFrame: #esto
         }
     )
 
-    #deberia usar el feature_name_lut para mapear los nombres a ids,
-    unique_feature_names = ao_features["name"].unique()
-    name_to_id = {name: idx for idx, name in enumerate(unique_feature_names)}
-    #print(name_to_id)
+    # Invert the LUT so ids are stable across batches, regardless of which
+    # feature names happen to be present in this one.
+    name_to_id = {name: feature_id for feature_id, name in feature_name_lut.items()}
     
     # Map feature names to their IDs using the lookup table
     ao_features["feature_id"] = ao_features["name"].map(name_to_id)
@@ -501,7 +533,7 @@ def parse_scribe_payload(
 
     for astro_object in astro_objects:
         # for upserting features
-        ao_features = prepare_ao_features_for_db(astro_object)
+        ao_features = prepare_ao_features_for_db(astro_object, feature_name_lut)
         oid = query_ao_table(astro_object.metadata, "oid")
         last_mjd = query_ao_table(astro_object.metadata, "last_mjd")
 

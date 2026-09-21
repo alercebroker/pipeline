@@ -34,7 +34,7 @@ class SPMExtractor(FeatureExtractor):
         forced_phot_prelude: Optional[float] = None,
     ):
 
-        self.version = "1.0.1"
+        self.version = "1.0.2"
         self.cws = {
             "u": 3671.0,
             "g": 4827.0,
@@ -173,6 +173,15 @@ class SPMExtractor(FeatureExtractor):
 
         for band, chi in zip(self.bands, chis):
             features.append(("SPM_chi", chi, band))
+
+        # Reference epoch subtracted from mjd before the fit (mirrors
+        # get_observations). One value for the whole object -> fid=None -> band 0.
+        # NaN under the same condition SPM params are NaN: no usable observations.
+        if len(observations) == 0:
+            mjd_first_detection = np.nan
+        else:
+            mjd_first_detection = np.min(astro_object.detections["mjd"])
+        features.append(("SPM_mjd_ref", mjd_first_detection, None))
 
         features_df = pd.DataFrame(data=features, columns=["name", "value", "fid"])
 

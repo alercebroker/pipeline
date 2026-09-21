@@ -39,13 +39,13 @@ def ulens_model_jax(t, u0, tE, fs, t0, mag_0):
 
 
 class MicroLensExtractor(FeatureExtractor):
-    version = "1.0.2"
+    version = "1.0.3"
     unit = "magnitude"
 
     def __init__(self, bands: List[str]):
         self.bands = bands
 
-    def get_observations(self, astro_object: AstroObject) -> pd.DataFrame:
+    def get_observations(self, astro_object: AstroObject):
         observations = astro_object.detections
         if astro_object.forced_photometry is not None:
             observations = pd.concat(
@@ -54,13 +54,18 @@ class MicroLensExtractor(FeatureExtractor):
         observations = observations[observations["unit"] == self.unit]
         observations = observations[observations["brightness"].notna()]
         observations = observations[observations["e_brightness"] < 1.0]
-        observations["mjd"] -= np.min(observations["mjd"])
-        return observations
+        if len(observations):
+            mjd_first_detection = np.min(observations["mjd"])
+            observations["mjd"] -= mjd_first_detection
+        else:
+            mjd_first_detection = np.nan
+        return observations, mjd_first_detection
 
     def compute_features_single_object(self, astro_object: AstroObject):
-        observations = self.get_observations(astro_object)
+        observations, mjd_first_detection = self.get_observations(astro_object)
 
         features = []
+        any_band_fit = False
         for band in self.bands:
             band_observations = observations[observations["fid"] == band]
             if len(band_observations) < 4:
@@ -106,6 +111,7 @@ class MicroLensExtractor(FeatureExtractor):
                 features.append(("ulens_chi", chi_per_degree, band))
                 features.append(("ulens_t0", parameters[3], band))
                 features.append(("ulens_mag0", parameters[4], band))
+                any_band_fit = True
             except RuntimeError:
                 features.append(("ulens_u0", np.nan, band))
                 features.append(("ulens_tE", np.nan, band))
@@ -113,6 +119,13 @@ class MicroLensExtractor(FeatureExtractor):
                 features.append(("ulens_chi", np.nan, band))
                 features.append(("ulens_t0", np.nan, band))
                 features.append(("ulens_mag0", np.nan, band))
+
+        # Reference epoch subtracted from mjd in get_observations. One value for
+        # the whole object -> fid=None -> band 0. NaN unless at least one band
+        # produced a fit (matches the per-band NaN conditions above).
+        if not any_band_fit:
+            mjd_first_detection = np.nan
+        features.append(("ulens_mjd_ref", mjd_first_detection, None))
 
         features_df = pd.DataFrame(data=features, columns=["name", "value", "fid"])
 
