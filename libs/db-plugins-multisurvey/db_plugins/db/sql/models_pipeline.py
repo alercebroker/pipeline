@@ -1008,6 +1008,79 @@ class Probability(Base):
         return f"FOR VALUES WITH (MODULUS {cls.__n_partitions__}, REMAINDER {partition_idx})"
 
 
+# Private copies of classifier / taxonomy / probability, for a classifier that
+# is not public yet (the TNS candidate hunter). Same columns and physical
+# shape as the public tables, in the same schema; the API roles get no grant
+# on them. Kept as separate tables rather than rows in the public ones so the
+# public tables stay public.
+class ClassifierPrivate(Base):
+    __tablename__ = "classifier_private"
+
+    classifier_id = Column(Integer, nullable=False)
+    classifier_name = Column(VARCHAR, nullable=False)
+    classifier_version = Column(VARCHAR, nullable=False)
+    tid = Column(SmallInteger, nullable=False)
+
+    created_date = Column(Date, server_default=func.now())
+
+    __table_args__ = (
+        PrimaryKeyConstraint("classifier_id", name="pk_classifier_private_classifierid"),
+    )
+
+
+class TaxonomyPrivate(Base):
+    __tablename__ = "taxonomy_private"
+
+    class_id = Column(Integer, nullable=False)
+    class_name = Column(VARCHAR, nullable=False)
+    order = Column(Integer, nullable=False)
+    classifier_id = Column(SmallInteger, nullable=False)
+    created_date = Column(Date, server_default=func.now())
+
+    __table_args__ = (
+        PrimaryKeyConstraint("class_id", "classifier_id", name="pk_taxonomy_private_classid_classifierid"),
+    )
+
+
+class ProbabilityPrivate(Base):
+    __tablename__ = "probability_private"
+
+    oid = Column(BigInteger, nullable=False)
+    sid = Column(SmallInteger, nullable=False)
+    classifier_id = Column(SmallInteger, nullable=False)
+    classifier_version = Column(SmallInteger, nullable=False)
+    class_id = Column(SmallInteger, nullable=False)
+    probability = Column(REAL, nullable=False)
+    ranking = Column(SmallInteger)
+    lastmjd = Column(DOUBLE_PRECISION, nullable=False)
+
+    __table_args__ = (
+        PrimaryKeyConstraint(
+            "oid",
+            "sid",
+            "classifier_id",
+            "class_id",
+            name="pk_probability_private_oid_classifierid_classid",
+        ),
+        Index("ix_probability_private_oid", "oid", postgresql_using="hash"),
+        Index("ix_probability_private_probability", "probability", postgresql_using="btree"),
+        Index("ix_probability_private_ranking", "ranking", postgresql_using="btree"),
+        Index(
+            "ix_classification_private_rank1",
+            "ranking",
+            postgresql_where=ranking == 1,
+            postgresql_using="btree",
+        ),
+        {"postgresql_partition_by": "HASH (oid)"},
+    )
+
+    __n_partitions__ = 16
+
+    @classmethod
+    def __partition_on__(cls, partition_idx: int):
+        return f"FOR VALUES WITH (MODULUS {cls.__n_partitions__}, REMAINDER {partition_idx})"
+
+
 class Feature(Base):
     __tablename__ = "feature"
 

@@ -1,5 +1,5 @@
 from sqlalchemy.dialects.postgresql import insert
-from db_plugins.db.sql.models_pipeline import Probability
+from db_plugins.db.sql.models_pipeline import Probability, Taxonomy
 from contextlib import contextmanager
 from typing import Callable, ContextManager
 from sqlalchemy import create_engine
@@ -48,14 +48,17 @@ def store_probability(
     classifier_version: str,
     class_taxonomy: dict[str, int],
     predictions: list[dict],
+    model: type = Probability,
 ) -> None:
+    """Insert one row per (object, class) into `model`'s table: the public
+    Probability, or a private copy such as ProbabilityPrivate."""
     if len(predictions) == 0:
         return
 
     with psql_connection.session() as session:
         data = _format_data(classifier_id, classifier_version, class_taxonomy, predictions)
 
-        insert_stmt = insert(Probability)
+        insert_stmt = insert(model)
         insert_stmt = insert_stmt.on_conflict_do_nothing()
 
         session.execute(insert_stmt, data)
@@ -68,10 +71,7 @@ def _format_data(
     formated_probabilities = []
     for prediction in predictions:
         probabilities = prediction["probabilities"]
-        dia_object_id = prediction["diaObjectId"] #aqui tambien vienen los SSobjectid, los guardo en el step
-        ss_object_id = prediction["ssObjectId"]
         alert_mjd = prediction["midpointMjdTai"]
-        sid = 1 if (dia_object_id is not None and dia_object_id != 0) else 2
 
         # sort probabilities by value in descending order
         probabilities = sorted(
@@ -80,8 +80,8 @@ def _format_data(
         for i, (class_name, probability) in enumerate(probabilities):
             formated_probabilities.append(
                 {
-                    "oid": dia_object_id if dia_object_id is not None and dia_object_id != 0 else ss_object_id,
-                    "sid": sid,
+                    "oid": prediction["oid"],
+                    "sid": prediction["sid"],
                     "classifier_id": classifier_id,
                     "classifier_version": classifier_version_str_to_small_integer(
                         classifier_version
@@ -129,19 +129,22 @@ def class_id_to_name(class_id: int, class_taxonomy: dict[str, int]) -> str:
     return class_dict.get(class_id, "unknown")
 
 
-def get_taxonomy_by_classifier_id(classifier_id: int, psql_connection: PSQLConnection) -> dict[str, int]:
+def get_taxonomy_by_classifier_id(
+    classifier_id: int, psql_connection: PSQLConnection, model: type = Taxonomy
+) -> dict[str, int]:
     """Fetch taxonomy from DB for a given classifier, return {class_name: class_id}.
 
-    Expects a table with columns: class_id, class_name, "order", classifier_id, created_date
-    available under the configured schema.
+    `model` is the public Taxonomy or a private copy such as TaxonomyPrivate;
+    its table must have columns class_id, class_name, "order", classifier_id.
     """
+    table = model.__tablename__
     mapping: dict[str, int] = {}
     try:
         with psql_connection.session() as session:
             query = text(
-                """
+                f"""
                 SELECT class_id, class_name
-                FROM taxonomy
+                FROM {table}
                 WHERE classifier_id = :classifier_id
                 ORDER BY "order" ASC
                 """

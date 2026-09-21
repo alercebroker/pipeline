@@ -1,6 +1,7 @@
 FROM python:3.10-slim as python-base
 LABEL org.opencontainers.image.authors="ALeRCE"
-ARG model
+# Which model's dependency group to install: rubin (default) or hunter.
+ARG model=rubin
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONFAULTHANDLER=1 \
@@ -12,6 +13,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 
 FROM python-base as builder
+ARG model
 RUN apt-get update && \
     apt-get install -y --no-install-recommends git build-essential && \
     apt-get clean && \
@@ -24,7 +26,7 @@ COPY libs/db-plugins-multisurvey /libs/db-plugins-multisurvey
 COPY alerce_classifiers /alerce_classifiers
 COPY schemas /schemas
 WORKDIR /app
-RUN poetry install --no-root --without=dev --with=rubin
+RUN poetry install --no-root --without=dev --with=${model}
 
 
 FROM python:3.10-slim as production

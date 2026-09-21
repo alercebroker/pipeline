@@ -20,6 +20,7 @@ jobs:
       base-folder: "rubin_stamp_classifier_step"
       sources-folder: "rubin_stamp_classifier_step"
       test-folder: "tests/integration"
+      poetry-install: "--with rubin"
       codecov-flags: "" # Do not upload
     secrets:
       GH_TOKEN: "${{ secrets.ADMIN_TOKEN }}"
@@ -29,7 +30,18 @@ jobs:
     with:
       ref: ${{ github.ref }}
       stage: staging
-      extra-args: rubin_stamp_classifier_step --dry-run
+      extra-args: rubin_stamp_classifier_step --build-args model:rubin --dry-run
+      submodules: true
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+  # Same Dockerfile, hunter dependency group: a separate image for the
+  # hunter deployment.
+  build-hunter-stamp-classifier-dagger:
+    uses: ./.github/workflows/template_build_with_dagger.yaml
+    with:
+      ref: ${{ github.ref }}
+      stage: staging
+      extra-args: hunter_stamp_classifier_step --package-dir rubin_stamp_classifier_step --build-args model:hunter --dry-run
       submodules: true
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
