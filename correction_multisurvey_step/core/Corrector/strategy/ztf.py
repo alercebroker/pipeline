@@ -30,7 +30,7 @@ def is_corrected(detections: pd.DataFrame) -> pd.Series:
     return corrected
 
 
-def is_dubious(detections: pd.DataFrame) -> pd.Series:
+def is_dubious(detections: pd.DataFrame, first_corrected: pd.Series = None) -> pd.Series:
     """A correction/non-correction is dubious if,
 
     * the flux difference is negative and there is no nearby source, or
@@ -41,10 +41,20 @@ def is_dubious(detections: pd.DataFrame) -> pd.Series:
     new_detections = detections[is_new_mask]
     old_detections = detections[~is_new_mask]
 
+    # per-(oid, band) reference over the whole lightcurve; the caller passes it in
+    corrected_all = is_corrected(detections)
+    if first_corrected is None:
+        first_all = is_first_corrected(detections, corrected_all)
+    else:
+        first_all = pd.Series(
+            pd.MultiIndex.from_frame(detections[["oid", "band"]]).map(first_corrected),
+            index=detections.index,
+        ).fillna(False).astype(bool)
+
     # Process new detections
     negative = new_detections["isdiffpos"] == -1
-    corrected = is_corrected(new_detections)
-    first = is_first_corrected(new_detections, corrected)
+    corrected = corrected_all.loc[new_detections.index]
+    first = first_all.loc[new_detections.index]
     dubious_new: pd.Series = (~corrected & negative) | (first & ~corrected) | (~first & corrected)
 
     if len(old_detections) == 0:
@@ -196,6 +206,19 @@ def is_first_corrected(detections: pd.DataFrame, corrected: pd.Series) -> pd.Ser
     """Whether the first detection for each OID and FID has a nearby source"""
     idxmin = detections.groupby(["oid", "band"])["mjd"].transform("idxmin")
     return corrected[idxmin].set_axis(idxmin.index)
+
+
+def first_corrected_lookup(detections: pd.DataFrame) -> pd.Series:
+    """`corrected` of the earliest detection of each (oid, band), indexed by that pair."""
+    if detections.empty:
+        return pd.Series(dtype=bool, index=pd.MultiIndex.from_arrays([[], []], names=["oid", "band"]))
+    corrected = is_corrected(detections)
+    order = detections.sort_values(["oid", "band", "mjd", "measurement_id"])
+    firsts = order.groupby(["oid", "band"], sort=False).head(1)
+    return pd.Series(
+        corrected.loc[firsts.index].to_numpy(),
+        index=pd.MultiIndex.from_frame(firsts[["oid", "band"]]),
+    )
 
 
 def post_process(df: pd.DataFrame, key: str) -> None:
