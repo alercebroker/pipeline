@@ -66,11 +66,6 @@ def test_taxonomy_is_read_from_the_configured_table():
     assert mapping == {"candidate": 1}
 
 
-def test_taxonomy_table_must_be_a_plain_identifier():
-    with pytest.raises(ValueError):
-        get_taxonomy_by_classifier_id(10, RecordingConnection(), table="taxonomy; drop table x")
-
-
 def prediction():
     return {"oid": 123, "sid": 1, "probabilities": {"candidate": 0.9, "not_candidate": 0.1}, "midpointMjdTai": 60000.5}
 

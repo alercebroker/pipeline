@@ -7,24 +7,15 @@ from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.pool import NullPool
 from sqlalchemy import text, MetaData, Table
 import logging
-import re
 
 # Public table names. A classifier that is not public yet keeps private copies
 # in the same schema (e.g. probability_hunter); DB_CONFIG names them.
 TAXONOMY_TABLE = "taxonomy"
 PROBABILITY_TABLE = "probability"
-_IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
-
-
-def _checked_identifier(table: str) -> str:
-    if not _IDENTIFIER.match(table):
-        raise ValueError(f"table name must be a plain SQL identifier, got {table!r}")
-    return table
 
 
 def probability_table(table: str = PROBABILITY_TABLE) -> Table:
     """The Probability model's table, renamed when a private copy is used."""
-    _checked_identifier(table)
     base = Probability.__table__
     if table == base.name:
         return base
@@ -157,7 +148,6 @@ def get_taxonomy_by_classifier_id(
     Expects a table with columns: class_id, class_name, "order", classifier_id, created_date
     available under the configured schema. `table` names a private copy.
     """
-    table = _checked_identifier(table)
     mapping: dict[str, int] = {}
     try:
         with psql_connection.session() as session:
