@@ -5,8 +5,30 @@ from typing import Callable, ContextManager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.pool import NullPool
-from sqlalchemy import text
+from sqlalchemy import text, MetaData, Table
 import logging
+import re
+
+# Public table names. A classifier that is not public yet keeps private copies
+# in the same schema (e.g. probability_hunter); DB_CONFIG names them.
+TAXONOMY_TABLE = "taxonomy"
+PROBABILITY_TABLE = "probability"
+_IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+
+def _checked_identifier(table: str) -> str:
+    if not _IDENTIFIER.match(table):
+        raise ValueError(f"table name must be a plain SQL identifier, got {table!r}")
+    return table
+
+
+def probability_table(table: str = PROBABILITY_TABLE) -> Table:
+    """The Probability model's table, renamed when a private copy is used."""
+    _checked_identifier(table)
+    base = Probability.__table__
+    if table == base.name:
+        return base
+    return base.to_metadata(MetaData(), name=table)
 
 
 class PSQLConnection:
@@ -48,6 +70,7 @@ def store_probability(
     classifier_version: str,
     class_taxonomy: dict[str, int],
     predictions: list[dict],
+    table: str = PROBABILITY_TABLE,
 ) -> None:
     if len(predictions) == 0:
         return
@@ -55,7 +78,7 @@ def store_probability(
     with psql_connection.session() as session:
         data = _format_data(classifier_id, classifier_version, class_taxonomy, predictions)
 
-        insert_stmt = insert(Probability)
+        insert_stmt = insert(probability_table(table))
         insert_stmt = insert_stmt.on_conflict_do_nothing()
 
         session.execute(insert_stmt, data)
@@ -126,19 +149,22 @@ def class_id_to_name(class_id: int, class_taxonomy: dict[str, int]) -> str:
     return class_dict.get(class_id, "unknown")
 
 
-def get_taxonomy_by_classifier_id(classifier_id: int, psql_connection: PSQLConnection) -> dict[str, int]:
+def get_taxonomy_by_classifier_id(
+    classifier_id: int, psql_connection: PSQLConnection, table: str = TAXONOMY_TABLE
+) -> dict[str, int]:
     """Fetch taxonomy from DB for a given classifier, return {class_name: class_id}.
 
     Expects a table with columns: class_id, class_name, "order", classifier_id, created_date
-    available under the configured schema.
+    available under the configured schema. `table` names a private copy.
     """
+    table = _checked_identifier(table)
     mapping: dict[str, int] = {}
     try:
         with psql_connection.session() as session:
             query = text(
-                """
+                f"""
                 SELECT class_id, class_name
-                FROM taxonomy
+                FROM {table}
                 WHERE classifier_id = :classifier_id
                 ORDER BY "order" ASC
                 """

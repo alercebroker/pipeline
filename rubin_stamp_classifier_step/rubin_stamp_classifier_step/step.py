@@ -6,7 +6,13 @@ from apf.core.step import GenericStep
 import logging
 import numexpr
 from .utils.tools import extract_image_from_fits
-from .db.db import PSQLConnection, store_probability, get_taxonomy_by_classifier_id
+from .db.db import (
+    PSQLConnection,
+    store_probability,
+    get_taxonomy_by_classifier_id,
+    TAXONOMY_TABLE,
+    PROBABILITY_TABLE,
+)
 from alerce_classifiers.base.dto import OutputDTO, InputDTO
 from alerce_classifiers.base._types import (
     Detections,
@@ -54,13 +60,19 @@ class StampClassifierStep(GenericStep):
         # its artifact path unless the deployment pins a non-empty MODEL_VERSION
         # (same key the lc classification step reads).
         self.model_version = config.get("MODEL_VERSION") or self.model.model_version
-        self.psql_connection = PSQLConnection(config["DB_CONFIG"], poolclass="NullPool")
+        db_cfg = config["DB_CONFIG"]
+        self.psql_connection = PSQLConnection(db_cfg, poolclass="NullPool")
+        # Public tables by default; a private classifier names its own copies.
+        self.taxonomy_table = db_cfg.get("TAXONOMY_TABLE", TAXONOMY_TABLE)
+        self.probability_table = db_cfg.get("PROBABILITY_TABLE", PROBABILITY_TABLE)
         self.survey = self.config.get("SURVEY")
 
         self.classifier_id = model_cfg["CLS_ID"]
         self.rename_stamp_columns = config.get("RENAME_STAMP_COLUMNS", False)
 
-        self.class_taxonomy = get_taxonomy_by_classifier_id(self.classifier_id, self.psql_connection)
+        self.class_taxonomy = get_taxonomy_by_classifier_id(
+            self.classifier_id, self.psql_connection, table=self.taxonomy_table
+        )
         logging.info(f"Class taxonomy: {self.class_taxonomy}")
         logging.info(f"RENAME_STAMP_COLUMNS: {self.rename_stamp_columns}")
 
@@ -265,6 +277,7 @@ class StampClassifierStep(GenericStep):
             classifier_version=self.model_version,
             class_taxonomy = self.class_taxonomy,
             predictions=messages,
+            table=self.probability_table,
         )
 
         # Produce to scribe
