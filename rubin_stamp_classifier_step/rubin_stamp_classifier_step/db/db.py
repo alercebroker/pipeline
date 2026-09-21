@@ -1,25 +1,12 @@
 from sqlalchemy.dialects.postgresql import insert
-from db_plugins.db.sql.models_pipeline import Probability
+from db_plugins.db.sql.models_pipeline import Probability, Taxonomy
 from contextlib import contextmanager
 from typing import Callable, ContextManager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.pool import NullPool
-from sqlalchemy import text, MetaData, Table
+from sqlalchemy import text
 import logging
-
-# Public table names. A classifier that is not public yet keeps private copies
-# in the same schema (e.g. probability_private); DB_CONFIG names them.
-TAXONOMY_TABLE = "taxonomy"
-PROBABILITY_TABLE = "probability"
-
-
-def probability_table(table: str = PROBABILITY_TABLE) -> Table:
-    """The Probability model's table, renamed when a private copy is used."""
-    base = Probability.__table__
-    if table == base.name:
-        return base
-    return base.to_metadata(MetaData(), name=table)
 
 
 class PSQLConnection:
@@ -61,17 +48,17 @@ def store_probability(
     classifier_version: str,
     class_taxonomy: dict[str, int],
     predictions: list[dict],
-    table: Table = Probability.__table__,
+    model: type = Probability,
 ) -> None:
-    """Insert one row per (object, class). `table` is the Probability model's
-    table or a renamed copy of it from probability_table(), built once."""
+    """Insert one row per (object, class) into `model`'s table: the public
+    Probability, or a private copy such as ProbabilityPrivate."""
     if len(predictions) == 0:
         return
 
     with psql_connection.session() as session:
         data = _format_data(classifier_id, classifier_version, class_taxonomy, predictions)
 
-        insert_stmt = insert(table)
+        insert_stmt = insert(model)
         insert_stmt = insert_stmt.on_conflict_do_nothing()
 
         session.execute(insert_stmt, data)
@@ -143,13 +130,14 @@ def class_id_to_name(class_id: int, class_taxonomy: dict[str, int]) -> str:
 
 
 def get_taxonomy_by_classifier_id(
-    classifier_id: int, psql_connection: PSQLConnection, table: str = TAXONOMY_TABLE
+    classifier_id: int, psql_connection: PSQLConnection, model: type = Taxonomy
 ) -> dict[str, int]:
     """Fetch taxonomy from DB for a given classifier, return {class_name: class_id}.
 
-    Expects a table with columns: class_id, class_name, "order", classifier_id, created_date
-    available under the configured schema. `table` names a private copy.
+    `model` is the public Taxonomy or a private copy such as TaxonomyPrivate;
+    its table must have columns class_id, class_name, "order", classifier_id.
     """
+    table = model.__tablename__
     mapping: dict[str, int] = {}
     try:
         with psql_connection.session() as session:

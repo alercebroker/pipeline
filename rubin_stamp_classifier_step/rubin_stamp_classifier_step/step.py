@@ -10,10 +10,8 @@ from .db.db import (
     PSQLConnection,
     store_probability,
     get_taxonomy_by_classifier_id,
-    TAXONOMY_TABLE,
-    PROBABILITY_TABLE,
-    probability_table,
 )
+from db_plugins.db.sql.models_pipeline import Probability, Taxonomy
 from alerce_classifiers.base.dto import OutputDTO, InputDTO
 from alerce_classifiers.base._types import (
     Detections,
@@ -53,10 +51,10 @@ class StampClassifierStep(GenericStep):
         self.model_version = config.get("MODEL_VERSION") or self.model.model_version
         db_cfg = config["DB_CONFIG"]
         self.psql_connection = PSQLConnection(db_cfg, poolclass="NullPool")
-        # Public tables by default; a private classifier names its own copies.
-        self.taxonomy_table = db_cfg.get("TAXONOMY_TABLE", TAXONOMY_TABLE)
-        # Built once: a private copy is a renamed clone of the model's table.
-        self.probability_table = probability_table(db_cfg.get("PROBABILITY_TABLE", PROBABILITY_TABLE))
+        # Public models by default; a classifier that is not public yet names
+        # the private copies (db_plugins TaxonomyPrivate / ProbabilityPrivate).
+        self.taxonomy_model = self._db_model(db_cfg, "TAXONOMY_CLASS", Taxonomy)
+        self.probability_model = self._db_model(db_cfg, "PROBABILITY_CLASS", Probability)
         self.survey = self.config.get("SURVEY")
         # The output topic's fields, from the schema the producer loaded
         # (SCHEMA_PATH). None when the producer has no schema (local runs).
@@ -67,7 +65,7 @@ class StampClassifierStep(GenericStep):
         self.rename_stamp_columns = config.get("RENAME_STAMP_COLUMNS", False)
 
         self.class_taxonomy = get_taxonomy_by_classifier_id(
-            self.classifier_id, self.psql_connection, table=self.taxonomy_table
+            self.classifier_id, self.psql_connection, model=self.taxonomy_model
         )
         logging.info(f"Class taxonomy: {self.class_taxonomy}")
         logging.info(f"RENAME_STAMP_COLUMNS: {self.rename_stamp_columns}")
@@ -182,6 +180,11 @@ class StampClassifierStep(GenericStep):
 
         return processed_messages
 
+    @staticmethod
+    def _db_model(db_cfg: dict, key: str, default: type) -> type:
+        path = db_cfg.get(key)
+        return get_class(path) if path else default
+
     def _messages_to_dto(self, messages: List[dict]) -> InputDTO:
         
         df = pd.DataFrame.from_records(messages)
@@ -273,7 +276,7 @@ class StampClassifierStep(GenericStep):
             classifier_version=self.model_version,
             class_taxonomy = self.class_taxonomy,
             predictions=messages,
-            table=self.probability_table,
+            model=self.probability_model,
         )
 
         # Produce to scribe
