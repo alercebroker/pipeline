@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "prv-candidates-step"
-version = "27.5.7a38"
+version = "27.6.0"
 description = "Previous Detections Step"
 authors = []
 readme = "README.md"
@@ -8,7 +8,7 @@ packages = [{include = "prv_candidates_step"}]
 
 [tool.poetry.dependencies]
 python = ">=3.8,<3.11"
-apf-base = { path = "../libs/apf", develop = true }
+apf-base-ztf-legacy = { path = "../libs/apf_ztf_legacy", develop = true }
 survey-parser-plugins = {path = "../libs/survey_parser_plugins", develop = true}
 
 [tool.poetry.group.test.dependencies]

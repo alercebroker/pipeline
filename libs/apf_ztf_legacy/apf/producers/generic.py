@@ -30,3 +30,12 @@ class GenericProducer(ABC):
             Message to be sended.
         """
         pass
+
+    def flush(self):
+        """Wait until every message already produced has been delivered.
+
+        No-op by default, for producers that write synchronously and have
+        nothing buffered. Producers that queue messages in the background
+        override this.
+        """
+        pass

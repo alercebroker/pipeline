@@ -93,11 +93,32 @@ class KafkaProducer(GenericProducer):
                     ]
                 }
             }
+
+    FLUSH_TIMEOUT: int, float
+        Optional. Seconds that :py:func:`flush` waits for the buffered messages
+        to be delivered before giving up and raising. Must be positive.
+
+        When it is not set, :py:func:`flush` waits as long as the underlying
+        library does, which is until every message is either delivered or its
+        `message.timeout.ms` expires.
+
+        .. code-block:: python
+
+            #settings.py
+            PRODUCER_CONFIG = { ...
+                "FLUSH_TIMEOUT": 30
+            }
     """
 
     def __init__(self, config):
         super().__init__(config=config)
         self.producer = Producer(self.config["PARAMS"])
+
+        self.flush_timeout = self.config.get("FLUSH_TIMEOUT")
+        if self.flush_timeout is not None:
+            self.flush_timeout = float(self.flush_timeout)
+            if self.flush_timeout <= 0:
+                raise ValueError("FLUSH_TIMEOUT must be a positive number of seconds")
 
         self.schema = fastavro.schema.load_schema(config["SCHEMA_PATH"])
 
@@ -185,6 +206,30 @@ class KafkaProducer(GenericProducer):
                 self._handle_buffer_error(err, topic, message, key, acked, **kwargs)
             if flush:
                 self.producer.flush()
+
+    def flush(self):
+        """Wait until every message already produced has been delivered.
+
+        Waits up to the `FLUSH_TIMEOUT` seconds from the config, or as long as
+        the underlying library does when no timeout is configured.
+
+        Raises
+        ------
+        BufferError
+            If messages remain undelivered when the timeout expires. Raising
+            here is deliberate: the step must not commit its consumer offset
+            while writes it produced are still buffered.
+        """
+        if self.flush_timeout is None:
+            remaining = self.producer.flush()
+        else:
+            remaining = self.producer.flush(self.flush_timeout)
+
+        if remaining:
+            raise BufferError(
+                f"{remaining} message(s) still undelivered after "
+                f"{self.flush_timeout}s; refusing to commit"
+            )
 
     def __del__(self):
         self.logger.info("Waiting to produce last messages")

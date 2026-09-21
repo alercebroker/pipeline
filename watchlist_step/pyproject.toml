@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "watchlist-step"
-version = "27.5.7a39"
+version = "27.6.0"
 description = "Watchlist Step"
 authors = []
 readme = "README.md"
@@ -12,7 +12,7 @@ sample = "scripts.make_sample:run"
 
 [tool.poetry.dependencies]
 python = "~3.10"
-apf-base = { path = "../libs/apf", develop = true }
+apf-base-ztf-legacy = { path = "../libs/apf_ztf_legacy", develop = true }
 pydantic = "^2.6.4"
 psycopg2-binary = "=2.9.9"
 
