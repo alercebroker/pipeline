@@ -158,6 +158,7 @@ configYaml:
       # schema). Unset means the public models.
       # TAXONOMY_CLASS: db_plugins.db.sql.models_pipeline.TaxonomyPrivate
       # PROBABILITY_CLASS: db_plugins.db.sql.models_pipeline.ProbabilityPrivate
+      # The tables come from the models: scripts/create_private_tables.py.
     MODEL_VERSION: "1.0.0"
     MODEL_CONFIG:
       CLASS: "alerce_classifiers.rubin.StampClassifierModel"
