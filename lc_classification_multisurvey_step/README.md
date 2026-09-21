@@ -148,3 +148,23 @@ its first batch: that hierarchy is stale (it lists `SNIbc`/`SNIIb` and `RRL`,
 while 2.1.0 emits `SESN` and `RRLab`/`RRLc`). After a model bump, regenerate:
 
     python scripts/dump_model_taxonomy.py /path/to/model/2.1.0
+
+## Replaying real objects through the whole step
+
+`scripts/replay_fixture.py` drives the production lifecycle (`GenericStep.start`:
+pre_execute, execute, post_execute, produce_scribe, flush) from the 992-object
+fixture instead of the empty feature topic, through apf's `JSONConsumer`. The
+model, the taxonomy lookup and the row building are the real ones; only the
+consumer is swapped. By default the scribe producer is replaced by one that
+records every command to `<out>/scribe_commands.jsonl`, one `{"key", "payload"}`
+per line, and nothing leaves the machine. `--send` uses the yaml's
+`SCRIBE_PRODUCER_CONFIG` as is and the commands go to the real scribe topic.
+
+    python scripts/replay_fixture.py --config local_config.yaml \
+        --model-path /path/to/model/2.1.0 --out /tmp/replay
+
+2026-09-07, dry run: 992 objects in 10 batches of 100 gave 44640
+`update-probability` commands on survey `ztf`, classifier version 210, heads 5
+to 9 (20832 / 2976 / 5952 / 5952 / 8928 rows), keyed by oid. The same rows the
+equivalence test matched against production, now as the envelope the scribe
+receives.

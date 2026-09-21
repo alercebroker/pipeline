@@ -8,3 +8,4 @@ config.yaml
 config.yml
 config.*.yaml
 local_config*.yaml
+scribe_commands*.jsonl
