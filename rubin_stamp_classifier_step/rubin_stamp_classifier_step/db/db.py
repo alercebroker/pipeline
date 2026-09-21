@@ -61,15 +61,17 @@ def store_probability(
     classifier_version: str,
     class_taxonomy: dict[str, int],
     predictions: list[dict],
-    table: str = PROBABILITY_TABLE,
+    table: Table = Probability.__table__,
 ) -> None:
+    """Insert one row per (object, class). `table` is the Probability model's
+    table or a renamed copy of it from probability_table(), built once."""
     if len(predictions) == 0:
         return
 
     with psql_connection.session() as session:
         data = _format_data(classifier_id, classifier_version, class_taxonomy, predictions)
 
-        insert_stmt = insert(probability_table(table))
+        insert_stmt = insert(table)
         insert_stmt = insert_stmt.on_conflict_do_nothing()
 
         session.execute(insert_stmt, data)

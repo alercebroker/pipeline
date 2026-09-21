@@ -12,6 +12,7 @@ from .db.db import (
     get_taxonomy_by_classifier_id,
     TAXONOMY_TABLE,
     PROBABILITY_TABLE,
+    probability_table,
 )
 from alerce_classifiers.base.dto import OutputDTO, InputDTO
 from alerce_classifiers.base._types import (
@@ -54,7 +55,8 @@ class StampClassifierStep(GenericStep):
         self.psql_connection = PSQLConnection(db_cfg, poolclass="NullPool")
         # Public tables by default; a private classifier names its own copies.
         self.taxonomy_table = db_cfg.get("TAXONOMY_TABLE", TAXONOMY_TABLE)
-        self.probability_table = db_cfg.get("PROBABILITY_TABLE", PROBABILITY_TABLE)
+        # Built once: a private copy is a renamed clone of the model's table.
+        self.probability_table = probability_table(db_cfg.get("PROBABILITY_TABLE", PROBABILITY_TABLE))
         self.survey = self.config.get("SURVEY")
         # The output topic's fields, from the schema the producer loaded
         # (SCHEMA_PATH). None when the producer has no schema (local runs).

@@ -11,9 +11,10 @@ from contextlib import contextmanager
 from unittest import mock
 
 import pytest
+from sqlalchemy import Table
 from sqlalchemy.dialects import postgresql
 
-from rubin_stamp_classifier_step.db.db import get_taxonomy_by_classifier_id, store_probability
+from rubin_stamp_classifier_step.db.db import get_taxonomy_by_classifier_id, probability_table, store_probability
 from rubin_stamp_classifier_step.step import StampClassifierStep
 from tests.unit.stub_model import CLASSES
 
@@ -82,7 +83,7 @@ def test_probabilities_are_written_to_the_configured_table():
     connection = RecordingConnection()
 
     store_probability(connection, 10, "1.0.0", {"candidate": 1, "not_candidate": 0}, [prediction()],
-                      table="probability_hunter")
+                      table=probability_table("probability_hunter"))
 
     sql = executed_sql(connection)
     assert sql.startswith("INSERT INTO probability_hunter (")
@@ -119,6 +120,22 @@ def test_step_writes_probabilities_to_the_configured_table(db_config, table):
     step, _ = build_step(db_config)
 
     with mock.patch("rubin_stamp_classifier_step.step.store_probability") as store:
-        step.post_execute([{"oid": 1, "sid": 1, "probabilities": {c: 0.2 for c in CLASSES}, "midpointMjdTai": 1.0}])
+        step.post_execute(prediction_messages())
 
-    assert store.call_args.kwargs["table"] == table
+    assert store.call_args.kwargs["table"] is step.probability_table
+    assert isinstance(step.probability_table, Table)
+    assert step.probability_table.name == table
+
+
+def prediction_messages():
+    return [{"oid": 1, "sid": 1, "probabilities": {c: 0.2 for c in CLASSES}, "midpointMjdTai": 1.0}]
+
+
+def test_step_builds_the_private_table_once_not_per_insert():
+    step, _ = build_step({"PROBABILITY_TABLE": "probability_hunter"})
+
+    with mock.patch("rubin_stamp_classifier_step.db.db.probability_table") as factory:
+        step.post_execute(prediction_messages())
+        step.post_execute(prediction_messages())
+
+    factory.assert_not_called()
