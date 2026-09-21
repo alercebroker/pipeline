@@ -24,7 +24,7 @@ from db_plugins.db.sql.models_pipeline import (
     ZtfReference,
     ZtfSS,
 )
-from sqlalchemy import bindparam, func, update
+from sqlalchemy import bindparam, func, or_, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
@@ -234,11 +234,20 @@ class ZTFCorrectionCommand(Command):
             for mjd, obj in ztfobj_dict.values():
                 clean_obj = {k: v for k, v in obj.items() if k != "_mjd"}
                 clean_obj["_oid"] = clean_obj["oid"]
+                # own key so the SET clause and the condition don't share a bindparam
+                clean_obj["_mjdendhist_guard"] = clean_obj["mjdendhist"]
                 ztfobj_list.append(clean_obj)
 
+            # ZTF history counters only advance; NULL on a freshly ingested object
             ztf_object_stmt = (
                 update(ZtfObject)
                 .where(ZtfObject.oid == bindparam("_oid"))
+                .where(
+                    or_(
+                        ZtfObject.mjdendhist.is_(None),
+                        ZtfObject.mjdendhist < bindparam("_mjdendhist_guard"),
+                    )
+                )
                 .values(
                     {
                         "ndethist": bindparam("ndethist"),
@@ -598,6 +607,7 @@ class ProbabilityCommand(Command):
         records = list(dedup.values())
 
         stmt = insert(Probability)
+        # the lightcurve classifier improves with more photometry: only a newer alert wins
         upsert = stmt.on_conflict_do_update(
             constraint="pk_probability_oid_classifierid_classid",
             set_={
@@ -606,6 +616,7 @@ class ProbabilityCommand(Command):
                 "lastmjd": stmt.excluded.lastmjd,
                 "classifier_version": stmt.excluded.classifier_version,
             },
+            where=Probability.lastmjd < stmt.excluded.lastmjd,
         )
         session.connection().execute(upsert, records)
 
