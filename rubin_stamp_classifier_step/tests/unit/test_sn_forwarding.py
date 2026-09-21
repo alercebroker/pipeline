@@ -16,7 +16,7 @@ import yaml
 
 from rubin_stamp_classifier_step.step import StampClassifierStep
 from tests.unit.stub_model import StubModel
-from tests.unit.test_ss_object_handling import TAXONOMY, CLS_ID, alert, processed, OUTPUT_SCHEMA_FIELDS
+from tests.unit.test_ss_object_handling import TAXONOMY, CLS_ID, alert, processed, OUTPUT_SCHEMA_FIELDS, OUTPUT_SCHEMA_PATH
 
 FORWARD_TOPIC = "sn_candidates"
 
@@ -24,7 +24,10 @@ FORWARD_TOPIC = "sn_candidates"
 def make_step(forward_config=None, forward_class=None):
     config = {
         "CONSUMER_CONFIG": {"CLASS": "apf.core.step.DefaultConsumer"},
-        "PRODUCER_CONFIG": {"CLASS": "apf.core.step.DefaultProducer"},
+        "PRODUCER_CONFIG": {
+            "CLASS": "tests.unit.recording_producer.RecordingProducer",
+            "SCHEMA_PATH": OUTPUT_SCHEMA_PATH,
+        },
         "DB_CONFIG": {},
         "MODEL_CONFIG": {
             "CLASS": "tests.unit.stub_model.StubModel",

@@ -7,6 +7,7 @@ database, a Kafka broker, or a downloaded model: the model is a stub that
 returns fixed probabilities for whatever rows it receives.
 """
 import io
+import os
 from unittest import mock
 
 import numpy as np
@@ -20,6 +21,9 @@ from tests.unit.stub_model import CLASSES, MODEL_VERSION, StubModel
 
 TAXONOMY = {name: idx + 10 for idx, name in enumerate(CLASSES)}
 CLS_ID = 3
+OUTPUT_SCHEMA_PATH = os.path.join(
+    os.path.dirname(__file__), "..", "..", "..", "schemas", "rubin_stamp_classifier_step", "output.avsc"
+)
 OUTPUT_SCHEMA_FIELDS = {
     "diaObjectId", "ssObjectId", "diaSourceId", "probabilities", "midpointMjdTai", "ra", "dec",
 }
@@ -29,7 +33,10 @@ OUTPUT_SCHEMA_FIELDS = {
 def step():
     config = {
         "CONSUMER_CONFIG": {"CLASS": "apf.core.step.DefaultConsumer"},
-        "PRODUCER_CONFIG": {"CLASS": "apf.core.step.DefaultProducer"},
+        "PRODUCER_CONFIG": {
+            "CLASS": "tests.unit.recording_producer.RecordingProducer",
+            "SCHEMA_PATH": OUTPUT_SCHEMA_PATH,
+        },
         "DB_CONFIG": {},
         "MODEL_CONFIG": {
             "CLASS": "tests.unit.stub_model.StubModel",

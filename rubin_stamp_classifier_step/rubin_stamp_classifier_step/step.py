@@ -34,16 +34,6 @@ class StampClassifierStep(GenericStep):
     DIA_OBJECT_SID = 1
     SS_OBJECT_SID = 2
     # Fields of schemas/rubin_stamp_classifier_step/output.avsc
-    OUTPUT_FIELDS = (
-        "diaObjectId",
-        "ssObjectId",
-        "diaSourceId",
-        "probabilities",
-        "midpointMjdTai",
-        "ra",
-        "dec",
-    )
-
     def __init__(self, config: dict, level=logging.INFO, **step_args):
         super().__init__(config=config, level=level, **step_args)
         numexpr.utils.set_num_threads(1)
@@ -66,6 +56,10 @@ class StampClassifierStep(GenericStep):
         self.taxonomy_table = db_cfg.get("TAXONOMY_TABLE", TAXONOMY_TABLE)
         self.probability_table = db_cfg.get("PROBABILITY_TABLE", PROBABILITY_TABLE)
         self.survey = self.config.get("SURVEY")
+        # The output topic's fields, from the schema the producer loaded
+        # (SCHEMA_PATH). None when the producer has no schema (local runs).
+        schema = getattr(self.producer, "schema", None)
+        self.output_fields = {f["name"] for f in schema["fields"]} if schema else None
 
         self.classifier_id = model_cfg["CLS_ID"]
         self.rename_stamp_columns = config.get("RENAME_STAMP_COLUMNS", False)
@@ -307,9 +301,12 @@ class StampClassifierStep(GenericStep):
         logging.info(f"Forwarded {forwarded} of {len(predictions)} alerts as SN candidates")
 
     def pre_produce(self, messages: List[dict]) -> List[dict]:
-        # oid and sid are internal; the output schema is strict about extra fields.
+        # oid, sid and the raw alert are internal; the output schema is strict
+        # about extra fields, so keep only what it declares.
+        if self.output_fields is None:
+            return messages
         return [
-            {key: value for key, value in message.items() if key in self.OUTPUT_FIELDS}
+            {key: value for key, value in message.items() if key in self.output_fields}
             for message in messages
         ]
 
