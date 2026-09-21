@@ -61,9 +61,9 @@ def test_taxonomy_is_read_from_the_public_table_by_default():
 def test_taxonomy_is_read_from_the_configured_table():
     connection = RecordingConnection(rows=[{"class_id": 1, "class_name": "candidate"}])
 
-    mapping = get_taxonomy_by_classifier_id(10, connection, table="taxonomy_hunter")
+    mapping = get_taxonomy_by_classifier_id(10, connection, table="taxonomy_private")
 
-    assert "FROM taxonomy_hunter WHERE" in executed_sql(connection)
+    assert "FROM taxonomy_private WHERE" in executed_sql(connection)
     assert mapping == {"candidate": 1}
 
 
@@ -83,10 +83,10 @@ def test_probabilities_are_written_to_the_configured_table():
     connection = RecordingConnection()
 
     store_probability(connection, 10, "1.0.0", {"candidate": 1, "not_candidate": 0}, [prediction()],
-                      table=probability_table("probability_hunter"))
+                      table=probability_table("probability_private"))
 
     sql = executed_sql(connection)
-    assert sql.startswith("INSERT INTO probability_hunter (")
+    assert sql.startswith("INSERT INTO probability_private (")
     assert "ON CONFLICT DO NOTHING" in sql
     _, rows = connection.executed[0]
     assert [(r["class_id"], r["ranking"]) for r in rows] == [(1, 1), (0, 2)]
@@ -108,14 +108,14 @@ def build_step(db_config):
     return step, read_taxonomy
 
 
-@pytest.mark.parametrize("db_config, table", [({}, "taxonomy"), ({"TAXONOMY_TABLE": "taxonomy_hunter"}, "taxonomy_hunter")])
+@pytest.mark.parametrize("db_config, table", [({}, "taxonomy"), ({"TAXONOMY_TABLE": "taxonomy_private"}, "taxonomy_private")])
 def test_step_reads_the_taxonomy_from_the_configured_table(db_config, table):
     _, read_taxonomy = build_step(db_config)
 
     assert read_taxonomy.call_args.kwargs["table"] == table
 
 
-@pytest.mark.parametrize("db_config, table", [({}, "probability"), ({"PROBABILITY_TABLE": "probability_hunter"}, "probability_hunter")])
+@pytest.mark.parametrize("db_config, table", [({}, "probability"), ({"PROBABILITY_TABLE": "probability_private"}, "probability_private")])
 def test_step_writes_probabilities_to_the_configured_table(db_config, table):
     step, _ = build_step(db_config)
 
@@ -132,7 +132,7 @@ def prediction_messages():
 
 
 def test_step_builds_the_private_table_once_not_per_insert():
-    step, _ = build_step({"PROBABILITY_TABLE": "probability_hunter"})
+    step, _ = build_step({"PROBABILITY_TABLE": "probability_private"})
 
     with mock.patch("rubin_stamp_classifier_step.db.db.probability_table") as factory:
         step.post_execute(prediction_messages())

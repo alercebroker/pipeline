@@ -154,7 +154,7 @@ configYaml:
       SCHEMA: public
       # Optional. A classifier that is not public yet keeps private copies of
       # the taxonomy and probability tables in the same schema (hunter:
-      # taxonomy_hunter / probability_hunter). Unset means the public tables.
+      # taxonomy_private / probability_private). Unset means the public tables.
       # TAXONOMY_TABLE: taxonomy
       # PROBABILITY_TABLE: probability
     MODEL_VERSION: "1.0.0"

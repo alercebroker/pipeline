@@ -9,7 +9,7 @@ from sqlalchemy import text, MetaData, Table
 import logging
 
 # Public table names. A classifier that is not public yet keeps private copies
-# in the same schema (e.g. probability_hunter); DB_CONFIG names them.
+# in the same schema (e.g. probability_private); DB_CONFIG names them.
 TAXONOMY_TABLE = "taxonomy"
 PROBABILITY_TABLE = "probability"
 
