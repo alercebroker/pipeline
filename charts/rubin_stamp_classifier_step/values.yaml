@@ -103,7 +103,7 @@ configYaml:
   MODEL_VERSION: ""
   MODEL_CONFIG:
     # rubin: alerce_classifiers.rubin.StampClassifierModel
-    # hunter: alerce_classifiers.hunter.HunterStampClassifierModel
+    # hunter: alerce_classifiers.hunter.HunterClassifierModel
     CLASS: ""
     PARAMS:
       model_path: ""
