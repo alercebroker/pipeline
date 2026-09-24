@@ -1,6 +1,4 @@
-import logging
-
-logger = logging.getLogger("alerce.SqlScribe")
+import math
 
 
 def multisurvey_detection_to_ztf(command: dict):
@@ -460,8 +458,9 @@ def parse_ztf_object_feature_update(raw_ztf_update: dict) -> dict:
 def _as_int(value):
     """int() that returns None instead of raising.
 
-    Payload ids arrive either as int or as string ("0"), and missing values as
-    None or NaN. int() keeps the precision of the 64 bit oids.
+    Payload ids arrive either as int or as string ("0"). An invalid or missing
+    value becomes None, so the insert fails on the NOT NULL columns and the
+    batch fails, instead of the object being dropped in silence.
     """
     try:
         return int(value)
@@ -476,6 +475,17 @@ def parse_feature_version(raw_version) -> int:
     return _as_int(raw_version)
 
 
+def _as_mjd(value) -> float:
+    """mjd as float. A missing, invalid or NaN mjd doesn't fail: it sorts
+    before any real one, so a set with mjd always wins over one without, and
+    among sets without mjd the last message wins."""
+    try:
+        mjd = float(value)
+    except (TypeError, ValueError):
+        return -math.inf
+    return -math.inf if math.isnan(mjd) else mjd
+
+
 def parse_features(raw_features: dict) -> dict:
     """Feature set of one object from a features command payload, for any
     survey.
@@ -483,31 +493,17 @@ def parse_features(raw_features: dict) -> dict:
     The set is kept whole because it replaces every feature of the object:
     features that came out NaN are not sent, so writing row by row would leave
     their old values mixed with the new ones. "mjd" picks the newest set when
-    an object arrives more than once in a batch. ZTF payloads have no mjd, so
-    it defaults to 0.0 and the last message wins.
+    an object arrives more than once in a batch, the same way for every survey.
     """
     oid = _as_int(raw_features["oid"])
     sid = _as_int(raw_features["sid"])
     version = parse_feature_version(raw_features["features_version"])
 
-    if oid is None or sid is None or version is None:
-        raise ValueError(
-            "Invalid features command: "
-            f"oid={raw_features['oid']}, sid={raw_features['sid']}, "
-            f"features_version={raw_features['features_version']}"
-        )
-
     deduplication_dict = {}
-    skipped = []
 
     for feature in raw_features["features"]:
-        feature_id = _as_int(feature.get("feature_id"))
-        band = _as_int(feature.get("band"))
-
-        # both are part of the primary key, a null would abort the whole batch
-        if feature_id is None or band is None:
-            skipped.append(feature)
-            continue
+        feature_id = _as_int(feature["feature_id"])
+        band = _as_int(feature["band"])
 
         deduplication_dict[(feature_id, band)] = {
             "oid": oid,
@@ -515,18 +511,12 @@ def parse_features(raw_features: dict) -> dict:
             "feature_id": feature_id,
             "band": band,
             "version": version,
-            "value": feature.get("value"),
+            "value": feature["value"],
         }
-
-    if skipped:
-        logger.warning(
-            f"Skipped {len(skipped)} features of object {oid} "
-            f"without feature_id or band: {skipped[:5]}"
-        )
 
     return {
         "oid": oid,
         "sid": sid,
-        "mjd": raw_features.get("mjd") or 0.0,
+        "mjd": _as_mjd(raw_features.get("mjd")),
         "rows": list(deduplication_dict.values()),
     }

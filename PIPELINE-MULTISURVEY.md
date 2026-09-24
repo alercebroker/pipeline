@@ -246,7 +246,7 @@ The legacy coordinate-based ALeRCE id and the 1.5″ crossmatch lookup in `sorti
 **Status.** Current.
 
 **Notes.**
-- `pre_execute` deduplicates `magstat` and `magstat_objects` messages within a batch, keeping only the record with the highest detection count / latest MJD, before handing off to `execute`.
+- `pre_execute` deduplicates `magstat` messages within a batch, keeping only the record with the highest detection count, before handing off to `execute`.
 - `ALLOWED_COMMANDS` config key can restrict which command types are accepted.
 
 ---
