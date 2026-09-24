@@ -578,6 +578,7 @@ def parse_scribe_payload(
                 "features_version": features_version,
                 "sid": sid,
                 "features": features_list,
+                "mjd": last_mjd,
             },
         }
         upsert_features_commands_list.append(upsert_features_command) #esto tengo que hacerlo
