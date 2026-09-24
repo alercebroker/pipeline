@@ -476,12 +476,15 @@ def parse_feature_version(raw_version) -> int:
     return _as_int(raw_version)
 
 
-def parse_features(raw_features: dict) -> list:
-    """Feature rows of a features command payload, for any survey.
+def parse_features(raw_features: dict) -> dict:
+    """Feature set of one object from a features command payload, for any
+    survey.
 
-    Rows carry an extra "mjd" key used only to keep the newest value of a
-    repeated feature, that must be dropped before writing. ZTF payloads have
-    no mjd, so it defaults to 0.0 and the last occurrence wins.
+    The set is kept whole because it replaces every feature of the object:
+    features that came out NaN are not sent, so writing row by row would leave
+    their old values mixed with the new ones. "mjd" picks the newest set when
+    an object arrives more than once in a batch. ZTF payloads have no mjd, so
+    it defaults to 0.0 and the last message wins.
     """
     oid = _as_int(raw_features["oid"])
     sid = _as_int(raw_features["sid"])
@@ -493,8 +496,6 @@ def parse_features(raw_features: dict) -> list:
             f"oid={raw_features['oid']}, sid={raw_features['sid']}, "
             f"features_version={raw_features['features_version']}"
         )
-
-    mjd = raw_features.get("mjd") or 0.0
 
     deduplication_dict = {}
     skipped = []
@@ -508,19 +509,14 @@ def parse_features(raw_features: dict) -> list:
             skipped.append(feature)
             continue
 
-        key = (oid, sid, feature_id, band)
-        row = {
+        deduplication_dict[(feature_id, band)] = {
             "oid": oid,
             "sid": sid,
             "feature_id": feature_id,
             "band": band,
             "version": version,
             "value": feature.get("value"),
-            "mjd": mjd,
         }
-
-        if key not in deduplication_dict or mjd >= deduplication_dict[key]["mjd"]:
-            deduplication_dict[key] = row
 
     if skipped:
         logger.warning(
@@ -528,4 +524,9 @@ def parse_features(raw_features: dict) -> list:
             f"without feature_id or band: {skipped[:5]}"
         )
 
-    return list(deduplication_dict.values())
+    return {
+        "oid": oid,
+        "sid": sid,
+        "mjd": raw_features.get("mjd") or 0.0,
+        "rows": list(deduplication_dict.values()),
+    }

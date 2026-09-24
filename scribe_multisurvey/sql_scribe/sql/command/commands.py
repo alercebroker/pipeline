@@ -24,7 +24,7 @@ from db_plugins.db.sql.models_pipeline import (
     ZtfReference,
     ZtfSS,
 )
-from sqlalchemy import bindparam, func, or_, update
+from sqlalchemy import bindparam, delete, func, or_, tuple_, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
@@ -465,8 +465,12 @@ class LSSTMagstatCommand(Command):
 
 
 class FeatureCommand(Command):
-    """Upsert into the feature table. Subclassed per survey to keep the
-    command types (and so the batches) separate."""
+    """Replace the feature set of each object in the feature table: delete
+    its rows and insert the new ones in the same transaction. Upserting would
+    keep the old value of any feature that is missing from the new set (NaN
+    features are not sent), mixing features computed at different times.
+    Subclassed per survey to keep the command types (and so the batches)
+    separate."""
 
     def _format_data(self, data):
         return parse_features(data)
@@ -476,29 +480,21 @@ class FeatureCommand(Command):
         if not data:
             return
 
-        dedup = {}
+        # one set per object: the newest message wins whole, never mixed
+        latest = {}
+        for feature_set in data:
+            key = (feature_set["oid"], feature_set["sid"])
+            if key not in latest or feature_set["mjd"] >= latest[key]["mjd"]:
+                latest[key] = feature_set
 
-        for row in data:
-            key = (row["oid"], row["sid"], row["feature_id"], row["band"])
-            if key not in dedup or row["mjd"] >= dedup[key]["mjd"]:
-                dedup[key] = row
-
-        deduplicated_data = [
-            {k: v for k, v in row.items() if k != "mjd"} for row in dedup.values()
-        ]
-
-        stmt = insert(Feature)
-
-        upsert_stmt = stmt.on_conflict_do_update(
-            constraint="pk_feature_oid_featureid_band",
-            set_={
-                "value": stmt.excluded.value,
-                "version": stmt.excluded.version,
-                "updated_date": func.now(),
-            },
+        session.execute(
+            delete(Feature).where(tuple_(Feature.oid, Feature.sid).in_(latest.keys()))
         )
 
-        session.execute(upsert_stmt, deduplicated_data)
+        rows = [row for feature_set in latest.values() for row in feature_set["rows"]]
+        # an object whose features all came out NaN is left with none
+        if rows:
+            session.execute(insert(Feature), rows)
 
 
 class LSSTFeatureCommand(FeatureCommand):
