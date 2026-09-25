@@ -16,8 +16,8 @@ SURVEY_DETECTION_KEYS = {
     "lsst": ["sources", "previous_sources", "forced_sources", "ss_sources"]
 }
 
-# keys whose union is the lightcurve the first detection comes from
-FIRST_DETECTION_KEYS = {
+# Keys that together hold an object's lightcurve, where its first detection is searched
+LIGHTCURVE_KEYS = {
     "ztf": ["detections", "previous_detections"],
     "lsst": ["sources", "previous_sources"],
 }
@@ -121,7 +121,7 @@ class Corrector:
         
         return self
 
-    def _apply_strategy_function(self, df: pd.DataFrame, function_name: str, default=None, columns=None, dtype=object, extra=None):
+    def _apply_strategy_function(self, df: pd.DataFrame, function_name: str, *args, default=None, columns=None, dtype=object):
         """Applies given function from the strategy to a single DataFrame"""
         
         # Handle no detections dataframe. Separate because corrected returns a dataframe, while dubious, stellar and corrected return a series
@@ -135,14 +135,14 @@ class Corrector:
             result = pd.Series(default, index=df.index, dtype=dtype)
         
         # Apply the strategy function to the original dataframe
-        function_output = getattr(self._strategy, function_name)(df, **(extra or {}))
+        function_output = getattr(self._strategy, function_name)(df, *args)
 
         # Replace in the pre-filled dataframe the actual calculated values 
         result[:] = function_output.loc[df.index].astype(dtype).values
         
         return result.astype(dtype)
 
-    def _correct_dataframe_inplace(self, df: pd.DataFrame, key: str, first_corrected=None):
+    def _correct_dataframe_inplace(self, df: pd.DataFrame, key: str, first_corrected: dict | None = None):
         """Apply corrections to a single dataframe. Must be applied for each key in the survey detection keys"""
         # If there's no detection to correct, then there's no need to apply correction so we end the correction for this key
         if len(df) == 0:
@@ -150,9 +150,7 @@ class Corrector:
         
         # Calculate corrected, dubious and stellar for all detections in the current key
         corrected = self._apply_strategy_function(df, "is_corrected", default=False, dtype=bool)
-        dubious = self._apply_strategy_function(
-            df, "is_dubious", default=False, dtype=bool,
-            extra={"first_corrected": first_corrected} if first_corrected is not None else None)
+        dubious = self._apply_strategy_function(df, "is_dubious", first_corrected, default=False, dtype=bool)
         stellar = self._apply_strategy_function(df, "is_stellar", default=False, dtype=bool)
         
         # Get corrected magnitudes
@@ -179,14 +177,13 @@ class Corrector:
         if hasattr(self._strategy, 'post_process'):
             self._strategy.post_process(df, key)
 
-    def _first_detection_reference(self):
-        """`corrected` of each object's earliest detection."""
-        keys = FIRST_DETECTION_KEYS.get(self._survey.lower(), [])
-        frames = [self.parsed_data[k] for k in keys
-                  if k in self.parsed_data and len(self.parsed_data[k])]
-        if not frames or not hasattr(self._strategy, "first_corrected_lookup"):
+    def _corrected_of_first_detection(self) -> dict | None:
+        """`corrected` of the earliest detection of each (oid, band), over the whole lightcurve."""
+        keys = LIGHTCURVE_KEYS.get(self._survey.lower(), [])
+        lightcurve = [self.parsed_data[k] for k in keys if len(self.parsed_data.get(k, []))]
+        if not lightcurve or not hasattr(self._strategy, "corrected_of_first_detection"):
             return None
-        return self._strategy.first_corrected_lookup(pd.concat(frames, ignore_index=True))
+        return self._strategy.corrected_of_first_detection(pd.concat(lightcurve, ignore_index=True))
 
     def corrected_as_dataframes(self) -> dict[str, pd.DataFrame]:
         """Apply corrections to the original dict of parsed data for survey and return as dict of DataFrames
@@ -204,8 +201,8 @@ class Corrector:
             return self.parsed_data
         
         # Apply corrections to detection DataFrames for each of the survey detection keys
-        first_corrected = self._first_detection_reference()
-        first_keys = FIRST_DETECTION_KEYS.get(self._survey.lower(), [])
+        first_corrected = self._corrected_of_first_detection()
+        lightcurve_keys = LIGHTCURVE_KEYS.get(self._survey.lower(), [])
 
         for key in self.parsed_data.keys():
             if key in self._detection_keys:
@@ -214,8 +211,7 @@ class Corrector:
                 self.logger.info(f"Processing {len(df)} detections from {key}")
                 
                 # Modify the detections in place of the parsed data key
-                self._correct_dataframe_inplace(
-                    df, key, first_corrected if key in first_keys else None)
+                self._correct_dataframe_inplace(df, key, first_corrected if key in lightcurve_keys else None)
                 
                 num_corrected = df["corrected"].sum() if len(df) > 0 else 0
                 if num_corrected > 0:

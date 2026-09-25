@@ -8,7 +8,8 @@ from sql_scribe.sql.command.commands import (
     ZTFCorrectionCommand,
     ZTFFeatureCommand,
     ZTFMagstatCommand,
-    ProbabilityArchivalCommand,
+    LightcurveProbabilityArchivalCommand,
+    StampProbabilityArchivalCommand,
     ProbabilityCommand,
     ZtfObjectUpdateCommand,
 )
@@ -47,7 +48,8 @@ class SQLCommandExecutor:
             LSSTFeatureCommand,
             ZTFFeatureCommand,
             XmatchCommand,
-            ProbabilityArchivalCommand,
+            StampProbabilityArchivalCommand,
+            LightcurveProbabilityArchivalCommand,
             ProbabilityCommand,
             ZtfObjectUpdateCommand,
         )

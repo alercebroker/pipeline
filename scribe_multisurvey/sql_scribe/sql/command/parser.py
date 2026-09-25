@@ -424,7 +424,8 @@ def parse_probability(raw_probability: dict) -> dict:
     return {
         "oid": raw_probability["oid"],
         "sid": raw_probability["sid"],
-        "classifier_version_id": raw_probability["classifier_id"],
+        "classifier_id": raw_probability["classifier_id"],
+        "classifier_version": raw_probability["classifier_version"],
         "class_id": raw_probability["class_id"],
         "probability": raw_probability["probability"],
         "ranking": raw_probability.get("ranking"),
@@ -480,8 +481,8 @@ def parse_features(raw_features: dict) -> list:
     """Feature rows of a features command payload, for any survey.
 
     Rows carry an extra "mjd" key used only to keep the newest value of a
-    repeated feature, that must be dropped before writing. ZTF payloads have
-    no mjd, so it defaults to 0.0 and the last occurrence wins.
+    repeated feature (the first one on a tie), that must be dropped before
+    writing. A payload without mjd defaults to 0.0.
     """
     oid = _as_int(raw_features["oid"])
     sid = _as_int(raw_features["sid"])
@@ -519,13 +520,13 @@ def parse_features(raw_features: dict) -> list:
             "mjd": mjd,
         }
 
-        if key not in deduplication_dict or mjd >= deduplication_dict[key]["mjd"]:
+        if key not in deduplication_dict or mjd > deduplication_dict[key]["mjd"]:
             deduplication_dict[key] = row
 
     if skipped:
         logger.warning(
             f"Skipped {len(skipped)} features of object {oid} "
-            f"without feature_id or band: {skipped[:5]}"
+            f"without feature_id or band (first 5 shown): {skipped[:5]}"
         )
 
     return list(deduplication_dict.values())

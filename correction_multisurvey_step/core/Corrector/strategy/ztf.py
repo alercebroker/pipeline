@@ -30,39 +30,34 @@ def is_corrected(detections: pd.DataFrame) -> pd.Series:
     return corrected
 
 
-def is_dubious(detections: pd.DataFrame, first_corrected: pd.Series = None) -> pd.Series:
+def is_dubious(detections: pd.DataFrame, first_corrected: dict | None = None) -> pd.Series:
     """A correction/non-correction is dubious if,
 
     * the flux difference is negative and there is no nearby source, or
-    * the first detection for its OID and FID has a nearby source, but the detection doesn't, or
-    * the first detection for its OID and FID doesn't have a nearby source, but the detection does.
+    * the detection disagrees with the first detection of its OID and band about having a nearby source.
+
+    `first_corrected` comes from `corrected_of_first_detection` over the object's whole lightcurve.
+    Without it, the first detection is searched in `detections` alone.
     """
-    is_new_mask = detections["new"].astype(bool)
-    new_detections = detections[is_new_mask]
-    old_detections = detections[~is_new_mask]
-
-    # per-(oid, band) reference over the whole lightcurve; the caller passes it in
-    corrected_all = is_corrected(detections)
     if first_corrected is None:
-        first_all = is_first_corrected(detections, corrected_all)
-    else:
-        first_all = pd.Series(
-            pd.MultiIndex.from_frame(detections[["oid", "band"]]).map(first_corrected),
-            index=detections.index,
-        ).fillna(False).astype(bool)
+        first_corrected = corrected_of_first_detection(detections)
 
-    # Process new detections
+    is_new = detections["new"].astype(bool)
+    new_detections = detections[is_new]
+    old_detections = detections[~is_new]
+
+    corrected = is_corrected(new_detections)
     negative = new_detections["isdiffpos"] == -1
-    corrected = corrected_all.loc[new_detections.index]
-    first = first_all.loc[new_detections.index]
-    dubious_new: pd.Series = (~corrected & negative) | (first & ~corrected) | (~first & corrected)
+    first = pd.Series(
+        [first_corrected[oid_band] for oid_band in zip(new_detections["oid"], new_detections["band"])],
+        index=new_detections.index,
+        dtype=bool,
+    )
+    dubious_new = (~corrected & negative) | (first != corrected)
 
-    if len(old_detections) == 0:
+    if old_detections.empty:
         return dubious_new
-
-    dubious_old: pd.Series = old_detections["dubious"]
-    dubious = pd.concat([dubious_new, dubious_old]).loc[detections.index]
-    return dubious
+    return pd.concat([dubious_new, old_detections["dubious"]]).loc[detections.index]
 
 
 def is_stellar(detections: pd.DataFrame) -> pd.Series:
@@ -202,23 +197,12 @@ def correct(detections: pd.DataFrame) -> pd.DataFrame:
     return corrected_mags
 
 
-def is_first_corrected(detections: pd.DataFrame, corrected: pd.Series) -> pd.Series:
-    """Whether the first detection for each OID and FID has a nearby source"""
-    idxmin = detections.groupby(["oid", "band"])["mjd"].transform("idxmin")
-    return corrected[idxmin].set_axis(idxmin.index)
-
-
-def first_corrected_lookup(detections: pd.DataFrame) -> pd.Series:
-    """`corrected` of the earliest detection of each (oid, band), indexed by that pair."""
-    if detections.empty:
-        return pd.Series(dtype=bool, index=pd.MultiIndex.from_arrays([[], []], names=["oid", "band"]))
+def corrected_of_first_detection(detections: pd.DataFrame) -> dict:
+    """`corrected` of the earliest detection of each (oid, band), keyed by (oid, band).
+    Detections with the same mjd are ordered by measurement_id, lowest first."""
     corrected = is_corrected(detections)
-    order = detections.sort_values(["oid", "band", "mjd", "measurement_id"])
-    firsts = order.groupby(["oid", "band"], sort=False).head(1)
-    return pd.Series(
-        corrected.loc[firsts.index].to_numpy(),
-        index=pd.MultiIndex.from_frame(firsts[["oid", "band"]]),
-    )
+    earliest = detections.sort_values(["mjd", "measurement_id"]).drop_duplicates(["oid", "band"])
+    return dict(zip(zip(earliest["oid"], earliest["band"]), corrected.loc[earliest.index]))
 
 
 def post_process(df: pd.DataFrame, key: str) -> None:

@@ -480,7 +480,7 @@ class FeatureCommand(Command):
 
         for row in data:
             key = (row["oid"], row["sid"], row["feature_id"], row["band"])
-            if key not in dedup or row["mjd"] >= dedup[key]["mjd"]:
+            if key not in dedup or row["mjd"] > dedup[key]["mjd"]:
                 dedup[key] = row
 
         deduplicated_data = [
@@ -555,36 +555,55 @@ class XmatchCommand(Command):
 
 
 class ProbabilityArchivalCommand(Command):
-    type = "ProbabilityArchivalCommand"
+    """Archive the probabilities of every classifier version, one alert per row. Subclasses say
+    whether the earliest or the latest alert wins; on a tie the stored row stays."""
+
+    earliest_wins: bool
 
     def _format_data(self, data):
         return parse_probability(data)
 
-    @staticmethod
-    def db_operation(session: Session, data: list):
+    @classmethod
+    def db_operation(cls, session: Session, data: list):
         if not data:
             return
+        if any(row["class_id"] < 0 for row in data):
+            raise ValueError("probability for a class missing from the classifier's taxonomy")
+
+        wins = (lambda new, old: new < old) if cls.earliest_wins else (lambda new, old: new > old)
 
         dedup = {}
         for row in data:
-            key = (
-                row["oid"],
-                row["sid"],
-                row["classifier_version_id"],
-                row["class_id"],
-            )
-            # Stamp classifiers archive the FIRST stamp, so keep the earliest
-            # alert in the batch and never overwrite an existing row.
-            if key not in dedup or row["lastmjd"] < dedup[key]["lastmjd"]:
+            key = (row["oid"], row["sid"], row["classifier_id"], row["classifier_version"], row["class_id"])
+            if key not in dedup or wins(row["lastmjd"], dedup[key]["lastmjd"]):
                 dedup[key] = row
 
-        records = list(dedup.values())
-
         stmt = insert(ProbabilityArchive)
-        insert_only = stmt.on_conflict_do_nothing(
+        upsert = stmt.on_conflict_do_update(
             constraint="pk_probability_archive",
+            set_={
+                "probability": stmt.excluded.probability,
+                "ranking": stmt.excluded.ranking,
+                "lastmjd": stmt.excluded.lastmjd,
+                "update_date": func.now(),
+            },
+            where=wins(stmt.excluded.lastmjd, ProbabilityArchive.lastmjd),
         )
-        session.connection().execute(insert_only, records)
+        session.connection().execute(upsert, list(dedup.values()))
+
+
+class StampProbabilityArchivalCommand(ProbabilityArchivalCommand):
+    """Stamp classifiers classify the first stamp: the earliest alert wins."""
+
+    type = "StampProbabilityArchivalCommand"
+    earliest_wins = True
+
+
+class LightcurveProbabilityArchivalCommand(ProbabilityArchivalCommand):
+    """Light-curve classifiers improve with more photometry: the latest alert wins."""
+
+    type = "LightcurveProbabilityArchivalCommand"
+    earliest_wins = False
 
 
 class ProbabilityCommand(Command):
