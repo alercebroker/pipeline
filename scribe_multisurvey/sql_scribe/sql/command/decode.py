@@ -6,8 +6,10 @@ from .commands import (
     LSSTMagstatCommand,
     XmatchCommand,
     ZTFCorrectionCommand,
+    ZTFFeatureCommand,
     ZTFMagstatCommand,
-    ProbabilityArchivalCommand,
+    LightcurveProbabilityArchivalCommand,
+    StampProbabilityArchivalCommand,
     ProbabilityCommand,
     ZtfObjectUpdateCommand,
 )
@@ -85,11 +87,17 @@ def command_factory(msg: str) -> Command:
     if survey == "lsst" and step == "features":
         return LSSTFeatureCommand(**message)
 
+    if survey == "ztf" and step == "features":
+        return ZTFFeatureCommand(**message)
+
     if step == "xmatch" and survey in {"lsst", "ztf"}:
         return XmatchCommand(**message)
     
     if step == "probability-archival-step" and survey in {"lsst", "ztf"}:
-        return ProbabilityArchivalCommand(**message)
+        return StampProbabilityArchivalCommand(**message)
+
+    if step == "lightcurve-probability-archival-step" and survey in {"lsst", "ztf"}:
+        return LightcurveProbabilityArchivalCommand(**message)
 
     if step == "update-probability" and survey in {"lsst", "ztf"}:
         return ProbabilityCommand(**message)

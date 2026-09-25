@@ -24,12 +24,13 @@ from db_plugins.db.sql.models_pipeline import (
     ZtfReference,
     ZtfSS,
 )
-from sqlalchemy import bindparam, func, update
+from sqlalchemy import bindparam, func, or_, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
 from .parser import (
     parse_det,
+    parse_features,
     parse_fp,
     parse_obj_stats,
     parse_probability,
@@ -233,11 +234,20 @@ class ZTFCorrectionCommand(Command):
             for mjd, obj in ztfobj_dict.values():
                 clean_obj = {k: v for k, v in obj.items() if k != "_mjd"}
                 clean_obj["_oid"] = clean_obj["oid"]
+                # own key so the SET clause and the condition don't share a bindparam
+                clean_obj["_mjdendhist_guard"] = clean_obj["mjdendhist"]
                 ztfobj_list.append(clean_obj)
 
+            # ZTF history counters only advance; NULL on a freshly ingested object
             ztf_object_stmt = (
                 update(ZtfObject)
                 .where(ZtfObject.oid == bindparam("_oid"))
+                .where(
+                    or_(
+                        ZtfObject.mjdendhist.is_(None),
+                        ZtfObject.mjdendhist < bindparam("_mjdendhist_guard"),
+                    )
+                )
                 .values(
                     {
                         "ndethist": bindparam("ndethist"),
@@ -454,43 +464,12 @@ class LSSTMagstatCommand(Command):
             )
 
 
-class LSSTFeatureCommand(Command):
-    type = "LSSTFeatureCommand"
+class FeatureCommand(Command):
+    """Upsert into the feature table. Subclassed per survey to keep the
+    command types (and so the batches) separate."""
 
     def _format_data(self, data):
-        oid = data["oid"]
-        sid = data["sid"]
-        mjd = data["mjd"]
-
-        feature_version = (
-            data["features_version"].split(".")[0]
-            if isinstance(data["features_version"], str)
-            else data["features_version"]
-        )
-
-        deduplication_dict = {}
-
-        for feature in data["features"]:
-            key = (oid, sid, feature["feature_id"], feature["band"])
-
-            row = {
-                "oid": oid,
-                "sid": sid,
-                "feature_id": feature["feature_id"],
-                "band": feature["band"],
-                "version": feature_version,
-                "value": feature["value"],
-                "mjd": mjd,  # only used for dedup logic
-            }
-
-            # Deduplicate by keeping the feature with the latest mjd
-            if (
-                key not in deduplication_dict
-                or row["mjd"] > deduplication_dict[key]["mjd"]
-            ):
-                deduplication_dict[key] = row
-
-        return list(deduplication_dict.values())
+        return parse_features(data)
 
     @staticmethod
     def db_operation(session: Session, data: list):
@@ -504,10 +483,9 @@ class LSSTFeatureCommand(Command):
             if key not in dedup or row["mjd"] > dedup[key]["mjd"]:
                 dedup[key] = row
 
-        deduplicated_data = list(dedup.values())
-
-        for row in deduplicated_data:
-            row.pop("mjd", None)
+        deduplicated_data = [
+            {k: v for k, v in row.items() if k != "mjd"} for row in dedup.values()
+        ]
 
         stmt = insert(Feature)
 
@@ -521,6 +499,14 @@ class LSSTFeatureCommand(Command):
         )
 
         session.execute(upsert_stmt, deduplicated_data)
+
+
+class LSSTFeatureCommand(FeatureCommand):
+    type = "LSSTFeatureCommand"
+
+
+class ZTFFeatureCommand(FeatureCommand):
+    type = "ZTFFeatureCommand"
 
 
 class XmatchCommand(Command):
@@ -569,28 +555,28 @@ class XmatchCommand(Command):
 
 
 class ProbabilityArchivalCommand(Command):
-    type = "ProbabilityArchivalCommand"
+    """Archive the probabilities of every classifier version, one alert per row. Subclasses say
+    whether the earliest or the latest alert wins; on a tie the stored row stays."""
+
+    earliest_wins: bool
 
     def _format_data(self, data):
         return parse_probability(data)
 
-    @staticmethod
-    def db_operation(session: Session, data: list):
+    @classmethod
+    def db_operation(cls, session: Session, data: list):
         if not data:
             return
+        if any(row["class_id"] < 0 for row in data):
+            raise ValueError("probability for a class missing from the classifier's taxonomy")
+
+        wins = (lambda new, old: new < old) if cls.earliest_wins else (lambda new, old: new > old)
 
         dedup = {}
         for row in data:
-            key = (
-                row["oid"],
-                row["sid"],
-                row["classifier_version_id"],
-                row["class_id"],
-            )
-            if key not in dedup or row["lastmjd"] > dedup[key]["lastmjd"]:
+            key = (row["oid"], row["sid"], row["classifier_id"], row["classifier_version"], row["class_id"])
+            if key not in dedup or wins(row["lastmjd"], dedup[key]["lastmjd"]):
                 dedup[key] = row
-
-        records = list(dedup.values())
 
         stmt = insert(ProbabilityArchive)
         upsert = stmt.on_conflict_do_update(
@@ -598,10 +584,26 @@ class ProbabilityArchivalCommand(Command):
             set_={
                 "probability": stmt.excluded.probability,
                 "ranking": stmt.excluded.ranking,
+                "lastmjd": stmt.excluded.lastmjd,
                 "update_date": func.now(),
             },
+            where=wins(stmt.excluded.lastmjd, ProbabilityArchive.lastmjd),
         )
-        session.connection().execute(upsert, records)
+        session.connection().execute(upsert, list(dedup.values()))
+
+
+class StampProbabilityArchivalCommand(ProbabilityArchivalCommand):
+    """Stamp classifiers classify the first stamp: the earliest alert wins."""
+
+    type = "StampProbabilityArchivalCommand"
+    earliest_wins = True
+
+
+class LightcurveProbabilityArchivalCommand(ProbabilityArchivalCommand):
+    """Light-curve classifiers improve with more photometry: the latest alert wins."""
+
+    type = "LightcurveProbabilityArchivalCommand"
+    earliest_wins = False
 
 
 class ProbabilityCommand(Command):
@@ -624,13 +626,16 @@ class ProbabilityCommand(Command):
         records = list(dedup.values())
 
         stmt = insert(Probability)
+        # the lightcurve classifier improves with more photometry: only a newer alert wins
         upsert = stmt.on_conflict_do_update(
             constraint="pk_probability_oid_classifierid_classid",
             set_={
                 "probability": stmt.excluded.probability,
                 "ranking": stmt.excluded.ranking,
                 "lastmjd": stmt.excluded.lastmjd,
+                "classifier_version": stmt.excluded.classifier_version,
             },
+            where=Probability.lastmjd < stmt.excluded.lastmjd,
         )
         session.connection().execute(upsert, records)
 

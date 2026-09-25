@@ -87,9 +87,15 @@ class MultiScaleStampClassifier(GenericStep):
 
         """ SCRIBE PRODUCER TO PRODUCE TO SCRIBE-MULTISURVEY TOPIC FOR ARCHIVAL PURPOSES"""
         scribe_cfg = config.get("SCRIBE_PRODUCER_CONFIG")
-        scribe_class = get_class(scribe_cfg["CLASS"])
-        self.scribe_producer = scribe_class(scribe_cfg)
-        self.scribe_topic_name = scribe_cfg.get("TOPIC")
+        self.scribe_producer = None
+        self.scribe_topic_name = None
+        if scribe_cfg:
+            scribe_class = get_class(scribe_cfg["CLASS"])
+            self.scribe_producer = scribe_class(scribe_cfg)
+            self.scribe_topic_name = scribe_cfg.get("TOPIC")
+            logging.info("Scribe producer enabled")
+        else:
+            logging.info("Scribe producer disabled (no config for scribe producer)")
 
 
         """ OBTAIN TAXONOMY FROM DB USING CLASSIFIER ID"""
@@ -254,6 +260,10 @@ class MultiScaleStampClassifier(GenericStep):
         The Kafka message key is set to the string representation of oid.
         """
 
+        # When no scribe producer is configured, do nothing
+        if self.scribe_producer is None:
+            return
+
         if output_dto.probabilities.shape[0] == 0:
             return
 
@@ -269,7 +279,7 @@ class MultiScaleStampClassifier(GenericStep):
         last_idx = len(records) - 1
         for idx, record in enumerate(records):
             command = {
-                "step": "update-probability",
+                "step": "probability-archival-step",
                 "survey": "ztf",
                 "payload": record,
             }
@@ -320,7 +330,8 @@ class MultiScaleStampClassifier(GenericStep):
             )
 
             # Send data to scribe topic
-            self.produce_to_scribe(output_dto, messages_dict)
+            if self.scribe_producer is not None:
+                self.produce_to_scribe(output_dto, messages_dict)
 
             oids_removed = [
                 k
