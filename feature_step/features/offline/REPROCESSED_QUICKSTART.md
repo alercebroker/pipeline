@@ -89,6 +89,7 @@ df -h $RUN | tail -1                                 # manifests only with --no-
 #     Read `no AllWISE` in the manifests: far above ~14% means Xwave is empty.
 poetry run python scripts/offline_run_batch.py \
     --oid-file $RUN/oids/reprocesados.npy --out-dir $RUN/bhrf_reproc_smoke \
+    --credentials features/offline/credentials.json \
     --unit-size 500 --max-units 2 --workers 8 --features
 jq '{n_oids, n_ok, n_unclassifiable, n_no_detections, n_errors, n_no_allwise}' \
     $RUN/bhrf_reproc_smoke/manifests/unit_*.json
@@ -102,18 +103,28 @@ export RUN=$HOME/bhrf
 export MODEL_PATH=$PWD/features/offline/models/hierarchical_random_forest_model.pkl
 poetry run python scripts/offline_run_batch.py \
     --oid-file $RUN/oids/reprocesados.npy --out-dir $RUN/bhrf_reproc \
-    --workers 32 --stall-timeout 7200 --features \
+    --credentials features/offline/credentials.json \
+    --workers 64 --stall-timeout 7200 --features \
     --load-db --write-credentials features/offline/credentials.json --no-shards
+# --stall-timeout 7200: the 30 min default aborts on the first half hour with
+# no completion, and units here take 1-2 h (see "How long" below).
+# Capture the pane once: the per-minibatch and progress lines drown in the
+# extractors' warnings and tmux keeps only 2,000 lines.
+tmux pipe-pane -t reproc -o "cat >> $RUN/reproc_pane.log"
 
 # 7 — progress, from another window. The estimate reads the manifests landed
 #     so far and projects time, rows and RSS onto the whole array; it tightens
-#     as units finish. Expect no manifest for the first ~2-3 h: the array is
-#     sorted, so the first units are the ZTF17 objects with the longest light
-#     curves (the full run's unit 0 took 1.7 h, unit 1 took 3 h). Totals come
-#     from the manifests, never from the end-of-run summary (BHRF_RUN_RESULTS.md).
+#     as units finish. Units take 1-2 h here, so the first manifests land 1-2 h
+#     after a start or resume. Totals come from the manifests, never from the
+#     end-of-run summary (BHRF_RUN_RESULTS.md).
 poetry run python scripts/offline_estimate.py $RUN/bhrf_reproc \
-    --oid-file $RUN/oids/reprocesados.npy --workers 32
+    --oid-file $RUN/oids/reprocesados.npy --workers 64
 ls $RUN/bhrf_reproc/manifests/unit_*.json | wc -l
+# where a unit's time went (fields written by the runner since 2026-09-28):
+jq -r 'select(.t_compute_s != null) | "\(.unit) \(.elapsed_s)s fetch \(.t_fetch_s) compute \(.t_compute_s) write \(.t_write_s)"' \
+    $RUN/bhrf_reproc/manifests/unit_*.json | sort -n | tail
+# units in flight, one line per finished minibatch per worker:
+grep -E '^  mb ' $RUN/reproc_pane.log | tail -64 | sort -k3,3n
 jq -s '{units:length, oids:(map(.n_oids)|add), ok:(map(.n_ok)|add),
         unclassifiable:(map(.n_unclassifiable)|add), no_det:(map(.n_no_detections)|add),
         errors:(map(.n_errors)|add)}' $RUN/bhrf_reproc/manifests/unit_*.json
@@ -135,41 +146,48 @@ poetry run python scripts/offline_backfill_object_colors.py \
 
 ## Before starting step 6
 
-**How long.** The full run measured 156 oid/s on 64 workers (0.559 core-s per
-oid, `BHRF_RUN_RESULTS.md` §3). Step 3 on 2026-09-27 kept **6,779,444** of the
-15.45M names (5,163,575 processed before, 1,615,869 never processed), so the
-run is **~12 h**. The 8.67M dropped are all present in `object` with a single
-detection: `scripts/offline_reprocessed_probe.py` on a 2,000-name sample found
-0 absent, 56% under the cut, 44% eligible, and 46% of the sample last written on
-2026-09-22 -- the ingestion did land. The oids are sorted, so throughput should
-match the full run's, not the probe's.
+**How long.** Step 3 on 2026-09-27 kept **6,779,444** of the 15.45M names
+(5,163,575 processed before, 1,615,869 never processed). The 8.67M dropped are
+all present in `object` with a single detection (`offline_reprocessed_probe.py`
+on a 2,000-name sample: 0 absent, 56% under the cut, 44% eligible).
+
+**Do not size this run from the full run's 0.559 core-s/oid.** The campaign's
+objects are the ACTIVE ones: in a given oid range they carry ~3x the detections
+of the eligible objects around them (unit 135's range: 145 vs 44.5 mean n_det;
+the objects not in the campaign average 8). August's per-range cost was mostly
+cheap objects this run never touches, so the same oid range costs this run
+1.3-2x August's figure with nothing slowed down. Measured 2026-09-28 with the
+runner's phase clocks: a unit is ~2.5% fetch, ~95% compute, ~2% write; the
+database is idle either way, at 32 or 64 workers. Units run 0.35-1.5 s/oid
+depending on the block, i.e. 30 min to 2 h each; the estimate in step 7 is the
+number to trust once a round has landed. The campaign itself added only ~2
+detections per object (its alerts, matched to `detection.created_date`), so
+the light curves are not heavier than in August -- the SET is.
 
 **Memory.** Nothing about the run changed, so `RSS all workers` from the
 original step 10 estimate still applies. If the host has less free memory than
 it had in August (another job running), lower `--workers`; it may change between
 resumes, `--unit-size` may not.
 
-**32 workers and a 2 h stall timeout, not the full run's 64 and 30 min.** On
-2026-09-28 the run aborted (`stalled for 30.0 min`) after 129 units at 64, and
-the resume slowed the same way within its first round. Two things were going
-on, and `offline_stall_forensics.py` plus `offline_compare_unit_cost.py`
-against `bhrf_run` separate them:
+**The 30 min stall abort will fire here; raise it.** On 2026-09-28 the run
+aborted (`stalled for 30.0 min`) after 129 units. The abort fires on the first
+30 min gap between completions, and a round's units all start together and
+take 1-2 h in the heavy blocks, so a start or resume can trip it before a
+single unit lands. `--stall-timeout 7200` is the fix; it was not a database or
+a worker problem (a day of diagnosis is in `REPROCESSED_RUN_HANDOFF.md`).
 
-- The database saturates under 64 writers. The comparison showed the SAME
-  objects costing 2-2.7x what the full run spent on them from unit 69 on,
-  ratio ~1 before that. Most of this list (5.16M of 6.78M) already has rows,
-  so every upsert is an UPDATE leaving a dead tuple behind, which August's
-  inserts into empty tables never paid. Fewer workers is the lever.
-- The abort fires on the first 30 min gap between completions, and here no
-  unit finishes in under ~40 min, so the first round after any start or resume
-  can trip it before a single unit lands. `--stall-timeout 7200` is the lever.
-
-If units slow down again, run the comparison on the last 40; a ratio climbing
-past 2 means fewer workers (16), a ratio near 1 means leave it.
+**If a stretch looks slow**, read the phases before touching anything:
+`t_compute_s` at ~95% of `elapsed_s` with `t_write_s` and `t_fetch_s` in the
+tens of seconds is the objects, and the run is healthy. `t_write_s` in the
+thousands would be the database; `t_fetch_s` in the thousands, the database
+reads or Xwave. `offline_compare_unit_cost.py` against `bhrf_run` is NOT a
+health check for this run (see "How long"); `offline_stall_forensics.py` still
+gives the completion timeline.
 
 ```bash
-python3 scripts/offline_stall_forensics.py $RUN/bhrf_reproc --workers 32
-python3 scripts/offline_compare_unit_cost.py $RUN/bhrf_reproc $RUN/bhrf_run --last 40 | tail -3
+python3 scripts/offline_stall_forensics.py $RUN/bhrf_reproc --workers 64
+jq -r 'select(.t_compute_s != null) | "\(.unit) \(.elapsed_s)s fetch \(.t_fetch_s) compute \(.t_compute_s) write \(.t_write_s)"' \
+    $RUN/bhrf_reproc/manifests/unit_*.json | sort -n | tail -20
 ```
 
 **Ctrl-C drains.** The parent waits for every in-flight unit to finish (an hour
