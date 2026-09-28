@@ -79,11 +79,6 @@ Typical use:
         --oid-file feature_step/features/offline/oids/run_ndet6.npy \
         --out-dir /data/bhrf_run --workers 16 --max-units 16
 
-    # 3. the real run (resumable: rerun the same command after any interruption)
-    python feature_step/scripts/offline_run_batch.py \
-        --oid-file feature_step/features/offline/oids/run_ndet6.npy \
-        --out-dir /data/bhrf_run --workers 64 --features \
-        --load-db --write-credentials feature_step/features/offline/write_credentials.json
 """
 # --- thread pinning: MUST happen before numpy/BLAS/JAX are imported ---
 import os
@@ -139,7 +134,7 @@ from features.offline.probability_writer import (
     CLASSIFIER_IDS, build_probability_rows, write_probabilities)
 from features.utils.parsers import prepare_ao_features_for_db
 
-DEFAULT_CREDENTIALS = str(PIPE / "feature_step" / "features" / "offline" / "credentials.json")
+DEFAULT_CREDENTIALS = str(PIPE / "feature_step" / "features" / "offline" / "read_credentials.json")
 SID_ZTF = 0
 
 # Worker-process singletons, built once by _init_worker and reused for every unit
@@ -411,6 +406,10 @@ def process_unit(unit) -> dict:
     oids = [int(o) for o in oids]
     prob_rows, feat_frames, unit_matches = [], [], []
     n_ok = n_errors = n_no_allwise = n_no_detections = n_unclassifiable = 0
+    # Where the unit's wall clock goes, per phase, so a slow unit says WHY in
+    # its manifest: the batched reads (DB + Xwave), the per-oid compute, and the
+    # end-of-unit write. Their sum is elapsed_s minus the bookkeeping between.
+    t_fetch = t_compute = t_write = 0.0
     # `failed` keeps EVERY failed oid and lands in errors/unit_*.jsonl; the
     # manifest only carries a capped sample of it. The unit still completes and
     # still writes its manifest, so the resume logic will skip it forever --
@@ -421,9 +420,12 @@ def process_unit(unit) -> dict:
         mb = oids[start:start + cfg["minibatch"]]
         # A failure here aborts the UNIT (not the run): the unit stays unmarked
         # and a rerun picks it up, rather than writing a shard with a silent hole.
+        t_mb = time.perf_counter()
         inputs, mb_matches = fetch_minibatch(mb, cfg)
+        t_fetch += time.perf_counter() - t_mb
         if cfg.get("load_db"):
             unit_matches.extend(mb_matches)
+        t_mb = time.perf_counter()
         for oid in mb:
             got = inputs.get(oid)
             if got is None:
@@ -452,6 +454,7 @@ def process_unit(unit) -> dict:
             if f_rows is not None and len(f_rows):
                 feat_frames.append(f_rows)
             n_ok += 1
+        t_compute += time.perf_counter() - t_mb
 
     feats = (pd.concat(feat_frames, ignore_index=True) if feat_frames
              else pd.DataFrame(columns=["oid", "sid", "feature_id",
@@ -477,6 +480,7 @@ def process_unit(unit) -> dict:
     # idempotent. Writing the manifest first would strand the unit as "done"
     # with nothing in the database.
     n_db_prob = n_db_feat = n_db_xmatch = 0
+    t_w = time.perf_counter()
     if cfg.get("load_db"):
         wc = cfg["write_credentials"]
         if prob_rows:
@@ -494,6 +498,7 @@ def process_unit(unit) -> dict:
         if unit_matches:
             n_db_xmatch = persist_matches(
                 unit_matches, wc, schema=cfg["schema"], execute=True)["written"]
+    t_write = time.perf_counter() - t_w
 
     # Also before the manifest: its presence must mean the error list is complete.
     _write_jsonl(out_dir / "errors" / f"unit_{index:07d}.jsonl", failed)
@@ -512,6 +517,8 @@ def process_unit(unit) -> dict:
         "db_prob_rows": n_db_prob, "db_feat_rows": n_db_feat,
         "db_xmatch_rows": n_db_xmatch,
         "elapsed_s": round(time.perf_counter() - t0, 2),
+        "t_fetch_s": round(t_fetch, 2), "t_compute_s": round(t_compute, 2),
+        "t_write_s": round(t_write, 2),
         "peak_rss_mb": worker_peak_rss_mb(),
         "errors": failed[:20],   # sample; errors/unit_*.jsonl has all of them
     }
@@ -892,7 +899,9 @@ def main():
                     eta = (n_units - i) * (elapsed / i) if i else 0.0
                     print(f"[{i}/{n_units}] unit {man['unit']:>7} "
                           f"ok={man['n_ok']:>5} skip={man['n_skipped']:>4} "
-                          f"err={man['n_errors']:>3} {man['elapsed_s']:>7.1f}s | "
+                          f"err={man['n_errors']:>3} {man['elapsed_s']:>7.1f}s "
+                          f"(fetch {man.get('t_fetch_s', 0):.0f} compute {man.get('t_compute_s', 0):.0f} "
+                          f"write {man.get('t_write_s', 0):.0f}) | "
                           f"{rate:6.1f} oid/s  ETA {eta / 3600:5.2f}h", flush=True)
     except BrokenProcessPool as exc:
         raise SystemExit(
