@@ -131,9 +131,13 @@ poetry run python scripts/offline_backfill_object_colors.py \
 ## Before starting step 6
 
 **How long.** The full run measured 156 oid/s on 64 workers (0.559 core-s per
-oid, `BHRF_RUN_RESULTS.md` §3). The whole list is 15.45M objects, so the ceiling
-is **~27.5 h**; `--eligible` in step 3 lowers it by whatever it drops. The oids
-are sorted, so throughput should match the full run's, not the probe's.
+oid, `BHRF_RUN_RESULTS.md` §3). Step 3 on 2026-09-27 kept **6,779,444** of the
+15.45M names (5,163,575 processed before, 1,615,869 never processed), so the
+run is **~12 h**. The 8.67M dropped are all present in `object` with a single
+detection: `scripts/offline_reprocessed_probe.py` on a 2,000-name sample found
+0 absent, 56% under the cut, 44% eligible, and 46% of the sample last written on
+2026-09-22 -- the ingestion did land. The oids are sorted, so throughput should
+match the full run's, not the probe's.
 
 **Memory.** Nothing about the run changed, so `RSS all workers` from the
 original step 10 estimate still applies. If the host has less free memory than
@@ -181,7 +185,7 @@ SHA-1, the same value `run.json` will pin.
 |---|---|
 | `Invalid ZTF object ID: '…'` from step 3 | A name in the list is not `ZTF` + 2 digits + 7 lowercase letters. The offending line is quoted; fix the list, not the script. |
 | `BASELINE MISMATCH` from step 3 | `features/offline/oids/run.npy` is not the array `$RUN/bhrf_run/run.json` pinned — someone rebuilt it. Point `--baseline` at the array the run used. The list is unaffected; only the label is. |
-| step 3 drops most of the list as ineligible | Either the campaign's objects are not in `multisurvey_ztf.object` yet (ingestion pending — see step 0) or the cut is wrong (`--min-n-det` must be the run's, 2). |
+| step 3 drops most of the list as ineligible | `scripts/offline_reprocessed_probe.py <list>` samples the names and splits the drop into absent / under the cut. Absent means the campaign's objects are not in `multisurvey_ztf.object` yet (ingestion pending — see step 0); under the cut is single-detection objects, expected to be most of an alert manifest (56% on 2026-09-27). |
 | `run.json` refuses the resume in step 6 | `--out-dir` reused from another array (`bhrf_run`, `bhrf_tail`) or `--unit-size` changed. Fresh directory, default unit size. |
 | `MODEL_PATH env var is required to load the model` | Step 4 skipped in this shell — every tmux window needs it. |
 | `no AllWISE` far above ~14% in step 5 | Xwave returning empty, not the sky. Runbook §6 before trusting anything. |
