@@ -44,9 +44,12 @@ with e.connect() as c:
 # 1 — the code. The list builder (scripts/offline_reprocessed_oids.py) and the
 #     colour backfill (scripts/offline_backfill_object_colors.py) landed after
 #     the tail run; pull the working branch. A dirty tree here means someone
-#     edited the server checkout by hand: look before you pull. The venv
-#     already exists — `poetry run` finds it; nothing to install.
+#     edited the server checkout by hand: look before you pull. The venv is
+#     the checkout's own `.venv` (poetry is at ~/.venvs/poetry/bin, already on
+#     PATH); `poetry run` from this directory uses it. Nothing to activate or
+#     install.
 cd /home/alerce/features_batch_processing/pipeline/feature_step
+poetry env info --path                              # -> .../feature_step/.venv
 git status --short
 git pull --recurse-submodules
 poetry run python scripts/offline_reprocessed_oids.py --help | head -3
