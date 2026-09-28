@@ -105,9 +105,14 @@ poetry run python scripts/offline_run_batch.py \
     --workers 64 --features \
     --load-db --write-credentials features/offline/credentials.json --no-shards
 
-# 7 — progress, from another window. Unit count against the plan the run
-#     printed; totals from the manifests, never from the end-of-run summary
-#     (BHRF_RUN_RESULTS.md, caveats).
+# 7 — progress, from another window. The estimate reads the manifests landed
+#     so far and projects time, rows and RSS onto the whole array; it tightens
+#     as units finish. Expect no manifest for the first ~2-3 h: the array is
+#     sorted, so the first units are the ZTF17 objects with the longest light
+#     curves (the full run's unit 0 took 1.7 h, unit 1 took 3 h). Totals come
+#     from the manifests, never from the end-of-run summary (BHRF_RUN_RESULTS.md).
+poetry run python scripts/offline_estimate.py $RUN/bhrf_reproc \
+    --oid-file $RUN/oids/reprocesados.npy --workers 64
 ls $RUN/bhrf_reproc/manifests/unit_*.json | wc -l
 jq -s '{units:length, oids:(map(.n_oids)|add), ok:(map(.n_ok)|add),
         unclassifiable:(map(.n_unclassifiable)|add), no_det:(map(.n_no_detections)|add),
