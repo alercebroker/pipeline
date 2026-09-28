@@ -13,6 +13,11 @@ oid range (printed alongside if --ref-dir is given).
     poetry run python scripts/offline_time_minibatch.py \
         --oid-file $RUN/oids/reprocesados.npy --unit 400 --ref-dir $RUN/bhrf_run
 
+    # a whole unit in ONE process, s/oid and RSS after each of its 10 minibatches:
+    # a line that climbs is a worker ageing, which no shared service can explain.
+    poetry run python scripts/offline_time_minibatch.py \
+        --oid-file $RUN/oids/reprocesados.npy --unit 400 --minibatches 10
+
 Reads only. No database writes, no shards, no manifest. It does load the model
 and build the extractor, so it costs one worker's memory for a few minutes.
 """
@@ -58,15 +63,12 @@ def main():
     ap.add_argument("--ref-dir", type=Path, help="a finished run: prints its s/oid on this range")
     ap.add_argument("--n-oids", type=int, default=0,
                     help="only the first N oids of the minibatch (default: all)")
+    ap.add_argument("--minibatches", type=int, default=1,
+                    help="run this many consecutive minibatches in THIS process and print "
+                         "s/oid and RSS after each: a climbing line is a worker ageing.")
     args = ap.parse_args()
 
     arr = np.load(args.oid_file)
-    lo = args.unit * args.unit_size + args.minibatch_index * args.minibatch
-    oids = [int(o) for o in arr[lo:lo + args.minibatch]]
-    if args.n_oids:
-        oids = oids[:args.n_oids]
-    print(f"unit {args.unit} minibatch {args.minibatch_index}: {len(oids)} oids, "
-          f"{oids[0]} .. {oids[-1]}")
 
     cfg = {"credentials": args.credentials, "schema": args.schema, "load_db": False,
            "write_credentials": None, "no_shards": True, "xmatch_url": args.xmatch_url,
@@ -82,6 +84,44 @@ def main():
     M._init_worker(cfg)
     print(f"setup (model + extractor + taxonomy): {time.perf_counter() - t:7.1f}s  (paid once per worker, not per unit)")
 
+    history = []
+    for k in range(args.minibatches):
+        mb_index = args.minibatch_index + k
+        lo = args.unit * args.unit_size + mb_index * args.minibatch
+        oids = [int(o) for o in arr[lo:lo + args.minibatch]]
+        if args.n_oids:
+            oids = oids[:args.n_oids]
+        if not oids:
+            break
+        print(f"\n=== unit {args.unit} minibatch {mb_index}: {len(oids)} oids, "
+              f"{oids[0]} .. {oids[-1]} ===")
+        total = one_minibatch(oids, cfg, args)
+        history.append((mb_index, total / len(oids), rss_mb()))
+        if args.minibatches > 1:
+            print(f"--- after minibatch {mb_index}: {total / len(oids):.3f} s/oid, RSS {rss_mb():.0f} MB")
+
+    if len(history) > 1:
+        print("\nthis process over time (minibatch, s/oid, RSS MB):")
+        for mb_index, spo, rss in history:
+            print(f"  {mb_index:4d}  {spo:7.3f}  {rss:8.0f}")
+        first, last = history[0][1], history[-1][1]
+        print(f"  s/oid last/first = {last / first:.2f}   RSS first {history[0][2]:.0f} MB -> last {history[-1][2]:.0f} MB")
+    return 0
+
+
+def rss_mb() -> float:
+    try:
+        with open("/proc/self/status") as fh:
+            for line in fh:
+                if line.startswith("VmRSS:"):
+                    return int(line.split()[1]) / 1024
+    except OSError:
+        pass
+    import resource
+    return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024
+
+
+def one_minibatch(oids: list, cfg: dict, args) -> float:
     phases = {}
 
     def timed(name, fn):
@@ -161,7 +201,7 @@ def main():
         else:
             print(f"\nreference {args.ref_dir}: {r:.3f} s/oid on this oid range  ->  now/ref = {total / len(oids) / r:.2f}")
             print("  (the reference number includes its own DB write at the end of the unit; this one has none)")
-    return 0
+    return total
 
 
 if __name__ == "__main__":
