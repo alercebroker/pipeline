@@ -102,7 +102,7 @@ export RUN=$HOME/bhrf
 export MODEL_PATH=$PWD/features/offline/models/hierarchical_random_forest_model.pkl
 poetry run python scripts/offline_run_batch.py \
     --oid-file $RUN/oids/reprocesados.npy --out-dir $RUN/bhrf_reproc \
-    --workers 64 --features \
+    --workers 32 --stall-timeout 7200 --features \
     --load-db --write-credentials features/offline/credentials.json --no-shards
 
 # 7 — progress, from another window. The estimate reads the manifests landed
@@ -112,7 +112,7 @@ poetry run python scripts/offline_run_batch.py \
 #     curves (the full run's unit 0 took 1.7 h, unit 1 took 3 h). Totals come
 #     from the manifests, never from the end-of-run summary (BHRF_RUN_RESULTS.md).
 poetry run python scripts/offline_estimate.py $RUN/bhrf_reproc \
-    --oid-file $RUN/oids/reprocesados.npy --workers 64
+    --oid-file $RUN/oids/reprocesados.npy --workers 32
 ls $RUN/bhrf_reproc/manifests/unit_*.json | wc -l
 jq -s '{units:length, oids:(map(.n_oids)|add), ok:(map(.n_ok)|add),
         unclassifiable:(map(.n_unclassifiable)|add), no_det:(map(.n_no_detections)|add),
@@ -148,6 +148,34 @@ match the full run's, not the probe's.
 original step 10 estimate still applies. If the host has less free memory than
 it had in August (another job running), lower `--workers`; it may change between
 resumes, `--unit-size` may not.
+
+**32 workers and a 2 h stall timeout, not the full run's 64 and 30 min.** On
+2026-09-28 the run aborted (`stalled for 30.0 min`) after 129 units at 64, and
+the resume slowed the same way within its first round. Two things were going
+on, and `offline_stall_forensics.py` plus `offline_compare_unit_cost.py`
+against `bhrf_run` separate them:
+
+- The database saturates under 64 writers. The comparison showed the SAME
+  objects costing 2-2.7x what the full run spent on them from unit 69 on,
+  ratio ~1 before that. Most of this list (5.16M of 6.78M) already has rows,
+  so every upsert is an UPDATE leaving a dead tuple behind, which August's
+  inserts into empty tables never paid. Fewer workers is the lever.
+- The abort fires on the first 30 min gap between completions, and here no
+  unit finishes in under ~40 min, so the first round after any start or resume
+  can trip it before a single unit lands. `--stall-timeout 7200` is the lever.
+
+If units slow down again, run the comparison on the last 40; a ratio climbing
+past 2 means fewer workers (16), a ratio near 1 means leave it.
+
+```bash
+python3 scripts/offline_stall_forensics.py $RUN/bhrf_reproc --workers 32
+python3 scripts/offline_compare_unit_cost.py $RUN/bhrf_reproc $RUN/bhrf_run --last 40 | tail -3
+```
+
+**Ctrl-C drains.** The parent waits for every in-flight unit to finish (an hour
+or more each, all still writing) before it exits. To actually relieve the
+database, `pkill -f offline_run_batch.py` instead; units without a manifest are
+redone on resume and their partial rows overwritten.
 
 **If it is interrupted, rerun step 6 unchanged.** It resumes from the manifests
 in `$RUN/bhrf_reproc`. `run.json` there pins `reprocesados.npy` by SHA-1; a
