@@ -152,11 +152,19 @@ all present in `object` with a single detection (`offline_reprocessed_probe.py`
 on a 2,000-name sample: 0 absent, 56% under the cut, 44% eligible).
 
 **Do not size this run from the full run's 0.559 core-s/oid.** The campaign's
-objects are the ACTIVE ones: in a given oid range they carry ~3x the detections
-of the eligible objects around them (unit 135's range: 145 vs 44.5 mean n_det;
-the objects not in the campaign average 8). August's per-range cost was mostly
-cheap objects this run never touches, so the same oid range costs this run
-1.3-2x August's figure with nothing slowed down. Measured 2026-09-28 with the
+objects are the ACTIVE ones. A random sample of eligible objects
+(`object TABLESAMPLE`, 2026-09-28, 13,902 objects) split by membership:
+
+| group | objects | mean n_det | median | p90 | n_det >= 50 | n_det >= 200 |
+|---|---|---|---|---|---|---|
+| eligible, NOT in this run | 76% | 7.7 | 3 | 9 | 2.2% | 0.4% |
+| eligible, in this run | 24% | 48.8 | 6 | 111 | 15.1% | 7.1% |
+
+6.3x the detections, 3.3x the forced photometry, and the extractors' cost lives
+in that tail. August's per-range cost was mostly cheap objects this run never
+touches, so the same oid range costs this run 1.3-2x August's figure with
+nothing slowed down (unit 135's range: campaign objects 145 mean n_det, the
+rest 8). Measured 2026-09-28 with the
 runner's phase clocks: a unit is ~2.5% fetch, ~95% compute, ~2% write; the
 database is idle either way, at 32 or 64 workers. Units run 0.35-1.5 s/oid
 depending on the block, i.e. 30 min to 2 h each; the estimate in step 7 is the
