@@ -1,11 +1,14 @@
 # Quickstart — rerun on `quimal-cpu1` for the reprocessed ZTF objects
 
 The commands, in order, for classifying the objects of the reprocessing
-campaign on the server that already ran the full catalogue. It assumes the
-machine as [`SERVER_QUICKSTART.md`](./SERVER_QUICKSTART.md) left it after step
-11: the checkout, the venv, the model, the credentials and `$RUN/bhrf_run` are
-all in place, and none of them is rebuilt here. For *why* the offline run works
-the way it does, read [`SERVER_RUNBOOK.md`](./SERVER_RUNBOOK.md).
+campaign on the server that already ran the full catalogue and the tail run.
+Nothing is installed here: the checkout at
+`/home/alerce/features_batch_processing/pipeline`, the poetry venv, the model,
+the credentials, `$RUN/bhrf_run` and `$RUN/bhrf_tail` are all as
+[`SERVER_QUICKSTART.md`](./SERVER_QUICKSTART.md) steps 1 to 12 left them, and the
+list of names is already at `$RUN/oids/ztf_reprocesados_oids.txt.gz`. For *why*
+the offline run works the way it does, read
+[`SERVER_RUNBOOK.md`](./SERVER_RUNBOOK.md).
 
 **What this run is.** The campaign's manifest, `ztf_reprocesados.parquet`, is a
 table of **alerts** (one row per `candid`), 29.7M rows, of which 9.2M carry no
@@ -38,21 +41,21 @@ with e.connect() as c:
       FROM {db.SCHEMA}.object o WHERE o.oid = ANY(:oids) AND o.sid=:sid'''),
       c, params={'oids':oids,'sid':db.SID}).to_string())"
 
-# 1 — the code. The list builder is new (scripts/offline_reprocessed_oids.py);
-#     pull the working branch. A dirty tree here means someone edited the
-#     server checkout by hand: look before you pull.
-cd ~/pipeline/feature_step
+# 1 — the code. The list builder (scripts/offline_reprocessed_oids.py) and the
+#     colour backfill (scripts/offline_backfill_object_colors.py) landed after
+#     the tail run; pull the working branch. A dirty tree here means someone
+#     edited the server checkout by hand: look before you pull. The venv
+#     already exists — `poetry run` finds it; nothing to install.
+cd /home/alerce/features_batch_processing/pipeline/feature_step
 git status --short
 git pull --recurse-submodules
-export PATH="$HOME/.venvs/poetry/bin:$PATH"
 poetry run python scripts/offline_reprocessed_oids.py --help | head -3
+poetry run python scripts/offline_backfill_object_colors.py --help | head -3
 
-# 2 — the names, from the laptop. 192 MB of newline-separated ZTF names, ~50 MB
-#     gzipped. (Built from the parquet's oid column with nulls dropped and
-#     duplicates removed; the parquet itself never needs to leave the laptop.)
-gzip -k ~/Downloads/ztf_reprocesados_oids.txt
-scp ~/Downloads/ztf_reprocesados_oids.txt.gz quimal-cpu1:~/bhrf/oids/
-# ...and on the server:
+# 2 — the names are already on the server: 15,453,749 newline-separated ZTF
+#     names, 40 MB gzipped, at $RUN/oids. (Built on the laptop from the
+#     parquet's oid column with nulls dropped and duplicates removed; the
+#     parquet itself never leaves the laptop.) Unpack and count.
 export RUN=$HOME/bhrf
 gunzip -k $RUN/oids/ztf_reprocesados_oids.txt.gz
 wc -l $RUN/oids/ztf_reprocesados_oids.txt          # -> 15453749
@@ -71,7 +74,9 @@ poetry run python scripts/offline_reprocessed_oids.py \
     --eligible --run-dir $RUN/bhrf_run --out $RUN/oids/reprocesados.npy
 cat $RUN/oids/reprocesados.npy.json                 # the counts, kept next to the array
 
-# 4 — the environment, again. A fresh shell or tmux window has none of it.
+# 4 — the environment, again. A fresh shell or tmux window has none of it
+#     (same as before the tail run: RUN and MODEL_PATH are per shell).
+export RUN=$HOME/bhrf
 export MODEL_PATH=$PWD/features/offline/models/hierarchical_random_forest_model.pkl
 curl -s -o /dev/null -w '%{http_code}\n' http://quimal-db1.alerce.online:8081/   # 200
 df -h $RUN | tail -1                                 # manifests only with --no-shards; MBs
@@ -88,7 +93,8 @@ jq '{n_oids, n_ok, n_unclassifiable, n_no_detections, n_errors, n_no_allwise}' \
 # 6 — the run. Under tmux; a FRESH --out-dir; no --max-units. Same flags as
 #     the full run. Every write is an upsert, so objects the full run already
 #     classified get their feature / probability / xmatch rows overwritten.
-tmux new -s reproc
+tmux new -s reproc          # the tail run used `tail`; a new name, a new window
+cd /home/alerce/features_batch_processing/pipeline/feature_step
 export RUN=$HOME/bhrf
 export MODEL_PATH=$PWD/features/offline/models/hierarchical_random_forest_model.pkl
 poetry run python scripts/offline_run_batch.py \
@@ -142,11 +148,14 @@ have (born since, or under the cut in August). If `never processed` is close to
 zero and step 0 showed no movement in `lastmjd`, the ingestion has not happened
 and this run changes nothing — stop and check that first.
 
-**Two lists, two runs, one database.** The tail run (quickstart step 12) and this
-one can both be pending. They may overlap; upserts make that harmless. Run them
-one after the other, not concurrently — both write the same tables through the
-same account and the full run's throughput was measured with the database to
-itself.
+**The tail run is done.** It ran in the tmux session `tail` over `tail.npy`
+into `$RUN/bhrf_tail`; this run is the same procedure over a third array into
+its own `--out-dir`. The two lists may overlap; upserts make that harmless. The
+split step 3 prints is against `run.npy` only, so an object the tail run
+classified but the full run did not shows up as `never processed`. Do not start
+this run while another one is still writing — both use the same tables through
+the same account, and the full run's throughput was measured with the database
+to itself.
 
 ## What the list builder does
 
