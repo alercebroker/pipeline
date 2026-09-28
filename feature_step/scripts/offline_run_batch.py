@@ -455,6 +455,13 @@ def process_unit(unit) -> dict:
                 feat_frames.append(f_rows)
             n_ok += 1
         t_compute += time.perf_counter() - t_mb
+        # One line per minibatch so a unit in flight says where its time goes.
+        # `mb` prefix: grep -E '^  mb ' pulls these out of the warning noise.
+        print(f"  mb unit {index} {start // cfg['minibatch'] + 1:>2}/"
+              f"{-(-len(oids) // cfg['minibatch'])} fetch {t_fetch:6.0f}s "
+              f"compute {t_compute:6.0f}s ok {n_ok} "
+              f"({(time.perf_counter() - t0) / max(1, start + len(mb)):.3f} s/oid so far)",
+              flush=True)
 
     feats = (pd.concat(feat_frames, ignore_index=True) if feat_frames
              else pd.DataFrame(columns=["oid", "sid", "feature_id",
