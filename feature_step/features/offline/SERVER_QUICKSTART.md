@@ -51,6 +51,11 @@ poetry run python scripts/offline_setup.py                  # ...and fixes what 
 #      here on loads the pickle, and none of it falls back to a default.
 export MODEL_PATH=$PWD/features/offline/models/hierarchical_random_forest_model.pkl
 
+# 6c — Xwave answers. Every CLI defaults to this URL; a dead or wrong one does
+#      not error, it returns no counterpart, and every WISE colour comes out NaN
+#      (runbook §6). Expect 200.
+curl -s -o /dev/null -w '%{http_code}\n' http://quimal-db1.alerce.online:8081/
+
 # 7 — three verifications. Each has caught a real defect; minutes each.
 poetry run python scripts/offline_verify_model_features.py --smoke                    # all 199 features produced
 poetry run python scripts/offline_verify_taxonomy.py                                  # seeded taxonomy == the pickle's
@@ -205,3 +210,52 @@ genuinely new.
 at `$RUN/bhrf_run` makes `run.json` refuse the resume (correctly), and
 `--force-resume` there would mark tail units as done against the full run's
 indices.
+
+## Step 13 — the object colours (after any run, full or tail)
+
+The live feature step does one thing the offline run does not: next to the
+feature upsert it sends an `update-ztf-object-features` command, and the scribe
+sets `g_r_max`, `g_r_mean`, `g_r_max_corr` and `g_r_mean_corr` on
+`multisurvey_ztf.ztf_object` from the band-12 (g,r) features of the same name.
+`offline_run_batch.py --load-db` writes `feature`, `probability` and `xmatch`
+only, so every object a run processed keeps whatever those four columns held
+before it. The values are already in `feature`; this copies them across in oid
+ranges, without recomputing anything.
+
+```bash
+# 13a — the plan. Connects read-only: ranges, the feature ids resolved from the
+#       DB LUT (never the fixture), and the SQL it would run.
+poetry run python scripts/offline_backfill_object_colors.py \
+    --oid-file $RUN/oids/run.npy --out-dir $RUN/object_colors \
+    --credentials features/offline/credentials.json
+
+# 13b — two ranges, then look at a handful of their objects by hand.
+poetry run python scripts/offline_backfill_object_colors.py \
+    --oid-file $RUN/oids/run.npy --out-dir $RUN/object_colors \
+    --credentials features/offline/credentials.json --execute --max-chunks 2
+
+# 13c — the rest. Under tmux; the SAME command resumes past finished ranges.
+poetry run python scripts/offline_backfill_object_colors.py \
+    --oid-file $RUN/oids/run.npy --out-dir $RUN/object_colors \
+    --credentials features/offline/credentials.json --execute
+```
+
+**One transaction per range** of `--chunk-size` oids (default 100k, ~263 ranges
+for the full run), each appended to `<out-dir>/progress.jsonl` with its row
+count and seconds. An interruption loses the range in flight and nothing else.
+
+**The oid array defines the ranges**, so the tail run's `tail.npy` gets its own
+`--out-dir`, exactly as in step 12; the progress file refuses a range plan that
+does not match.
+
+**It mirrors the step, including the NULLs.** The step sends `None` for a colour
+absent from the object's feature list. `feature` keeps a row from an older run
+when the latest one did not recompute it, so only rows carrying the object's
+most recent `updated_date` count and an older colour becomes NULL rather than
+leaking into the object. Objects with no colour rows are not touched.
+
+**Cost.** `feature` has no index but its primary key, and the key starts with
+`oid`: a range is a btree scan that touches the four colour entries per object
+and nothing else. The update itself rides `ztf_object`'s primary key. The write
+account needs UPDATE on `ztf_object`; `offline_setup.py` checks SELECT on it,
+not UPDATE, so 13b is also the first test of that grant.

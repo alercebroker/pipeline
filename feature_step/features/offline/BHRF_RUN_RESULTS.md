@@ -87,6 +87,12 @@ Exactly 45.00 probability rows per classified object, matching the 45-class
 taxonomy with no partial writes. Feature rows vary per object (73.26 mean), as
 expected — the count depends on which bands are present.
 
+**Not written: `ztf_object`.** The live step's `update-ztf-object-features`
+command (the four `g_r_*` colour columns) has no offline counterpart, so the run
+left those columns untouched on all 26.3M objects. They are backfilled from the
+`feature` rows above by `scripts/offline_backfill_object_colors.py`
+(SERVER_QUICKSTART.md step 13); it had not been run when this note was added.
+
 ### Throughput
 
 The final pass ran 5,000 units (24,997,154 oids) in **44.42 h** — 156 oid/s

@@ -311,6 +311,21 @@ poetry run python scripts/offline_run_batch.py \
     --out-dir $RUN/bhrf_run --workers 64 --features \
     --load-db --write-credentials features/offline/credentials.json \
     --no-shards
+
+# 5. the object colours. The run never writes ztf_object; the live step does,
+#    through the scribe (update-ztf-object-features). Copy the four g-r
+#    colours across from the feature rows, in oid ranges. Plan first, then two
+#    ranges, then the rest -- the same command resumes. SERVER_QUICKSTART.md
+#    step 13 has the reasoning.
+poetry run python scripts/offline_backfill_object_colors.py \
+    --oid-file $RUN/oids/run.npy --out-dir $RUN/object_colors \
+    --credentials features/offline/credentials.json
+poetry run python scripts/offline_backfill_object_colors.py \
+    --oid-file $RUN/oids/run.npy --out-dir $RUN/object_colors \
+    --credentials features/offline/credentials.json --execute --max-chunks 2
+poetry run python scripts/offline_backfill_object_colors.py \
+    --oid-file $RUN/oids/run.npy --out-dir $RUN/object_colors \
+    --credentials features/offline/credentials.json --execute
 ```
 
 Step 2 was run on 2026-08-20 over 20 oids against `multisurvey_ztf`: 900
@@ -446,6 +461,7 @@ not match the original shards. That is the guard working, not an obstacle.
 | Gap | Consequence |
 |---|---|
 | **`--load-db` has never run a full 5000-oid unit.** It was exercised end to end over 20 oids (§8), not at unit scale. | The per-statement paging is untested against ~19k feature rows at once; step 2 on the server is what closes it. |
+| **`--load-db` does not write `ztf_object`.** The live step also sends `update-ztf-object-features`, which sets the four `g_r_*` colour columns; the run has no equivalent. | Every processed object keeps stale colours until `scripts/offline_backfill_object_colors.py` is run after it (§8 step 5, quickstart step 13). It reads the values back out of `feature`, so nothing is recomputed. |
 | **No parquet → DB backfill loader.** `--load-db` writes during the run; there is nothing that loads shards afterwards. | Units finished before the flag was turned on can only be redone into a fresh `--out-dir`. |
 | `multisurvey_ztf.allwise` is empty. | `XMATCH_URL` is mandatory (§6). `--load-db` writes the `xmatch` link rows, but with no catalog rows to join against, the features still cannot be recomputed from the DB alone. |
 | Objects with no AllWISE counterpart are indistinguishable from never-crossmatched ones in the stored data. | Only the per-unit `n_no_allwise` count records the difference. |
