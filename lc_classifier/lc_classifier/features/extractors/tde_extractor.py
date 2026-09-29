@@ -17,7 +17,7 @@ jax.config.update("jax_enable_x64", True)
 
 
 class TDETailExtractor(FeatureExtractor):
-    version = "1.0.1"
+    version = "1.0.2"
     unit = "diff_flux"
 
     def __init__(self, bands: List[str]):
@@ -56,6 +56,7 @@ class TDETailExtractor(FeatureExtractor):
                 features.append(("TDE_decay", np.nan, band))
                 features.append(("TDE_decay_chi", np.nan, band))
                 features.append(("TDE_mag0", np.nan, band))
+                features.append(("TDE_mjd_ref", np.nan, band))
                 continue
 
             brightest_obs = band_observations.sort_values("brightness").iloc[0]
@@ -90,6 +91,8 @@ class TDETailExtractor(FeatureExtractor):
             features.append(("TDE_decay", coeffs[1], band))
             features.append(("TDE_decay_chi", chi_per_degree, band))
             features.append(("TDE_mag0", coeffs[0], band))
+            # Reference epoch (decay start) for this band.
+            features.append(("TDE_mjd_ref", t_d, band))
 
         features_df = pd.DataFrame(data=features, columns=["name", "value", "fid"])
 
@@ -129,7 +132,7 @@ def fleet_model_jax(t, a, w, m_0, t0):
 
 
 class FleetExtractor(FeatureExtractor):
-    version = "1.0.2"
+    version = "1.0.3"
     unit = "diff_flux"
 
     def __init__(self, bands: List[str]):
@@ -161,6 +164,7 @@ class FleetExtractor(FeatureExtractor):
                 features.append(("fleet_chi", np.nan, band))
                 features.append(("fleet_m0", np.nan, band))
                 features.append(("fleet_t0", np.nan, band))
+                features.append(("fleet_mjd_ref", np.nan, band))
                 continue
 
             first_mjd = band_observations.sort_values("mjd").iloc[0]["mjd"]
@@ -200,12 +204,15 @@ class FleetExtractor(FeatureExtractor):
                 features.append(("fleet_chi", chi_per_degree, band))
                 features.append(("fleet_m0", parameters[2], band))
                 features.append(("fleet_t0", parameters[3], band))
+                # Reference epoch (first mjd) for this band.
+                features.append(("fleet_mjd_ref", first_mjd, band))
             except RuntimeError:
                 features.append(("fleet_a", np.nan, band))
                 features.append(("fleet_w", np.nan, band))
                 features.append(("fleet_chi", np.nan, band))
                 features.append(("fleet_m0", np.nan, band))
                 features.append(("fleet_t0", np.nan, band))
+                features.append(("fleet_mjd_ref", np.nan, band))
 
         features_df = pd.DataFrame(data=features, columns=["name", "value", "fid"])
 
