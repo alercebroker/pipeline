@@ -16,19 +16,6 @@ def scribe_parser(magstats_list, survey):
     return result_messages
 
 
-def scribe_parser_objects(objects_list, survey):
-    result_messages_object = []
-    for objects_data in objects_list:
-        result_messages_object.append(
-            {
-                "step": "magstat_objects",
-                "survey": survey,
-                "oid": objects_data["oid"],
-                "payload": objects_data,
-            }
-        )
-    return result_messages_object
-
 
 def remove_timestamp(message: dict):
     message.pop("timestamp", None)

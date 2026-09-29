@@ -60,14 +60,18 @@ def config():
             "scribe.avsc",
         )
     )
-    SCRIBE_PRODUCER_CONFIG = {
-        "CLASS": "apf.producers.KafkaProducer",
-        "PARAMS": {
-            "bootstrap.servers": os.environ["SCRIBE_SERVER"],
-        },
-        "TOPIC": os.environ["SCRIBE_TOPIC"],
-        "SCHEMA_PATH": os.getenv("SCRIBE_SCHEMA_PATH", scribe_schema_path),
-    }
+    # Optional: with SCRIBE_SERVER unset the step runs with the scribe disabled
+    # and only writes probabilities through the direct DB insert.
+    SCRIBE_PRODUCER_CONFIG = None
+    if os.getenv("SCRIBE_SERVER"):
+        SCRIBE_PRODUCER_CONFIG = {
+            "CLASS": "apf.producers.KafkaProducer",
+            "PARAMS": {
+                "bootstrap.servers": os.environ["SCRIBE_SERVER"],
+            },
+            "TOPIC": os.environ["SCRIBE_TOPIC"],
+            "SCHEMA_PATH": os.getenv("SCRIBE_SCHEMA_PATH", scribe_schema_path),
+        }
 
     metrics_schema_path = str(
         pathlib.Path(
@@ -110,7 +114,9 @@ def config():
         PRODUCER_CONFIG["PARAMS"]["sasl.password"] = os.getenv(
             "PRODUCER_KAFKA_PASSWORD"
         )
-    if os.getenv("SCRIBE_KAFKA_USERNAME") and os.getenv("SCRIBE_KAFKA_PASSWORD"):
+    if SCRIBE_PRODUCER_CONFIG and os.getenv("SCRIBE_KAFKA_USERNAME") and os.getenv(
+        "SCRIBE_KAFKA_PASSWORD"
+    ):
         SCRIBE_PRODUCER_CONFIG["PARAMS"]["security.protocol"] = "SASL_SSL"
         SCRIBE_PRODUCER_CONFIG["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
         SCRIBE_PRODUCER_CONFIG["PARAMS"]["sasl.username"] = os.getenv(

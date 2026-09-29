@@ -55,8 +55,18 @@ def store_probability(
     with psql_connection.session() as session:
         data = _format_data(classifier_id, classifier_version, class_taxonomy, predictions)
 
-        insert_stmt = insert(Probability)
-        insert_stmt = insert_stmt.on_conflict_do_nothing()
+        stmt = insert(Probability)
+        # the classification belongs to the first detection: only an older alert wins
+        insert_stmt = stmt.on_conflict_do_update(
+            constraint="pk_probability_oid_classifierid_classid",
+            set_={
+                "probability": stmt.excluded.probability,
+                "ranking": stmt.excluded.ranking,
+                "lastmjd": stmt.excluded.lastmjd,
+                "classifier_version": stmt.excluded.classifier_version,
+            },
+            where=Probability.lastmjd > stmt.excluded.lastmjd,
+        )
 
         session.execute(insert_stmt, data)
         session.commit()

@@ -127,7 +127,7 @@ Per-survey output schemas live under [schemas/correction_ms_step/](./schemas/cor
 
 ### magstats_multisurvey_step
 
-Computes per-band magnitude statistics for each object: `ndet`, `firstmjd`, `lastmjd`, mean coordinates, etc. Computes object-level aggregates. Emits scribe commands (`magstat`, `magstat_objects`) on `scribe-multisurvey`.
+Computes per-band magnitude statistics for each object: `ndet`, `firstmjd`, `lastmjd`, mean coordinates, etc. Computes object-level aggregates. Emits scribe commands (`magstat`) on `scribe-multisurvey`.
 
 LSST deployment (`multisurvey-magstats-lsst-db1-step`) consumes `lsst-correction`
 and produces to `lsst-magstats`. ZTF overlay still pending — confirm once committed.
@@ -189,7 +189,7 @@ Uploads raw Avro alerts to per-survey S3 buckets in parallel using a thread pool
 
 ### scribe_multisurvey
 
-CQRS async DB writer for the multisurvey PSQL schema. Consumes JSON command messages from the `scribe-multisurvey` Kafka topic and executes bulk SQL upserts. Each message carries a `step` discriminator (e.g. `"magstat"`, `"magstat_objects"`, `"probability-archival-step"`) that determines which table is written. Deduplicates `magstat` / `magstat_objects` messages within a batch.
+CQRS async DB writer for the multisurvey PSQL schema. Consumes JSON command messages from the `scribe-multisurvey` Kafka topic and executes bulk SQL upserts. Each message carries a `step` discriminator (e.g. `"magstat"`, `"probability-archival-step"`) that determines which table is written. Deduplicates `magstat` messages within a batch.
 
 > **TODO:** no values overlay for `scribe_multisurvey` is committed yet under `charts/multisurvey_step/`. The legacy `charts/scribe/` deploys the MongoDB scribe; the multisurvey scribe is expected to deploy via the generic `multisurvey_step` chart with its own image + overlay.
 
