@@ -1,0 +1,54 @@
+{
+  "name": "features_ms_ztf",
+  "type": "record",
+  "doc": "ZTF multisurvey feature_step output: the magstats_ms_ztf epochs the features were computed from, plus the feature vector",
+  "fields": [
+    {
+      "name": "oid",
+      "type": "long"
+    },
+    {
+      "name": "candid",
+      "type": {
+        "type": "array",
+        "items": "long"
+      },
+      "doc": "measurement_id of every epoch in the input message"
+    },
+    {
+      "name": "detections",
+      "type": {
+        "type": "array",
+        "items": [
+          "candidate",
+          "prv_candidate",
+          "forced_photometry"
+        ]
+      },
+      "doc": "detections + previous_detections + forced_photometries of the input, bogus ones dropped"
+    },
+    {
+      "name": "non_detections",
+      "type": {
+        "type": "array",
+        "items": "non_detection"
+      }
+    },
+    {
+      "name": "xmatches",
+      "type": [
+        "null",
+        "xmatch"
+      ],
+      "default": null
+    },
+    {
+      "name": "features",
+      "type": [
+        "null",
+        "features_record_ztf"
+      ],
+      "default": null
+    }
+  ]
+}

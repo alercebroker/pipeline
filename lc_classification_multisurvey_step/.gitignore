@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+config.yaml
+config.yml
+config.*.yaml
+local_config*.yaml
+scribe_commands*.jsonl
