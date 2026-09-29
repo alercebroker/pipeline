@@ -461,15 +461,19 @@ def prepare_ao_features_for_db(astro_object: AstroObject, feature_name_lut) -> p
     # Map feature names to their IDs using the lookup table
     ao_features["feature_id"] = ao_features["name"].map(name_to_id)
     
-    # Log warning for unmapped features
-    unmapped_features = ao_features[ao_features["feature_id"].isna()]["name"].unique()
-    if len(unmapped_features) > 0:
+    # Drop features the LUT does not know, with a warning. feature_id is NOT
+    # NULL and part of the PK in `feature`, so one unmapped row would fail the
+    # whole scribe batch. Each survey's LUT decides what gets stored.
+    unmapped = ao_features["feature_id"].isna()
+    if unmapped.any():
         logging.getLogger("alerce.FeatureStep").warning(
-            f"Features not found in lookup table: {list(unmapped_features)}"
+            f"Features not found in lookup table: {list(ao_features.loc[unmapped, 'name'].unique())}"
         )
+        ao_features = ao_features[~unmapped]
+    ao_features["feature_id"] = ao_features["feature_id"].astype(int)
 
     # Drop original columns, keep only the mapped data
-    ao_features.drop(columns=["fid"], inplace=True) 
+    ao_features = ao_features.drop(columns=["fid"])
     return ao_features
 
 
@@ -504,15 +508,18 @@ def prepare_ao_features_for_db_lsst(astro_object: AstroObject, feature_name_lut)
     # Map feature names to their IDs using the lookup table
     ao_features["feature_id"] = ao_features["name"].map(name_to_id)
     
-    # Log warning for unmapped features
-    unmapped_features = ao_features[ao_features["feature_id"].isna()]["name"].unique()
-    if len(unmapped_features) > 0:
+    # Drop features the LUT does not know, with a warning. See
+    # prepare_ao_features_for_db.
+    unmapped = ao_features["feature_id"].isna()
+    if unmapped.any():
         logging.getLogger("alerce.FeatureStep").warning(
-            f"Features not found in lookup table: {list(unmapped_features)}"
+            f"Features not found in lookup table: {list(ao_features.loc[unmapped, 'name'].unique())}"
         )
+        ao_features = ao_features[~unmapped]
+    ao_features["feature_id"] = ao_features["feature_id"].astype(int)
 
     # Drop original columns, keep only the mapped data
-    ao_features.drop(columns=["fid", "name"], inplace=True)
+    ao_features = ao_features.drop(columns=["fid", "name"])
 
     return ao_features
 

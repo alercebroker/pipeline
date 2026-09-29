@@ -15,6 +15,7 @@ from features.utils.parsers import (
     detections_to_astro_object,
     get_bogus_flags_for_each_detection,
     prepare_ao_features_for_db,
+    prepare_ao_features_for_db_lsst,
 )
 from lc_classifier.features.core.base import query_ao_table
 from lc_classifier.features.composites.ztf import ZTFFeatureExtractor
@@ -430,15 +431,27 @@ class FeatureIdTestCase(unittest.TestCase):
         self.assertEqual(id_of(first, "Multiband_period"), id_of(second, "Multiband_period"))
         self.assertEqual(42, id_of(first, "Multiband_period"))
 
-    def test_unknown_feature_name_maps_to_nan_and_warns(self):
+    def test_unknown_feature_name_is_dropped_and_warns(self):
+        # A name the LUT does not know must not reach the scribe: feature_id is
+        # NOT NULL and part of the PK, so one unmapped row fails the whole batch.
         lut = {7: "Amplitude"}
         ao = self._astro_object_with_features(["Amplitude", "NotInTheLut"])
 
         with self.assertLogs("alerce.FeatureStep", level=logging.WARNING) as logs:
             result = prepare_ao_features_for_db(ao, lut)
 
-        unknown = result[result["name"] == "NotInTheLut"]["feature_id"].iloc[0]
-        self.assertTrue(pd.isna(unknown))
+        self.assertEqual(["Amplitude"], result["name"].tolist())
+        self.assertEqual([7], result["feature_id"].tolist())
+        self.assertIn("NotInTheLut", "".join(logs.output))
+
+    def test_unknown_feature_name_is_dropped_and_warns_lsst(self):
+        lut = {7: "Amplitude"}
+        ao = self._astro_object_with_features(["Amplitude", "NotInTheLut"])
+
+        with self.assertLogs("alerce.FeatureStep", level=logging.WARNING) as logs:
+            result = prepare_ao_features_for_db_lsst(ao, lut)
+
+        self.assertEqual([7], result["feature_id"].tolist())
         self.assertIn("NotInTheLut", "".join(logs.output))
 
 
