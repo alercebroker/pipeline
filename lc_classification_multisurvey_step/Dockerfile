@@ -30,6 +30,7 @@ RUN poetry install --no-root --without=dev,test
 # schemas, so copying them here keeps a schema edit from invalidating it.
 COPY schemas/scribe_step /schemas/scribe_step
 COPY schemas/lc_classification_step /schemas/lc_classification_step
+COPY schemas/feature_ms_step /schemas/feature_ms_step
 
 
 FROM python:3.10-slim as production
