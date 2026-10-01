@@ -3,10 +3,31 @@ from db_plugins.db.sql.models_pipeline import Probability
 from contextlib import contextmanager
 from typing import Callable, ContextManager
 from sqlalchemy import create_engine
+from sqlalchemy import event
+from psycopg2.extensions import quote_ident
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.pool import NullPool
 from sqlalchemy import text
 import logging
+
+def _set_search_path_on_connect(engine, schema):
+    """Apply `schema` with a SET on every new connection.
+
+    The `-csearch_path` startup option is dropped by PgBouncer
+    (ignore_startup_parameters=options), which left sessions on the DB user's
+    default search_path. A SET after connecting is passed through, and holds for
+    the whole connection in PgBouncer's session mode.
+    """
+    schemas = [s.strip() for s in schema.split(",") if s.strip()]
+
+    @event.listens_for(engine, "connect")
+    def _set_search_path(dbapi_connection, _connection_record):
+        cursor = dbapi_connection.cursor()
+        cursor.execute(
+            "SET search_path TO " + ", ".join(quote_ident(s, cursor) for s in schemas)
+        )
+        cursor.close()
+        dbapi_connection.commit()  # a later rollback would otherwise undo the SET
 
 
 class PSQLConnection:
@@ -20,6 +41,7 @@ class PSQLConnection:
             poolclass = None
 
         self._engine = create_engine(url, connect_args=args, echo=False, poolclass=poolclass)
+        _set_search_path_on_connect(self._engine, config["SCHEMA"])
         self._session_factory = sessionmaker(
             self._engine,
         )
