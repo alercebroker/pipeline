@@ -29,6 +29,24 @@ from .utils.parsers import parse_output_lsst,parse_scribe_payload_lsst
 from .utils.data_utils import clean_and_flatten_columns, save_astro_objects_to_csvs
 
 
+def _match_for_output(match: Dict[str, Any]) -> Dict[str, Any]:
+    """Shape a service match for the output topic: keep only the map-valued
+    `metadata` entries.
+
+    The xmatch service returns each metadata row with its own `id` column, a
+    plain string equal to `match_id`. The output schema
+    (`schemas/feature_ms_step/ztf/xmatch.avsc`) declares `metadata` as a map of
+    maps, so any scalar entry makes Avro serialization fail. Nothing downstream
+    reads the scalars: the parser only uses the `w*mpro` maps. The scribe path
+    receives the untouched match list, not this copy.
+    """
+    metadata = match.get("metadata") or {}
+    return {
+        **match,
+        "metadata": {k: v for k, v in metadata.items() if isinstance(v, dict)},
+    }
+
+
 from importlib.metadata import version
 
 
@@ -300,7 +318,7 @@ class FeatureStep(GenericStep):
             # use the allwise match (W1-W4), so map oid -> allwise match for the
             # per-message attach; the full list still goes to scribe below.
             xmatch_dict = {
-                str(match['oid']): match
+                str(match['oid']): _match_for_output(match)
                 for match in xmatch_results
                 if match.get('catalog') == 'allwise'
             }
