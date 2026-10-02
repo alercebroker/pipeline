@@ -3,9 +3,15 @@
 Covers the flat, three-array input contract (no `extra_fields`) that
 `schemas/magstats_ms_step/ztf/output.avsc` defines.
 """
+import io
+import json
 import logging
+import os
 import random
 import unittest
+
+import fastavro
+import fastavro.schema
 from unittest import mock
 
 import pandas as pd
@@ -495,3 +501,75 @@ class ExtractorParityTestCase(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def service_allwise_match(oid):
+    """The row the xmatch service really returns: every `metadata` entry is a
+    `{Float64, Valid}` map except the row's own `id`, a plain string."""
+    return {
+        "oid": str(oid),
+        "query_ra": 259.04,
+        "query_dec": -7.29,
+        "match_id": "2593m076_ac51-046081",
+        "catalog": "allwise",
+        "match_ra": 259.04,
+        "match_dec": -7.29,
+        "distance": 0.68,
+        "metadata": {
+            "id": "2593m076_ac51-046081",
+            "w1mpro": {"Float64": 14.977, "Valid": True},
+            "w1sigmpro": {"Float64": 0.038, "Valid": True},
+            "w2mpro": {"Float64": 15.163, "Valid": True},
+            "w2sigmpro": {"Float64": 0.091, "Valid": True},
+            "w3mpro": {"Float64": 12.258, "Valid": True},
+            "w3sigmpro": {"Float64": 0, "Valid": False},
+            "w4mpro": {"Float64": 8.87, "Valid": True},
+            "w4sigmpro": {"Float64": 0, "Valid": False},
+        },
+    }
+
+
+class XmatchOutputTestCase(unittest.TestCase):
+    """The output topic is Avro: `xmatches.metadata` must be a map of maps."""
+
+    SCHEMA = os.path.join(
+        os.path.dirname(__file__), "..", "..", "..", "schemas", "feature_ms_step", "ztf", "output.avsc"
+    )
+
+    def _run(self):
+        step = build_step(USE_XMATCH=True, XMATCH_CONFIG={"base_url": "http://xmatch.test"})
+        step.xmatch_client = mock.MagicMock()
+        message = generate_message(
+            oid=36028949625357731, seed=7, n_detections=30, n_previous_detections=20, n_forced=20
+        )
+        step.xmatch_client.conesearch_with_metadata.side_effect = lambda **kw: (
+            [service_allwise_match(message["oid"])] if kw.get("catalog") == "allwise" else []
+        )
+        prepared = step.pre_execute([message])
+        return step, prepared, step.post_execute(step.execute(prepared))
+
+    def test_scalar_metadata_entries_are_dropped_from_the_attached_match(self):
+        _, prepared, results = self._run()
+        self.assertNotIn("id", prepared[0]["xmatches"]["metadata"])
+        self.assertNotIn("id", results[0]["xmatches"]["metadata"])
+        self.assertEqual(14.977, results[0]["xmatches"]["metadata"]["w1mpro"]["Float64"])
+
+    def test_scribe_xmatch_command_is_unaffected(self):
+        step, _, _ = self._run()
+        payloads = [
+            json.loads(call.kwargs["value"])
+            for call in step.scribe_producer.producer.produce.call_args_list
+        ]
+        xmatch_cmds = [p for p in payloads if p.get("step") == "xmatch"]
+        self.assertEqual(1, len(xmatch_cmds))
+        self.assertEqual("2593m076_ac51-046081", xmatch_cmds[0]["payload"]["oid_catalog"])
+
+    def test_output_message_serializes_against_the_output_schema(self):
+        _, _, results = self._run()
+        schema = fastavro.schema.load_schema(self.SCHEMA)
+        out = io.BytesIO()
+        fastavro.schemaless_writer(out, schema, results[0])
+        out.seek(0)
+        decoded = fastavro.schemaless_reader(out, schema)
+        self.assertEqual("allwise", decoded["xmatches"]["catalog"])
+        self.assertNotIn("id", decoded["xmatches"]["metadata"])
