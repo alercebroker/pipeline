@@ -37,13 +37,34 @@ def config():
         "SCHEMA_PATH": os.getenv("SCRIBE_SCHEMA_PATH", scribe_schema_path),
     }
 
-    # No downstream producer until design §9 lands: there is no
-    # schemas/lc_classification_multisurvey_step/*.avsc, and a KafkaProducer
-    # would raise KeyError('SCHEMA_PATH') in __init__ and crashloop the pod. Left
-    # empty, apf falls back to its DefaultProducer and nothing is produced
-    # downstream, which is the intended §9 behaviour. Hence no PRODUCER_SERVER
-    # switch: it could not work.
+    # Optional daily topic output, same schema as the legacy lc_classification_step.
+    # Without PRODUCER_SERVER nothing is produced.
     PRODUCER_CONFIG = {}
+    if os.getenv("PRODUCER_SERVER"):
+        producer_schema_path = str(
+            pathlib.Path(
+                pathlib.Path(__file__).parent.parent,
+                "schemas/lc_classification_step",
+                "output_ztf.avsc",
+            )
+        )
+        PRODUCER_CONFIG = {
+            "CLASS": os.getenv("PRODUCER_CLASS", "apf.producers.kafka.KafkaProducer"),
+            "TOPIC_STRATEGY": {
+                "CLASS": os.getenv(
+                    "PRODUCER_TOPIC_STRATEGY_CLASS",
+                    "apf.core.topic_management.DailyTopicStrategy",
+                ),
+                "PARAMS": {
+                    "topic_format": os.environ["PRODUCER_TOPIC_FORMAT"],
+                    "date_format": os.getenv("PRODUCER_DATE_FORMAT", "%Y%m%d"),
+                    "change_hour": int(os.getenv("PRODUCER_CHANGE_HOUR", 23)),
+                    "retention_days": int(os.getenv("PRODUCER_RETENTION_DAYS", 1)),
+                },
+            },
+            "PARAMS": {"bootstrap.servers": os.environ["PRODUCER_SERVER"]},
+            "SCHEMA_PATH": os.getenv("PRODUCER_SCHEMA_PATH", producer_schema_path),
+        }
 
     METRICS_CONFIG = {}
     if os.getenv("METRICS_HOST"):
@@ -77,6 +98,11 @@ def config():
         CONSUMER_CONFIG["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
         CONSUMER_CONFIG["PARAMS"]["sasl.username"] = os.getenv("CONSUMER_KAFKA_USERNAME")
         CONSUMER_CONFIG["PARAMS"]["sasl.password"] = os.getenv("CONSUMER_KAFKA_PASSWORD")
+    if PRODUCER_CONFIG and os.getenv("PRODUCER_KAFKA_USERNAME") and os.getenv("PRODUCER_KAFKA_PASSWORD"):
+        PRODUCER_CONFIG["PARAMS"]["security.protocol"] = "SASL_SSL"
+        PRODUCER_CONFIG["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
+        PRODUCER_CONFIG["PARAMS"]["sasl.username"] = os.getenv("PRODUCER_KAFKA_USERNAME")
+        PRODUCER_CONFIG["PARAMS"]["sasl.password"] = os.getenv("PRODUCER_KAFKA_PASSWORD")
     if os.getenv("SCRIBE_KAFKA_USERNAME") and os.getenv("SCRIBE_KAFKA_PASSWORD"):
         SCRIBE_PRODUCER_CONFIG["PARAMS"]["security.protocol"] = "SASL_SSL"
         SCRIBE_PRODUCER_CONFIG["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
