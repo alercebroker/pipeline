@@ -53,7 +53,7 @@ def config():
             "TOPIC_STRATEGY": {
                 "CLASS": os.getenv(
                     "PRODUCER_TOPIC_STRATEGY_CLASS",
-                    "apf.core.topic_management.DailyTopicStrategy",
+                    "lc_classification_multisurvey_step.topic_strategy.CurrentDailyTopicStrategy",
                 ),
                 "PARAMS": {
                     "topic_format": os.environ["PRODUCER_TOPIC_FORMAT"],
