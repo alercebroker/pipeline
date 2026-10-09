@@ -4,6 +4,8 @@ Consumes the multisurvey feature_step output topic, classifies the batch, and
 produces one `update-probability` command per probability row to the
 scribe_multisurvey topic. The step writes nothing to the database — the scribe
 owns the upsert (design doc §2, decision 3).
+
+If PRODUCER_CONFIG is set, it also produces each classified object to a daily topic.
 """
 import json
 import logging
@@ -19,6 +21,7 @@ from alerce_classifiers.base.dto import OutputDTO
 
 from .db.db import PSQLConnection, resolve_classifiers
 from .input_dto import collapse_by_oid, create_input_dto, filter_messages, lastmjd_by_oid
+from .output import build_output_messages
 from .probabilities import build_probability_rows, head_names
 
 
@@ -51,6 +54,11 @@ class LateClassifierMultisurvey(GenericStep):
         scribe_config = config["SCRIBE_PRODUCER_CONFIG"]
         self.scribe_producer = get_class(scribe_config["CLASS"])(scribe_config)
 
+        # Daily topic output is optional: PRODUCER_CONFIG: {} turns it off.
+        self.produce_output = bool(config.get("PRODUCER_CONFIG"))
+        if self.produce_output:
+            self.set_producer_key_field("oid")
+
     @staticmethod
     def _empty_output() -> OutputDTO:
         return OutputDTO(pd.DataFrame(), {"top": pd.DataFrame(), "children": {}})
@@ -75,27 +83,27 @@ class LateClassifierMultisurvey(GenericStep):
         )
         return collapsed
 
-    def execute(self, collapsed: dict) -> Tuple[OutputDTO, dict]:
-        """Classify the batch; returns the model output and the lastmjd per oid."""
+    def execute(self, collapsed: dict) -> Tuple[OutputDTO, dict, dict]:
+        """Classify the batch; returns model output, lastmjd per oid and the batch."""
         if not collapsed:
-            return self._empty_output(), {}
+            return self._empty_output(), {}, {}
 
         dto = create_input_dto(collapsed)
 
         can_predict, reason = self.model.can_predict(dto)
         if not can_predict:
             self.logger.warning(f"Model cannot predict this batch: {reason}")
-            return self._empty_output(), {}
+            return self._empty_output(), {}, {}
 
         output_dto = self.predict(dto)
         if output_dto is None:
-            return self._empty_output(), {}
+            return self._empty_output(), {}, {}
 
-        return output_dto, lastmjd_by_oid(collapsed)
+        return output_dto, lastmjd_by_oid(collapsed), collapsed
 
-    def post_execute(self, result: Tuple[OutputDTO, dict]) -> Tuple[OutputDTO, dict]:
+    def post_execute(self, result: Tuple[OutputDTO, dict, dict]) -> Tuple[OutputDTO, dict, dict]:
         """Build the probability rows and write them to the scribe."""
-        output_dto, lastmjd_map = result
+        output_dto, lastmjd_map, _ = result
         rows = build_probability_rows(
             output_dto,
             lastmjd_map,
@@ -131,11 +139,12 @@ class LateClassifierMultisurvey(GenericStep):
 
         self.logger.info(f"Produced {len(rows)} probability rows to the scribe")
 
-    def pre_produce(self, result: Tuple[OutputDTO, dict]) -> list:
-        # No downstream output yet (design doc §9): PRODUCER_CONFIG is always {},
-        # and returning the raw result would have apf iterate the tuple as if it
-        # were messages. The scribe is the only output path.
-        return []
+    def pre_produce(self, result: Tuple[OutputDTO, dict, dict]) -> list:
+        # Output off: produce nothing (never return the raw tuple).
+        if not self.produce_output:
+            return []
+        output_dto, _, collapsed = result
+        return build_output_messages(output_dto, collapsed)
 
     def tear_down(self):
         # No `else: self.consumer.__del__()`: that branch raises AttributeError on
