@@ -4,7 +4,8 @@ Dumps the squidward (BHRF 2.1.0, classifier_version=210) rows of a single hash
 partition to a gzip CSV and prints rows, elapsed time and a x16 projection for
 the whole table. Read-only on the DB; writes one file under ~/dumps/.
 
-Usage: python3 prob_dump_timing.py <readonly_credentials.json> [partition] [version]
+Setup: bash setup.sh (creates .venv here)
+Usage: .venv/bin/python prob_dump_timing.py <readonly_credentials.json> [partition] [version]
 """
 import gzip  # gzip output file
 import json  # credentials file is psycopg2 kwargs in json
