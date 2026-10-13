@@ -3,21 +3,21 @@
 Dumps the squidward (BHRF 2.1.0, classifier_version=210) rows of a single hash
 partition to a parquet file and prints rows, elapsed time and a x16 projection
 for the whole table. Read-only on the DB; writes one file under ~/dumps/.
-COPY CSV output is streamed through a pipe into pyarrow's CSV reader and written
-in row groups, so memory stays bounded whatever the partition size.
+Plain two-step: COPY the whole result as CSV into memory (~3 GB per partition),
+then parse it with pyarrow and write one parquet file.
 
 Setup: bash setup.sh (creates .venv here)
 Usage: .venv/bin/python prob_dump_timing.py <readonly_credentials.json> [partition] [version]
 """
+import io  # in-memory CSV buffer
 import json  # credentials file is psycopg2 kwargs in json
-import os  # pipes, paths and file sizes
+import os  # paths and file sizes
 import sys  # argv
-import threading  # COPY runs in a thread feeding the pipe
 import time  # timing
 
 import psycopg2  # DB driver
 import pyarrow as pa  # arrow types
-import pyarrow.csv as pacsv  # streaming CSV reader
+import pyarrow.csv as pacsv  # CSV parser
 import pyarrow.parquet as pq  # parquet writer
 
 COLUMNS = ["oid", "sid", "classifier_id", "class_id", "probability", "ranking", "lastmjd"]  # COPY column order
@@ -32,16 +32,6 @@ SCHEMA = pa.schema(  # explicit types: real stays float32, small ints stay int16
         ("lastmjd", pa.float64()),  # double precision
     ]
 )
-ROW_GROUP = 4_000_000  # rows per parquet row group
-
-
-def copy_to_fd(cur, sql, fd, err):
-    """Run COPY TO STDOUT writing into the pipe fd; close it when done so the reader sees EOF."""
-    try:
-        with os.fdopen(fd, "wb", buffering=1 << 20) as w:  # buffered writer over the pipe
-            cur.copy_expert(sql, w, size=1 << 20)  # 1 MB chunks from the server
-    except BaseException as e:  # noqa: BLE001  # surface the error to the main thread
-        err.append(e)  # main thread re-raises
 
 
 def main():
@@ -65,32 +55,25 @@ def main():
         "TO STDOUT WITH (FORMAT csv)" % (", ".join(COLUMNS), part, version)
     )
     t0 = time.time()  # start clock
-    rfd, wfd = os.pipe()  # COPY writes wfd, arrow reads rfd
-    err = []  # errors from the COPY thread
-    th = threading.Thread(target=copy_to_fd, args=(cur, sql, wfd, err), daemon=True)  # producer
-    th.start()  # start streaming
-
-    rows = 0  # rows written
-    reader = pacsv.open_csv(  # streaming reader with fixed schema
-        os.fdopen(rfd, "rb"),  # pipe read end
-        read_options=pacsv.ReadOptions(column_names=COLUMNS, block_size=64 << 20),  # 64 MB blocks
+    buf = io.BytesIO()  # whole CSV result in memory
+    cur.copy_expert(sql, buf, size=1 << 20)  # step 1: COPY from the server
+    t_copy = time.time() - t0  # seconds spent in COPY
+    buf.seek(0)  # rewind for the parser
+    table = pacsv.read_csv(  # step 2: parse with fixed schema
+        buf,
+        read_options=pacsv.ReadOptions(column_names=COLUMNS),  # no header in the CSV
         convert_options=pacsv.ConvertOptions(column_types=SCHEMA),  # no type inference
     )
-    with pq.ParquetWriter(tmp, SCHEMA, compression="zstd") as writer:  # zstd: small and fast to read
-        for batch in reader:  # one block at a time
-            writer.write_batch(batch, row_group_size=ROW_GROUP)  # bounded memory
-            rows += batch.num_rows  # count
-    th.join()  # wait for COPY to finish
-    if err:  # COPY failed: drop the partial file and raise
-        os.remove(tmp)  # never leave a .tmp that looks complete
-        raise err[0]  # original error
-    os.replace(tmp, out)  # atomic rename marks completion
+    del buf  # free the 3 GB text
+    pq.write_table(table, tmp, compression="zstd", row_group_size=4_000_000)  # step 3: parquet
+    os.replace(tmp, out)  # rename marks completion
     dt = time.time() - t0  # elapsed seconds
+    rows = table.num_rows  # rows dumped
     size = os.path.getsize(out)  # parquet size
 
     print("partition: %d" % part)  # which partition
     print("rows: %d" % rows)  # rows dumped
-    print("elapsed_s: %.0f" % dt)  # the number we want
+    print("elapsed_s: %.0f  (copy %.0f, parse+write %.0f)" % (dt, t_copy, dt - t_copy))  # the number we want
     print("rows_per_s: %.0f" % (rows / max(dt, 1e-9)))  # throughput
     print("parquet_mb: %.0f" % (size / 1e6))  # file size
     print("bytes_per_row: %.1f" % (size / max(rows, 1)))  # per-row weight
