@@ -7,6 +7,6 @@ VENV="$HERE/.venv"  # venv location
 [ -d "$VENV" ] || python3 -m venv "$VENV"  # create once
 "$VENV/bin/pip" install -q --upgrade pip  # recent pip
 "$VENV/bin/pip" install -q -r "$HERE/requirements.txt"  # psycopg2
-"$VENV/bin/python" -c "import psycopg2; print('psycopg2:', psycopg2.__version__)"  # proof it imports
+"$VENV/bin/python" -c 'import psycopg2, pyarrow; print("psycopg2:", psycopg2.__version__, "pyarrow:", pyarrow.__version__)'  # proof it imports
 echo "venv: $VENV"  # where it is
 echo "run: $VENV/bin/python $HERE/prob_dump_timing.py <readonly_credentials.json> 0"  # the command

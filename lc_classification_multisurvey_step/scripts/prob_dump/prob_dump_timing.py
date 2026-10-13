@@ -1,42 +1,56 @@
-"""Timed COPY of one multisurvey.probability partition filtered on classifier_version.
+"""Timed COPY of one multisurvey.probability partition filtered on classifier_version, to parquet.
 
 Dumps the squidward (BHRF 2.1.0, classifier_version=210) rows of a single hash
-partition to a gzip CSV and prints rows, elapsed time and a x16 projection for
-the whole table. Read-only on the DB; writes one file under ~/dumps/.
+partition to a parquet file and prints rows, elapsed time and a x16 projection
+for the whole table. Read-only on the DB; writes one file under ~/dumps/.
+COPY CSV output is streamed through a pipe into pyarrow's CSV reader and written
+in row groups, so memory stays bounded whatever the partition size.
 
 Setup: bash setup.sh (creates .venv here)
 Usage: .venv/bin/python prob_dump_timing.py <readonly_credentials.json> [partition] [version]
 """
-import gzip  # gzip output file
 import json  # credentials file is psycopg2 kwargs in json
-import os  # paths and file sizes
+import os  # pipes, paths and file sizes
 import sys  # argv
+import threading  # COPY runs in a thread feeding the pipe
 import time  # timing
 
 import psycopg2  # DB driver
+import pyarrow as pa  # arrow types
+import pyarrow.csv as pacsv  # streaming CSV reader
+import pyarrow.parquet as pq  # parquet writer
+
+COLUMNS = ["oid", "sid", "classifier_id", "class_id", "probability", "ranking", "lastmjd"]  # COPY column order
+SCHEMA = pa.schema(  # explicit types: real stays float32, small ints stay int16
+    [
+        ("oid", pa.int64()),  # bigint
+        ("sid", pa.int16()),  # smallint
+        ("classifier_id", pa.int16()),  # smallint
+        ("class_id", pa.int16()),  # smallint
+        ("probability", pa.float32()),  # real
+        ("ranking", pa.int16()),  # smallint
+        ("lastmjd", pa.float64()),  # double precision
+    ]
+)
+ROW_GROUP = 4_000_000  # rows per parquet row group
 
 
-class Counter:
-    """File-like wrapper that counts rows (newlines) and raw bytes before compression."""
-
-    def __init__(self, f):
-        self.f = f  # underlying gzip file
-        self.rows = 0  # newlines seen = CSV rows
-        self.raw = 0  # uncompressed bytes seen
-
-    def write(self, b):
-        """Count then forward a chunk from COPY TO STDOUT."""
-        self.rows += b.count(b"\n")  # one newline per CSV row
-        self.raw += len(b)  # uncompressed size
-        self.f.write(b)  # forward to gzip
+def copy_to_fd(cur, sql, fd, err):
+    """Run COPY TO STDOUT writing into the pipe fd; close it when done so the reader sees EOF."""
+    try:
+        with os.fdopen(fd, "wb", buffering=1 << 20) as w:  # buffered writer over the pipe
+            cur.copy_expert(sql, w, size=1 << 20)  # 1 MB chunks from the server
+    except BaseException as e:  # noqa: BLE001  # surface the error to the main thread
+        err.append(e)  # main thread re-raises
 
 
 def main():
-    """Run the timed COPY and print labeled metrics."""
+    """Run the timed COPY-to-parquet and print labeled metrics."""
     cred = sys.argv[1]  # path to readonly credentials json
     part = int(sys.argv[2]) if len(sys.argv) > 2 else 0  # hash partition number
     version = int(sys.argv[3]) if len(sys.argv) > 3 else 210  # classifier_version to dump
-    out = os.path.expanduser("~/dumps/prob_part_%d_v%d.csv.gz" % (part, version))  # output file
+    out = os.path.expanduser("~/dumps/prob_part_%d_v%d.parquet" % (part, version))  # output file
+    tmp = out + ".tmp"  # written here, renamed on success so a partial file is never mistaken for done
     os.makedirs(os.path.dirname(out), exist_ok=True)  # ensure ~/dumps exists
 
     kw = json.load(open(cred))  # psycopg2 kwargs, never printed
@@ -46,26 +60,41 @@ def main():
     cur = conn.cursor()  # cursor for COPY
     cur.execute("SET statement_timeout = 0")  # full partition scan takes minutes
 
-    sql = (  # COPY of the filtered partition as CSV
-        "COPY (SELECT oid, sid, classifier_id, class_id, probability, ranking, lastmjd "
-        "FROM multisurvey.probability_part_%d WHERE classifier_version = %d) "
-        "TO STDOUT WITH (FORMAT csv)" % (part, version)
+    sql = (  # COPY of the filtered partition as CSV, no header
+        "COPY (SELECT %s FROM multisurvey.probability_part_%d WHERE classifier_version = %d) "
+        "TO STDOUT WITH (FORMAT csv)" % (", ".join(COLUMNS), part, version)
     )
     t0 = time.time()  # start clock
-    with gzip.open(out, "wb", compresslevel=1) as g:  # fast compression
-        w = Counter(g)  # counting wrapper
-        cur.copy_expert(sql, w, size=1 << 20)  # 1 MB chunks
+    rfd, wfd = os.pipe()  # COPY writes wfd, arrow reads rfd
+    err = []  # errors from the COPY thread
+    th = threading.Thread(target=copy_to_fd, args=(cur, sql, wfd, err), daemon=True)  # producer
+    th.start()  # start streaming
+
+    rows = 0  # rows written
+    reader = pacsv.open_csv(  # streaming reader with fixed schema
+        os.fdopen(rfd, "rb"),  # pipe read end
+        read_options=pacsv.ReadOptions(column_names=COLUMNS, block_size=64 << 20),  # 64 MB blocks
+        convert_options=pacsv.ConvertOptions(column_types=SCHEMA),  # no type inference
+    )
+    with pq.ParquetWriter(tmp, SCHEMA, compression="zstd") as writer:  # zstd: small and fast to read
+        for batch in reader:  # one block at a time
+            writer.write_batch(batch, row_group_size=ROW_GROUP)  # bounded memory
+            rows += batch.num_rows  # count
+    th.join()  # wait for COPY to finish
+    if err:  # COPY failed: drop the partial file and raise
+        os.remove(tmp)  # never leave a .tmp that looks complete
+        raise err[0]  # original error
+    os.replace(tmp, out)  # atomic rename marks completion
     dt = time.time() - t0  # elapsed seconds
-    gz = os.path.getsize(out)  # compressed size
+    size = os.path.getsize(out)  # parquet size
 
     print("partition: %d" % part)  # which partition
-    print("rows: %d" % w.rows)  # rows dumped
+    print("rows: %d" % rows)  # rows dumped
     print("elapsed_s: %.0f" % dt)  # the number we want
-    print("rows_per_s: %.0f" % (w.rows / max(dt, 1e-9)))  # throughput
-    print("csv_mb: %.0f" % (w.raw / 1e6))  # uncompressed size
-    print("gz_mb: %.0f" % (gz / 1e6))  # compressed size
-    print("bytes_per_row_csv: %.1f  gz: %.1f" % (w.raw / max(w.rows, 1), gz / max(w.rows, 1)))  # per-row weight
-    print("x16_estimate: %.0f min, csv %.0f GB, gz %.0f GB" % (dt * 16 / 60, w.raw * 16 / 1e9, gz * 16 / 1e9))  # serial projection
+    print("rows_per_s: %.0f" % (rows / max(dt, 1e-9)))  # throughput
+    print("parquet_mb: %.0f" % (size / 1e6))  # file size
+    print("bytes_per_row: %.1f" % (size / max(rows, 1)))  # per-row weight
+    print("x16_estimate: %.0f min, parquet %.0f GB" % (dt * 16 / 60, size * 16 / 1e9))  # serial projection
 
 
 if __name__ == "__main__":
