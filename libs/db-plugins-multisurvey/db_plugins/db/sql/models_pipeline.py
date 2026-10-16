@@ -10,6 +10,8 @@ from sqlalchemy import (
     PrimaryKeyConstraint,
     SmallInteger,
     String,
+    Text,
+    cast,
     func,
     text,
 )
@@ -68,8 +70,11 @@ class Object(Base):
         Index("ix_object_n_det", "n_det", postgresql_using="btree"),
         Index("ix_object_firstmjd", "firstmjd", postgresql_using="btree"),
         Index("ix_object_lastmjd", "lastmjd", postgresql_using="btree"),
-        Index("ix_object_meanra", "meanra", postgresql_using="btree"),
-        Index("ix_object_meandec", "meandec", postgresql_using="btree"),
+        Index("ix_object_sid_n_det", "sid", "n_det", postgresql_using="btree"),
+        Index("ix_object_sid_firstmjd", "sid", "firstmjd", postgresql_using="btree"),
+        Index("ix_object_sid_lastmjd", "sid", "lastmjd", postgresql_using="btree"),
+        # Production also has object_q3c_ang2ipix_idx on q3c_ang2ipix(meanra, meandec). It needs the q3c
+        # extension, so it is not declared here; create it separately where q3c is installed.
         {"postgresql_partition_by": "HASH (oid)"},
     )
 
@@ -991,10 +996,19 @@ class Probability(Base):
         ),
         Index("ix_probability_oid", "oid", postgresql_using="hash"),
         Index("ix_probability_probability", "probability", postgresql_using="btree"),
-        Index("ix_probability_ranking", "ranking", postgresql_using="btree"),
         Index(
-            "ix_classification_rank1",
-            "ranking",
+            "ix_prob_clf_class_prob_rank1",
+            classifier_id,
+            class_id,
+            probability.desc(),
+            postgresql_where=ranking == 1,
+            postgresql_using="btree",
+        ),
+        Index(
+            "ix_probability_sid_prob_oid_rank1",
+            "sid",
+            "probability",
+            "oid",
             postgresql_where=ranking == 1,
             postgresql_using="btree",
         ),
@@ -1206,4 +1220,9 @@ class GaiaDR3_source(Base):
 
     __table_args__ = (
         PrimaryKeyConstraint("oid_catalog", name="pk_gaiadr3_source_oid_catalog"),
+        Index(
+            "gaiadr3_source_oid_catalog_idx1",
+            cast(oid_catalog, Text),
+            postgresql_using="btree",
+        ),
     )
