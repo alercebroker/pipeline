@@ -401,3 +401,47 @@ def fetch_feature_version_id(credentials_json: str, version_name: str, sid: int 
             f"{schema}.feature_version_lut — seed it before writing features"
         )
     return int(version_id)
+
+
+def fetch_feature_rows(credentials_json: str, oids: list, sid: int = SID,
+                       schema: Optional[str] = None) -> pd.DataFrame:
+    """Stored feature rows of `oids`, named through <schema>.feature_name_lut.
+
+    Columns [oid, feature_name, band, value, updated_date], one row per stored
+    (oid, feature, band). The names are the LUT's spelling, not the model's; see
+    reclassify.model_column. updated_date rides along so the caller can drop
+    rows an older computation left behind (reclassify.current_rows).
+    """
+    schema = schema or SCHEMA  # trusted operator input, same convention as the other readers
+    engine = _make_engine(credentials_json)  # cached per process
+    query = text(f"""
+        SELECT f.oid, l.feature_name, f.band, f.value, f.updated_date
+        FROM {schema}.feature f
+        JOIN {schema}.feature_name_lut l ON l.feature_id = f.feature_id AND l.sid = f.sid
+        WHERE f.oid = ANY(:oids) AND f.sid = :sid
+    """)  # PK (oid, sid, feature_id, band): one index range per oid, no scan
+    with engine.connect() as conn:
+        return pd.read_sql_query(query, conn, params={"oids": _py_oids(oids), "sid": sid})
+
+
+def fetch_probability_lastmjd(credentials_json: str, oids: list, classifier_id: int = 5,
+                              sid: int = SID, schema: Optional[str] = None) -> dict:
+    """{oid: lastmjd} of the stored probability rows of one classifier for `oids`.
+
+    The lastmjd a reclassification stamps is the one the stored features were
+    computed at, which is what the stored probability rows carry (the same run
+    wrote both). max() over the rows of one classifier, by primary key, so no
+    scan; an oid with no stored row is simply absent from the dict.
+    """
+    schema = schema or SCHEMA  # trusted operator input
+    engine = _make_engine(credentials_json)  # cached per process
+    query = text(f"""
+        SELECT oid, max(lastmjd) AS lastmjd
+        FROM {schema}.probability
+        WHERE oid = ANY(:oids) AND sid = :sid AND classifier_id = :cid
+        GROUP BY oid
+    """)  # PK (oid, sid, classifier_id, class_id): index lookups only
+    with engine.connect() as conn:
+        frame = pd.read_sql_query(query, conn, params={"oids": _py_oids(oids), "sid": sid,
+                                                       "cid": classifier_id})
+    return {int(o): float(m) for o, m in zip(frame["oid"], frame["lastmjd"])}  # plain scalars
