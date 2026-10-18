@@ -403,8 +403,8 @@ def fetch_feature_version_id(credentials_json: str, version_name: str, sid: int 
     return int(version_id)
 
 
-def fetch_feature_rows(credentials_json: str, oids: list, sid: int = SID,
-                       schema: Optional[str] = None) -> pd.DataFrame:
+def fetch_feature_rows(credentials_json: str, oids: list, sid: int = SID,  # oids: any int sequence
+                       schema: Optional[str] = None) -> pd.DataFrame:  # schema: None -> db.SCHEMA
     """Stored feature rows of `oids`, named through <schema>.feature_name_lut.
 
     Columns [oid, feature_name, band, value, updated_date], one row per stored
@@ -419,13 +419,13 @@ def fetch_feature_rows(credentials_json: str, oids: list, sid: int = SID,
         FROM {schema}.feature f
         JOIN {schema}.feature_name_lut l ON l.feature_id = f.feature_id AND l.sid = f.sid
         WHERE f.oid = ANY(:oids) AND f.sid = :sid
-    """)  # PK (oid, sid, feature_id, band): one index range per oid, no scan
-    with engine.connect() as conn:
-        return pd.read_sql_query(query, conn, params={"oids": _py_oids(oids), "sid": sid})
+    """)  # PK (oid, sid, feature_id, band): one index range per oid, no scan; the LUT join names the ids
+    with engine.connect() as conn:  # one connection from the per-process pool
+        return pd.read_sql_query(query, conn, params={"oids": _py_oids(oids), "sid": sid})  # plain ints for psycopg2
 
 
-def fetch_probability_lastmjd(credentials_json: str, oids: list, classifier_id: int = 5,
-                              sid: int = SID, schema: Optional[str] = None) -> dict:
+def fetch_probability_lastmjd(credentials_json: str, oids: list, classifier_id: int = 5,  # 5 = flat BHRF
+                              sid: int = SID, schema: Optional[str] = None) -> dict:  # {oid: lastmjd}
     """{oid: lastmjd} of the stored probability rows of one classifier for `oids`.
 
     The lastmjd a reclassification stamps is the one the stored features were
@@ -440,8 +440,8 @@ def fetch_probability_lastmjd(credentials_json: str, oids: list, classifier_id: 
         FROM {schema}.probability
         WHERE oid = ANY(:oids) AND sid = :sid AND classifier_id = :cid
         GROUP BY oid
-    """)  # PK (oid, sid, classifier_id, class_id): index lookups only
-    with engine.connect() as conn:
-        frame = pd.read_sql_query(query, conn, params={"oids": _py_oids(oids), "sid": sid,
-                                                       "cid": classifier_id})
+    """)  # PK (oid, sid, classifier_id, class_id): index lookups only; the GROUP BY folds that classifier's rows
+    with engine.connect() as conn:  # one connection from the per-process pool
+        frame = pd.read_sql_query(query, conn, params={"oids": _py_oids(oids), "sid": sid,  # plain ints
+                                                       "cid": classifier_id})  # one classifier only
     return {int(o): float(m) for o, m in zip(frame["oid"], frame["lastmjd"])}  # plain scalars

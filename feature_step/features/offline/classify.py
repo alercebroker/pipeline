@@ -32,7 +32,7 @@ DEFAULT_MODEL_CLASS = "alerce_classifiers.squidward.model.SquidwardFeaturesClass
 DEFAULT_MAPPER_CLASS = "alerce_classifiers.squidward.mapper.SquidwardMapper"
 
 
-def resolve_model_version(reported: str, expected: str = None) -> str:
+def resolve_model_version(reported: str, expected: str = None) -> str:  # expected: None -> the module pin
     """The model's self-reported version -> the version we actually stamp.
 
     `expected` overrides the pinned MODEL_VERSION for a run that deliberately
@@ -66,8 +66,8 @@ def resolve_model_version(reported: str, expected: str = None) -> str:
     return reported
 
 
-def load_squidward_model(model_class: str = DEFAULT_MODEL_CLASS,
-                         expected_version: str = None):
+def load_squidward_model(model_class: str = DEFAULT_MODEL_CLASS,  # the live step's class by default
+                         expected_version: str = None):  # None keeps the 2.1.0 pin for every existing caller
     """Instantiate the BHRF classifier from env vars (mirrors the deployed step).
 
     Returns (model, classifier_name, classifier_version). The version is the

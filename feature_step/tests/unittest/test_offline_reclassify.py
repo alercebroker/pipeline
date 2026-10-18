@@ -55,6 +55,7 @@ def test_features_frame_pivots_to_the_model_columns():
 
 
 def test_features_frame_of_no_rows_is_empty_with_the_model_columns():
+    """Features frame of no rows is empty with the model columns."""
     frame = reclassify.features_frame(_rows([]), ["Amplitude_1"])
     assert len(frame) == 0
     assert list(frame.columns) == ["Amplitude_1"]
@@ -80,6 +81,7 @@ class _FakeModel:
 
 
 def test_classify_frame_hands_the_frame_to_the_model_as_features():
+    """Classify frame hands the frame to the model as features."""
     frame = pd.DataFrame({"Amplitude_1": [0.5, 0.7]}, index=[1, 2])
     model = _FakeModel()
     dto = reclassify.classify_frame(frame, model)
@@ -89,6 +91,7 @@ def test_classify_frame_hands_the_frame_to_the_model_as_features():
 
 
 def test_classify_frame_returns_empty_output_when_the_model_cannot_predict():
+    """Classify frame returns empty output when the model cannot predict."""
     dto = reclassify.classify_frame(pd.DataFrame(columns=["Amplitude_1"]), _FakeModel())
     assert len(dto.probabilities) == 0
 
@@ -105,6 +108,7 @@ def test_split_output_gives_one_oid_single_row_frames():
 
 
 def test_split_output_of_an_absent_oid_is_empty():
+    """Split output of an absent oid is empty."""
     frame = pd.DataFrame({"Amplitude_1": [0.5, 0.7]}, index=[1, 2])
     dto = reclassify.classify_frame(frame, _FakeModel())
     assert len(reclassify.split_output(dto, 99).probabilities) == 0
@@ -118,6 +122,7 @@ def test_resolve_model_version_accepts_the_expected_version():
 
 
 def test_resolve_model_version_refuses_a_mismatch():
+    """Resolve model version refuses a mismatch."""
     with pytest.raises(ValueError, match="2.2.0"):
         classify.resolve_model_version("2.1.0", expected="2.2.0")
     with pytest.raises(ValueError, match="2.1.0"):

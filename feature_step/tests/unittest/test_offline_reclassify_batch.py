@@ -52,7 +52,7 @@ def _cfg(tmp_path, **over):
 def _wire(monkeypatch, tmp_path, with_features, with_lastmjd, **over):
     """Fakes: oids in `with_features` get a frame, oids in `with_lastmjd` a lastmjd."""
     monkeypatch.setattr(B, "_W", {"cfg": _cfg(tmp_path, **over), "taxonomy": TAX_MAPS,
-                                  "feature_list": ["Amplitude_1"]})
+                                  "feature_list": ["Amplitude_1"], "rows_per_oid": 45})
     monkeypatch.setattr(B, "fetch_minibatch",
                         lambda mb, cfg: (pd.DataFrame(), {o: 60000.5 for o in mb if o in with_lastmjd}))
     monkeypatch.setattr(B, "classify_minibatch",
@@ -60,6 +60,7 @@ def _wire(monkeypatch, tmp_path, with_features, with_lastmjd, **over):
 
 
 def test_unit_classifies_oids_with_features_and_lastmjd(monkeypatch, tmp_path):
+    """Unit classifies oids with features and lastmjd."""
     _wire(monkeypatch, tmp_path, with_features={1, 2, 3}, with_lastmjd={1, 2, 3})
     manifest = B.process_unit((0, [1, 2, 3]))
     assert manifest["n_ok"] == 3
@@ -82,6 +83,7 @@ def test_unit_separates_no_features_from_no_lastmjd(monkeypatch, tmp_path):
 
 
 def test_unit_writes_rows_before_the_manifest_and_counts_them(monkeypatch, tmp_path):
+    """Unit writes rows before the manifest and counts them."""
     _wire(monkeypatch, tmp_path, with_features={1}, with_lastmjd={1},
           load_db=True, write_credentials="wc", no_shards=True)
     seen = {}
@@ -100,6 +102,7 @@ def test_unit_writes_rows_before_the_manifest_and_counts_them(monkeypatch, tmp_p
 
 
 def test_unit_records_a_failed_oid_and_keeps_going(monkeypatch, tmp_path):
+    """Unit records a failed oid and keeps going."""
     _wire(monkeypatch, tmp_path, with_features={1, 2}, with_lastmjd={1, 2})
     real = B.build_probability_rows
 

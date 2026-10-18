@@ -26,7 +26,7 @@ from alerce_classifiers.base.factories import input_dto_factory  # builds the fe
 ROW_COLUMNS = ["oid", "feature_name", "band", "value", "updated_date"]  # what fetch_feature_rows returns
 
 
-def model_column(lut_name: str, band: int) -> str:
+def model_column(lut_name: str, band: int) -> str:  # pure; tested on its own
     """feature_name_lut spelling + band -> the column name in the model's feature_list.
 
     `W1-W2` -> `W1_W2`, `Power_rate_1/2` at band 12 -> `Power_rate_1_2_12`; band 0
@@ -36,19 +36,24 @@ def model_column(lut_name: str, band: int) -> str:
     return f"{name}_{band}" if band else name  # 1 = g, 2 = r, 12 = (g,r); 0 = no band
 
 
-def current_rows(rows: pd.DataFrame) -> pd.DataFrame:
+def current_rows(rows: pd.DataFrame) -> pd.DataFrame:  # rows as fetch_feature_rows returns them
     """Keep, per oid, only the rows dated with that oid's newest updated_date.
 
     Rows of an older computation that the newest one did not overwrite are
-    dropped, because the stored probabilities were computed without them.
+    dropped, because the stored probabilities were computed without them. A row
+    with a NULL date next to dated siblings is of unknown age and is dropped
+    too; an oid with no dated row at all keeps everything it has.
     """
     if len(rows) == 0:  # nothing to filter; keep the columns
         return rows
-    newest = rows.groupby("oid")["updated_date"].transform("max")  # per-oid newest date, aligned to rows
-    return rows[rows["updated_date"] == newest]  # only the newest pass survives
+    dated = rows.dropna(subset=["updated_date"])  # NULL dates cannot take part in the max
+    per_oid = dated.groupby("oid")["updated_date"].max()  # newest date of each oid that has one
+    newest = rows["oid"].map(per_oid)  # aligned to rows; NaN for an oid with no dated row
+    undated_oid = newest.isna()  # True on every row of such an oid
+    return rows[(rows["updated_date"] == newest) | undated_oid]  # newest pass, or all rows when none is dated
 
 
-def features_frame(rows: pd.DataFrame, columns: list) -> pd.DataFrame:
+def features_frame(rows: pd.DataFrame, columns: list) -> pd.DataFrame:  # columns = the model's feature_list
     """Pivot feature rows into one row per oid with exactly the model's columns.
 
     `columns` is the model's feature_list. A feature with no row is NaN (the
@@ -66,7 +71,7 @@ def features_frame(rows: pd.DataFrame, columns: list) -> pd.DataFrame:
     return wide.astype("float64")  # values are reals; the preprocessor casts anyway
 
 
-def classify_frame(frame: pd.DataFrame, model) -> OutputDTO:
+def classify_frame(frame: pd.DataFrame, model) -> OutputDTO:  # model = SquidwardFeaturesClassifier
     """Features-only DTO from a wide frame -> the model's OutputDTO for every row.
 
     Mirrors classify.classify_astro_object after the parser: empty detections,
@@ -81,19 +86,19 @@ def classify_frame(frame: pd.DataFrame, model) -> OutputDTO:
     return model.predict(dto)  # one call for the whole minibatch
 
 
-def _one_row(frame, oid: int) -> pd.DataFrame:
+def _one_row(frame, oid: int) -> pd.DataFrame:  # helper of split_output
     """The single-row slice of `frame` for `oid`, or an empty frame when absent."""
     if frame is None or oid not in frame.index:  # the branch frame may not exist or not hold the oid
         return pd.DataFrame()
     return frame.loc[[oid]]  # list indexer keeps it a one-row DataFrame, not a Series
 
 
-def split_output(dto: OutputDTO, oid: int) -> OutputDTO:
+def split_output(dto: OutputDTO, oid: int) -> OutputDTO:  # one oid out of a batched DTO
     """The single-oid OutputDTO that build_probability_rows expects, cut from a batched one."""
     hierarchical = dto.hierarchical or {}  # a can't-predict DTO carries an empty dict
     children = hierarchical.get("children", {}) or {}  # the three branch frames
-    return OutputDTO(
+    return OutputDTO(  # same shape the model returns, one row everywhere
         _one_row(dto.probabilities, oid),  # flat 21-class row
         {"top": _one_row(hierarchical.get("top"), oid),  # top-level row
          "children": {name: _one_row(frame, oid) for name, frame in children.items()}},  # one row per branch
-    )
+    )  # build_probability_rows demands one-row frames
