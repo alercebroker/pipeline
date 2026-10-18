@@ -122,3 +122,26 @@ def test_resolve_model_version_refuses_a_mismatch():
         classify.resolve_model_version("2.1.0", expected="2.2.0")
     with pytest.raises(ValueError, match="2.1.0"):
         classify.resolve_model_version("2.2.0")
+
+
+def test_current_rows_keeps_rows_whose_oid_has_no_date_at_all():
+    """A NULL updated_date cannot be compared: rows survive when the oid has no dated row."""
+    rows = _rows([
+        (1, "Amplitude", 1, 0.5, None),            # oid 1: both rows undated -> kept
+        (1, "Amplitude", 2, 0.6, None),
+        (2, "Amplitude", 1, 0.7, "2026-08-21"),    # oid 2: an undated row next to a dated one
+        (2, "Period", 0, 9.9, None),               #        is of unknown age -> dropped
+    ])
+    out = reclassify.current_rows(rows)
+    assert sorted(zip(out["oid"], out["feature_name"])) == [
+        (1, "Amplitude"), (1, "Amplitude"), (2, "Amplitude")]
+
+
+def test_features_frame_refuses_two_rows_on_the_same_model_column():
+    """Two LUT names collapsing onto one column would silently pick one value; refuse instead."""
+    rows = _rows([
+        (1, "W1-W2", 0, 0.1, "d"),
+        (1, "W1_W2", 0, 0.2, "d"),                 # a second spelling of the same column
+    ])
+    with pytest.raises(ValueError):
+        reclassify.features_frame(rows, ["W1_W2"])

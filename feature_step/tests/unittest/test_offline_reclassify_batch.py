@@ -114,3 +114,21 @@ def test_unit_records_a_failed_oid_and_keeps_going(monkeypatch, tmp_path):
     assert manifest["n_errors"] == 1
     recorded = json.loads((tmp_path / "errors" / "unit_0000000.jsonl").read_text())
     assert recorded["oid"] == 2 and "boom 2" in recorded["error"]
+
+
+def test_unit_counts_an_incomplete_row_set_as_an_error(monkeypatch, tmp_path):
+    """Every classified oid must yield exactly the taxonomy's row count (45); fewer is an error, not ok."""
+    _wire(monkeypatch, tmp_path, with_features={1, 2}, with_lastmjd={1, 2})
+    real = B.build_probability_rows
+
+    def _short_on_two(dto, oid, *a, **k):
+        rows = real(dto, oid, *a, **k)
+        return rows[:36] if oid == 2 else rows        # oid 2 loses one branch's rows
+    monkeypatch.setattr(B, "build_probability_rows", _short_on_two)
+
+    manifest = B.process_unit((0, [1, 2]))
+    assert manifest["n_ok"] == 1
+    assert manifest["n_errors"] == 1
+    assert manifest["prob_rows"] == 45                 # the short set was not written
+    recorded = json.loads((tmp_path / "errors" / "unit_0000000.jsonl").read_text())
+    assert recorded["oid"] == 2 and "36" in recorded["error"]
