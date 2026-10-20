@@ -91,7 +91,7 @@ def test_process_unit_writes_kept_oids_in_minibatches(S, tmp_path, monkeypatch):
         """Record the call and keep the even oids."""
         calls.append(list(oids)); return np.array([o for o in oids if o % 2 == 0], dtype=np.int64)  # record, filter
     monkeypatch.setattr(S.db, "fetch_oids_with_good_detections", fake)  # fake reader
-    S._init_worker({"credentials": "creds", "schema": "multisurvey", "min_detections": 8,
+    S._init_worker({"credentials": "creds", "schema": "multisurvey", "min_detections": 8,  # worker config:
                     "minibatch": 2, "retries": 1, "out_dir": str(tmp_path)})  # worker config
     m = S.process_unit((3, np.array([1, 2, 3, 4, 5], dtype=np.int64)))  # unit 3, five oids
     assert calls == [[1, 2], [3, 4], [5]]  # minibatches of 2
@@ -113,13 +113,13 @@ def test_merge_units_concatenates_in_order_and_names_missing(S, tmp_path):  # me
 def _run(S, monkeypatch, tmp_path, oids, prefiltered, keep, extra=()):  # main() driver
     """Drive main() with both readers faked and the pool replaced by in-process calls."""
     monkeypatch.setattr(S.db, "fetch_oids_min_n_det", lambda c, n, schema: np.array(prefiltered, dtype=np.int64))  # n_det reader
-    monkeypatch.setattr(S.db, "fetch_oids_with_good_detections",
+    monkeypatch.setattr(S.db, "fetch_oids_with_good_detections",  # rb reader:
                         lambda c, o, n, schema: np.array([x for x in o if x in keep], dtype=np.int64))  # rb reader
-    monkeypatch.setattr(S, "run_pool", lambda units, cfg, workers, start_method:
+    monkeypatch.setattr(S, "run_pool", lambda units, cfg, workers, start_method:  # pool replaced:
                         [S._init_worker(cfg) or S.process_unit(u) for u in units])  # no processes
     src = tmp_path / "in.npy"; np.save(src, np.array(oids, dtype=np.int64))  # input oid file
     out = tmp_path / "out.npy"  # output oid file
-    rc = S.main(["--oid-file", str(src), "--out", str(out), "--out-dir", str(tmp_path / "run"),
+    rc = S.main(["--oid-file", str(src), "--out", str(out), "--out-dir", str(tmp_path / "run"),  # flags:
                  "--unit-size", "2", "--minibatch", "1", "--credentials", "creds", *extra])  # run the script
     return rc, out  # exit code and output path
 
@@ -172,6 +172,6 @@ def test_failed_unit_blocks_merge(S, monkeypatch, tmp_path, capsys):   # review 
     monkeypatch.setattr(S, "run_pool", pool)  # no processes
     src = tmp_path / "in.npy"; np.save(src, np.array([1, 2, 3, 4], dtype=np.int64))  # input oid file
     out = tmp_path / "out.npy"  # output oid file
-    rc = S.main(["--oid-file", str(src), "--out", str(out), "--out-dir", str(tmp_path / "run"),
+    rc = S.main(["--oid-file", str(src), "--out", str(out), "--out-dir", str(tmp_path / "run"),  # flags:
                  "--unit-size", "2", "--minibatch", "1", "--retries", "1", "--credentials", "creds"])  # run the script
     assert rc == 1 and not out.exists() and "unit 1" in capsys.readouterr().out  # failure named, no output

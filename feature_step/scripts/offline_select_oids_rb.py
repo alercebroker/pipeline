@@ -28,8 +28,8 @@ Typical use on cpu1:
 # --- thread pinning: MUST happen before numpy/BLAS are imported (see offline_run_batch) ---
 import os  # env vars first
 
-for _var in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS",
-             "NUMEXPR_NUM_THREADS", "VECLIB_MAXIMUM_THREADS"):  # every BLAS/OpenMP knob
+for _var in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS",  # every BLAS/OpenMP knob,
+             "NUMEXPR_NUM_THREADS", "VECLIB_MAXIMUM_THREADS"):  # continued
     os.environ.setdefault(_var, "1")  # one BLAS thread per worker process
 
 import argparse  # CLI
@@ -41,9 +41,9 @@ from concurrent.futures import ProcessPoolExecutor, as_completed  # the pool
 from pathlib import Path  # paths
 
 PIPE = Path(__file__).resolve().parents[2]  # .../pipeline
-for _p in (PIPE / "feature_step", PIPE / "lc_classifier", PIPE / "libs" / "idmapper",
-           PIPE / "libs" / "apf", PIPE / "libs" / "xmatch_client",
-           PIPE / "alerce_classifiers", PIPE / "feature_step" / "scripts"):  # same roots as the siblings
+for _p in (PIPE / "feature_step", PIPE / "lc_classifier", PIPE / "libs" / "idmapper",  # same roots as the siblings,
+           PIPE / "libs" / "apf", PIPE / "libs" / "xmatch_client",  # continued,
+           PIPE / "alerce_classifiers", PIPE / "feature_step" / "scripts"):  # plus scripts/ for offline_run_batch
     sys.path.insert(0, str(_p))  # importable without an install
 
 import numpy as np  # oid arrays
@@ -57,24 +57,32 @@ DEFAULT_SCHEMA = "multisurvey"  # production; db.SCHEMA's default no longer exis
 _W: dict = {}  # cfg
 
 
-def prefilter(oids: np.ndarray, credentials: str, min_detections: int, schema: str) -> np.ndarray:
+def prefilter(oids: np.ndarray, credentials: str, min_detections: int, schema: str) -> np.ndarray:  # n_det pre-filter
     """Sorted unique oids of `oids` whose object.n_det (sid 0) is >= min_detections."""
     passing = db.fetch_oids_min_n_det(credentials, min_detections, schema=schema)  # sorted int64, whole table
     return np.intersect1d(np.unique(oids), passing, assume_unique=True).astype(np.int64)  # sorted, unique, int64
 
 
-def unit_path(out_dir: Path, index: int) -> Path:
+def unit_path(out_dir: Path, index: int) -> Path:  # a unit's output file
     """Where unit `index` writes its kept oids; its existence marks the unit done."""
     return Path(out_dir) / "units" / f"unit_{index:05d}.npy"  # one file per unit
 
 
-def _init_worker(cfg: dict):
+def _save_npy_atomic(path: Path, arr: np.ndarray) -> None:  # atomic .npy writer
+    """Write `arr` to `path` exactly (no suffix added) through a .tmp file and os.replace."""
+    tmp = path.with_name(path.name + ".tmp")  # <name>.tmp next to the final file
+    with open(tmp, "wb") as fh:  # file handle, so np.save adds no extra suffix
+        np.save(fh, arr)  # write the array
+    os.replace(tmp, path)  # atomic: the file appears whole or not at all
+
+
+def _init_worker(cfg: dict):  # per-process setup
     """Per-process setup: ignore Ctrl-C and keep the run config."""
     signal.signal(signal.SIGINT, signal.SIG_IGN)  # the parent handles Ctrl-C
     _W["cfg"] = cfg  # the run configuration
 
 
-def process_unit(unit: tuple) -> dict:
+def process_unit(unit: tuple) -> dict:  # the worker's job
     """Count good detections for one unit in minibatches; write its kept oids atomically."""
     index, oids = unit  # unit number and its oid slice
     cfg = _W["cfg"]  # run configuration
@@ -82,21 +90,18 @@ def process_unit(unit: tuple) -> dict:
     kept = []  # kept oids per minibatch
     for start in range(0, len(oids), cfg["minibatch"]):  # one round trip per minibatch
         chunk = oids[start:start + cfg["minibatch"]]  # this minibatch
-        kept.append(R._retry(lambda: db.fetch_oids_with_good_detections(
-            cfg["credentials"], chunk, cfg["min_detections"], schema=cfg["schema"]),
-            cfg["retries"], f"unit {index} rb count"))  # sorted subset of the chunk
+        kept.append(R._retry(lambda: db.fetch_oids_with_good_detections(  # rb count with backoff:
+            cfg["credentials"], chunk, cfg["min_detections"], schema=cfg["schema"]),  # reader arguments,
+            cfg["retries"], f"unit {index} rb count"))  # attempts and label; sorted subset of the chunk
     out = np.concatenate(kept).astype(np.int64) if kept else np.empty(0, dtype=np.int64)  # the unit's kept oids
     path = unit_path(Path(cfg["out_dir"]), index)  # final name
     path.parent.mkdir(parents=True, exist_ok=True)  # units/ on first write
-    tmp = path.with_name(path.name + ".tmp")  # unit_NNNNN.npy.tmp
-    with open(tmp, "wb") as fh:  # file handle, so np.save adds no extra suffix
-        np.save(fh, out)  # write the array
-    os.replace(tmp, path)  # atomic: the done-marker appears whole or not at all
-    return {"unit": index, "n_in": int(len(oids)), "n_kept": int(len(out)),
-            "seconds": round(time.perf_counter() - t0, 2)}  # what the parent prints
+    _save_npy_atomic(path, out)  # the done-marker, last
+    return {"unit": index, "n_in": int(len(oids)), "n_kept": int(len(out)),  # counts and
+            "seconds": round(time.perf_counter() - t0, 2)}  # wall clock, printed by the parent
 
 
-def merge_units(out_dir: Path, n_units: int) -> np.ndarray:
+def merge_units(out_dir: Path, n_units: int) -> np.ndarray:  # unit files -> one array
     """Concatenate units 0..n_units-1 in order; raise FileNotFoundError naming any missing unit."""
     missing = [i for i in range(n_units) if not unit_path(out_dir, i).exists()]  # units without a file
     if missing:  # an incomplete run must not produce an output
@@ -105,17 +110,17 @@ def merge_units(out_dir: Path, n_units: int) -> np.ndarray:
     return np.concatenate(parts).astype(np.int64) if parts else np.empty(0, dtype=np.int64)  # globally sorted
 
 
-def run_pool(units: list, cfg: dict, workers: int, start_method: str) -> list:
+def run_pool(units: list, cfg: dict, workers: int, start_method: str) -> list:  # the only pool user
     """Run `units` on a process pool; a unit that raises comes back as {"unit", "error"}."""
     ctx = mp.get_context(start_method)  # fork or spawn
     results = []  # one dict per unit
-    with ProcessPoolExecutor(max_workers=workers, mp_context=ctx,
+    with ProcessPoolExecutor(max_workers=workers, mp_context=ctx,  # pool size and start method,
                              initializer=_init_worker, initargs=(cfg,)) as ex:  # workers get cfg
         futures = {ex.submit(process_unit, u): u[0] for u in units}  # all units queued
         for i, fut in enumerate(as_completed(futures), 1):  # as each unit lands
             try:  # the unit's result, or its exception
                 m = fut.result()  # raises what process_unit raised
-                print(f"[{i}/{len(units)}] unit {m['unit']}: {m['n_in']:,} -> {m['n_kept']:,}, "
+                print(f"[{i}/{len(units)}] unit {m['unit']}: {m['n_in']:,} -> {m['n_kept']:,}, "  # counts,
                       f"{m['seconds']:.1f}s", flush=True)  # one line per unit
             except Exception as exc:  # a failed unit is data, not a crash
                 m = {"unit": futures[fut], "error": repr(exc)}  # stays without a file; rerun retries it
@@ -124,16 +129,17 @@ def run_pool(units: list, cfg: dict, workers: int, start_method: str) -> list:
     return results  # every unit, success or error
 
 
-def main(argv=None) -> int:
+def main(argv=None) -> int:  # CLI entry
     """Parse the flags, pre-filter by n_det, run the rb count per unit, merge into --out."""
     ap = argparse.ArgumentParser(  # flag names follow the sibling runners
-        description="Select oids with >= N ZTF detections after dropping rb < 0.55.",
+        description="Select oids with >= N ZTF detections after dropping rb < 0.55.",  # --help header
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)  # defaults in --help
     ap.add_argument("--oid-file", required=True, help="input oids, a .npy or newline .txt file.")  # the only input
-    ap.add_argument("--out", help="output .npy of kept oids (+ .json sidecar).")  # final list
-    ap.add_argument("--out-dir", help="run directory: run.json and units/.")  # checkpoint root
-    ap.add_argument("--min-detections", type=int, default=8,
-                    help="detections an object must keep after the rb cut.")  # N
+    ap.add_argument("--out", required=True,  # final list,
+                    help="output .npy of kept oids, written as named (+ .json sidecar).")  # no suffix added
+    ap.add_argument("--out-dir", required=True, help="run directory: run.json and units/.")  # checkpoint root
+    ap.add_argument("--min-detections", type=int, default=8,  # N,
+                    help="detections an object must keep after the rb cut.")  # its help
     ap.add_argument("--credentials", default=R.DEFAULT_CREDENTIALS, help="read-only credentials JSON.")  # read account
     ap.add_argument("--schema", default=DEFAULT_SCHEMA, help="schema holding object and detection.")  # multisurvey
     ap.add_argument("--workers", type=int, default=R.default_workers(), help="worker processes.")  # pool size
@@ -141,13 +147,11 @@ def main(argv=None) -> int:
     ap.add_argument("--minibatch", type=int, default=500, help="oids per DB round trip.")  # query size
     ap.add_argument("--max-units", type=int, help="run at most N units this pass (smoke); --out is not written.")  # smoke
     ap.add_argument("--retries", type=int, default=4, help="attempts per DB call before failing the unit.")  # R._retry
-    ap.add_argument("--start-method", default=R.default_start_method(), choices=["fork", "spawn"],
-                    help="process start method.")  # fork on Linux
-    ap.add_argument("--force-resume", action="store_true",
-                    help="resume even if run.json does not match (dangerous).")  # fingerprint override
+    ap.add_argument("--start-method", default=R.default_start_method(), choices=["fork", "spawn"],  # fork on Linux,
+                    help="process start method.")  # its help
+    ap.add_argument("--force-resume", action="store_true",  # fingerprint override,
+                    help="resume even if run.json does not match (dangerous).")  # its help
     args = ap.parse_args(argv)  # the run's flags
-    if not args.out or not args.out_dir:  # both are needed for a real run
-        ap.error("--out and --out-dir are required")  # exits 2
 
     sys.stdout.reconfigure(line_buffering=True)  # progress through a redirected log
     t_run = time.perf_counter()  # run clock
@@ -162,12 +166,12 @@ def main(argv=None) -> int:
 
     out_dir = Path(args.out_dir)  # the run directory
     out_dir.mkdir(parents=True, exist_ok=True)  # created on first run
-    R.check_or_write_fingerprint(out_dir, R.run_fingerprint(oids, args.unit_size),
+    R.check_or_write_fingerprint(out_dir, R.run_fingerprint(oids, args.unit_size),  # oid list + unit size,
                                  args.force_resume)  # refuses a different oid list
     units = R.make_units(oids, args.unit_size)  # contiguous slices
     todo = [u for u in units if not unit_path(out_dir, u[0]).exists()]  # units without a file
-    print(f"plan: {len(units):,} units of {args.unit_size:,} ({args.minibatch}-oid minibatches, "
-          f"{args.workers} workers); {len(units) - len(todo):,} already done, {len(todo):,} to go")  # the plan
+    print(f"plan: {len(units):,} units of {args.unit_size:,} ({args.minibatch}-oid minibatches, "  # the plan,
+          f"{args.workers} workers); {len(units) - len(todo):,} already done, {len(todo):,} to go")  # and progress
     if args.max_units is not None:  # a smoke or probe
         todo = todo[:args.max_units]  # cap this pass
         print(f"--max-units: running {len(todo)} unit(s) this pass")  # say so
@@ -189,15 +193,16 @@ def main(argv=None) -> int:
         return 1  # incomplete
 
     kept = merge_units(out_dir, len(units))  # sorted, every unit present
-    Path(args.out).parent.mkdir(parents=True, exist_ok=True)  # output directory
-    np.save(args.out, kept)  # the selected oids
+    out = Path(args.out)  # exactly the name given
+    out.parent.mkdir(parents=True, exist_ok=True)  # output directory
+    _save_npy_atomic(out, kept)  # the selected oids, atomically
     elapsed = round(time.perf_counter() - t_run, 2)  # whole run
-    R._write_json(Path(args.out + ".json"), {
+    R._write_json(Path(args.out + ".json"), {  # sidecar next to --out:
         "n_input": int(len(raw)), "n_after_n_det": int(len(oids)), "n_after_rb": int(len(kept)),  # counts
         "min_detections": args.min_detections, "schema": args.schema,  # the rule
         "unit_size": args.unit_size, "elapsed_s": elapsed})  # the run
-    print(f"done: {len(raw):,} input -> {len(oids):,} after n_det -> {len(kept):,} after rb; "
-          f"wrote {args.out} ({elapsed:.0f}s)")  # final counts
+    print(f"done: {len(raw):,} input -> {len(oids):,} after n_det -> {len(kept):,} after rb; "  # final counts,
+          f"wrote {args.out} ({elapsed:.0f}s)")  # and where
     return 0  # success
 
 
