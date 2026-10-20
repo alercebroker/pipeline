@@ -221,3 +221,33 @@ def test_out_without_npy_suffix_returns_1(S, monkeypatch, tmp_path):  # review n
     rc = S.main(["--oid-file", str(src), "--out", str(out), "--out-dir", str(tmp_path / "run"),  # flags:
                  "--credentials", "creds"])  # run the script
     assert rc == 1 and not out.exists() and not (tmp_path / "run").exists()  # refused, nothing written
+
+
+def test_resume_with_different_oid_file_is_refused(S, monkeypatch, tmp_path):  # round-2 regression
+    """Pins the input digest: a resume on the same --out-dir with another --oid-file is refused, no --out."""
+    monkeypatch.setattr(S.db, "fetch_oids_min_n_det", lambda c, n, schema: np.array([1, 3, 5, 7, 9, 11], dtype=np.int64))  # n_det reader
+    monkeypatch.setattr(S.db, "fetch_oids_with_good_detections",  # rb reader:
+                        lambda c, o, n, schema: np.array(list(o), dtype=np.int64))  # keeps all
+    monkeypatch.setattr(S, "run_pool", lambda units, cfg, workers, start_method:  # a kill after the first unit:
+                        [S._init_worker(cfg) or S.process_unit(units[0])])  # one unit landed
+    src, out, run_dir = tmp_path / "in.npy", tmp_path / "out.npy", tmp_path / "run"  # input, output, run directory
+    argv = ["--oid-file", str(src), "--out", str(out), "--out-dir", str(run_dir),  # flags:
+            "--unit-size", "2", "--minibatch", "1", "--credentials", "creds"]  # small units
+    np.save(src, np.array([1, 3, 5, 7, 9], dtype=np.int64))  # pass 1 input
+    assert S.main(argv) == 1 and not out.exists()  # pass 1: incomplete, no output
+    np.save(src, np.array([1, 3, 5, 7, 9, 11], dtype=np.int64))  # pass 2: a different input list
+    with pytest.raises(SystemExit):  # check_or_write_fingerprint refuses
+        S.main(argv)  # pass 2
+    assert not out.exists()  # nothing merged
+
+
+def test_partial_run_names_missing_units(S, monkeypatch, tmp_path, capsys):  # round-2 minor
+    """Pins the state message: units that never landed are named as MISSING, no --out."""
+    monkeypatch.setattr(S.db, "fetch_oids_min_n_det", lambda c, n, schema: np.array([1, 2, 3, 4], dtype=np.int64))  # n_det reader
+    monkeypatch.setattr(S, "run_pool", lambda units, cfg, workers, start_method: [])  # the pool died silently
+    src, out = tmp_path / "in.npy", tmp_path / "out.npy"  # input and output files
+    np.save(src, np.array([1, 2, 3, 4], dtype=np.int64))  # two units of two
+    rc = S.main(["--oid-file", str(src), "--out", str(out), "--out-dir", str(tmp_path / "run"),  # flags:
+                 "--unit-size", "2", "--credentials", "creds"])  # run the script
+    text = capsys.readouterr().out  # the log
+    assert rc == 1 and not out.exists() and "MISSING unit 0" in text and "MISSING unit 1" in text  # both named

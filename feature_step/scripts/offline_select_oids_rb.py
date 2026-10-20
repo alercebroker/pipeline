@@ -43,6 +43,7 @@ for _var in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS",  # ev
     os.environ.setdefault(_var, "1")  # one BLAS thread per worker process
 
 import argparse  # CLI
+import hashlib  # digest of the raw input list
 import multiprocessing as mp  # start-method context
 import signal  # workers ignore Ctrl-C; the parent handles it
 import sys  # path setup
@@ -170,8 +171,8 @@ def main(argv=None) -> int:  # CLI entry
         print("--out must end in .npy (R.load_oids reads anything else as text)")  # say why
         return 1  # before any DB work
 
-    raw = R.load_oids(args.oid_file)  # input oids
-    print(f"input: {len(raw):,} oids from {args.oid_file}")  # input count
+    raw = np.unique(R.load_oids(args.oid_file))  # input oids, sorted and deduplicated
+    print(f"input: {len(raw):,} unique oids from {args.oid_file}")  # input count
     out_dir = Path(args.out_dir)  # the run directory
     out_dir.mkdir(parents=True, exist_ok=True)  # created on first run
     pre_path = out_dir / "prefiltered.npy"  # the persisted pre-filter: n_det only grows, so never re-query
@@ -189,6 +190,8 @@ def main(argv=None) -> int:  # CLI entry
     fingerprint = R.run_fingerprint(oids, args.unit_size)  # persisted oid list + unit size
     fingerprint["min_detections"] = args.min_detections  # a resume under another N is refused
     fingerprint["schema"] = args.schema  # and under another schema
+    fingerprint["input_sha1"] = hashlib.sha1(np.ascontiguousarray(raw).tobytes()).hexdigest()  # and another --oid-file
+    fingerprint["n_input"] = int(len(raw))  # its unique size, readable in run.json
     R.check_or_write_fingerprint(out_dir, fingerprint, args.force_resume)  # refuses a different run
     units = R.make_units(oids, args.unit_size)  # contiguous slices
     todo = [u for u in units if not unit_path(out_dir, u[0]).exists()]  # units without a file
@@ -207,10 +210,13 @@ def main(argv=None) -> int:  # CLI entry
         results = run_pool(todo, cfg, args.workers, args.start_method)  # module global: tests replace it
 
     failed = [r for r in results if "error" in r]  # units that raised
-    done = sum(unit_path(out_dir, u[0]).exists() for u in units)  # unit files present
-    if failed or args.max_units is not None or done < len(units):  # partial run (incl. units that never landed): no output
+    missing = [u[0] for u in units if not unit_path(out_dir, u[0]).exists()]  # units without a file
+    done = len(units) - len(missing)  # unit files present
+    if failed or args.max_units is not None or missing:  # partial run (incl. units that never landed): no output
         for r in failed:  # name each one
             print(f"FAILED unit {r['unit']}: {r['error']}")  # named in the log
+        for i in missing:  # name every unit without a file
+            print(f"MISSING unit {i}")  # failed, capped or never landed
         print(f"state: {done:,}/{len(units):,} units done; {args.out} not written, rerun to resume")  # where it stands
         return 1  # incomplete
 
