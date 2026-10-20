@@ -161,7 +161,8 @@ def main(argv=None) -> int:  # CLI entry
     ap.add_argument("--start-method", default=R.default_start_method(), choices=["fork", "spawn"],  # fork on Linux,
                     help="process start method.")  # its help
     ap.add_argument("--force-resume", action="store_true",  # fingerprint override,
-                    help="resume even if run.json does not match (dangerous).")  # its help
+                    help="resume even if run.json does not match (dangerous): the first pass's "  # its help,
+                         "prefiltered.npy is reused even when --min-detections differs.")  # cut with the first N
     args = ap.parse_args(argv)  # the run's flags
 
     sys.stdout.reconfigure(line_buffering=True)  # progress through a redirected log

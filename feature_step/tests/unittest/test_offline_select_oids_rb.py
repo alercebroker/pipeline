@@ -110,13 +110,13 @@ def test_merge_units_concatenates_in_order_and_names_missing(S, tmp_path):  # me
         S.merge_units(tmp_path, 3)  # asks for three units
 
 
-def _run(S, monkeypatch, tmp_path, oids, prefiltered, keep, extra=()):  # main() driver
-    """Drive main() with both readers faked and the pool replaced by in-process calls."""
+def _run(S, monkeypatch, tmp_path, oids, prefiltered, keep, extra=(), pool=None):  # main() driver
+    """Drive main() with both readers faked and the pool replaced by `pool`, or by in-process calls."""
     monkeypatch.setattr(S.db, "fetch_oids_min_n_det", lambda c, n, schema: np.array(prefiltered, dtype=np.int64))  # n_det reader
     monkeypatch.setattr(S.db, "fetch_oids_with_good_detections",  # rb reader:
                         lambda c, o, n, schema: np.array([x for x in o if x in keep], dtype=np.int64))  # rb reader
-    monkeypatch.setattr(S, "run_pool", lambda units, cfg, workers, start_method:  # pool replaced:
-                        [S._init_worker(cfg) or S.process_unit(u) for u in units])  # no processes
+    monkeypatch.setattr(S, "run_pool", pool or (lambda units, cfg, workers, start_method:  # the given pool, or:
+                        [S._init_worker(cfg) or S.process_unit(u) for u in units]))  # no processes
     src = tmp_path / "in.npy"; np.save(src, np.array(oids, dtype=np.int64))  # input oid file
     out = tmp_path / "out.npy"  # output oid file
     rc = S.main(["--oid-file", str(src), "--out", str(out), "--out-dir", str(tmp_path / "run"),  # flags:
@@ -134,11 +134,27 @@ def test_main_writes_sorted_npy_and_json(S, monkeypatch, tmp_path):     # criter
 
 def test_main_resumes_skipping_finished_units(S, monkeypatch, tmp_path):   # criterion 4
     """Pins resume: a rerun with every unit file present runs nothing and only merges."""
-    _run(S, monkeypatch, tmp_path, [1, 2, 3, 4], [1, 2, 3, 4], {1, 2, 3, 4})  # first pass
-    seen = []  # units the second pass would run
-    monkeypatch.setattr(S, "run_pool", lambda units, cfg, w, s: seen.extend(u[0] for u in units) or [])  # record only
-    rc, out = _run(S, monkeypatch, tmp_path, [1, 2, 3, 4], [1, 2, 3, 4], {1, 2, 3, 4})  # second pass
-    assert rc == 0 and seen == []            # both unit files exist: nothing to run, merge only
+    _run(S, monkeypatch, tmp_path, [1, 2, 3, 4], [1, 2, 3, 4], {1, 2, 3, 4})  # first pass, complete
+    seen = []  # units the second pass hands to the pool
+    def recorder(units, cfg, workers, start_method):  # record only
+        """Record the unit indexes handed to the pool; run nothing."""
+        seen.extend(u[0] for u in units)  # the indexes
+        return []  # no results
+    rc, out = _run(S, monkeypatch, tmp_path, [1, 2, 3, 4], [1, 2, 3, 4], {1, 2, 3, 4}, pool=recorder)  # second pass
+    assert rc == 0 and seen == [] and np.load(out).tolist() == [1, 2, 3, 4]  # nothing to run, merge only
+
+
+def test_main_resume_hands_only_unfinished_units_to_pool(S, monkeypatch, tmp_path):  # criterion 4, partial pass 1
+    """Pins resume after --max-units 1: pass 2 hands only unit 1 to the pool and merges the full list."""
+    rc, _ = _run(S, monkeypatch, tmp_path, [1, 2, 3, 4], [1, 2, 3, 4], {1, 2, 3, 4}, extra=("--max-units", "1"))  # unit 0 only
+    assert rc == 1  # pass 1 partial
+    seen = []  # units the second pass hands to the pool
+    def recorder(units, cfg, workers, start_method):  # record, then run in-process
+        """Record the unit indexes handed to the pool, then process them in-process."""
+        seen.extend(u[0] for u in units)  # the indexes
+        return [S._init_worker(cfg) or S.process_unit(u) for u in units]  # run them
+    rc, out = _run(S, monkeypatch, tmp_path, [1, 2, 3, 4], [1, 2, 3, 4], {1, 2, 3, 4}, pool=recorder)  # second pass
+    assert rc == 0 and seen == [1] and np.load(out).tolist() == [1, 2, 3, 4]  # only unit 1 ran, full output
 
 
 def test_empty_prefilter_exits_1(S, monkeypatch, tmp_path, capsys):   # review focus 2
