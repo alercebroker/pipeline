@@ -32,9 +32,9 @@ Typical use (the squidward 2.2.0 rerun over the oids of the 2.1.0 dump):
     python scripts/offline_reclassify_batch.py \\
         --oid-file $RUN/oids/squidward_v210_oids.npy --out-dir $RUN/reclass_220 \\
         --schema multisurvey --model-version 2.2.0 \\
-        --credentials features/offline/credentials.json \\
+        --credentials features/offline/read_credentials.json \\
         --workers 32 --stall-timeout 7200 \\
-        --load-db --write-credentials features/offline/credentials.json --no-shards
+        --load-db --write-credentials $WRITE_CREDS --no-shards  # superuser json, named by the operator
 """
 # --- thread pinning: MUST happen before numpy/BLAS are imported (see offline_run_batch) ---
 import os  # env vars first
