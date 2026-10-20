@@ -401,3 +401,92 @@ def fetch_feature_version_id(credentials_json: str, version_name: str, sid: int 
             f"{schema}.feature_version_lut — seed it before writing features"
         )
     return int(version_id)
+
+
+def fetch_feature_rows(credentials_json: str, oids: list, sid: int = SID,  # oids: any int sequence
+                       schema: Optional[str] = None) -> pd.DataFrame:  # schema: None -> db.SCHEMA
+    """Stored feature rows of `oids`, named through <schema>.feature_name_lut.
+
+    Columns [oid, feature_name, band, value, updated_date], one row per stored
+    (oid, feature, band). The names are the LUT's spelling, not the model's; see
+    reclassify.model_column. updated_date rides along so the caller can drop
+    rows an older computation left behind (reclassify.current_rows).
+    """
+    schema = schema or SCHEMA  # trusted operator input, same convention as the other readers
+    engine = _make_engine(credentials_json)  # cached per process
+    query = text(f"""
+        SELECT f.oid, l.feature_name, f.band, f.value, f.updated_date
+        FROM {schema}.feature f
+        JOIN {schema}.feature_name_lut l ON l.feature_id = f.feature_id AND l.sid = f.sid
+        WHERE f.oid = ANY(:oids) AND f.sid = :sid
+    """)  # PK (oid, sid, feature_id, band): one index range per oid, no scan; the LUT join names the ids
+    with engine.connect() as conn:  # one connection from the per-process pool
+        return pd.read_sql_query(query, conn, params={"oids": _py_oids(oids), "sid": sid})  # plain ints for psycopg2
+
+
+def fetch_probability_lastmjd(credentials_json: str, oids: list, classifier_id: int = 5,  # 5 = flat BHRF
+                              sid: int = SID, schema: Optional[str] = None) -> dict:  # {oid: lastmjd}
+    """{oid: lastmjd} of the stored probability rows of one classifier for `oids`.
+
+    The lastmjd a reclassification stamps is the one the stored features were
+    computed at, which is what the stored probability rows carry (the same run
+    wrote both). max() over the rows of one classifier, by primary key, so no
+    scan; an oid with no stored row is simply absent from the dict.
+    """
+    schema = schema or SCHEMA  # trusted operator input
+    engine = _make_engine(credentials_json)  # cached per process
+    query = text(f"""
+        SELECT oid, max(lastmjd) AS lastmjd
+        FROM {schema}.probability
+        WHERE oid = ANY(:oids) AND sid = :sid AND classifier_id = :cid
+        GROUP BY oid
+    """)  # PK (oid, sid, classifier_id, class_id): index lookups only; the GROUP BY folds that classifier's rows
+    with engine.connect() as conn:  # one connection from the per-process pool
+        frame = pd.read_sql_query(query, conn, params={"oids": _py_oids(oids), "sid": sid,  # plain ints
+                                                       "cid": classifier_id})  # one classifier only
+    return {int(o): float(m) for o, m in zip(frame["oid"], frame["lastmjd"])}  # plain scalars
+
+
+def fetch_oids_min_n_det(credentials_json: str, min_n_det: int,  # min_n_det: object.n_det floor
+                         schema: str = SCHEMA) -> np.ndarray:  # schema: trusted operator input
+    """Sorted int64 oids of ZTF objects with `object.n_det >= min_n_det`.
+
+    Cheap pre-filter: n_det counts every detection, rb-bad ones included, so
+    this is an upper bound of the oids that pass the rb-aware count.
+    """
+    engine = _make_engine(credentials_json)  # cached per process
+    query = text(f"""
+        SELECT oid FROM {schema}.object
+        WHERE sid = :sid AND n_det >= :min_n_det
+    """)  # one pass over object, filtered by sid and n_det
+    parts = []  # int64 chunks, concatenated at the end
+    with engine.connect().execution_options(stream_results=True) as conn:  # server-side cursor, bounded memory
+        for chunk in pd.read_sql_query(query, conn, chunksize=1_000_000,  # stream 1M rows at a time
+                                       params={"sid": SID, "min_n_det": int(min_n_det)}):  # plain ints
+            parts.append(chunk["oid"].to_numpy(dtype=np.int64))  # keep only the oid column as int64
+    if not parts:  # no chunk at all
+        return np.empty(0, dtype=np.int64)  # empty result
+    return np.sort(np.concatenate(parts))  # sort in numpy, not in the database
+
+
+def fetch_oids_with_good_detections(credentials_json: str, oids,  # oids: any int sequence
+                                    min_detections: int,  # min_detections: floor of surviving detections
+                                    schema: str = SCHEMA) -> np.ndarray:  # schema: trusted operator input
+    """Sorted int64 oids among `oids` with at least `min_detections` ZTF detections after the rb cut.
+
+    A detection survives when its ztf_detection row has rb NULL or rb >= 0.55
+    (the cut the feature step applies before computing features).
+    """
+    engine = _make_engine(credentials_json)  # cached per process
+    query = text(f"""
+        SELECT d.oid
+        FROM {schema}.detection d
+        JOIN {schema}.ztf_detection z ON d.oid = z.oid AND d.measurement_id = z.measurement_id
+        WHERE d.oid IN :oids AND d.sid = :sid AND (z.rb IS NULL OR z.rb >= 0.55)
+        GROUP BY d.oid
+        HAVING count(*) >= :min_detections
+    """).bindparams(sa.bindparam("oids", expanding=True))  # expanding IN runs on postgres and sqlite
+    with engine.connect() as conn:  # one connection from the per-process pool
+        frame = pd.read_sql_query(query, conn, params={"oids": _py_oids(oids), "sid": SID,  # plain ints
+                                                       "min_detections": int(min_detections)})  # plain int
+    return np.sort(np.asarray(frame["oid"], dtype=np.int64))  # sorted int64, empty when none

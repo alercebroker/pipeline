@@ -32,8 +32,13 @@ DEFAULT_MODEL_CLASS = "alerce_classifiers.squidward.model.SquidwardFeaturesClass
 DEFAULT_MAPPER_CLASS = "alerce_classifiers.squidward.mapper.SquidwardMapper"
 
 
-def resolve_model_version(reported: str) -> str:
+def resolve_model_version(reported: str, expected: str = None) -> str:  # expected: None -> the module pin
     """The model's self-reported version -> the version we actually stamp.
+
+    `expected` overrides the pinned MODEL_VERSION for a run that deliberately
+    loads another artifact with the same feature list and taxonomy (squidward
+    2.2.0, verified identical to 2.1.0 in both); the stamped classifier_version
+    then follows it. Without it the pin below applies unchanged.
 
     alerce_classifiers derives it by scanning MODEL_PATH for a version-shaped
     path component, so a local pickle (which OFFLINE_VS_LEGACY_VALIDATION.md §3
@@ -47,24 +52,27 @@ def resolve_model_version(reported: str) -> str:
     2.1.0, so a different artifact would write probabilities whose class ids
     mean something else.
     """
+    pinned = expected or MODEL_VERSION  # the version this run stamps and accepts
     if reported in (None, "", "no_version"):
         log.info("model reports no version (derived from MODEL_PATH); "
-                 "stamping the pinned %s", MODEL_VERSION)
-        return MODEL_VERSION
-    if reported != MODEL_VERSION:
+                 "stamping the pinned %s", pinned)  # a local pickle outside a version dir
+        return pinned  # the caller's version, or the module pin
+    if reported != pinned:  # a URL or dir that names another version
         raise ValueError(
-            f"model at MODEL_PATH reports version {reported!r}, but this code is "
-            f"pinned to {MODEL_VERSION} (feature list, taxonomy and "
+            f"model at MODEL_PATH reports version {reported!r}, but this run is "
+            f"pinned to {pinned} (feature list, taxonomy and "
             f"classifier_version all assume it) -- refusing to classify"
         )
     return reported
 
 
-def load_squidward_model(model_class: str = DEFAULT_MODEL_CLASS):
+def load_squidward_model(model_class: str = DEFAULT_MODEL_CLASS,  # the live step's class by default
+                         expected_version: str = None):  # None keeps the 2.1.0 pin for every existing caller
     """Instantiate the BHRF classifier from env vars (mirrors the deployed step).
 
     Returns (model, classifier_name, classifier_version). The version is the
-    pinned MODEL_VERSION; see resolve_model_version for why it is not simply the
+    pinned MODEL_VERSION, or `expected_version` when the caller runs another
+    artifact on purpose; see resolve_model_version for why it is not simply the
     one the model derives from the path.
     """
     model_path = os.getenv("MODEL_PATH")
@@ -74,7 +82,7 @@ def load_squidward_model(model_class: str = DEFAULT_MODEL_CLASS):
     mapper = get_class(mapper_class)()
     model = get_class(model_class)(model_path=model_path, mapper=mapper)
     name = os.getenv("CLASSIFIER_NAME", model_class.split(".")[-1])
-    return model, name, resolve_model_version(model.model_version)
+    return model, name, resolve_model_version(model.model_version, expected_version)  # the caller's pin wins
 
 
 def features_message_to_dto(out_message: dict):
