@@ -31,6 +31,7 @@ def _dets(engine, oid, rbs, sid=0):  # insert helper
 
 
 def test_min_n_det_reader_filters_sid_and_threshold_sorted(engine):  # n_det pre-filter
+    """Pins the n_det reader: sid 0 only, n_det >= threshold, sorted int64."""
     with engine.begin() as c:  # seed objects
         c.exec_driver_sql(f"INSERT INTO {SCHEMA}.object VALUES (30, 0, 8), (10, 0, 9), (20, 0, 7), (40, 1, 50)")  # 40 is another survey
     out = db.fetch_oids_min_n_det("creds", 8, schema=SCHEMA)  # run the reader
@@ -38,16 +39,19 @@ def test_min_n_det_reader_filters_sid_and_threshold_sorted(engine):  # n_det pre
 
 
 def test_rb_count_drops_oid_with_one_rb_below_threshold(engine):  # spec criterion 3, first case
+    """Pins spec criterion 3: 7 good + 1 rb < 0.55 detection leaves 7, below 8, so the oid is dropped."""
     _dets(engine, 1, [0.9] * 7 + [0.5])  # 7 good, 1 bad
     assert db.fetch_oids_with_good_detections("creds", [1], 8, schema=SCHEMA).tolist() == []  # only 7 survive
 
 
 def test_rb_count_keeps_oid_with_null_rb(engine):  # spec criterion 3, second case
+    """Pins spec criterion 3: rb == 0.55 and rb NULL both count, so 8 survive and the oid is kept."""
     _dets(engine, 2, [0.55] * 7 + [None])  # boundary rb and a NULL
     assert db.fetch_oids_with_good_detections("creds", [2], 8, schema=SCHEMA).tolist() == [2]  # all 8 survive
 
 
 def test_rb_count_ignores_other_sid_and_oids_not_asked(engine):  # sid and oid scoping
+    """Pins the sid filter and the oid list: other-survey detections and unasked oids never appear."""
     _dets(engine, 3, [0.9] * 8, sid=1)  # right count, wrong survey
     _dets(engine, 4, [0.9] * 8)  # passes but not in the list
     _dets(engine, 5, [0.9] * 8)  # passes and asked
@@ -55,6 +59,7 @@ def test_rb_count_ignores_other_sid_and_oids_not_asked(engine):  # sid and oid s
 
 
 def test_rb_count_accepts_numpy_oids(engine):  # review focus 1
+    """Pins numpy input: an int64 array of oids is accepted and the result is int64."""
     _dets(engine, 6, [0.9] * 8)  # passes
     out = db.fetch_oids_with_good_detections("creds", np.array([6], dtype=np.int64), 8, schema=SCHEMA)  # numpy input
     assert out.tolist() == [6] and out.dtype == np.int64  # plain result, int64
