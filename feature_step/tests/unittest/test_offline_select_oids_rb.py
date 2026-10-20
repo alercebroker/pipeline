@@ -175,3 +175,49 @@ def test_failed_unit_blocks_merge(S, monkeypatch, tmp_path, capsys):   # review 
     rc = S.main(["--oid-file", str(src), "--out", str(out), "--out-dir", str(tmp_path / "run"),  # flags:
                  "--unit-size", "2", "--minibatch", "1", "--retries", "1", "--credentials", "creds"])  # run the script
     assert rc == 1 and not out.exists() and "unit 1" in capsys.readouterr().out  # failure named, no output
+
+
+def test_main_fingerprint_carries_rule(S, monkeypatch, tmp_path):  # review note 2
+    """Pins run.json: the fingerprint carries --min-detections and --schema."""
+    rc, out = _run(S, monkeypatch, tmp_path, [1, 2, 3], [1, 2, 3], {1, 2, 3})  # full run
+    fp = json.loads((tmp_path / "run" / "run.json").read_text())  # the fingerprint
+    assert rc == 0 and fp["min_detections"] == 8 and fp["schema"] == "multisurvey"  # the rule is in it
+
+
+def test_resume_uses_persisted_prefilter_not_live_query(S, monkeypatch, tmp_path):  # review finding 1
+    """Pins resume: pass 2 loads <out-dir>/prefiltered.npy and never re-runs the n_det query."""
+    monkeypatch.setattr(S.db, "fetch_oids_min_n_det", lambda c, n, schema: np.array([1, 3, 5, 7, 9], dtype=np.int64))  # pass 1 reader
+    monkeypatch.setattr(S.db, "fetch_oids_with_good_detections",  # rb reader:
+                        lambda c, o, n, schema: np.array(list(o), dtype=np.int64))  # keeps all
+    def first_only(units, cfg, workers, start_method):  # a kill after the first unit
+        """Process only the first unit, as if the run died after it."""
+        S._init_worker(cfg)  # configure
+        return [S.process_unit(units[0])]  # one unit landed
+    monkeypatch.setattr(S, "run_pool", first_only)  # pass 1 pool
+    src = tmp_path / "in.npy"; np.save(src, np.array([1, 3, 5, 7, 9], dtype=np.int64))  # input oid file
+    out, run_dir = tmp_path / "out.npy", tmp_path / "run"  # output file and run directory
+    argv = ["--oid-file", str(src), "--out", str(out), "--out-dir", str(run_dir),  # flags:
+            "--unit-size", "2", "--minibatch", "1", "--credentials", "creds"]  # small units
+    assert S.main(argv) == 1 and not out.exists()  # pass 1: incomplete, no output
+    def no_query(c, n, schema):  # pass 2 must not query object
+        """Fail if the pre-filter runs on resume."""
+        raise AssertionError("pre-filter must not run on resume")  # loud
+    monkeypatch.setattr(S.db, "fetch_oids_min_n_det", no_query)  # pass 2 reader
+    monkeypatch.setattr(S, "run_pool", lambda units, cfg, workers, start_method:  # pass 2 pool:
+                        [S._init_worker(cfg) or S.process_unit(u) for u in units])  # every unit given
+    assert S.main(argv) == 0  # pass 2 completes
+    assert np.load(out).tolist() == [1, 3, 5, 7, 9] and (run_dir / "prefiltered.npy").exists()  # whole list, persisted
+
+
+def test_out_without_npy_suffix_returns_1(S, monkeypatch, tmp_path):  # review note 3
+    """Pins --out validation: a non-.npy name returns 1 before any reader runs, nothing written."""
+    def never(*a, **k):  # any DB call is a failure
+        """Fail if a reader is called."""
+        raise AssertionError("no DB work before --out is validated")  # loud
+    monkeypatch.setattr(S.db, "fetch_oids_min_n_det", never)  # n_det reader
+    monkeypatch.setattr(S.db, "fetch_oids_with_good_detections", never)  # rb reader
+    src = tmp_path / "in.npy"; np.save(src, np.array([1, 2], dtype=np.int64))  # input oid file
+    out = tmp_path / "list.bin"  # wrong suffix
+    rc = S.main(["--oid-file", str(src), "--out", str(out), "--out-dir", str(tmp_path / "run"),  # flags:
+                 "--credentials", "creds"])  # run the script
+    assert rc == 1 and not out.exists() and not (tmp_path / "run").exists()  # refused, nothing written

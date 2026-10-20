@@ -18,7 +18,17 @@ run.json (the oid list + unit size fingerprint, shared with offline_run_batch)
 refuses a resume against a different list. --out is written only when every
 unit landed in this run's directory and --max-units was not given.
 
-Typical use on cpu1:
+The pre-filtered list is saved once as <out-dir>/prefiltered.npy; every later
+pass on the same --out-dir loads it instead of querying object again, so the
+unit slices never shift under a resume. --out must end in .npy.
+
+Typical use on cpu1: a one-unit smoke first (exits 1 with "not written, rerun
+to resume"), then the full run on the same --out-dir, which resumes from it:
+
+    python scripts/offline_select_oids_rb.py \\
+        --oid-file $RUN/oids/squidward_v210_oids.npy \\
+        --out $RUN/oids/squidward_v210_oids_ndet8_rb.npy --out-dir $RUN/select_ndet8 \\
+        --credentials features/offline/read_credentials.json --workers 32 --max-units 1
 
     python scripts/offline_select_oids_rb.py \\
         --oid-file $RUN/oids/squidward_v210_oids.npy \\
@@ -156,18 +166,30 @@ def main(argv=None) -> int:  # CLI entry
     sys.stdout.reconfigure(line_buffering=True)  # progress through a redirected log
     t_run = time.perf_counter()  # run clock
 
+    if not args.out.endswith(".npy"):  # the consumer's loader keys on the suffix
+        print("--out must end in .npy (R.load_oids reads anything else as text)")  # say why
+        return 1  # before any DB work
+
     raw = R.load_oids(args.oid_file)  # input oids
     print(f"input: {len(raw):,} oids from {args.oid_file}")  # input count
-    oids = prefilter(raw, args.credentials, args.min_detections, args.schema)  # n_det >= N, sorted unique
-    print(f"after n_det >= {args.min_detections} pre-filter: {len(oids):,}")  # pre-filter count
-    if len(oids) == 0:  # nothing to count
-        print(f"no oid passed the n_det >= {args.min_detections} pre-filter")  # say so
-        return 1  # nothing written
-
     out_dir = Path(args.out_dir)  # the run directory
     out_dir.mkdir(parents=True, exist_ok=True)  # created on first run
-    R.check_or_write_fingerprint(out_dir, R.run_fingerprint(oids, args.unit_size),  # oid list + unit size,
-                                 args.force_resume)  # refuses a different oid list
+    pre_path = out_dir / "prefiltered.npy"  # the persisted pre-filter: n_det only grows, so never re-query
+    if pre_path.exists():  # a resume
+        oids = np.load(pre_path).astype(np.int64)  # the list the units were cut from
+        print(f"resume: pre-filtered list from {pre_path} ({len(oids):,} oids)")  # no DB query
+    else:  # first pass
+        oids = prefilter(raw, args.credentials, args.min_detections, args.schema)  # n_det >= N, sorted unique
+        print(f"after n_det >= {args.min_detections} pre-filter: {len(oids):,}")  # pre-filter count
+        if len(oids) == 0:  # nothing to count
+            print(f"no oid passed the n_det >= {args.min_detections} pre-filter")  # say so
+            return 1  # nothing written
+        _save_npy_atomic(pre_path, oids)  # frozen for every later pass
+
+    fingerprint = R.run_fingerprint(oids, args.unit_size)  # persisted oid list + unit size
+    fingerprint["min_detections"] = args.min_detections  # a resume under another N is refused
+    fingerprint["schema"] = args.schema  # and under another schema
+    R.check_or_write_fingerprint(out_dir, fingerprint, args.force_resume)  # refuses a different run
     units = R.make_units(oids, args.unit_size)  # contiguous slices
     todo = [u for u in units if not unit_path(out_dir, u[0]).exists()]  # units without a file
     print(f"plan: {len(units):,} units of {args.unit_size:,} ({args.minibatch}-oid minibatches, "  # the plan,
@@ -185,10 +207,10 @@ def main(argv=None) -> int:  # CLI entry
         results = run_pool(todo, cfg, args.workers, args.start_method)  # module global: tests replace it
 
     failed = [r for r in results if "error" in r]  # units that raised
-    if failed or args.max_units is not None:  # partial run: no output
+    done = sum(unit_path(out_dir, u[0]).exists() for u in units)  # unit files present
+    if failed or args.max_units is not None or done < len(units):  # partial run (incl. units that never landed): no output
         for r in failed:  # name each one
             print(f"FAILED unit {r['unit']}: {r['error']}")  # named in the log
-        done = sum(unit_path(out_dir, u[0]).exists() for u in units)  # unit files present
         print(f"state: {done:,}/{len(units):,} units done; {args.out} not written, rerun to resume")  # where it stands
         return 1  # incomplete
 
