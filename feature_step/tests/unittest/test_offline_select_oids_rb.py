@@ -63,3 +63,115 @@ def test_rb_count_accepts_numpy_oids(engine):  # review focus 1
     _dets(engine, 6, [0.9] * 8)  # passes
     out = db.fetch_oids_with_good_detections("creds", np.array([6], dtype=np.int64), 8, schema=SCHEMA)  # numpy input
     assert out.tolist() == [6] and out.dtype == np.int64  # plain result, int64
+
+
+# --- Task 2: the script scripts/offline_select_oids_rb.py, on faked readers ---
+import importlib, json, sys  # module import by name, json sidecar, sys.path
+from pathlib import Path  # paths
+
+
+@pytest.fixture  # the script as a module
+def S():  # scripts/ is on sys.path only here
+    """The script module (scripts/ is not a package)."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))  # feature_step/scripts
+    return importlib.import_module("offline_select_oids_rb")  # cached after the first import
+
+
+def test_prefilter_sorted_unique(S, monkeypatch):                   # review focus 5
+    """Pins prefilter: duplicates dropped, only oids the n_det reader returned, sorted int64."""
+    monkeypatch.setattr(S.db, "fetch_oids_min_n_det", lambda c, n, schema: np.array([1, 3, 5, 7], dtype=np.int64))  # fake reader
+    out = S.prefilter(np.array([7, 3, 3, 2, 9], dtype=np.int64), "creds", 8, "multisurvey")  # unsorted, duplicated input
+    assert out.tolist() == [3, 7] and out.dtype == np.int64  # intersection, sorted, int64
+
+
+def test_process_unit_writes_kept_oids_in_minibatches(S, tmp_path, monkeypatch):  # worker
+    """Pins process_unit: one reader call per minibatch, kept oids in the unit file, no .tmp left."""
+    calls = []  # oids each reader call received
+    def fake(c, oids, n, schema):  # keeps even oids
+        """Record the call and keep the even oids."""
+        calls.append(list(oids)); return np.array([o for o in oids if o % 2 == 0], dtype=np.int64)  # record, filter
+    monkeypatch.setattr(S.db, "fetch_oids_with_good_detections", fake)  # fake reader
+    S._init_worker({"credentials": "creds", "schema": "multisurvey", "min_detections": 8,
+                    "minibatch": 2, "retries": 1, "out_dir": str(tmp_path)})  # worker config
+    m = S.process_unit((3, np.array([1, 2, 3, 4, 5], dtype=np.int64)))  # unit 3, five oids
+    assert calls == [[1, 2], [3, 4], [5]]  # minibatches of 2
+    assert np.load(S.unit_path(tmp_path, 3)).tolist() == [2, 4]  # the kept oids
+    assert m["unit"] == 3 and m["n_in"] == 5 and m["n_kept"] == 2  # the returned counts
+    assert not list((tmp_path / "units").glob("*.tmp"))  # atomic write left nothing behind
+
+
+def test_merge_units_concatenates_in_order_and_names_missing(S, tmp_path):  # merge
+    """Pins merge_units: unit order concatenation, and a missing unit is named in the error."""
+    (tmp_path / "units").mkdir()  # the unit directory
+    np.save(S.unit_path(tmp_path, 0), np.array([1, 2], dtype=np.int64))  # unit 0
+    np.save(S.unit_path(tmp_path, 1), np.array([5], dtype=np.int64))  # unit 1
+    assert S.merge_units(tmp_path, 2).tolist() == [1, 2, 5]  # both units, in order
+    with pytest.raises(FileNotFoundError, match="2"):  # unit 2 never ran
+        S.merge_units(tmp_path, 3)  # asks for three units
+
+
+def _run(S, monkeypatch, tmp_path, oids, prefiltered, keep, extra=()):  # main() driver
+    """Drive main() with both readers faked and the pool replaced by in-process calls."""
+    monkeypatch.setattr(S.db, "fetch_oids_min_n_det", lambda c, n, schema: np.array(prefiltered, dtype=np.int64))  # n_det reader
+    monkeypatch.setattr(S.db, "fetch_oids_with_good_detections",
+                        lambda c, o, n, schema: np.array([x for x in o if x in keep], dtype=np.int64))  # rb reader
+    monkeypatch.setattr(S, "run_pool", lambda units, cfg, workers, start_method:
+                        [S._init_worker(cfg) or S.process_unit(u) for u in units])  # no processes
+    src = tmp_path / "in.npy"; np.save(src, np.array(oids, dtype=np.int64))  # input oid file
+    out = tmp_path / "out.npy"  # output oid file
+    rc = S.main(["--oid-file", str(src), "--out", str(out), "--out-dir", str(tmp_path / "run"),
+                 "--unit-size", "2", "--minibatch", "1", "--credentials", "creds", *extra])  # run the script
+    return rc, out  # exit code and output path
+
+
+def test_main_writes_sorted_npy_and_json(S, monkeypatch, tmp_path):     # criteria 4, 5
+    """Pins the output: sorted kept oids in --out and the counts in its .json sidecar."""
+    rc, out = _run(S, monkeypatch, tmp_path, oids=[1, 2, 3, 4, 5], prefiltered=[1, 2, 4, 5], keep={1, 4, 5})  # full run
+    assert rc == 0 and np.load(out).tolist() == [1, 4, 5]  # success, kept oids
+    meta = json.loads(Path(str(out) + ".json").read_text())  # sidecar
+    assert (meta["n_input"], meta["n_after_n_det"], meta["n_after_rb"], meta["min_detections"]) == (5, 4, 3, 8)  # counts
+
+
+def test_main_resumes_skipping_finished_units(S, monkeypatch, tmp_path):   # criterion 4
+    """Pins resume: a rerun with every unit file present runs nothing and only merges."""
+    _run(S, monkeypatch, tmp_path, [1, 2, 3, 4], [1, 2, 3, 4], {1, 2, 3, 4})  # first pass
+    seen = []  # units the second pass would run
+    monkeypatch.setattr(S, "run_pool", lambda units, cfg, w, s: seen.extend(u[0] for u in units) or [])  # record only
+    rc, out = _run(S, monkeypatch, tmp_path, [1, 2, 3, 4], [1, 2, 3, 4], {1, 2, 3, 4})  # second pass
+    assert rc == 0 and seen == []            # both unit files exist: nothing to run, merge only
+
+
+def test_empty_prefilter_exits_1(S, monkeypatch, tmp_path, capsys):   # review focus 2
+    """Pins the empty pre-filter: exit 1, a message naming the pre-filter, no output file."""
+    rc, out = _run(S, monkeypatch, tmp_path, [1, 2], prefiltered=[], keep=set())  # nothing passes n_det
+    assert rc == 1 and not out.exists() and "pre-filter" in capsys.readouterr().out  # refused loudly
+
+
+def test_max_units_does_not_write_out(S, monkeypatch, tmp_path):     # review focus 4
+    """Pins --max-units: the capped units run, but --out is never written from a partial run."""
+    rc, out = _run(S, monkeypatch, tmp_path, [1, 2, 3, 4], [1, 2, 3, 4], {1, 2, 3, 4}, extra=("--max-units", "1"))  # one unit
+    assert rc == 1 and not out.exists()  # partial: no output
+    assert S.unit_path(tmp_path / "run", 0).exists() and not S.unit_path(tmp_path / "run", 1).exists()  # only unit 0 ran
+
+
+def test_failed_unit_blocks_merge(S, monkeypatch, tmp_path, capsys):   # review focus 3
+    """Pins a failed unit: exit 1, the unit named in the log, no output file."""
+    def boom(c, o, n, schema):  # fails on oid 3
+        """Raise for the minibatch holding oid 3, keep everything else."""
+        if 3 in list(o): raise RuntimeError("db down")  # unit 1 fails
+        return np.array(list(o), dtype=np.int64)  # keep all
+    monkeypatch.setattr(S.db, "fetch_oids_min_n_det", lambda c, n, schema: np.array([1, 2, 3, 4], dtype=np.int64))  # n_det reader
+    monkeypatch.setattr(S.db, "fetch_oids_with_good_detections", boom)  # rb reader
+    def pool(units, cfg, workers, start_method):  # in-process pool with run_pool's error contract
+        """Run units in-process; a raising unit comes back as {"unit", "error"}."""
+        S._init_worker(cfg); res = []  # configure, collect
+        for u in units:  # each unit
+            try: res.append(S.process_unit(u))  # success
+            except Exception as e: res.append({"unit": u[0], "error": repr(e)})  # failure as data
+        return res  # all results
+    monkeypatch.setattr(S, "run_pool", pool)  # no processes
+    src = tmp_path / "in.npy"; np.save(src, np.array([1, 2, 3, 4], dtype=np.int64))  # input oid file
+    out = tmp_path / "out.npy"  # output oid file
+    rc = S.main(["--oid-file", str(src), "--out", str(out), "--out-dir", str(tmp_path / "run"),
+                 "--unit-size", "2", "--minibatch", "1", "--retries", "1", "--credentials", "creds"])  # run the script
+    assert rc == 1 and not out.exists() and "unit 1" in capsys.readouterr().out  # failure named, no output
