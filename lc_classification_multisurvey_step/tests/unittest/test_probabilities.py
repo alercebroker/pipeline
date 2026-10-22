@@ -166,9 +166,9 @@ class TestBuildProbabilityRows:
         """Ties no longer share a rank: the first column wins (details in test_ranking_tiebreak.py)."""
         dto = make_dto(flat=frame([1], {"SNIa": [0.5], "AGN": [0.5], "LPV": [0.0]}))  # SNIa and AGN tie
 
-        rows = build(dto, {1: 1.0})
+        rows = build(dto, {1: 1.0})  # flat head only
 
-        rank_by_class = {r["class_id"]: r["ranking"] for r in rows}
+        rank_by_class = {r["class_id"]: r["ranking"] for r in rows}  # one head, so class_id is unique
         assert rank_by_class[TAXONOMY[50]["SNIa"]] == 1  # first column wins the tie
         assert rank_by_class[TAXONOMY[50]["AGN"]] == 2  # tie -> next rank, not the same one
         assert rank_by_class[TAXONOMY[50]["LPV"]] == 3  # ranks are 1..N, no gap
