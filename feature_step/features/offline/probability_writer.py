@@ -69,8 +69,10 @@ def build_probability_rows(output_dto, oid: int, lastmjd: float,
     taxonomy_by_classifier: {classifier_id: {class_name: class_id}} from the DB
     (db.fetch_taxonomy_maps). A class name not in its classifier's map, or a
     classifier with no map at all, raises (mirrors the -1 miss that would store
-    garbage). Returns [] for an empty/can't-predict OutputDTO. ranking =
-    per-classifier dense rank descending.
+    garbage). Returns [] for an empty/can't-predict OutputDTO. ranking = per-
+    classifier rank by descending probability, unique 1..N: a tie is broken by
+    column order, the class that comes first in the frame gets the lower rank
+    (same rule as the live step, rank(method="first")).
     """
     if output_dto is None or output_dto.probabilities is None or len(output_dto.probabilities) == 0:
         return []
@@ -94,7 +96,7 @@ def build_probability_rows(output_dto, oid: int, lastmjd: float,
                 "(fetch_taxonomy_maps returned nothing for it — is the taxonomy seeded?)"
             )
         series = frame.iloc[0]  # single oid -> Series: class_name -> probability
-        ranks = series.rank(ascending=False, method="dense").astype(int)
+        ranks = series.rank(ascending=False, method="first").astype(int)  # unique 1..N; a tie -> the earlier column (model order) wins, as the live step does
         for class_name in series.index:
             if class_name not in class_id_of:
                 raise ValueError(
