@@ -162,15 +162,16 @@ class TestBuildProbabilityRows:
         agn_id = TAXONOMY[50]["AGN"]
         assert [r["ranking"] for r in oid2 if r["class_id"] == agn_id] == [1]
 
-    def test_ranking_is_dense_descending_within_oid_and_head(self):
-        dto = make_dto(flat=frame([1], {"SNIa": [0.5], "AGN": [0.5], "LPV": [0.0]}))
+    def test_ranking_is_unique_descending_within_oid_and_head(self):
+        """Ties no longer share a rank: the first column wins (details in test_ranking_tiebreak.py)."""
+        dto = make_dto(flat=frame([1], {"SNIa": [0.5], "AGN": [0.5], "LPV": [0.0]}))  # SNIa and AGN tie
 
         rows = build(dto, {1: 1.0})
 
         rank_by_class = {r["class_id"]: r["ranking"] for r in rows}
-        assert rank_by_class[TAXONOMY[50]["SNIa"]] == 1
-        assert rank_by_class[TAXONOMY[50]["AGN"]] == 1  # tie -> same dense rank
-        assert rank_by_class[TAXONOMY[50]["LPV"]] == 2  # dense, not 3
+        assert rank_by_class[TAXONOMY[50]["SNIa"]] == 1  # first column wins the tie
+        assert rank_by_class[TAXONOMY[50]["AGN"]] == 2  # tie -> next rank, not the same one
+        assert rank_by_class[TAXONOMY[50]["LPV"]] == 3  # ranks are 1..N, no gap
 
     def test_all_five_heads_are_emitted(self):
         dto = make_dto(
