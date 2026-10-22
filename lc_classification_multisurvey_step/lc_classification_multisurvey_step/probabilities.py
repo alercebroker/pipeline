@@ -111,9 +111,12 @@ def build_probability_rows(
                 "probability.lastmjd is NOT NULL"
             )
 
+        # Ranks are a permutation of 1..N per oid: method="first" breaks ties by row
+        # order, and melt keeps the frame's column order within each oid, so on a
+        # tie the class that comes first in the model's columns gets the lower rank.
         melted["ranking"] = (
-            melted.groupby("oid")["probability"]
-            .rank(ascending=False, method="dense")
+            melted.groupby("oid")["probability"]  # one group per oid of this head
+            .rank(ascending=False, method="first")  # unique ranks; ties -> earlier column wins
             .astype(int)
         )
         melted["lastmjd"] = melted["oid"].map(lastmjd_map)
