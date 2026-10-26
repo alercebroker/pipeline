@@ -93,7 +93,7 @@ class CustomMirrormaker(GenericStep):
         return copy_messages
     
     def execute(self, messages):
-        if self.config['FILTERS_CONFIG']['ENABLE']:
-            messages_for_staging = self.copy_messages_by_percentage(messages, 0.01)
+        if self.config['FILTERS_CONFIG']['ENABLE'] and self.config['FILTERS_CONFIG']['STAGING']:
+            messages = self.copy_messages_by_percentage(messages, 0.01)
 
         return messages
