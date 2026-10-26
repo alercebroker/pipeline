@@ -86,5 +86,14 @@ class CustomMirrormaker(GenericStep):
         if not isinstance(self.producer, DefaultProducer):
             self.logger.info(f"Produced {count} messages")
 
+    def copy_messages_by_percentage(self, messages, percentage):
+        index_to_copy = int(len(messages) * percentage)
+        copy_messages = messages[:index_to_copy].copy()
+
+        return copy_messages
+    
     def execute(self, messages):
+        if self.config['FILTERS_CONFIG']['ENABLE']:
+            messages_for_staging = self.copy_messages_by_percentage(messages, 0.01)
+
         return messages
