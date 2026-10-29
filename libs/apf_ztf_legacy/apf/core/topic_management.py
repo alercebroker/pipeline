@@ -82,3 +82,22 @@ class DailyTopicStrategy(GenericTopicStrategy):
                     self.topics.append(topic)
 
         return [topic.name for topic in self.topics]
+
+
+class CurrentDailyTopicStrategy(DailyTopicStrategy):
+    """DailyTopicStrategy for producers: always the current day's topic(s).
+
+    The day is computed from the UTC clock on every call (the next day from
+    `change_hour` on), so a pod that lives across the day change moves to the
+    new topic even if it produces nothing between `change_hour` and midnight,
+    and it never writes to two days at once.
+
+    Producer only: a consumer using it drops yesterday's topics at `change_hour`.
+    """
+
+    def get_topics(self):
+        now = datetime.datetime.utcnow()
+        if now.hour >= self.change_hour:
+            now += datetime.timedelta(days=1)
+        date = now.strftime(self.date_format)
+        return [topic_format % date for topic_format in self.topic_formats]
