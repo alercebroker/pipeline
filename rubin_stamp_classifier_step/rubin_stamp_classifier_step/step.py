@@ -228,16 +228,25 @@ class StampClassifierStep(GenericStep):
     def execute(
         self, messages: List[dict]
     ) -> Union[Iterable[Dict[str, Any]], Dict[str, Any]]:
-        
+        """Classify the batch and return one output message per alert the model scored."""  # docstring
+
         # Every alert goes to the model; what it does with sid (e.g. the
         # asteroid rule for solar system objects) is the model's business.
         input_dto = self._messages_to_dto(messages)
         output_dto: OutputDTO = self.model.predict(input_dto)
         predicted_probabilities = output_dto.probabilities
 
+        # The model may return rows for a subset of the oids (hunter drops
+        # alerts whose cutouts are unusable); those alerts get no output.
+        skipped = [m["oid"] for m in messages if m["oid"] not in predicted_probabilities.index]  # oids without a row
+        if skipped:  # only warn when something was dropped
+            logging.warning(f"model returned no probability for {len(skipped)} alert(s), dropping oids {skipped}")  # one warning per batch
+
         output_messages = []
         for message in messages:
             oid, sid = message["oid"], message["sid"]
+            if oid not in predicted_probabilities.index:  # model skipped this alert
+                continue  # emit nothing for it
             output_messages.append(
                 {
                     "oid": oid,
