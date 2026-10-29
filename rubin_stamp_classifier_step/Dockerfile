@@ -15,7 +15,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 
 FROM python-base as builder
-ARG model  # picks up the global default (rubin) unless --build-arg overrides it
+# Bare re-declaration: picks up the global default (rubin) unless --build-arg overrides it.
+ARG model
 RUN apt-get update && \
     apt-get install -y --no-install-recommends git build-essential && \
     apt-get clean && \
