@@ -81,9 +81,14 @@ class StampClassifierStep(GenericStep):
         # hunter deployment does not set it.
         forward_cfg = config.get("SN_FORWARD_PRODUCER_CONFIG")
         self.sn_forward_producer = None
+        self.sn_forward_fields = None  # top-level keys the forwarder schema declares; None means no filtering
         self.sn_forward_class = config.get("SN_FORWARD_CLASS", "SN")
         if forward_cfg:
             self.sn_forward_producer = get_class(forward_cfg["CLASS"])(forward_cfg)
+            forward_schema = getattr(self.sn_forward_producer, "schema", None)  # schema the forwarder loaded, if any
+            self.sn_forward_fields = (  # field names of the forwarder schema, mirrors output_fields
+                {f["name"] for f in forward_schema["fields"]} if forward_schema else None
+            )
             logging.info(
                 f"SN forwarder enabled: ranking-1 {self.sn_forward_class!r} alerts "
                 f"go to {forward_cfg.get('TOPIC')}"
@@ -286,6 +291,9 @@ class StampClassifierStep(GenericStep):
     def forward_sn_candidates(self, predictions: List[dict]):
         """Re-emit the raw alert of every ranking-1 SN_FORWARD_CLASS object.
 
+        The alert is re-emitted with the consumer's extra keys (e.g. timestamp)
+        stripped: only the keys the forwarder schema declares are produced.
+
         apf drains this producer with the others before the consumer offset is
         committed, so nothing is flushed here.
         """
@@ -297,7 +305,10 @@ class StampClassifierStep(GenericStep):
             probs = msg["probabilities"]
             if max(probs, key=probs.get) != self.sn_forward_class:
                 continue
-            self.sn_forward_producer.produce(msg["alert"], key=str(msg["oid"]))
+            alert = msg["alert"]  # raw alert as the consumer deserialized it
+            if self.sn_forward_fields is not None:  # forwarder schema known: drop undeclared keys
+                alert = {key: value for key, value in alert.items() if key in self.sn_forward_fields}  # new dict, original untouched
+            self.sn_forward_producer.produce(alert, key=str(msg["oid"]))  # emit the (filtered) alert keyed by oid
             forwarded += 1
         logging.info(f"Forwarded {forwarded} of {len(predictions)} alerts as SN candidates")
 
