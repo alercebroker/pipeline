@@ -47,7 +47,7 @@ Remove `test_center_crop_keeps_the_middle_of_a_larger_stamp` and `test_center_cr
 
 - [ ] **Step 2: Write the failing tests `tests/unit/test_hunter_skip.py`**
 
-`tests/` and `tests/unit/` are packages in the submodule: import `CONFIG`, `HPARAMS`, `CROP`, `STAMP_COLS`, `dto` and `stamp` from `tests.unit.test_hunter_model`, and define a module-scoped `model` fixture that builds a checkpoint the same way that file's `checkpoint_path` fixture does (same `DeepHitsD4` construction, `torch.save` of `state_dict`, `hparams`, `config` under `<tmp>/0.1.0/best_model.pt`). Use `caplog` for the warnings.
+`tests/unit/` is not a package in the submodule; pytest's default prepend import mode puts the test file's directory on `sys.path`, so import `CONFIG`, `HPARAMS`, `CROP`, `STAMP_COLS`, `dto` and `stamp` with `from test_hunter_model import ...`, and define a module-scoped `model` fixture that builds a checkpoint the same way that file's `checkpoint_path` fixture does (same `DeepHitsD4` construction, `torch.save` of `state_dict`, `hparams`, `config` under `<tmp>/0.1.0/best_model.pt`). Use `caplog` for the warnings.
 
 ```python
 def test_preprocess_crops_each_plane_then_stacks_planes_of_different_shapes():
