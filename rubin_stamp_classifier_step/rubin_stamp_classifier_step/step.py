@@ -87,7 +87,7 @@ class StampClassifierStep(GenericStep):
             self.sn_forward_producer = get_class(forward_cfg["CLASS"])(forward_cfg)
             forward_schema = getattr(self.sn_forward_producer, "schema", None)  # schema the forwarder loaded, if any
             self.sn_forward_fields = (  # field names of the forwarder schema, mirrors output_fields
-                {f["name"] for f in forward_schema["fields"]} if forward_schema else None
+                {f["name"] for f in forward_schema["fields"]} if forward_schema else None  # no schema means no filtering
             )
             logging.info(
                 f"SN forwarder enabled: ranking-1 {self.sn_forward_class!r} alerts "

@@ -15,9 +15,9 @@ import pytest
 from tests.unit.test_sn_forwarding import make_step, FORWARD_TOPIC
 
 # path of the real LSST v11.1 alert schema the forwarder uses
-LSST_SCHEMA_PATH = os.path.join(
-    os.path.dirname(__file__), "..", "..", "..", "schemas", "surveys", "lsst_v11.1", "lsst.v11_1.alert.avsc"
-)
+LSST_SCHEMA_PATH = os.path.join(  # join the pieces below into one path
+    os.path.dirname(__file__), "..", "..", "..", "schemas", "surveys", "lsst_v11.1", "lsst.v11_1.alert.avsc"  # from this test dir up to the repo schemas
+)  # end of the path join
 
 
 def minimal_record(schema, named=None):
@@ -33,8 +33,8 @@ def minimal_record(schema, named=None):
     kind = schema["type"]  # complex type tag
     if kind == "record":  # record: default per field or a recursive minimal value
         named[schema["name"]] = schema  # remember it for later references
-        return {f["name"]: (f["default"] if "default" in f else minimal_record(f["type"], named))
-                for f in schema["fields"]}
+        return {f["name"]: (f["default"] if "default" in f else minimal_record(f["type"], named))  # default or recursive minimal value per field
+                for f in schema["fields"]}  # iterate over the record fields
     if kind == "array":  # empty array is valid
         return []
     if kind == "map":  # empty map is valid
@@ -49,22 +49,22 @@ def minimal_record(schema, named=None):
 @pytest.fixture
 def lsst_schema():
     """The parsed LSST v11.1 alert schema."""
-    return fastavro.schema.load_schema(LSST_SCHEMA_PATH)
+    return fastavro.schema.load_schema(LSST_SCHEMA_PATH)  # parse the schema file
 
 
 @pytest.fixture
 def schema_step():
     """A step whose forwarder producer is a recording producer loaded with the LSST schema."""
-    return make_step(forward_config={
-        "CLASS": "tests.unit.recording_producer.RecordingProducer",
-        "TOPIC": FORWARD_TOPIC,
-        "SCHEMA_PATH": LSST_SCHEMA_PATH,
-    })
+    return make_step(forward_config={  # build the step with a forwarder config
+        "CLASS": "tests.unit.recording_producer.RecordingProducer",  # producer that records instead of sending
+        "TOPIC": FORWARD_TOPIC,  # forwarder output topic
+        "SCHEMA_PATH": LSST_SCHEMA_PATH,  # schema the producer loads, source of sn_forward_fields
+    })  # end of the forwarder config
 
 
 def sn_prediction(alert):
     """A processed message whose ranking-1 class is SN, carrying the given raw alert."""
-    return {"oid": 7, "sid": 1, "probabilities": {"SN": 0.9, "AGN": 0.1}, "alert": alert}
+    return {"oid": 7, "sid": 1, "probabilities": {"SN": 0.9, "AGN": 0.1}, "alert": alert}  # message shaped like the step's processed output
 
 
 def test_forwarded_alert_with_consumer_timestamp_serializes_strictly(schema_step, lsst_schema):
@@ -100,7 +100,7 @@ def test_fields_come_from_the_forwarder_schema_not_the_output_schema(schema_step
 
 def test_producer_without_schema_gets_the_alert_unchanged():
     """With no SCHEMA_PATH the alert is produced as is and no field set is kept."""
-    step = make_step(forward_config={"CLASS": "tests.unit.recording_producer.RecordingProducer", "TOPIC": FORWARD_TOPIC})
+    step = make_step(forward_config={"CLASS": "tests.unit.recording_producer.RecordingProducer", "TOPIC": FORWARD_TOPIC})  # forwarder without SCHEMA_PATH
     alert = {"diaSourceId": 5, "timestamp": 1}  # alert with the extra key
     step.forward_sn_candidates([sn_prediction(alert)])  # forward it
     (produced, _), = step.sn_forward_producer.produced  # exactly one produced message
