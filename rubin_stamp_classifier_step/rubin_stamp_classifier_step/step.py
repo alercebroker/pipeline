@@ -11,7 +11,6 @@ from .db.db import (
     store_probability,
     get_taxonomy_by_classifier_id,
 )
-from db_plugins.db.sql.models_pipeline import Probability, Taxonomy
 from alerce_classifiers.base.dto import OutputDTO, InputDTO
 from alerce_classifiers.base._types import (
     Detections,
@@ -51,10 +50,6 @@ class StampClassifierStep(GenericStep):
         self.model_version = config.get("MODEL_VERSION") or self.model.model_version
         db_cfg = config["DB_CONFIG"]
         self.psql_connection = PSQLConnection(db_cfg, poolclass="NullPool")
-        # Public models by default; a classifier that is not public yet names
-        # the private copies (db_plugins TaxonomyPrivate / ProbabilityPrivate).
-        self.taxonomy_model = self._db_model(db_cfg, "TAXONOMY_CLASS", Taxonomy)
-        self.probability_model = self._db_model(db_cfg, "PROBABILITY_CLASS", Probability)
         self.survey = self.config.get("SURVEY")
         # The output topic's fields, from the schema the producer loaded
         # (SCHEMA_PATH). None when the producer has no schema (local runs).
@@ -64,9 +59,7 @@ class StampClassifierStep(GenericStep):
         self.classifier_id = model_cfg["CLS_ID"]
         self.rename_stamp_columns = config.get("RENAME_STAMP_COLUMNS", False)
 
-        self.class_taxonomy = get_taxonomy_by_classifier_id(
-            self.classifier_id, self.psql_connection, model=self.taxonomy_model
-        )
+        self.class_taxonomy = get_taxonomy_by_classifier_id(self.classifier_id, self.psql_connection)  # public taxonomy table
         logging.info(f"Class taxonomy: {self.class_taxonomy}")
         logging.info(f"RENAME_STAMP_COLUMNS: {self.rename_stamp_columns}")
 
@@ -180,11 +173,6 @@ class StampClassifierStep(GenericStep):
 
         return processed_messages
 
-    @staticmethod
-    def _db_model(db_cfg: dict, key: str, default: type) -> type:
-        path = db_cfg.get(key)
-        return get_class(path) if path else default
-
     def _messages_to_dto(self, messages: List[dict]) -> InputDTO:
         
         df = pd.DataFrame.from_records(messages)
@@ -276,7 +264,6 @@ class StampClassifierStep(GenericStep):
             classifier_version=self.model_version,
             class_taxonomy = self.class_taxonomy,
             predictions=messages,
-            model=self.probability_model,
         )
 
         # Produce to scribe

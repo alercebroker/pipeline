@@ -48,17 +48,15 @@ def store_probability(
     classifier_version: str,
     class_taxonomy: dict[str, int],
     predictions: list[dict],
-    model: type = Probability,
 ) -> None:
-    """Insert one row per (object, class) into `model`'s table: the public
-    Probability, or a private copy such as ProbabilityPrivate."""
+    """Insert one row per (object, class) into the public probability table."""  # docstring: public table only
     if len(predictions) == 0:
         return
 
     with psql_connection.session() as session:
         data = _format_data(classifier_id, classifier_version, class_taxonomy, predictions)
 
-        insert_stmt = insert(model)
+        insert_stmt = insert(Probability)  # public probability table
         insert_stmt = insert_stmt.on_conflict_do_nothing()
 
         session.execute(insert_stmt, data)
@@ -130,14 +128,13 @@ def class_id_to_name(class_id: int, class_taxonomy: dict[str, int]) -> str:
 
 
 def get_taxonomy_by_classifier_id(
-    classifier_id: int, psql_connection: PSQLConnection, model: type = Taxonomy
+    classifier_id: int, psql_connection: PSQLConnection  # no model argument: public table only
 ) -> dict[str, int]:
     """Fetch taxonomy from DB for a given classifier, return {class_name: class_id}.
 
-    `model` is the public Taxonomy or a private copy such as TaxonomyPrivate;
-    its table must have columns class_id, class_name, "order", classifier_id.
-    """
-    table = model.__tablename__
+    Reads the public taxonomy table.
+    """  # docstring: public table only
+    table = Taxonomy.__tablename__  # public taxonomy table name
     mapping: dict[str, int] = {}
     try:
         with psql_connection.session() as session:
