@@ -53,7 +53,6 @@ class ClassifierVersion(Base):
     release_date = Column(Date, server_default=func.now())
 
     taxonomies = relationship("Taxonomy", back_populates="classifier_version")
-    probabilities = relationship("ProbabilityArchive", back_populates="classifier_version")
 
 
 class Taxonomy(Base):
@@ -71,7 +70,6 @@ class Taxonomy(Base):
     order = Column(Integer, nullable=False)
 
     classifier_version = relationship("ClassifierVersion", back_populates="taxonomies")
-    probabilities = relationship("ProbabilityArchive", back_populates="taxonomy")
 
 
 class SidLut(Base):
@@ -85,25 +83,19 @@ class SidLut(Base):
 
 
 class ProbabilityArchive(Base):
+    """One row per object, classifier version and class, with the ids the classifier steps
+    send (the same as in `probability`)."""
+
     __tablename__ = "probability_archive"
 
     oid = Column(BigInteger, nullable=False)
     sid = Column(SmallInteger, nullable=False)
-
-    classifier_version_id = Column(
-        Integer,
-        ForeignKey("classifier_version.id"),
-        nullable=False,
-    )
-
-    class_id = Column(
-        Integer,
-        ForeignKey("taxonomy.id"),
-        nullable=False,
-    )
-
+    classifier_id = Column(SmallInteger, nullable=False)
+    classifier_version = Column(SmallInteger, nullable=False)
+    class_id = Column(SmallInteger, nullable=False)
     probability = Column(REAL, nullable=False)
     ranking = Column(SmallInteger)
+    lastmjd = Column(DOUBLE_PRECISION, nullable=False)
 
     creation_date = Column(Date, server_default=func.now())
     update_date = Column(Date, onupdate=func.now())
@@ -112,7 +104,8 @@ class ProbabilityArchive(Base):
         PrimaryKeyConstraint(
             "oid",
             "sid",
-            "classifier_version_id",
+            "classifier_id",
+            "classifier_version",
             "class_id",
             name="pk_probability_archive",
         ),
@@ -125,6 +118,3 @@ class ProbabilityArchive(Base):
     @classmethod
     def __partition_on__(cls, idx: int):
         return f"FOR VALUES WITH (MODULUS {cls.__n_partitions__}, REMAINDER {idx})"
-
-    classifier_version = relationship("ClassifierVersion", back_populates="probabilities")
-    taxonomy = relationship("Taxonomy", back_populates="probabilities")

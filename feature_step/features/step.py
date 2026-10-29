@@ -29,6 +29,24 @@ from .utils.parsers import parse_output_lsst,parse_scribe_payload_lsst
 from .utils.data_utils import clean_and_flatten_columns, save_astro_objects_to_csvs
 
 
+def _match_for_output(match: Dict[str, Any]) -> Dict[str, Any]:
+    """Shape a service match for the output topic: keep only the map-valued
+    `metadata` entries.
+
+    The xmatch service returns each metadata row with its own `id` column, a
+    plain string equal to `match_id`. The output schema
+    (`schemas/feature_ms_step/ztf/xmatch.avsc`) declares `metadata` as a map of
+    maps, so any scalar entry makes Avro serialization fail. Nothing downstream
+    reads the scalars: the parser only uses the `w*mpro` maps. The scribe path
+    receives the untouched match list, not this copy.
+    """
+    metadata = match.get("metadata") or {}
+    return {
+        **match,
+        "metadata": {k: v for k, v in metadata.items() if isinstance(v, dict)},
+    }
+
+
 from importlib.metadata import version
 
 
@@ -300,7 +318,7 @@ class FeatureStep(GenericStep):
             # use the allwise match (W1-W4), so map oid -> allwise match for the
             # per-message attach; the full list still goes to scribe below.
             xmatch_dict = {
-                str(match['oid']): match
+                str(match['oid']): _match_for_output(match)
                 for match in xmatch_results
                 if match.get('catalog') == 'allwise'
             }
@@ -317,9 +335,12 @@ class FeatureStep(GenericStep):
         for message in messages:
             filtered_message = message.copy()
             if self.survey == "ztf":
-                filtered_message["detections"] = discard_bogus_detections(
-                    filtered_message.get("detections", [])
+                epochs = (
+                    (message.get("detections") or [])
+                    + (message.get("previous_detections") or [])
+                    + (message.get("forced_photometries") or [])
                 )
+                filtered_message["detections"] = discard_bogus_detections(epochs)
                 filtered_messages.append(filtered_message)
             elif self.survey == "lsst":
                 dets = filtered_message.get('sources', []) + filtered_message.get('previous_sources', [])
@@ -366,9 +387,10 @@ class FeatureStep(GenericStep):
             )
 
             if self.survey == "ztf":
-                forced = message.get("forced_photometries", None) #filtrar forced photometry
+                # No ZTF multisurvey record has an `aid`; the parser indexes on it.
+                m = map(lambda x: {**x, "aid": x["oid"]}, m)
                 xmatch_data = message.get("xmatches", None)
-                ao = self.detections_to_astro_object_fn(list(m), forced ,xmatch_data, references_db)
+                ao = self.detections_to_astro_object_fn(list(m), [], xmatch_data, references_db)
             else:
                 forced = message.get("forced_sources", None) #si no hay detections, filtrar forced photometry
                 xmatch_data = message.get("xmatches", None)

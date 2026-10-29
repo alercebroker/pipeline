@@ -1,0 +1,55 @@
+{
+  "name": "xmatch",
+  "type": "record",
+  "doc": "Nearest allwise match from xmatch_client.conesearch_with_metadata (null when USE_XMATCH is off or nothing matched)",
+  "fields": [
+    {
+      "name": "oid",
+      "type": "string"
+    },
+    {
+      "name": "query_ra",
+      "type": "double"
+    },
+    {
+      "name": "query_dec",
+      "type": "double"
+    },
+    {
+      "name": "match_id",
+      "type": "string"
+    },
+    {
+      "name": "catalog",
+      "type": "string"
+    },
+    {
+      "name": "match_ra",
+      "type": "double"
+    },
+    {
+      "name": "match_dec",
+      "type": "double"
+    },
+    {
+      "name": "distance",
+      "type": "double"
+    },
+    {
+      "name": "metadata",
+      "type": {
+        "type": "map",
+        "values": {
+          "type": "map",
+          "values": [
+            "null",
+            "string",
+            "double",
+            "long",
+            "boolean"
+          ]
+        }
+      }
+    }
+  ]
+}

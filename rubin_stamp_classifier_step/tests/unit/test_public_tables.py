@@ -88,7 +88,8 @@ def test_probabilities_are_written_to_the_public_table():  # probability write
     store_probability(connection, 10, "1.0.0", {"candidate": 1, "not_candidate": 0}, [prediction()])  # write
     sql = executed_sql(connection)  # compiled insert
     assert sql.startswith("INSERT INTO probability (")  # public table
-    assert "ON CONFLICT DO NOTHING" in sql  # conflicts are skipped
+    assert "ON CONFLICT ON CONSTRAINT pk_probability_oid_classifierid_classid DO UPDATE" in sql  # multisurvey upsert
+    assert "WHERE probability.lastmjd > excluded.lastmjd" in sql  # only an older alert overwrites
     _, rows = connection.executed[0]  # rows handed to the insert
     assert [(r["class_id"], r["ranking"]) for r in rows] == [(1, 1), (0, 2)]  # ranked by probability
 
