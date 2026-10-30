@@ -28,3 +28,16 @@ def create_data():
 
 def create_messages(n=1, topic="topic"):
     return [MockMessage(repr(create_data()), topic) for _ in range(n)]
+
+
+def create_raw_bytes_messages(n=1, topic="topic", key="objectId"):
+    """Messages shaped like RawKafkaConsumerBytes output"""
+    return [
+        {
+            "value": repr(create_data()).encode(),
+            "timestamp": 123,
+            "topic": topic,
+            "key": key,
+        }
+        for _ in range(n)
+    ]
