@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - main
+      - multisurvey
     paths:
       - 'reflector_step/**'
       - '!reflector_step/README.md'
