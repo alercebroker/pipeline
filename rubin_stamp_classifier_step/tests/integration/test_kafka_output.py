@@ -18,6 +18,10 @@ root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
 kafka_bootstrap_servers = "localhost:9092"
 input_topic = "lsst"
 output_topic = "rubin_stamp_classifier"
+sn_forward_topic = "sn_candidates"
+lsst_schema_path = os.path.join(
+    root_dir, "schemas", "surveys", "lsst_v11.1", "lsst.v11_1.alert.avsc"
+)
 
 # Minimal config for Kafka integration test
 step_config = {
@@ -41,13 +45,7 @@ step_config = {
         },
         "consume.timeout": 5,
         "consume.messages": 10,
-        "SCHEMA_PATH": os.path.join(
-            root_dir,
-            "schemas",
-            "surveys",
-            "lsst_v11.1",
-            "lsst.v11_1.alert.avsc",
-        ),
+        "SCHEMA_PATH": lsst_schema_path,
     },
     "PRODUCER_CONFIG": {
         "CLASS": "apf.producers.kafka.KafkaSchemalessProducer",
@@ -60,9 +58,19 @@ step_config = {
             "output.avsc",
         ),
     },
+    # The rubin deployment forwards the raw alert of ranking-1 SN objects to
+    # the topic the hunter deployment consumes.
+    "SN_FORWARD_PRODUCER_CONFIG": {
+        "CLASS": "apf.producers.kafka.KafkaSchemalessProducer",
+        "TOPIC": sn_forward_topic,
+        "PARAMS": {"bootstrap.servers": kafka_bootstrap_servers},
+        "SCHEMA_PATH": lsst_schema_path,
+    },
     "MODEL_VERSION": "",
     "MODEL_CONFIG": {
-        "MODEL_PATH": os.environ["TEST_RUBIN_STAMP_CLASSIFIER_STEP_MODEL_PATH"]
+        "CLASS": "alerce_classifiers.rubin.StampClassifierModel",
+        "PARAMS": {"model_path": os.environ["TEST_RUBIN_STAMP_CLASSIFIER_STEP_MODEL_PATH"]},
+        "CLS_ID": 3,
     },
     "FEATURE_FLAGS": {
         "USE_PROFILING": False,
@@ -122,7 +130,9 @@ class TestKafkaOutput(unittest.TestCase):
                 logging.debug(f"The message(s) that caused the error: {message}")
                 raise error
 
-            # Post-execute is not called because DB interaction is not tested here
+            # Post-execute is not called because DB interaction is not tested here,
+            # so the SN forwarder it triggers is called directly.
+            step.forward_sn_candidates(result)
 
             result = step._pre_produce(result)
             step.produce(result)
@@ -206,6 +216,43 @@ class TestKafkaOutput(unittest.TestCase):
                         deserialized_outputs[i][field],
                         f"Field '{field}' does not match at index {i}.",
                     )
+
+        # The forward topic holds exactly the raw alerts of the ranking-1 SN
+        # objects, as schemaless records the hunter deployment decodes with
+        # KafkaSchemalessConsumer and the LSST schema.
+        expected_forwarded = sorted(
+            r["diaSourceId"]
+            for r in execute_results
+            if max(r["probabilities"], key=r["probabilities"].get) == "SN"
+        )
+        consumer = Consumer(
+            {
+                "bootstrap.servers": kafka_bootstrap_servers,
+                "group.id": "test-sn-forward-checker",
+                "auto.offset.reset": "earliest",
+            }
+        )
+        consumer.subscribe([sn_forward_topic])
+        lsst_schema = fastavro.schema.load_schema(lsst_schema_path)
+        forwarded = []
+        while len(forwarded) < len(expected_forwarded):
+            msg = consumer.poll(5.0)
+            if msg is None:
+                break
+            if msg.error():
+                print(f"Consumer error: {msg.error()}")
+                continue
+            forwarded.append(fastavro.schemaless_reader(BytesIO(msg.value()), lsst_schema))
+        consumer.close()
+        self.assertEqual(
+            sorted(a["diaSource"]["diaSourceId"] for a in forwarded),
+            expected_forwarded,
+            "Forwarded alerts do not match the ranking-1 SN objects.",
+        )
+        for forwarded_alert in forwarded:
+            self.assertIn("cutoutScience", forwarded_alert)
+            self.assertIn("cutoutDifference", forwarded_alert)
+            self.assertIn("cutoutTemplate", forwarded_alert)
 
     def test_lsst_topic_has_messages(self):
         """Test that the lsst topic has messages after setup and count them"""

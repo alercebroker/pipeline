@@ -37,7 +37,9 @@ step_config = {
     "PRODUCER_CONFIG": {"CLASS": "apf.core.step.DefaultProducer"},
     "MODEL_VERSION": "",
     "MODEL_CONFIG": {
-        "MODEL_PATH": os.environ["TEST_RUBIN_STAMP_CLASSIFIER_STEP_MODEL_PATH"]
+        "CLASS": "alerce_classifiers.rubin.StampClassifierModel",
+        "PARAMS": {"model_path": os.environ["TEST_RUBIN_STAMP_CLASSIFIER_STEP_MODEL_PATH"]},
+        "CLS_ID": 3,
     },
 }
 
