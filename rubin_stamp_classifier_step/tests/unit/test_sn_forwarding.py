@@ -61,7 +61,7 @@ def plain_step():
 
 @pytest.fixture(autouse=True)
 def no_db_writes():
-    with mock.patch("rubin_stamp_classifier_step.step.store_probability") as store:
+    with mock.patch("rubin_stamp_classifier_step.step.store_probability") as store:  # keep the mock: its return value feeds the forwarder
         store.side_effect = lambda *a, **kw: {m['oid'] for m in kw['predictions']}  # every oid counts as written: first stamps all
         yield
 

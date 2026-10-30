@@ -74,9 +74,11 @@ from the `pipeline-hunter` worktree: no failure outside
 `.claude/test-baselines/rubin_stamp_classifier_step.txt` (60 passed on
 2026-10-30). And from `alerce_classifiers/`:
 ```
-~/.pyenv/versions/3.11.11/envs/rubin-stamp-classifier-step/bin/python -m pytest tests/unit -q
+~/.pyenv/versions/3.11.11/envs/rubin-stamp-classifier-step/bin/python -m pytest \
+  tests/unit/test_hunter_model.py tests/unit/test_hunter_mapper.py tests/unit/test_hunter_skip.py -q
 ```
-17 passed, 1 skipped, as on 2026-10-30.
+17 passed, 1 skipped, as on 2026-10-30 (the whole `tests/unit` does not collect in
+the rubin venv: `test_squidward_model.py` needs `imblearn`).
 
 ## Calls made here (check these)
 

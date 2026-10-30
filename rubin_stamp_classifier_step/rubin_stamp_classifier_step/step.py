@@ -288,7 +288,7 @@ class StampClassifierStep(GenericStep):
 
         return messages
 
-    def forward_sn_candidates(self, predictions: List[dict], written: Optional[set] = None):
+    def forward_sn_candidates(self, predictions: List[dict], written: Optional[set] = None):  # written: oids the upsert wrote this batch; None = no DB answer, forward every SN
         """Re-emit the raw alert of every ranking-1 SN_FORWARD_CLASS object.
 
         `written` is the set of oids the DB upsert just inserted or updated,
