@@ -9,6 +9,9 @@ on:
       - 'reflector_step/**'
       - '!reflector_step/README.md'
 
+permissions:
+  contents: read
+
 jobs:
   reflector_step_lint:
     uses: ./.github/workflows/lint-template.yaml
