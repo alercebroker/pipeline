@@ -59,7 +59,9 @@ class CustomMirrormaker(GenericStep):
             count += 1
             producer_kwargs = {"flush": count == len(to_produce)}
 
-            isRawKafkaConsumer = isinstance(self.consumer, RawKafkaConsumerBytes)
+            isRawKafkaConsumer = isinstance(
+                self.consumer, RawKafkaConsumerBytes
+            )
 
             if isRawKafkaConsumer:
                 if self.survey == "ztf":
