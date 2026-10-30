@@ -1,4 +1,4 @@
-from typing import List, Union, Iterable, Dict, Any
+from typing import List, Union, Iterable, Dict, Any, Optional  # Optional: the forwarder's written-oids argument
 
 from apf.consumers import KafkaConsumer
 from apf.core import get_class
@@ -272,7 +272,7 @@ class StampClassifierStep(GenericStep):
     def post_execute(self, messages: List[dict]) -> List[dict]:
 
         # Write probabilities in the database
-        store_probability(
+        written = store_probability(  # oids whose first stamp this batch is: the upsert wrote them
             self.psql_connection,
             classifier_id=self.classifier_id,
             classifier_version=self.model_version,
@@ -284,12 +284,18 @@ class StampClassifierStep(GenericStep):
         if self.scribe_producer is not None:
             self.produce_to_scribe(messages)
 
-        self.forward_sn_candidates(messages)
+        self.forward_sn_candidates(messages, written)  # only first stamps reach the hunter
 
         return messages
 
-    def forward_sn_candidates(self, predictions: List[dict]):
+    def forward_sn_candidates(self, predictions: List[dict], written: Optional[set] = None):
         """Re-emit the raw alert of every ranking-1 SN_FORWARD_CLASS object.
+
+        `written` is the set of oids the DB upsert just inserted or updated,
+        i.e. the objects for which this alert is the first stamp. Only those
+        are forwarded; an alert of an object the table already knows from an
+        older alert is not a first stamp and the hunter never sees it. None
+        (no DB write happened) forwards every SN, the pre-filter behaviour.
 
         The alert is re-emitted with the consumer's extra keys (e.g. timestamp)
         stripped: only the keys the forwarder schema declares are produced.
@@ -301,16 +307,23 @@ class StampClassifierStep(GenericStep):
             return
 
         forwarded = 0
+        not_first = 0  # SN alerts dropped because the object already had an older stamp
         for msg in predictions:
             probs = msg["probabilities"]
             if max(probs, key=probs.get) != self.sn_forward_class:
                 continue
+            if written is not None and msg["oid"] not in written:  # the upsert kept an older alert
+                not_first += 1  # count it for the log
+                continue  # not a first stamp: the hunter does not get it
             alert = msg["alert"]  # raw alert as the consumer deserialized it
             if self.sn_forward_fields is not None:  # forwarder schema known: drop undeclared keys
                 alert = {key: value for key, value in alert.items() if key in self.sn_forward_fields}  # new dict, original untouched
             self.sn_forward_producer.produce(alert, key=str(msg["oid"]))  # emit the (filtered) alert keyed by oid
             forwarded += 1
-        logging.info(f"Forwarded {forwarded} of {len(predictions)} alerts as SN candidates")
+        logging.info(  # one line per batch, with the first-stamp filter made visible
+            f"Forwarded {forwarded} of {len(predictions)} alerts as SN candidates "
+            f"({not_first} SN alerts skipped: not the object's first stamp)"
+        )
 
     def pre_produce(self, messages: List[dict]) -> List[dict]:
         # oid, sid and the raw alert are internal; the output schema is strict

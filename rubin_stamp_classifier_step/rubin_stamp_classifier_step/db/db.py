@@ -70,16 +70,34 @@ def store_probability(
     classifier_version: str,
     class_taxonomy: dict[str, int],
     predictions: list[dict],
-) -> None:
-    """Insert one row per (object, class) into the public probability table."""  # docstring: public table only
+) -> set[int]:  # oids whose rows were inserted or updated
+    """Insert one row per (object, class) into the public probability table.
+
+    Returns the oids Postgres actually wrote (inserted, or updated because this
+    alert is older than the stored one). An oid missing from the result already
+    had an older alert in the table: this alert is not its first stamp.
+    """  # docstring: public table only, RETURNING contract
     if len(predictions) == 0:
-        return
+        return set()  # nothing written
+
+    # One alert per object per statement: two alerts of the same oid in a batch would
+    # make the upsert touch the same (oid, classifier_id, class_id) row twice, which
+    # Postgres rejects (CardinalityViolation, seen 2026-10-30). Keep the oldest alert,
+    # the same rule the ON CONFLICT clause applies against rows already stored.
+    oldest = {}  # oid -> prediction with the smallest midpointMjdTai
+    for prediction in predictions:  # batch order is irrelevant, the mjd decides
+        current = oldest.get(prediction["oid"])  # the alert kept so far for this oid
+        if current is None or prediction["midpointMjdTai"] < current["midpointMjdTai"]:  # first or older
+            oldest[prediction["oid"]] = prediction  # keep it
+    predictions = list(oldest.values())  # deduplicated batch
 
     with psql_connection.session() as session:
         data = _format_data(classifier_id, classifier_version, class_taxonomy, predictions)
 
         stmt = insert(Probability)  # public probability table (multisurvey upsert, merged 2026-10-29)
-        # the classification belongs to the first detection: only an older alert wins
+        # the classification belongs to the first detection: only an older alert wins.
+        # `>=`, not `>`: replaying the same first alert rewrites it and RETURNING reports
+        # it, so the forwarder re-emits first stamps on a replay (2026-10-30).
         insert_stmt = stmt.on_conflict_do_update(
             constraint="pk_probability_oid_classifierid_classid",
             set_={
@@ -88,11 +106,13 @@ def store_probability(
                 "lastmjd": stmt.excluded.lastmjd,
                 "classifier_version": stmt.excluded.classifier_version,
             },
-            where=Probability.lastmjd > stmt.excluded.lastmjd,
-        )
+            where=Probability.lastmjd >= stmt.excluded.lastmjd,  # same alert again counts as written
+        ).returning(Probability.oid)  # only rows the upsert inserted or updated come back
 
-        session.execute(insert_stmt, data)
+        result = session.execute(insert_stmt, data)  # one INSERT ... VALUES (...), (...) RETURNING oid
+        written = set(result.scalars().all())  # one oid per written (oid, class) row, collapsed to oids
         session.commit()
+        return written  # the forwarder keeps only these
 
 
 def _format_data(

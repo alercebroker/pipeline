@@ -54,6 +54,7 @@ def test_db_write_uses_the_step_version():
     step = build_step(MODEL_VERSION="2.1.0")
 
     with mock.patch("rubin_stamp_classifier_step.step.store_probability") as store:
+        store.side_effect = lambda *a, **kw: {m['oid'] for m in kw['predictions']}  # every oid counts as written
         step.post_execute([prediction()])
 
     assert store.call_args.kwargs["classifier_version"] == "2.1.0"

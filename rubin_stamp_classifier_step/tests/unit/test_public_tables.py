@@ -20,8 +20,9 @@ LEFTOVER = {"TAXONOMY_CLASS": "nowhere.Bogus", "PROBABILITY_CLASS": "nowhere.Bog
 class RecordingConnection:  # fake PSQLConnection
     """Fake PSQLConnection: records what is executed, answers canned rows."""
 
-    def __init__(self, rows=()):  # rows are what a SELECT returns
+    def __init__(self, rows=(), written=()):  # rows: what a SELECT returns; written: what RETURNING oid gives
         self.rows = rows  # canned rows
+        self.written = written  # canned RETURNING oids
         self.executed = []  # (statement, params) pairs seen
 
     @contextmanager  # lets the fake be used in a with block
@@ -34,6 +35,7 @@ class RecordingConnection:  # fake PSQLConnection
         self.executed.append((statement, params))  # keep the call for the asserts
         result = mock.Mock()  # stand-in for the SQLAlchemy result
         result.mappings.return_value.all.return_value = list(self.rows)  # canned rows
+        result.scalars.return_value.all.return_value = list(self.written)  # oids a RETURNING would give back
         return result  # hand it back
 
     def commit(self):  # mimics Session.commit
@@ -89,9 +91,28 @@ def test_probabilities_are_written_to_the_public_table():  # probability write
     sql = executed_sql(connection)  # compiled insert
     assert sql.startswith("INSERT INTO probability (")  # public table
     assert "ON CONFLICT ON CONSTRAINT pk_probability_oid_classifierid_classid DO UPDATE" in sql  # multisurvey upsert
-    assert "WHERE probability.lastmjd > excluded.lastmjd" in sql  # only an older alert overwrites
+    assert "WHERE probability.lastmjd >= excluded.lastmjd" in sql  # an older, or the same, alert overwrites
+    assert sql.endswith("RETURNING probability.oid")  # the written oids come back
     _, rows = connection.executed[0]  # rows handed to the insert
     assert [(r["class_id"], r["ranking"]) for r in rows] == [(1, 1), (0, 2)]  # ranked by probability
+
+
+def test_store_probability_returns_the_written_oids():  # RETURNING contract
+    """store_probability returns the set of oids the upsert reported back, deduplicated across classes."""
+    connection = RecordingConnection(written=[123, 123])  # one oid per written (oid, class) row
+    written = store_probability(connection, 10, "1.0.0", {"candidate": 1, "not_candidate": 0}, [prediction()])  # write
+    assert written == {123}  # collapsed to oids
+
+
+def test_store_probability_keeps_the_oldest_alert_per_oid():  # batch dedup
+    """Two alerts of one object in a batch write one row set, the older alert's."""
+    connection = RecordingConnection()  # records the insert
+    older, newer = prediction(), prediction()  # same oid
+    older["midpointMjdTai"], newer["midpointMjdTai"] = 60000.1, 60000.9  # older first
+    store_probability(connection, 10, "1.0.0", {"candidate": 1, "not_candidate": 0}, [newer, older])  # newer first on purpose
+    _, rows = connection.executed[0]  # rows handed to the insert
+    assert {r["lastmjd"] for r in rows} == {60000.1}  # only the older alert's rows
+    assert len(rows) == 2  # one per class, not four
 
 
 def test_step_ignores_leftover_class_keys():  # old config keys

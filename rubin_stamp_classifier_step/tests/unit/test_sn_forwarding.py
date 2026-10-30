@@ -61,7 +61,8 @@ def plain_step():
 
 @pytest.fixture(autouse=True)
 def no_db_writes():
-    with mock.patch("rubin_stamp_classifier_step.step.store_probability"):
+    with mock.patch("rubin_stamp_classifier_step.step.store_probability") as store:
+        store.side_effect = lambda *a, **kw: {m['oid'] for m in kw['predictions']}  # every oid counts as written: first stamps all
         yield
 
 
@@ -239,3 +240,19 @@ def same_alert(a, b):
     if isinstance(a, float) and isinstance(b, float) and math.isnan(a) and math.isnan(b):
         return True
     return a == b
+
+
+def test_only_first_stamps_are_forwarded(forwarding_step):  # first-stamp filter
+    """An SN alert whose oid the upsert did not write (older stamp already stored) is not forwarded."""
+    raw = {"diaSource": {"diaSourceId": 1}}  # minimal raw alert
+    first, repeat = prediction(1, 10, "SN", raw), prediction(2, 20, "SN", raw)  # two SN alerts
+    forwarding_step.forward_sn_candidates([first, repeat], written={1})  # only oid 1 was written
+    forwarded = [kwargs["key"] for _, kwargs in forwarding_step.sn_forward_producer.produced]  # keys of forwarded alerts
+    assert forwarded == ["1"]  # oid 2 had an older stamp: dropped
+
+
+def test_without_db_answer_every_sn_is_forwarded(forwarding_step):  # written=None
+    """With no written set (DB write skipped) the forwarder behaves as before: every SN goes."""
+    raw = {"diaSource": {"diaSourceId": 1}}  # minimal raw alert
+    forwarding_step.forward_sn_candidates([prediction(1, 10, "SN", raw), prediction(2, 20, "SN", raw)])  # no written set
+    assert len(forwarding_step.sn_forward_producer.produced) == 2  # both forwarded

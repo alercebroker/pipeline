@@ -58,6 +58,7 @@ def test_post_execute_only_sees_the_kept_messages(step):  # post_execute sees ke
     """store_probability receives only the messages execute kept."""
     out = step.execute([processed(1, 1), processed(SKIPPED_OID, 1)])  # run
     with mock.patch("rubin_stamp_classifier_step.step.store_probability") as store:  # spy on DB write
+        store.side_effect = lambda *a, **kw: {m['oid'] for m in kw['predictions']}  # every oid counts as written
         step.post_execute(out)  # persist
     assert [p["oid"] for p in store.call_args.kwargs["predictions"]] == [1]  # only the kept oid
 
@@ -93,6 +94,7 @@ def test_post_execute_forwards_only_the_kept_alerts(forwarding_step):  # only ke
     kept["alert"], skipped["alert"] = {"tag": "kept"}, {"tag": "skipped"}  # distinguishable alerts
     out = forwarding_step.execute([kept, skipped])  # run
     with mock.patch("rubin_stamp_classifier_step.step.store_probability") as store:  # spy on DB write
+        store.side_effect = lambda *a, **kw: {m['oid'] for m in kw['predictions']}  # every oid counts as written
         forwarding_step.post_execute(out)  # persist and forward
     assert [p["oid"] for p in store.call_args.kwargs["predictions"]] == [1]  # DB sees only the kept oid
     produced = forwarding_step.sn_forward_producer.produced  # what the forwarder emitted
