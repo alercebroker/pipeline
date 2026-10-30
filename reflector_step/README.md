@@ -18,6 +18,11 @@ STEP_CONFIG:
   FEATURE_FLAGS:
     USE_PROFILING: false
     PROMETHEUS: false
+  FILTERS_CONFIG:
+    ENABLE: true
+    STAGING: true
+    MODULUS: 100
+    REMAINDER: 1
   CONSUMER_CONFIG:
     CLASS: "reflector_step.utils.RawKafkaConsumer"
     TOPICS: ["topic_1", "topic_2"]

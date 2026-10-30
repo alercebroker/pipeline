@@ -76,6 +76,7 @@ class TestStep(TestCase):
             "CONSUMER_CONFIG": {
                 "CLASS": "apf.core.step.DefaultConsumer",
             },
+            "FILTERS_CONFIG": {"ENABLE": False, "STAGING": False},
         }
 
         self.mock_consumer = mock.create_autospec(GenericConsumer)
