@@ -97,7 +97,7 @@ class TestStep(TestCase):
             "CONSUMER_CONFIG": {
                 "CLASS": "apf.core.step.DefaultConsumer",
             },
-            "FILTERS_CONFIG": {"ENABLE": False, "STAGING": False},
+            "FILTERS_CONFIG": {"ENABLE": False},
         }
 
         self.mock_consumer = mock.create_autospec(GenericConsumer)
@@ -194,3 +194,42 @@ class TestStepRawBytesConsumer(TestCase):
         )
         step.produce([message])
         self.assertEqual(self.mock_producer.topic, ["ztf_20261030_programid1"])
+
+
+class TestStepCopyMessages(TestCase):
+    def setUp(self):
+        self.settings = {
+            "PRODUCER_CONFIG": {
+                "CLASS": "apf.core.step.DefaultProducer",
+                "SCHEMA_PATH": PATH,
+            },
+            "CONSUMER_CONFIG": {
+                "CLASS": "apf.core.step.DefaultConsumer",
+            },
+            "FILTERS_CONFIG": {
+                "ENABLE": True,
+                "MODULUS": 10,
+                "REMAINDER": 0,
+            },
+        }
+
+    def create_step(self, **filters):
+        self.settings["FILTERS_CONFIG"].update(filters)
+        step = CustomMirrormaker(config=self.settings, survey="ztf")
+        step.consumer = mock.create_autospec(
+            RawKafkaConsumerBytes, instance=True
+        )
+        step.producer = mock.create_autospec(GenericProducer)
+        return step
+
+    def test_execute_passes_through_when_filters_disabled(self):
+        step = self.create_step(ENABLE=False)
+        batch = create_raw_bytes_messages(10)
+        result = step.execute(batch)
+        self.assertEqual(result, batch)
+
+    def test_returns_copies_not_originals(self):
+        step = self.create_step()
+        message = create_raw_bytes_messages(10)
+        result = step.copy_messages_by_percentage(message)
+        self.assertNotEqual(result, message)

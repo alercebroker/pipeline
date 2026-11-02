@@ -17,7 +17,8 @@ def docker_compose_file(pytestconfig):
         assert compose.exists()
     except AssertionError:
         compose = (
-            pytestconfig.rootdir / "reflector_step/tests/integration/docker-compose.yml"
+            pytestconfig.rootdir
+            / "reflector_step/tests/integration/docker-compose.yml"
         )
         assert compose.exists()
     return compose

@@ -49,10 +49,7 @@ CONSUMER_CONFIG = {
     "SCHEMA_PATH": PATH,
 }
 
-FILTERS_CONFIG = {
-    "ENABLE": False,
-    "STAGING": False,
-}
+FILTERS_CONFIG = {"ENABLE": False}
 
 
 def create_avro_alert(object_id):
