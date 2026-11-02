@@ -91,13 +91,20 @@ class CustomMirrormaker(GenericStep):
     def copy_messages_by_percentage(self, messages):
         copy_messages = []
         for message in messages:
-            if hash(message['value']) % self.config['FILTERS_CONFIG']['MODULUS'] == self.config['FILTERS_CONFIG']['REMAINDER']:
+            if (
+                hash(message["value"])
+                % self.config["FILTERS_CONFIG"]["MODULUS"]
+                == self.config["FILTERS_CONFIG"]["REMAINDER"]
+            ):
                 copy_messages.append(message.copy())
 
         return copy_messages
-    
+
     def execute(self, messages):
-        if self.config['FILTERS_CONFIG']['ENABLE'] and self.config['FILTERS_CONFIG']['STAGING']:
+        if (
+            self.config["FILTERS_CONFIG"]["ENABLE"]
+            and self.config["FILTERS_CONFIG"]["STAGING"]
+        ):
             messages = self.copy_messages_by_percentage(messages)
 
         return messages

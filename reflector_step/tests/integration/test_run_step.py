@@ -49,6 +49,11 @@ CONSUMER_CONFIG = {
     "SCHEMA_PATH": PATH,
 }
 
+FILTERS_CONFIG = {
+    "ENABLE": False,
+    "STAGING": False,
+}
+
 
 def create_avro_alert(object_id):
     out = io.BytesIO()
@@ -84,6 +89,7 @@ class MyTestCase(unittest.TestCase):
         cls.step_config = {
             "PRODUCER_CONFIG": PRODUCER_CONFIG,
             "CONSUMER_CONFIG": CONSUMER_CONFIG,
+            "FILTERS_CONFIG": FILTERS_CONFIG,
         }
 
     def test_keep_timestamp(self):
