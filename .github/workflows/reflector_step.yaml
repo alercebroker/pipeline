@@ -4,9 +4,13 @@ on:
   pull_request:
     branches:
       - main
+      - multisurvey
     paths:
       - 'reflector_step/**'
       - '!reflector_step/README.md'
+
+permissions:
+  contents: read
 
 jobs:
   reflector_step_lint:

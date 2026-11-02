@@ -4,6 +4,7 @@ import tempfile
 
 from apf.producers import KafkaSchemalessProducer
 
+
 class RawKafkaProducer(KafkaSchemalessProducer):
     """Producer that sends raw bytes without serialization"""
 
@@ -21,11 +22,14 @@ class RawKafkaProducerNoSchema(RawKafkaProducer):
     raw mirroring where no real schema exists / the source schema isn't self-contained.
     Honors an explicit SCHEMA_PATH if one is provided (backward compatible).
     """
+
     _DUMMY_SCHEMA = {"type": "record", "name": "RawPassthrough", "fields": []}
 
     def __init__(self, config: dict):
         if not config.get("SCHEMA_PATH"):
-            path = os.path.join(tempfile.gettempdir(), "reflector_raw_passthrough.avsc")
+            path = os.path.join(
+                tempfile.gettempdir(), "reflector_raw_passthrough.avsc"
+            )
             if not os.path.exists(path):
                 with open(path, "w") as f:
                     json.dump(self._DUMMY_SCHEMA, f)
