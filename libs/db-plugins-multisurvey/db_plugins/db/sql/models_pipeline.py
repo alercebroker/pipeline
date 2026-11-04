@@ -12,6 +12,7 @@ from sqlalchemy import (
     String,
     Text,
     cast,
+    event,
     func,
     text,
 )
@@ -73,8 +74,7 @@ class Object(Base):
         Index("ix_object_sid_n_det", "sid", "n_det", postgresql_using="btree"),
         Index("ix_object_sid_firstmjd", "sid", "firstmjd", postgresql_using="btree"),
         Index("ix_object_sid_lastmjd", "sid", "lastmjd", postgresql_using="btree"),
-        # Production also has object_q3c_ang2ipix_idx on q3c_ang2ipix(meanra, meandec). It needs the q3c
-        # extension, so it is not declared here; create it separately where q3c is installed.
+        # object_q3c_ang2ipix_idx is created after the table, see _create_object_q3c_index below
         {"postgresql_partition_by": "HASH (oid)"},
     )
 
@@ -83,6 +83,27 @@ class Object(Base):
     @classmethod
     def __partition_on__(cls, partition_idx: int):
         return f"FOR VALUES WITH (MODULUS {cls.__n_partitions__}, REMAINDER {partition_idx})"
+
+
+@event.listens_for(Object.__table__, "after_create")
+def _create_object_q3c_index(target, connection, **kw):
+    # Only where q3c is installed (not on plain Postgres), qualified with its schema since it may
+    # not be in the search_path. Created before the partitions, so each one gets it.
+    q3c_schema = connection.execute(
+        text(
+            "SELECT n.nspname FROM pg_extension e "
+            "JOIN pg_namespace n ON n.oid = e.extnamespace WHERE e.extname = 'q3c'"
+        )
+    ).scalar()
+    if q3c_schema is None:
+        return
+    preparer = connection.dialect.identifier_preparer
+    connection.execute(
+        text(
+            f"CREATE INDEX object_q3c_ang2ipix_idx ON {preparer.format_table(target)} "
+            f"USING btree ({preparer.quote_schema(q3c_schema)}.q3c_ang2ipix(meanra, meandec))"
+        )
+    )
 
 
 class ZtfObject(Base):
@@ -1009,6 +1030,14 @@ class Probability(Base):
             "sid",
             "probability",
             "oid",
+            postgresql_where=ranking == 1,
+            postgresql_using="btree",
+        ),
+        Index(
+            "ix_prob_clf_class_lastmjd_rank1",
+            classifier_id,
+            class_id,
+            lastmjd.desc(),
             postgresql_where=ranking == 1,
             postgresql_using="btree",
         ),
