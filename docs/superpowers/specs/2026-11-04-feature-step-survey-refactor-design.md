@@ -132,7 +132,8 @@ extractor.
 ```
 exits 0 (no failure outside the recorded baseline: 7 in `test_step_ztf`, 1 in
 `test_step_lsst`), with new test files
-`feature_step/tests/unittest/test_surveys_contract.py` (criteria 1-4, 6, 7) and
-`feature_step/tests/unittest/test_surveys_golden.py` (criterion 5) seen red before
-the implementation exists. The ztf and lsst golden fixtures are generated from the
+`feature_step/tests/unittest/test_surveys_<task>.py`, one per task (`golden` for
+criterion 5, `bands_registry` for 3-4, `common` for 7, `ztf` and `lsst` for 6,
+`step` for 1-3), each seen red before the implementation exists. One file per task
+because a committed test file is read-only for the agent (`edit_guard`). The ztf and lsst golden fixtures are generated from the
 `multisurvey` code before any refactor commit, in the first task.
