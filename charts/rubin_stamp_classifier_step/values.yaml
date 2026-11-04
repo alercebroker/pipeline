@@ -83,18 +83,31 @@ configYaml:
       sasl.password: ""
     TOPIC: "w_object"
     SCHEMA_PATH: "/schemas/scribe_step/scribe.avsc"
+  # Rubin deployment only: forward the raw LSST alert of every ranking-1
+  # SN_FORWARD_CLASS object to the topic the hunter deployment consumes.
+  # Schemaless records, like every multisurvey topic: the hunter deployment
+  # consumes with apf.consumers.KafkaSchemalessConsumer and this SCHEMA_PATH.
+  # The hunter deployment disables it with `SN_FORWARD_PRODUCER_CONFIG: null`
+  # (Helm merges maps, so `{}` would not remove the block).
+  SN_FORWARD_CLASS: "SN"
+  SN_FORWARD_PRODUCER_CONFIG:
+    CLASS: "apf.producers.kafka.KafkaSchemalessProducer"
+    PARAMS:
+      bootstrap.servers: ""
+      security.protocol: ""
+      sasl.mechanism: "SCRAM-SHA-512"
+      sasl.username: ""
+      sasl.password: ""
+    TOPIC: "sn_candidates"
+    SCHEMA_PATH: "/schemas/surveys/lsst_v11.1/lsst.v11_1.alert.avsc"
   MODEL_VERSION: ""
   MODEL_CONFIG:
+    # rubin: alerce_classifiers.rubin.StampClassifierModel
+    # hunter: alerce_classifiers.hunter.HunterClassifierModel
     CLASS: ""
-    NAME: ""
     PARAMS:
-      # model_path: ""
-      # mapper: ""
-      ## here go other settings like
-      ## header_quantiles_path: ""
-      ## feature_quantiles_path: ""
-      ## barney and toretto use path_to_model instead of model_path
-      ## path_to_model: ""
+      model_path: ""
+    CLS_ID: ""
   PYROSCOPE_SERVER: "http://pyroscope.pyroscope:4040"
   SCRIBE_PARSER_CLASS: "lc_classification.core.parsers.scribe_parser.ScribeParser"
   STEP_PARSER_CLASS: "lc_classification.core.parsers.elasticc_parser.ElasticcParser"

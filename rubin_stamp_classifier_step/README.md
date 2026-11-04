@@ -40,15 +40,36 @@ This step is part of the ALeRCE astronomical alert broker pipeline. It processes
        PORT: 5432
        DB_NAME: postgres
        SCHEMA: public
+     # Optional, rubin deployment only: see "SN forwarder" below.
+     SN_FORWARD_CLASS: "SN"
+     SN_FORWARD_PRODUCER_CONFIG:
+       CLASS: "apf.producers.kafka.KafkaSchemalessProducer"
+       TOPIC: sn_candidates
+       PARAMS:
+         bootstrap.servers: localhost:9092
+       SCHEMA_PATH: "/schemas/surveys/lsst_v11.1/lsst.v11_1.alert.avsc"
      MODEL_VERSION: "1.0.0"
      MODEL_CONFIG:
-       # MODEL_PATH: "/path/to/local/model"
-       MODEL_PATH: "https://download.my.model/model.zip"
+       CLASS: "alerce_classifiers.rubin.StampClassifierModel"
+       PARAMS:
+         # model_path: "/path/to/local/model"
+         model_path: "https://download.my.model/model.zip"
+       CLS_ID: 3
      FEATURE_FLAGS:
        USE_PROFILING: false
        PROMETHEUS: false
    ```
    Adjust parameters as needed for your environment.
+
+   **SN forwarder.** When `SN_FORWARD_PRODUCER_CONFIG` is set, the step
+   re-emits the raw LSST alert of every object whose ranking-1 class is
+   `SN_FORWARD_CLASS` (default `SN`) to that producer's topic, unchanged.
+   This is how the rubin deployment feeds the hunter deployment. The alert is
+   written with `KafkaSchemalessProducer` and the LSST alert schema, like
+   every multisurvey topic, so the hunter deployment consumes it with
+   `apf.consumers.KafkaSchemalessConsumer` and the same `SCHEMA_PATH` (not
+   `LsstKafkaConsumer`: our topic carries no Confluent prefix). Leave the
+   block out in the hunter deployment.
 
 2. **Set the config path:**
    ```bash
@@ -133,8 +154,11 @@ configYaml:
       SCHEMA: public
     MODEL_VERSION: "1.0.0"
     MODEL_CONFIG:
-      # MODEL_PATH: "/path/to/local/model"
-      MODEL_PATH: "https://download.my.model/model.zip"
+      CLASS: "alerce_classifiers.rubin.StampClassifierModel"
+      PARAMS:
+        # model_path: "/path/to/local/model"
+        model_path: "https://download.my.model/model.zip"
+      CLS_ID: 3
     FEATURE_FLAGS:
       USE_PROFILING: false
       PROMETHEUS: false
