@@ -17,15 +17,15 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 RUN pip install poetry
-COPY lc_classification_step/poetry.lock \
-    lc_classification_step/pyproject.toml \
+COPY lc_anomaly_step/poetry.lock \
+    lc_anomaly_step/pyproject.toml \
     /app/
 COPY libs/apf /libs/apf
 COPY alerce_classifiers /alerce_classifiers
 COPY lc_classifier /lc_classifier
 COPY mhps /mhps
 COPY P4J /P4J
-COPY schemas/lc_classification_step /schemas/lc_classification_step
+COPY schemas/lc_anomaly_step /schemas/lc_anomaly_step
 COPY schemas/feature_step /schemas/feature_step
 COPY schemas/scribe_step /schemas/scribe_step
 WORKDIR /app
@@ -43,11 +43,11 @@ COPY --from=builder /lc_classifier /lc_classifier
 COPY --from=builder /mhps /mhps
 COPY --from=builder /P4J /P4J
 COPY --from=builder /schemas /schemas
-COPY lc_classification_step/scripts /app/scripts
-COPY lc_classification_step/README.md /app/README.md
-COPY lc_classification_step/settings.py /app/settings.py
-COPY lc_classification_step/models_settings.py /app/models_settings.py
-COPY lc_classification_step/lc_classification /app/lc_classification
+COPY lc_anomaly_step/scripts /app/scripts
+COPY lc_anomaly_step/README.md /app/README.md
+COPY lc_anomaly_step/settings.py /app/settings.py
+COPY lc_anomaly_step/models_settings.py /app/models_settings.py
+COPY lc_anomaly_step/lc_classification /app/lc_classification
 WORKDIR /app/
 RUN poetry install --only-root
 CMD ["poetry", "run", "step"]

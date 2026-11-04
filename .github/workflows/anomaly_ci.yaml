@@ -1,0 +1,18 @@
+name: Staging CI Pipeline
+
+on:
+  push:
+    branches:
+      - anomaly_step
+
+concurrency: ci
+
+jobs:
+  build-lc-classification-anomaly-dagger:
+    uses: ./.github/workflows/template_build_with_dagger.yaml
+    with:
+      stage: staging
+      extra-args: lc_classification_step_anomaly --build-args=model:anomaly --package-dir=lc_anomaly_step
+      submodules: true
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
