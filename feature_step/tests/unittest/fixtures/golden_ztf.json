@@ -2471,6 +2471,7 @@
  "scribe": [
   {
    "key": "36028941624528297",
+   "raw": "{\"survey\": \"ztf\", \"step\": \"update-ztf-object-features\", \"payload\": {\"oid\": 36028941624528297, \"mjd\": 60023.79999999996, \"g_r_max\": 0.3, \"g_r_mean\": 0.2, \"g_r_max_corr\": 0.25, \"g_r_mean_corr\": 0.15}, \"criteria\": {\"oid\": 36028941624528297}, \"options\": {}}",
    "topic": "test-scribe",
    "value": {
     "criteria": {
@@ -2491,6 +2492,7 @@
   },
   {
    "key": "36028941624528298",
+   "raw": "{\"survey\": \"ztf\", \"step\": \"update-ztf-object-features\", \"payload\": {\"oid\": 36028941624528298, \"mjd\": 60015.299999999974, \"g_r_max\": 0.3, \"g_r_mean\": 0.2, \"g_r_max_corr\": 0.25, \"g_r_mean_corr\": 0.15}, \"criteria\": {\"oid\": 36028941624528298}, \"options\": {}}",
    "topic": "test-scribe",
    "value": {
     "criteria": {
@@ -2511,6 +2513,7 @@
   },
   {
    "key": "36028941624528297",
+   "raw": "{\"step\": \"features\", \"survey\": \"ztf\", \"payload\": {\"oid\": 36028941624528297, \"features_version\": 1, \"sid\": \"0\", \"features\": [{\"value\": 1.5, \"band\": 1, \"feature_id\": 1}, {\"value\": 2.5, \"band\": 2, \"feature_id\": 1}, {\"value\": 0.3, \"band\": 12, \"feature_id\": 2}, {\"value\": 0.2, \"band\": 12, \"feature_id\": 3}, {\"value\": 0.25, \"band\": 12, \"feature_id\": 4}, {\"value\": 0.15, \"band\": 12, \"feature_id\": 5}, {\"value\": 0.7, \"band\": 0, \"feature_id\": 6}, {\"value\": null, \"band\": 2, \"feature_id\": 8}], \"mjd\": 60023.79999999996}}",
    "topic": "test-scribe",
    "value": {
     "payload": {
@@ -2567,6 +2570,7 @@
   },
   {
    "key": "36028941624528298",
+   "raw": "{\"step\": \"features\", \"survey\": \"ztf\", \"payload\": {\"oid\": 36028941624528298, \"features_version\": 1, \"sid\": \"0\", \"features\": [{\"value\": 1.5, \"band\": 1, \"feature_id\": 1}, {\"value\": 2.5, \"band\": 2, \"feature_id\": 1}, {\"value\": 0.3, \"band\": 12, \"feature_id\": 2}, {\"value\": 0.2, \"band\": 12, \"feature_id\": 3}, {\"value\": 0.25, \"band\": 12, \"feature_id\": 4}, {\"value\": 0.15, \"band\": 12, \"feature_id\": 5}, {\"value\": 0.7, \"band\": 0, \"feature_id\": 6}, {\"value\": null, \"band\": 2, \"feature_id\": 8}], \"mjd\": 60015.299999999974}}",
    "topic": "test-scribe",
    "value": {
     "payload": {

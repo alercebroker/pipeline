@@ -124,7 +124,8 @@ def capture(survey) -> dict:
         "prepared_oids": [m["oid"] for m in prepared],  # which messages survived pre_execute
         "astro_objects": stub.frames,  # oid -> {detections, forced_photometry, metadata, reference} split dicts
         "scribe": [  # every scribe command in produce order
-            {"topic": kw["topic"], "key": kw["key"].decode(), "value": json.loads(kw["value"])}  # decode key and value
+            {"topic": kw["topic"], "key": kw["key"].decode(), "value": json.loads(kw["value"]),  # decode key and value
+             "raw": kw["value"].decode("utf-8")}  # wire bytes as text: pins key order, separators and NaN spelling
             for _, kw in step.scribe_producer.producer.produce.call_args_list  # keyword calls only
         ],
         "output": out,  # messages that would go to the output topic
@@ -168,6 +169,11 @@ def normalize(obj, path="$"):
     raise TypeError(f"cannot normalize {type(obj)!r} at {path}")  # surface the exact type and path
 
 
+def golden_text(got) -> str:
+    """Serialize a capture exactly as the fixture file stores it; the writer and the comparer both use this."""
+    return json.dumps(got, indent=1, sort_keys=True)  # text form keeps 1 vs 1.0 and true vs 1 distinct
+
+
 class GoldenTestCase(unittest.TestCase):
     """Compare today's captured behaviour with the committed golden fixtures."""
 
@@ -185,6 +191,7 @@ class GoldenTestCase(unittest.TestCase):
         got = capture(survey)  # today's behaviour
         if os.environ.get("FEATURE_STEP_WRITE_GOLDEN"):  # regeneration mode
             path.parent.mkdir(exist_ok=True)  # create fixtures/ on first write
-            path.write_text(json.dumps(got, indent=1, sort_keys=True))  # readable, stable diffs
+            path.write_text(golden_text(got))  # same serialization the comparison uses
             self.fail(f"wrote {path}")  # never pass while regenerating
-        self.assertEqual(json.loads(path.read_text()), got)  # FileNotFoundError when the fixture is missing
+        self.maxDiff = None  # show the whole text diff on mismatch
+        self.assertMultiLineEqual(path.read_text(), golden_text(got))  # text compare, FileNotFoundError when the fixture is missing

@@ -1098,6 +1098,7 @@
  "scribe": [
   {
    "key": "1152921504606847001",
+   "raw": "{\"step\": \"features\", \"survey\": \"lsst\", \"payload\": {\"oid\": 1152921504606847001, \"features_version\": 1, \"sid\": \"1\", \"mjd\": 60614.30000000003, \"features\": [{\"value\": 1.1, \"band\": 6, \"feature_id\": 1}, {\"value\": 1.2, \"band\": 1, \"feature_id\": 1}, {\"value\": 0.4, \"band\": 61, \"feature_id\": 2}, {\"value\": 0.6, \"band\": 0, \"feature_id\": 3}]}}",
    "topic": "test-scribe",
    "value": {
     "payload": {
@@ -1134,6 +1135,7 @@
   },
   {
    "key": "1152921504606847002",
+   "raw": "{\"step\": \"features\", \"survey\": \"lsst\", \"payload\": {\"oid\": 1152921504606847002, \"features_version\": 1, \"sid\": \"1\", \"mjd\": 60614.30000000003, \"features\": [{\"value\": 1.1, \"band\": 6, \"feature_id\": 1}, {\"value\": 1.2, \"band\": 1, \"feature_id\": 1}, {\"value\": 0.4, \"band\": 61, \"feature_id\": 2}, {\"value\": 0.6, \"band\": 0, \"feature_id\": 3}]}}",
    "topic": "test-scribe",
    "value": {
     "payload": {
