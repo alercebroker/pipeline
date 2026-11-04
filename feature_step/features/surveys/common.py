@@ -22,9 +22,9 @@ def last_mjd_of(detections: list[dict], forced: list[dict]) -> float:
     return float(max(all_mjds)) if all_mjds else np.nan  # NaN when empty
 
 
-def prepare_features_for_db(
+def prepare_features_for_db(  # signature spans three lines
     astro_object, feature_name_lut: dict, bands: SurveyBands, keep_name: bool  # object, id -> name, band table, name flag
-) -> pd.DataFrame:
+) -> pd.DataFrame:  # returns the feature rows frame
     """Return the feature rows of `astro_object` for the scribe upsert.
 
     Keeps rows with a value, maps fid to the db band code, turns inf into None,
@@ -39,12 +39,12 @@ def prepare_features_for_db(
     ao_features.replace({np.nan: None, np.inf: None, -np.inf: None}, inplace=True)  # inf -> None
 
     ao_features["name"] = ao_features["name"].replace(  # backward compatibility names
-        {
+        {  # old name -> db name
             "Power_rate_1_4": "Power_rate_1/4",  # name stored in the db
             "Power_rate_1_3": "Power_rate_1/3",  # name stored in the db
             "Power_rate_1_2": "Power_rate_1/2",  # name stored in the db
-        }
-    )
+        }  # end of the rename map
+    )  # end of the replace call
 
     name_to_id = {name: feature_id for feature_id, name in feature_name_lut.items()}  # invert the LUT
     ao_features["feature_id"] = ao_features["name"].map(name_to_id)  # name -> feature id
@@ -54,7 +54,7 @@ def prepare_features_for_db(
     if unmapped.any():  # at least one unknown name
         logging.getLogger("alerce.FeatureStep").warning(  # same logger as today
             f"Features not found in lookup table: {list(ao_features.loc[unmapped, 'name'].unique())}"  # list the names
-        )
+        )  # end of the warning call
         ao_features = ao_features[~unmapped]  # drop them
     ao_features["feature_id"] = ao_features["feature_id"].astype(int)  # ids as ints
 
@@ -77,4 +77,4 @@ def flatten_features_for_output(astro_object, bands: SurveyBands) -> dict[str, f
     return {  # NaN -> None, the rest as python float
         name: (None if np.isnan(value) else float(value))  # one entry per feature
         for name, value in zip(feature_names, values)  # pair names with values
-    }
+    }  # end of the features dict

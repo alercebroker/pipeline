@@ -16,7 +16,7 @@ from features.surveys.common import (  # helpers under test
     last_mjd_of,  # max mjd over detections and forced photometry
     prepare_features_for_db,  # feature rows for the scribe upsert
     wise_magnitudes,  # W1-W4 from an allwise xmatch
-)
+)  # end of the helper imports
 from features.surveys.lsst import LSSTSurvey  # lsst band table
 from features.surveys.ztf import ZTFSurvey  # ztf band table
 from lc_classifier.features.core.base import AstroObject  # object the helpers read
@@ -33,13 +33,13 @@ def astro_object_with(rows):
     """Return a minimal AstroObject whose features are `rows` of (name, fid, value)."""
     detections = pd.DataFrame(  # two-row detections frame, the columns __post_init__ requires
         {"oid": [1, 1], "sid": [0, 0], "fid": ["g", "r"]}  # one object, two bands
-    )
+    )  # end of the detections frame
     metadata = pd.DataFrame([["oid", 1]], columns=["name", "value"])  # metadata in the name/value layout
     ao = AstroObject(metadata=metadata, detections=detections)  # minimal object
     ao.features = pd.DataFrame(  # features in the extractor frame layout, as the golden stub writes them
         [(name, value, fid, 0, "stub") for name, fid, value in rows],  # reorder to name, value, fid
         columns=["name", "value", "fid", "sid", "version"],  # columns of empty_normal_dataframe
-    )
+    )  # end of the features frame
     return ao  # ready for the helpers
 
 
@@ -69,7 +69,7 @@ class PrepareFeaturesForDbTestCase(unittest.TestCase):
             list(result["name"]),  # names in row order
             ["Amplitude", "Amplitude", "g-r_max", "g-r_mean", "g-r_max_corr",  # band and color features
              "g-r_mean_corr", "Power_rate_1/4", "Skew"],  # renamed and inf features
-        )
+        )  # end of the names assertion
         self.assertTrue(set(result["name"]) <= set(LUT["ztf"].values()))  # every name is a LUT name
 
     def test_prepare_drop_name_equals_today_lsst(self):
@@ -91,7 +91,7 @@ class PrepareFeaturesForDbTestCase(unittest.TestCase):
             got,  # rows from the helper
             [{"value": None, "band": 4, "feature_id": 5},  # z -> 4, inf -> None
              {"value": 1.0, "band": 61, "feature_id": 1}],  # u,g -> 61
-        )
+        )  # end of the rows assertion
 
     def test_prepare_drops_unknown_with_warning(self):
         """A name absent from the LUT is dropped and logged on alerce.FeatureStep."""
@@ -150,7 +150,7 @@ class FlattenFeaturesTestCase(unittest.TestCase):
             "Power_rate_1_4": 0.7, "Skew_2": None, "Unknown_feat_1": 1.0,  # no band, inf -> None, unmapped kept
             "g_r_max_12": 0.3, "g_r_max_corr_12": 0.25, "g_r_mean_12": 0.2,  # colors renamed
             "g_r_mean_corr_12": 0.15,  # last color
-        }
+        }  # end of the expected ztf dict
         self.assertEqual(result, expected)  # same keys and values
         self.assertEqual(list(result), list(expected))  # same order: sorted by name
         self.assertTrue(all(v is None or type(v) is float for v in result.values()))  # values are float or None
@@ -164,6 +164,6 @@ class FlattenFeaturesTestCase(unittest.TestCase):
             "Amplitude_1": 1.2, "Amplitude_6": 1.1, "Mean_3": None,  # g, u, NaN -> None
             "Odd": 2.0, "Power_rate_1_2": 0.6, "Skew_5": None,  # unknown band no suffix, inf -> None
             "Unknown_feat_2": 1.0, "u_g_mean_61": 0.4,  # unmapped kept, color renamed
-        }
+        }  # end of the expected lsst dict
         self.assertEqual(result, expected)  # same keys and values
         self.assertEqual(list(result), list(expected))  # same order: sorted by name
