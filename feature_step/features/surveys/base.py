@@ -25,7 +25,7 @@ class SurveyBands:
         """Return the band letter of a numeric fid, or None if unknown."""
         return self.singles_inverse.get(fid)  # reverse lookup
 
-    @property
+    @property  # expose as attribute
     def singles_inverse(self):
         """Return the numeric fid -> band letter dict (today's band_map_inverse)."""
         return {code: letter for letter, code in self.letters.items()}  # invert the letter table

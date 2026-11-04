@@ -8,15 +8,15 @@ from features.surveys.ztf import ZTFSurvey  # ztf survey class under test
 ZTF_DB = {"g": 1, "r": 2, "g,r": 12, "i": 0, None: 0, "x": 0}  # today's fid_mapper_for_db
 ZTF_SUFFIX = {"g": "_1", "r": "_2", "g,r": "_12", "i": "", None: "", "x": ""}  # today's fid_map in parse_output
 LSST_DB = {  # today's fid_mapper_for_db_lsst
-    "u": 6, "g": 1, "r": 2, "i": 3, "z": 4, "y": 5,
-    "u,g": 61, "g,r": 12, "r,i": 23, "i,z": 34, "z,y": 45,
-    None: 0, "x": 0,
-}
+    "u": 6, "g": 1, "r": 2, "i": 3, "z": 4, "y": 5,  # single bands
+    "u,g": 61, "g,r": 12, "r,i": 23, "i,z": 34, "z,y": 45,  # band pairs
+    None: 0, "x": 0,  # missing and unknown bands
+}  # end of LSST_DB
 LSST_SUFFIX = {  # today's suffix_map in parse_output_lsst
-    "u": "_6", "g": "_1", "r": "_2", "i": "_3", "z": "_4", "y": "_5",
-    "u,g": "_61", "g,r": "_12", "r,i": "_23", "i,z": "_34", "z,y": "_45",
-    None: "", "x": "",
-}
+    "u": "_6", "g": "_1", "r": "_2", "i": "_3", "z": "_4", "y": "_5",  # single bands
+    "u,g": "_61", "g,r": "_12", "r,i": "_23", "i,z": "_34", "z,y": "_45",  # band pairs
+    None: "", "x": "",  # missing and unknown bands
+}  # end of LSST_SUFFIX
 
 
 class TestSurveyBandsRegistry(unittest.TestCase):
@@ -60,5 +60,5 @@ class TestSurveyBandsRegistry(unittest.TestCase):
         self.assertEqual((LSSTSurvey.sid, LSSTSurvey.tid), (1, 1))  # lsst ids
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # run as a script
     unittest.main()  # allow running the file directly

@@ -9,10 +9,10 @@ class LSSTSurvey(Survey):
     sid = 1  # survey id
     tid = 1  # type id
     needs_references = False  # lsst does not read references
-    bands = SurveyBands(
+    bands = SurveyBands(  # band table of lsst
         {"u": 6, "g": 1, "r": 2, "i": 3, "z": 4, "y": 5},  # single bands
         {"u,g": 61, "g,r": 12, "r,i": 23, "i,z": 34, "z,y": 45},  # band pairs
-    )
+    )  # end of band table
 
     def make_preprocessor(self):
         """Return the lsst lightcurve preprocessor."""
