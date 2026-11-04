@@ -6,6 +6,9 @@ from lc_classifier.utils import mag2flux, mag_err_2_flux_err
 from typing import List, Dict, Optional
 import os
 import json
+from features.surveys.common import last_mjd_of, prepare_features_for_db, wise_magnitudes  # shared survey helpers
+from features.surveys.lsst import LSSTSurvey  # lsst band table
+from features.surveys.ztf import ZTFSurvey  # ztf band table
 
 
 DETECTION_KEYS_MAP = {
@@ -101,23 +104,9 @@ def detections_to_astro_object_lsst(
     aid_forced = a[a["forced"]]
     aid_detections = a[~a["forced"]]
 
-    w1 = w2 = w3 = w4 = np.nan
+    w1, w2, w3, w4 = wise_magnitudes(xmatches)  # W1-W4 from an allwise match, else NaN
 
-    if xmatches is not None and xmatches['catalog'] == 'allwise':
-        w1 = xmatches['metadata']["w1mpro"]['Float64']
-        w2 = xmatches['metadata']["w2mpro"]['Float64']
-        w3 = xmatches['metadata']["w3mpro"]['Float64']
-        w4 = xmatches['metadata']["w4mpro"]['Float64']
-
-    all_mjds = []
-    for det in detections:
-        if "mjd" in det:
-            all_mjds.append(det["mjd"])
-    for frc in forced:
-        if "mjd" in frc:
-            all_mjds.append(frc["mjd"])
-    
-    last_mjd = float(max(all_mjds)) if all_mjds else np.nan
+    last_mjd = last_mjd_of(detections, forced)  # max mjd over detections and forced photometry
 
 
     metadata = pd.DataFrame(
@@ -324,12 +313,7 @@ def detections_to_astro_object(
     aid_detections = a[~a["forced"]]
 
 
-    w1 = w2 = w3 = w4 = np.nan
-    if xmatches is not None and xmatches.get("catalog") == "allwise":
-        w1 = xmatches['metadata']["w1mpro"]['Float64']
-        w2 = xmatches['metadata']["w2mpro"]['Float64']
-        w3 = xmatches['metadata']["w3mpro"]['Float64']
-        w4 = xmatches['metadata']["w4mpro"]['Float64']
+    w1, w2, w3, w4 = wise_magnitudes(xmatches)  # W1-W4 from an allwise match, else NaN
 
 
     sgscore1 = np.nan
@@ -349,16 +333,7 @@ def detections_to_astro_object(
             distpsnr1 = det["distpsnr1"]
             continue
 
-    # Get maximum mjd from all detections and forced photometry
-    all_mjds = []
-    for det in detections:
-        if "mjd" in det:
-            all_mjds.append(det["mjd"])
-    for frc in forced:
-        if "mjd" in frc:
-            all_mjds.append(frc["mjd"])
-    
-    last_mjd = float(max(all_mjds)) if all_mjds else np.nan
+    last_mjd = last_mjd_of(detections, forced)  # max mjd over detections and forced photometry
 
     metadata_rows = [
         ["aid", aid],
@@ -439,89 +414,14 @@ def fid_mapper_for_db_lsst(band: str) -> int:
 
 
 def prepare_ao_features_for_db(astro_object: AstroObject, feature_name_lut) -> pd.DataFrame:
-    ao_features = astro_object.features[["name", "fid", "value"]].copy()
-    ao_features = ao_features[ao_features["value"].notna()]
-
-    ao_features["band"] = ao_features["fid"].apply(fid_mapper_for_db) #esto deberia cambiarlo a band
-    ao_features.replace({np.nan: None, np.inf: None, -np.inf: None}, inplace=True)
-
-    # backward compatibility
-    ao_features["name"] = ao_features["name"].replace(
-        {
-            "Power_rate_1_4": "Power_rate_1/4",
-            "Power_rate_1_3": "Power_rate_1/3",
-            "Power_rate_1_2": "Power_rate_1/2",
-        }
-    )
-
-    # Invert the LUT so ids are stable across batches, regardless of which
-    # feature names happen to be present in this one.
-    name_to_id = {name: feature_id for feature_id, name in feature_name_lut.items()}
-    
-    # Map feature names to their IDs using the lookup table
-    ao_features["feature_id"] = ao_features["name"].map(name_to_id)
-    
-    # Drop features the LUT does not know, with a warning. feature_id is NOT
-    # NULL and part of the PK in `feature`, so one unmapped row would fail the
-    # whole scribe batch. Each survey's LUT decides what gets stored.
-    unmapped = ao_features["feature_id"].isna()
-    if unmapped.any():
-        logging.getLogger("alerce.FeatureStep").warning(
-            f"Features not found in lookup table: {list(ao_features.loc[unmapped, 'name'].unique())}"
-        )
-        ao_features = ao_features[~unmapped]
-    ao_features["feature_id"] = ao_features["feature_id"].astype(int)
-
-    # Drop original columns, keep only the mapped data
-    ao_features = ao_features.drop(columns=["fid"])
-    return ao_features
-
+    """Return the ztf feature rows for the scribe upsert, keeping the name column."""  # docstring of the delegation
+    return prepare_features_for_db(astro_object, feature_name_lut, ZTFSurvey.bands, keep_name=True)  # shared body, ztf bands
 
 
 def prepare_ao_features_for_db_lsst(astro_object: AstroObject, feature_name_lut) -> pd.DataFrame:
-    """
-    Prepare LSST AstroObject.features for DB upsert.
-    - Keep only name, fid, value
-    - Map fid using fid_mapper_for_db_lsst
-    - Apply backward-compat name replacements
-    - Use provided feature_name_lut to map feature names to IDs
-    """
-    ao_features = astro_object.features[["name", "fid", "value"]].copy()
-    #deberia votar features con value nan
-    ao_features = ao_features[ao_features["value"].notna()]
-    ao_features["band"] = ao_features["fid"].apply(fid_mapper_for_db_lsst)
-    ao_features.replace({np.nan: None, np.inf: None, -np.inf: None}, inplace=True)
-    ao_features["name"] = ao_features["name"].replace( 
-        {
-            "Power_rate_1_4": "Power_rate_1/4",
-            "Power_rate_1_3": "Power_rate_1/3",
-            "Power_rate_1_2": "Power_rate_1/2",
-        }
-    )
+    """Return the lsst feature rows for the scribe upsert, without the name column."""  # docstring of the delegation
+    return prepare_features_for_db(astro_object, feature_name_lut, LSSTSurvey.bands, keep_name=False)  # shared body, lsst bands
 
-    # Use the provided feature_name_lut to map feature names to IDs
-    # Create reverse mapping: name -> id
-    name_to_id = {name: feature_id for feature_id, name in feature_name_lut.items()}
-    #unique_feature_names = ao_features["name"].unique()
-    #name_to_id = {name: idx for idx, name in enumerate(unique_feature_names)}
-    
-    # Map feature names to their IDs using the lookup table
-    ao_features["feature_id"] = ao_features["name"].map(name_to_id)
-    
-    # Drop features the LUT does not know, with a warning. See
-    # prepare_ao_features_for_db.
-    unmapped = ao_features["feature_id"].isna()
-    if unmapped.any():
-        logging.getLogger("alerce.FeatureStep").warning(
-            f"Features not found in lookup table: {list(ao_features.loc[unmapped, 'name'].unique())}"
-        )
-        ao_features = ao_features[~unmapped]
-    ao_features["feature_id"] = ao_features["feature_id"].astype(int)
-
-    # Drop original columns, keep only the mapped data
-    ao_features = ao_features.drop(columns=["fid", "name"])
-
-    return ao_features
 
 def parse_scribe_payload(
     astro_objects: List[AstroObject], features_version, features_group,feature_name_lut
