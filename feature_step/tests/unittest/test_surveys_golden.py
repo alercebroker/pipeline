@@ -43,27 +43,41 @@ LUT = {"ztf": {1: "Amplitude", 2: "g-r_max", 3: "g-r_mean", 4: "g-r_max_corr", 5
                6: "Power_rate_1/4", 7: "Mean", 8: "Skew"},  # Unknown_feat deliberately absent
        "lsst": {1: "Amplitude", 2: "u-g_mean", 3: "Power_rate_1/2", 4: "Mean"}}  # lsst feature id -> name
 
-FRAME_NAMES = ("detections", "forced_photometry", "metadata", "reference")  # AstroObject frames recorded by the stub
+FRAME_NAMES = ("detections", "forced_photometry", "metadata", "reference")  # AstroObject frames recorded before preprocessing
 
 
-class StubExtractor:
-    """Writes STUB_FEATURES[survey] into every AstroObject instead of computing, and records
-    each AstroObject's frames (detections, forced_photometry, metadata, reference) as
-    `to_dict("split")` under self.frames, keyed by oid, so criterion 6 has an oracle."""
+class RecordingPreprocessor:
+    """Wraps the step's real lightcurve preprocessor and, before delegating, records each
+    AstroObject's frames (detections, forced_photometry, metadata, reference) as
+    `to_dict("split")` under self.frames, keyed by oid: the frames as the parser returned
+    them, before preprocessing, so criterion 6 has an oracle."""
 
-    def __init__(self, survey):
-        """Keep the survey whose stub rows are written and start with no recorded frames."""
-        self.survey = survey  # selects STUB_FEATURES[survey]
+    def __init__(self, inner):
+        """Keep the real preprocessor to delegate to and start with no recorded frames."""
+        self.inner = inner  # the step's own ZTF or LSST preprocessor
         self.frames = {}  # str(oid) -> {frame name: split dict or None}
 
-    def compute_features_batch(self, astro_objects, progress_bar=False):
-        """Record each AstroObject's frames, then replace its features with the stub rows."""
+    def preprocess_batch(self, astro_objects, progress_bar=False):
+        """Record each AstroObject's frames as the parser returned them, then run the real preprocessor."""
         for ao in astro_objects:  # one AstroObject per prepared message
             oid = query_ao_table(ao.metadata, "oid")  # oid as the parser stored it
-            self.frames[str(oid)] = {  # record the four frames as the step built them
+            self.frames[str(oid)] = {  # snapshot the four frames before preprocessing mutates them
                 name: (None if getattr(ao, name) is None else getattr(ao, name).to_dict("split"))  # None stays null
                 for name in FRAME_NAMES  # detections, forced_photometry, metadata, reference
             }
+        self.inner.preprocess_batch(astro_objects, progress_bar=progress_bar)  # today's preprocessing, unchanged
+
+
+class StubExtractor:
+    """Writes STUB_FEATURES[survey] into every AstroObject instead of computing features."""
+
+    def __init__(self, survey):
+        """Keep the survey whose stub rows are written."""
+        self.survey = survey  # selects STUB_FEATURES[survey]
+
+    def compute_features_batch(self, astro_objects, progress_bar=False):
+        """Replace each AstroObject's features with the stub rows."""
+        for ao in astro_objects:  # one AstroObject per prepared message
             sid = ao.detections["sid"].values[0]  # same sid the scribe payload reads
             ao.features = pd.DataFrame(  # stub features in the extractor frame layout
                 [(name, value, fid, sid, "stub") for name, fid, value in STUB_FEATURES[self.survey]],  # reorder to name, value, fid
@@ -115,14 +129,15 @@ def build_step(survey):
 def capture(survey) -> dict:
     """Run pre_execute, execute and post_execute on messages_for(survey) and return everything observable, normalized."""
     step = build_step(survey)  # mocked step
-    stub = StubExtractor(survey)  # replaces feature computation
-    step.feature_extractor = stub  # inject the stub
+    step.feature_extractor = StubExtractor(survey)  # replaces feature computation
+    recorder = RecordingPreprocessor(step.lightcurve_preprocessor)  # records parser output, then preprocesses as today
+    step.lightcurve_preprocessor = recorder  # inject the recording wrapper
     with mock.patch.object(FeatureStep, "_get_sql_references", return_value=references_df()):  # no db query for references
         prepared = step.pre_execute(messages_for(survey))  # filtering under capture
         out = step.post_execute(step.execute(prepared))  # AstroObjects, scribe commands and output
     return normalize({  # plain json-safe structure
         "prepared_oids": [m["oid"] for m in prepared],  # which messages survived pre_execute
-        "astro_objects": stub.frames,  # oid -> {detections, forced_photometry, metadata, reference} split dicts
+        "astro_objects": recorder.frames,  # oid -> frames as the parser returned them, before preprocessing
         "scribe": [  # every scribe command in produce order
             {"topic": kw["topic"], "key": kw["key"].decode(), "value": json.loads(kw["value"]),  # decode key and value
              "raw": kw["value"].decode("utf-8")}  # wire bytes as text: pins key order, separators and NaN spelling
