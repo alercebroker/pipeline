@@ -1,0 +1,28 @@
+name: Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+      - multisurvey
+    paths:
+      - 'scribe_multisurvey/**'
+      - 'libs/db-plugins-multisurvey/**'
+      - '.github/workflows/scribe_multisurvey.yaml'
+      - '!scribe_multisurvey/README.md'
+
+permissions:
+  contents: read
+
+jobs:
+  scribe_multisurvey_integration:
+    uses: ./.github/workflows/poetry-tests-template.yaml
+    with:
+      python-version: '3.10'
+      sources-folder: 'sql_scribe'
+      base-folder: 'scribe_multisurvey'
+      test-folder: 'tests/integration'
+      codecov-flags: 'scribe_multisurvey_integration'
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      CODECOV_TOKEN: "${{ secrets.CODECOV_TOKEN }}"
