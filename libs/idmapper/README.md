@@ -1,6 +1,10 @@
 # idmapper
 
-`idmapper` is a Python library for converting catalog object IDs to master IDs and vice versa. It supports multiple catalogs including ZTF and LSST.
+`idmapper` converts ZTF object ids (e.g. `ZTF20abcdefg`) to the int64 `oid` stored in the multisurvey database, and back.
+
+An object in the database is identified by `(oid, sid)`, where `sid` is the survey id from the `sid_lut` table (`idmapper.mapper.SURVEY_IDS`). LSST already publishes integer ids, which are stored as they come and need no conversion.
+
+A ZTF oid is the encoded ZTF name with a prefix in its top 8 bits. The prefix is the ZTF sid + 1, so it is 1 for every stored ZTF oid.
 
 ## Installation
 
@@ -12,9 +16,9 @@ poetry install
 
 ## Usage
 
-### Converting Catalog Object ID to Master ID
+### Converting a ZTF object id to an oid
 
-To convert a catalog object ID to a master ID, use the `catalog_oid_to_masterid` function:
+Use the `catalog_oid_to_masterid` function:
 
 ```python
 from idmapper.mapper import catalog_oid_to_masterid
@@ -22,20 +26,22 @@ from idmapper.mapper import catalog_oid_to_masterid
 catalog = "ZTF"
 catalog_oid = "ZTF20abcdefg"
 master_id = catalog_oid_to_masterid(catalog, catalog_oid)
-print(master_id)
+print(master_id)  # 36028957668018384
 ```
 
-### Decoding Master ID
+### Decoding an oid
 
-To decode a master ID back to its components, use the `decode_masterid` function:
+To convert a ZTF oid back to its ZTF object id, use the `decode_masterid` function:
 
 ```python
 from idmapper.mapper import decode_masterid
 
-master_id = 108086391180348693
+master_id = 36028957668018384
 catalog, catalog_oid = decode_masterid(master_id)
-print(catalog, catalog_oid)
+print(catalog, catalog_oid)  # ZTF ZTF20abcdefg
 ```
+
+Both functions only accept ZTF and raise `ValueError` for anything else.
 
 ## Validation
 
