@@ -372,7 +372,9 @@ class ZTFMagstatCommand(Command):
         if len(objectstat_list) > 0:
             object_stmt = update(Object)
             object_result = session.connection().execute(
-                object_stmt.where(Object.oid == bindparam("_oid")).values(
+                object_stmt.where(
+                    Object.oid == bindparam("_oid"), Object.sid == bindparam("_sid")
+                ).values(
                     {
                         "meanra": bindparam("meanra"),
                         "meandec": bindparam("meandec"),
@@ -446,7 +448,9 @@ class LSSTMagstatCommand(Command):
         if len(objectstat_list) > 0:
             object_stmt = update(Object)
             object_result = session.connection().execute(
-                object_stmt.where(Object.oid == bindparam("_oid")).values(
+                object_stmt.where(
+                    Object.oid == bindparam("_oid"), Object.sid == bindparam("_sid")
+                ).values(
                     {
                         "meanra": bindparam("meanra"),
                         "meandec": bindparam("meandec"),
