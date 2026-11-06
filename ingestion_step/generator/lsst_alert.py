@@ -14,7 +14,8 @@ HASH_CONSTANT_XOR = 23894729048  # Random number
 
 DEFAULT_ERR = 0.01  # Fallback for missing raErr/decErr values, in degrees.
 
-# LSST raErr/decErr (and trailRaErr/trailDecErr) are in degrees.
+# LSST raErr/decErr (and trailRaErr/trailDecErr) are in degrees,
+# ra_dec_Cov in deg**2.
 MIN_COORD_ERR = 1e-6
 MAX_COORD_ERR = 1e-4
 
@@ -337,7 +338,9 @@ class LsstAlertGenerator:
             if obj_info.otype == "dia"
             else self.rng.uniform(-90, 90),
             "decErr": self._noneable(self.rng.uniform(MIN_COORD_ERR, MAX_COORD_ERR)),
-            "ra_dec_Cov": self._noneable(self.rng.uniform(-0.01, 0.01)),
+            "ra_dec_Cov": self._noneable(
+                self.rng.uniform(-(MAX_COORD_ERR**2), MAX_COORD_ERR**2)
+            ),
             "x": self.rng.uniform(0, 4000),
             "xErr": self._noneable(self.rng.uniform(0, 5)),
             "y": self.rng.uniform(0, 4000),
@@ -524,7 +527,9 @@ class LsstAlertGenerator:
             "raErr": self._noneable(self.rng.uniform(MIN_COORD_ERR, MAX_COORD_ERR)),
             "dec": self.rng.uniform(-90, 90),
             "decErr": self._noneable(self.rng.uniform(MIN_COORD_ERR, MAX_COORD_ERR)),
-            "ra_dec_Cov": self._noneable(self.rng.uniform(-0.01, 0.01)),
+            "ra_dec_Cov": self._noneable(
+                self.rng.uniform(-(MAX_COORD_ERR**2), MAX_COORD_ERR**2)
+            ),
         }
         bands = self.bands
         for band in bands:
