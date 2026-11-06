@@ -6,6 +6,23 @@ import pandas as pd  # feature frames
 
 from features.surveys.base import SurveyBands  # band table type
 
+DETECTION_KEYS_MAP = {  # input key -> AstroObject column, shared by ztf and lsst
+    "oid": "oid",  # object id
+    "sid": "sid",  # survey id
+    "mjd": "mjd",  # epoch time
+    "ra": "ra",  # right ascension
+    "dec": "dec",  # declination
+    "tid": "tid",  # telescope id
+    "band": "fid",  # LSST usa 'band', ZTF usa 'fid'
+    "measurement_id": "candid",  # LSST 'measurement_id' ≈ ZTF 'candid'
+    "candid": "candid",  # ztf legacy spelling
+    "aid": "aid",  # alerce id
+    "fid": "fid",  # ZTF 'fid' ≈ LSST 'band'
+    "isdiffpos": "isdiffpos",  # sign of the difference flux
+    "forced": "forced",  # forced photometry flag
+    "pid": "pid",  # processing id
+}  # end of the keys map
+
 
 def wise_magnitudes(xmatches: dict | None) -> tuple[float, float, float, float]:
     """Return W1-W4 from an allwise xmatch, or four NaN when there is none or it is another catalog."""
