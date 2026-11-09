@@ -1,6 +1,7 @@
 """ztf scribe commands, moved from features/utils/parsers.py."""
 from typing import List  # type hints of the moved signature
 
+import pandas as pd  # return type of prepare_ao_features_for_db
 from lc_classifier.features.core.base import AstroObject, query_ao_table  # object and metadata lookup
 
 from features.surveys.common import prepare_features_for_db  # shared feature rows for the db
@@ -13,6 +14,11 @@ def fid_mapper_for_db(band: str):
     to the string value corresponding
     """
     return ZTF_BANDS.fid_for_db(band)  # g 1, r 2, g,r 12, anything else 0
+
+
+def prepare_ao_features_for_db(astro_object: AstroObject, feature_name_lut) -> pd.DataFrame:
+    """Return the ztf feature rows for the scribe upsert, keeping the name column."""
+    return prepare_features_for_db(astro_object, feature_name_lut, ZTF_BANDS, keep_name=True)  # shared body, ztf bands
 
 
 def parse_scribe_payload(  # signature spans three lines

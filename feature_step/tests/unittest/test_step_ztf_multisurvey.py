@@ -360,8 +360,8 @@ class ParserTestCase(unittest.TestCase):
 class ExecuteTestCase(unittest.TestCase):
     def test_execute_stamps_aid_and_passes_no_separate_forced_list(self):
         step = build_step()
-        spy = mock.MagicMock(wraps=step.detections_to_astro_object_fn)
-        step.detections_to_astro_object_fn = spy
+        spy = mock.patch("features.surveys.ztf.detections_to_astro_object", wraps=detections_to_astro_object).start()  # spy on the parser ZTFSurvey.build_astro_object calls
+        self.addCleanup(mock.patch.stopall)  # remove the spy after the test
 
         message = generate_message(n_detections=4, n_previous_detections=2, n_forced=3)
         step.execute(step.pre_execute([message]))

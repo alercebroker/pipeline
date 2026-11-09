@@ -1,6 +1,7 @@
 """lsst scribe commands, moved from features/utils/parsers.py."""
 from typing import List  # type hints of the moved signature
 
+import pandas as pd  # return type of prepare_ao_features_for_db_lsst
 from lc_classifier.features.core.base import AstroObject, query_ao_table  # object and metadata lookup
 
 from features.surveys.common import prepare_features_for_db  # shared feature rows for the db
@@ -15,6 +16,11 @@ def fid_mapper_for_db_lsst(band: str) -> int:
     Valid combinations: u,g g,r r,i i,z z,y -> 61,12,23,34,45
     """
     return LSST_BANDS.fid_for_db(band)  # None guard, str() and strip() live in the lsst band table
+
+
+def prepare_ao_features_for_db_lsst(astro_object: AstroObject, feature_name_lut) -> pd.DataFrame:
+    """Return the lsst feature rows for the scribe upsert, without the name column."""
+    return prepare_features_for_db(astro_object, feature_name_lut, LSST_BANDS, keep_name=False)  # shared body, lsst bands
 
 
 def parse_scribe_payload_lsst(  # signature spans three lines
