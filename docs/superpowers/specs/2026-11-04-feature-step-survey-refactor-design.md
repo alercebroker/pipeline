@@ -72,9 +72,9 @@ features/
 `fid_mapper_for_db` / `_lsst`), `suffix(band_str) -> str` (today the `fid_map` /
 `suffix_map` literals in `parse_output*`), `letter(fid_int) -> str` (today
 `band_map_inverse`). Unknown band gives `0` / `""`. For lsst this is today's
-result; for ztf today's `parse_output` yields a `None` name on an unknown band,
-unreachable with the current extractor, and the refactor gives the bare name
-instead.
+result; for ztf today's `parse_output` raises `AttributeError` on an unknown band
+and produces no output message, unreachable with the current extractor, and the
+refactor emits the feature under its bare name instead.
 
 `common.py` holds the bodies that are copied today: W1-W4 from an allwise match,
 `last_mjd` over detections and forced, `prepare_features_for_db(ao, lut, bands,
