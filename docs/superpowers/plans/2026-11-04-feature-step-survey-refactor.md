@@ -378,3 +378,4 @@ git commit -m "chore(feature_step): drop unused data_utils, core/utils/functions
 - `produce_xmatch_to_scribe` defaults `sid` to 1 for an oid absent from the batch.
 - lsst `forced_from_message` may return `None`; the parser iterates it, so a message without `forced_sources` would fail today as well.
 - The `"TIENE LENGTH MAYOR A CERO"` info log was removed in Task 6 (log noise only).
+- ztf `parse_output` gave a `None` feature name for a band outside `g`, `r`, `g,r`, `None`; through `SurveyBands.suffix` it now gives the bare name. Unreachable with today's extractor (spec amendment 8aa8715cc).
