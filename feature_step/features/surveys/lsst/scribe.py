@@ -14,10 +14,7 @@ def fid_mapper_for_db_lsst(band: str) -> int:
     Singles: u,g,r,i,z,y -> 6,1,2,3,4,5 #esto cambiar
     Valid combinations: u,g g,r r,i i,z z,y -> 61,12,23,34,45
     """
-    if band is None:  # missing band
-        return 0 #reemplazamos valor nulo por 0
-    band = str(band).strip()  # band as a stripped string
-    return LSST_BANDS.fid_for_db(band)  # codes of the lsst band table, anything else 0
+    return LSST_BANDS.fid_for_db(band)  # None guard, str() and strip() live in the lsst band table
 
 
 def parse_scribe_payload_lsst(  # signature spans three lines

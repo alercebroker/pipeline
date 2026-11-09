@@ -84,7 +84,7 @@ def detections_to_astro_object_lsst(  # signature spans several lines
     aid_forced = a[a["forced"]]  # forced photometry rows
     aid_detections = a[~a["forced"]]  # detection rows
 
-    w1, w2, w3, w4 = wise_magnitudes(xmatches)  # W1-W4 from an allwise match, else NaN
+    w1, w2, w3, w4 = wise_magnitudes(xmatches, require_catalog=True)  # W1-W4 from an allwise match, else NaN; KeyError without catalog
 
     last_mjd = last_mjd_of(detections, forced)  # max mjd over detections and forced photometry
 

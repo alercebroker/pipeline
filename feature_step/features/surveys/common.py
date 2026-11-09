@@ -24,11 +24,17 @@ DETECTION_KEYS_MAP = {  # input key -> AstroObject column, shared by ztf and lss
 }  # end of the keys map
 
 
-def wise_magnitudes(xmatches: dict | None) -> tuple[float, float, float, float]:
-    """Return W1-W4 from an allwise xmatch, or four NaN when there is none or it is another catalog."""
-    if xmatches is not None and xmatches.get("catalog") == "allwise":  # only allwise carries w<n>mpro
-        metadata = xmatches["metadata"]  # catalog columns of the match
-        return tuple(metadata[f"w{n}mpro"]["Float64"] for n in (1, 2, 3, 4))  # W1, W2, W3, W4
+def wise_magnitudes(xmatches: dict | None, require_catalog: bool = False) -> tuple[float, float, float, float]:
+    """Return W1-W4 from an allwise xmatch, or four NaN when there is none or it is another catalog.
+
+    A match without the `catalog` key counts as another catalog (ztf on multisurvey),
+    unless `require_catalog` is True: then it raises KeyError (lsst on multisurvey).
+    """
+    if xmatches is not None:  # a match was attached
+        catalog = xmatches["catalog"] if require_catalog else xmatches.get("catalog")  # KeyError only when required
+        if catalog == "allwise":  # only allwise carries w<n>mpro
+            metadata = xmatches["metadata"]  # catalog columns of the match
+            return tuple(metadata[f"w{n}mpro"]["Float64"] for n in (1, 2, 3, 4))  # W1, W2, W3, W4
     return (np.nan, np.nan, np.nan, np.nan)  # no allwise match
 
 
