@@ -380,6 +380,6 @@ git commit -m "chore(feature_step): drop unused data_utils, core/utils/functions
 - `produce_xmatch_to_scribe` defaults `sid` to 1 for an oid absent from the batch.
 - lsst `forced_from_message` may return `None`; the parser iterates it, so a message without `forced_sources` would fail today as well.
 - The `"TIENE LENGTH MAYOR A CERO"` info log was removed in Task 6 (log noise only).
-- ztf `parse_output` gave a `None` feature name for a band outside `g`, `r`, `g,r`, `None`; through `SurveyBands.suffix` it now gives the bare name. Unreachable with today's extractor (spec amendment 8aa8715cc).
+- ztf `parse_output` raised `AttributeError` (no output message) for a feature band outside `g`, `r`, `g,r`, `None`; through `SurveyBands.suffix` it now emits the feature under its bare name. Unreachable with today's extractor (spec amendments 8aa8715cc, 53cbd3085).
 - lsst raises `KeyError('catalog')` for an `xmatches` dict without `catalog` (and for `{}`); ztf gives W1-W4 NaN for the same dict. Kept as on `multisurvey` (`wise_magnitudes(..., require_catalog=True)`).
 - lsst strips the band string for the db code but not for the output suffix: a `" g "` feature row is written with `band: 1` and emitted under the bare feature name. Kept as on `multisurvey` (`LSSTBands.fid_for_db`).
