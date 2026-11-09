@@ -14,17 +14,42 @@ import json  # read the fixture and round-trip scribe commands like the step doe
 import pathlib  # locate the fixtures dir
 import unittest  # test case base class
 
-from features.surveys.lsst import LSSTSurvey  # survey under test
+import pandas as pd  # feature frames with padded bands
 
+from features.surveys.common import prepare_features_for_db  # shared feature rows for the db
+from features.surveys.lsst import LSSTSurvey  # survey under test
+from features.surveys.ztf import ZTFSurvey  # other caller of the shared helpers, must stay as it is
+
+from ..message_factory_ztf_ms import allwise_match  # allwise-shaped xmatch dict
 from .test_surveys_golden import (  # Task 1 inputs and normalizer
     FRAME_NAMES,  # detections, forced_photometry, metadata, reference
     LUT,  # feature id -> name tables
     StubExtractor,  # writes STUB_FEATURES into each AstroObject
     messages_for,  # the golden input batch
     normalize,  # NaN -> "NaN", numpy -> python, frames -> split dicts
+    references_df,  # one-row reference table for the ztf guard cases
 )  # end of the golden imports
 
 FIXTURES = pathlib.Path(__file__).parent / "fixtures"  # where the golden json files live
+
+PADDED_FEATURES = [  # (name, fid, value) rows whose band strings carry whitespace, plus the 0 cases
+    ("Amplitude", " g ", 1.0),  # padded on both sides
+    ("Amplitude", "g ", 2.0),  # padded on the right
+    ("u-g_mean", " u,g", 3.0),  # padded band pair
+    ("Amplitude", "g", 4.0),  # plain band
+    ("Power_rate_1_2", None, 0.5),  # no band
+    ("Amplitude", "other", 6.0),  # unknown band
+    ("Amplitude", 1, 7.0),  # int band
+]  # end of the padded rows
+PADDED_DB_ROWS = [  # scribe feature rows fid_mapper_for_db_lsst gave for PADDED_FEATURES at c9bc3feb8
+    {"band": 1, "feature_id": 1, "value": 1.0},  # " g " stripped to g
+    {"band": 1, "feature_id": 1, "value": 2.0},  # "g " stripped to g
+    {"band": 61, "feature_id": 2, "value": 3.0},  # " u,g" stripped to u,g
+    {"band": 1, "feature_id": 1, "value": 4.0},  # g
+    {"band": 0, "feature_id": 3, "value": 0.5},  # None band
+    {"band": 0, "feature_id": 1, "value": 6.0},  # unknown band
+    {"band": 0, "feature_id": 1, "value": 7.0},  # int band, str "1" is no band
+]  # end of the expected rows
 
 
 def golden():
@@ -239,3 +264,135 @@ class ReexportTestCase(unittest.TestCase):
         self.assertEqual(pairs, [61, 12, 23, 34, 45])  # today's pair codes
         self.assertEqual([fid_mapper_for_db_lsst(b) for b in (None, "other", 1)], [0, 0, 0])  # missing, unknown, int
         self.assertEqual(fid_mapper_for_db_lsst(" g "), 1)  # today's body strips the band string
+
+
+def with_padded_features(ao):
+    """Replace the features of `ao` with PADDED_FEATURES, in the extractor frame layout, and return it."""
+    sid = ao.detections["sid"].values[0]  # same sid the scribe payload reads
+    ao.features = pd.DataFrame(  # padded rows in the extractor frame layout
+        [(name, value, fid, sid, "stub") for name, fid, value in PADDED_FEATURES],  # reorder to name, value, fid
+        columns=["name", "value", "fid", "sid", "version"],  # columns of empty_normal_dataframe
+    )  # end of the features frame
+    return ao  # same object, features replaced
+
+
+def build_with_xmatch(message, xmatches):
+    """Return the AstroObject LSSTSurvey builds for `message` with `xmatches` in place of the message's own."""
+    survey = LSSTSurvey()  # survey under test
+    epochs = epochs_as_execute_stamps(message)  # what execute passes in
+    return survey.build_astro_object(epochs, survey.forced_from_message(message), xmatches, None)  # explicit xmatch
+
+
+def wise_of(ao):
+    """Return W1-W4 of an AstroObject's metadata, NaN as "NaN"."""
+    metadata = dict(zip(ao.metadata["name"], ao.metadata["value"]))  # name -> value
+    return normalize([metadata[w] for w in ("W1", "W2", "W3", "W4")])  # comparable list
+
+
+class PaddedBandTestCase(unittest.TestCase):
+    """lsst scribe write path strips the band string, as fid_mapper_for_db_lsst did on multisurvey (c9bc3feb8)."""
+
+    def setUp(self):
+        """Build the first golden object with the padded-band features."""
+        self.maxDiff = None  # whole diff on mismatch
+        message = messages_for("lsst")[0]  # first golden message
+        self.oid = message["oid"]  # 1152921504606847001
+        self.ao = with_padded_features(build(message))  # AstroObject with padded bands
+        self.prepared = {**message, "detections": LSSTSurvey().epochs_from_message(message)}  # pre_execute's message
+        self.candids = {self.oid: list(message["measurement_id"])}  # execute's candids accumulation
+
+    def test_scribe_command_strips_padded_bands(self):
+        """scribe_commands sends band 1, 1, 61 for fid " g ", "g ", " u,g" and 0 for None, unknown and int bands."""
+        commands = LSSTSurvey().scribe_commands([self.ao], 1, "LSSTFeatureExtractor", LUT["lsst"])  # survey under test
+        features = json.loads(json.dumps(commands["upserting_features"][0]["payload"]["features"]))  # as sent
+        self.assertEqual([f["band"] for f in features[:3]], [1, 1, 61])  # the three padded bands
+        self.assertEqual(features, PADDED_DB_ROWS)  # every row as on multisurvey
+
+    def test_prepare_features_for_db_with_lsst_bands_strips_padded_bands(self):
+        """Spec criterion 7 on padded bands: keep_name=False with the lsst band table equals the multisurvey lsst rows."""
+        result = prepare_features_for_db(self.ao, LUT["lsst"], LSSTSurvey.bands, keep_name=False)  # four-argument call
+        self.assertEqual(result.to_dict("records"), PADDED_DB_ROWS)  # same rows as prepare_ao_features_for_db_lsst gave
+
+    def test_parsers_shim_strips_padded_bands(self):
+        """parsers.prepare_ao_features_for_db_lsst, still imported by other tests, gives the multisurvey rows too."""
+        from features.utils import parsers  # old home of the lsst helper
+
+        result = parsers.prepare_ao_features_for_db_lsst(self.ao, LUT["lsst"])  # shim under test
+        self.assertEqual(result.to_dict("records"), PADDED_DB_ROWS)  # same rows as on multisurvey
+
+    def test_band_table_fid_for_db_is_the_multisurvey_mapper(self):
+        """LSSTSurvey.bands.fid_for_db and fid_mapper_for_db_lsst agree on padded, missing, unknown and unhashable bands."""
+        from features.surveys.lsst.scribe import fid_mapper_for_db_lsst  # moved function
+
+        cases = {" g ": 1, "g ": 1, " u,g": 61, " g,r": 12, "g": 1, None: 0, "other": 0, 1: 0, float("nan"): 0}  # band -> code
+        for band, code in cases.items():  # each band
+            self.assertEqual(LSSTSurvey.bands.fid_for_db(band), code, repr(band))  # band table
+            self.assertEqual(fid_mapper_for_db_lsst(band), code, repr(band))  # function name kept by parsers
+        self.assertEqual(LSSTSurvey.bands.fid_for_db(["g"]), 0)  # str(["g"]) is no band; multisurvey did not raise
+
+    def test_output_does_not_strip_padded_bands(self):
+        """output_messages adds no suffix to a padded band, as the multisurvey suffix_map did, and values are floats."""
+        out = LSSTSurvey().output_messages([self.ao], [self.prepared], self.candids)  # survey under test
+        self.assertEqual(  # features measured at c9bc3feb8 for the same rows
+            out[0]["features"],  # name + suffix -> value
+            {"Amplitude": 7.0, "Amplitude_1": 4.0, "Power_rate_1_2": 0.5, "u_g_mean": 3.0},  # only plain g has a suffix
+        )  # end of the features assertion
+        self.assertEqual({type(v) for v in out[0]["features"].values()}, {float})  # python floats, as on multisurvey
+        self.assertEqual(LSSTSurvey.bands.suffix(" g "), "")  # the band table strips for the db code only
+
+
+class XmatchCatalogTestCase(unittest.TestCase):
+    """lsst parser requires the xmatch `catalog` key, as the multisurvey body did (c9bc3feb8)."""
+
+    def setUp(self):
+        """Keep the first golden message and an allwise-shaped match for it."""
+        self.message = messages_for("lsst")[0]  # first golden message
+        self.allwise = allwise_match(self.message["oid"])  # catalog, distance, match_id, metadata
+
+    def test_xmatch_without_catalog_raises_key_error(self):
+        """An allwise-shaped xmatch without `catalog` raises KeyError('catalog')."""
+        no_catalog = {k: v for k, v in self.allwise.items() if k != "catalog"}  # same shape, key missing
+        with self.assertRaises(KeyError) as raised:  # the multisurvey body indexed xmatches['catalog']
+            build_with_xmatch(self.message, no_catalog)  # survey under test
+        self.assertEqual(raised.exception.args, ("catalog",))  # the missing key is catalog
+
+    def test_empty_xmatch_raises_key_error(self):
+        """An empty xmatch dict raises KeyError('catalog'): {} is not None."""
+        with self.assertRaises(KeyError) as raised:  # the multisurvey body indexed xmatches['catalog']
+            build_with_xmatch(self.message, {})  # survey under test
+        self.assertEqual(raised.exception.args, ("catalog",))  # the missing key is catalog
+
+    def test_xmatch_none_gives_nan(self):
+        """xmatches=None gives W1-W4 NaN and no error."""
+        self.assertEqual(wise_of(build_with_xmatch(self.message, None)), ["NaN"] * 4)  # no match attached
+
+    def test_xmatch_from_another_catalog_gives_nan(self):
+        """An xmatch whose catalog is not allwise gives W1-W4 NaN and no error."""
+        other = {**self.allwise, "catalog": "other"}  # same shape, other catalog
+        self.assertEqual(wise_of(build_with_xmatch(self.message, other)), ["NaN"] * 4)  # not read
+
+    def test_allwise_xmatch_gives_the_magnitudes(self):
+        """An allwise xmatch gives its w<n>mpro values."""
+        self.assertEqual(wise_of(build_with_xmatch(self.message, self.allwise)), [15.1, 14.9, 12.5, 9.1])  # factory defaults
+
+
+class ZtfUnchangedTestCase(unittest.TestCase):
+    """ztf keeps its own multisurvey behaviour on the same inputs: no strip, no KeyError."""
+
+    def test_ztf_band_mapper_does_not_strip(self):
+        """ztf fid_for_db gives 0 for a padded band, as the multisurvey fid_mapper_for_db did."""
+        got = [ZTFSurvey.bands.fid_for_db(b) for b in (" g ", "g ", " g,r", "g", None)]  # padded, plain, missing
+        self.assertEqual(got, [0, 0, 0, 1, 0])  # only the exact string has a code
+
+    def test_ztf_xmatch_without_catalog_gives_nan(self):
+        """ztf build_astro_object gives W1-W4 NaN for an xmatch without `catalog` and for {}, as on multisurvey."""
+        message = messages_for("ztf")[0]  # first ztf golden message
+        survey = ZTFSurvey()  # the other caller of wise_magnitudes
+        epochs = [  # execute stamps "<measurement_id>_<oid>" on each epoch
+            {**epoch, "index_column": f"{epoch['measurement_id']}_{epoch['oid']}"}  # new dict, original untouched
+            for epoch in survey.epochs_from_message(message)  # pre_execute's filtering
+        ]  # end of the stamped list
+        no_catalog = {k: v for k, v in allwise_match(message["oid"]).items() if k != "catalog"}  # key missing
+        for xmatches in (no_catalog, {}):  # both cases that raise for lsst
+            ao = survey.build_astro_object(epochs, [], xmatches, references_df())  # ztf parser
+            self.assertEqual(wise_of(ao), ["NaN"] * 4)  # ztf used .get: no error, no magnitudes
