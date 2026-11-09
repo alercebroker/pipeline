@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - main
+      - multisurvey
     paths:
       - "ingestion_step/**"
       - "!ingestion_step/README.md"

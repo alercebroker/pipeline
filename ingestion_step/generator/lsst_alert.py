@@ -12,7 +12,12 @@ HASH_CONSTANT_MUL = 72348927498  # Random number
 HASH_CONSTANT_INV_MUL = pow(HASH_CONSTANT_MUL, -1, 2**63 - 1)
 HASH_CONSTANT_XOR = 23894729048  # Random number
 
-DEFAULT_ERR = 0.01  # Used as fallback for missing error values.
+DEFAULT_ERR = 0.01  # Fallback for missing raErr/decErr values, in degrees.
+
+# LSST raErr/decErr (and trailRaErr/trailDecErr) are in degrees,
+# ra_dec_Cov in deg**2.
+MIN_COORD_ERR = 1e-6
+MAX_COORD_ERR = 1e-4
 
 
 def simple_hash(x: int) -> int:
@@ -90,13 +95,13 @@ class ObjectStats:
             else:
                 processed_errors.append(DEFAULT_ERR)
 
-        sigmas = np.array(processed_errors, dtype=np.float64) / 3600.0  # Arcsec to deg
+        sigmas = np.array(processed_errors, dtype=np.float64)  # Already in deg
         return sigmas**-2
 
     @staticmethod
     def _sigma(sigmas: NDArray[np.floating[Any]]) -> float:
         sigma = np.sqrt(1 / np.sum(sigmas))
-        sigma = sigma * 3600.0  # Deg to arcsec
+        sigma = sigma * 3600.0  # Deg to arcsec, as stored in the DB
 
         return sigma
 
@@ -328,12 +333,14 @@ class LsstAlertGenerator:
             "ra": obj_info.obj["ra"] + self.rng.uniform(-0.01, +0.01)
             if obj_info.otype == "dia"
             else self.rng.uniform(0, 360),
-            "raErr": self._noneable(self.rng.uniform(0, 0.1)),
+            "raErr": self._noneable(self.rng.uniform(MIN_COORD_ERR, MAX_COORD_ERR)),
             "dec": obj_info.obj["dec"] + self.rng.uniform(-0.01, +0.01)
             if obj_info.otype == "dia"
             else self.rng.uniform(-90, 90),
-            "decErr": self._noneable(self.rng.uniform(0, 0.1)),
-            "ra_dec_Cov": self._noneable(self.rng.uniform(-0.01, 0.01)),
+            "decErr": self._noneable(self.rng.uniform(MIN_COORD_ERR, MAX_COORD_ERR)),
+            "ra_dec_Cov": self._noneable(
+                self.rng.uniform(-(MAX_COORD_ERR**2), MAX_COORD_ERR**2)
+            ),
             "x": self.rng.uniform(0, 4000),
             "xErr": self._noneable(self.rng.uniform(0, 5)),
             "y": self.rng.uniform(0, 4000),
@@ -358,9 +365,13 @@ class LsstAlertGenerator:
             "trailFlux": self._noneable(self.rng.uniform(-1000, 1000)),
             "trailFluxErr": self._noneable(self.rng.uniform(0, 100)),
             "trailRa": self._noneable(self.rng.uniform(0, 360)),
-            "trailRaErr": self._noneable(self.rng.uniform(0, 0.1)),
+            "trailRaErr": self._noneable(
+                self.rng.uniform(MIN_COORD_ERR, MAX_COORD_ERR)
+            ),
             "trailDec": self._noneable(self.rng.uniform(-90, 90)),
-            "trailDecErr": self._noneable(self.rng.uniform(0, 0.1)),
+            "trailDecErr": self._noneable(
+                self.rng.uniform(MIN_COORD_ERR, MAX_COORD_ERR)
+            ),
             "trailLength": self._noneable(self.rng.uniform(0, 100)),
             "trailLengthErr": self._noneable(self.rng.uniform(0, 10)),
             "trailAngle": self._noneable(self.rng.uniform(0, 360)),
@@ -513,10 +524,12 @@ class LsstAlertGenerator:
             "diaObjectId": object_id,
             "validityStartMjdTai": self.rng.uniform(50000, 70000),
             "ra": self.rng.uniform(0, 360),
-            "raErr": self._noneable(self.rng.uniform(0, 0.1)),
+            "raErr": self._noneable(self.rng.uniform(MIN_COORD_ERR, MAX_COORD_ERR)),
             "dec": self.rng.uniform(-90, 90),
-            "decErr": self._noneable(self.rng.uniform(0, 0.1)),
-            "ra_dec_Cov": self._noneable(self.rng.uniform(-0.01, 0.01)),
+            "decErr": self._noneable(self.rng.uniform(MIN_COORD_ERR, MAX_COORD_ERR)),
+            "ra_dec_Cov": self._noneable(
+                self.rng.uniform(-(MAX_COORD_ERR**2), MAX_COORD_ERR**2)
+            ),
         }
         bands = self.bands
         for band in bands:
