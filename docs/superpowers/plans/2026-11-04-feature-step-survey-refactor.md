@@ -186,7 +186,7 @@ git commit -m "feat(feature_step): Survey contract, SurveyBands and registry wit
 **Interfaces:**
 - Consumes: `SurveyBands` (Task 2).
 - Produces, in `common.py`:
-  - `wise_magnitudes(xmatches: dict | None) -> tuple[float, float, float, float]`: W1-W4 from `xmatches["metadata"]["w<n>mpro"]["Float64"]` when `xmatches` is not None and `xmatches.get("catalog") == "allwise"`, else four `np.nan`.
+  - `wise_magnitudes(xmatches: dict | None) -> tuple[float, float, float, float]`: W1-W4 from `xmatches["metadata"]["w<n>mpro"]["Float64"]` when `xmatches` is not None and `xmatches.get("catalog") == "allwise"`, else four `np.nan`. Keyword `require_catalog: bool = False` (Task 5 fix round): with `True` the catalog is read as `xmatches["catalog"]`, so a dict without the key raises `KeyError` as the lsst parser does on `multisurvey`; only the lsst parser passes it.
   - `last_mjd_of(detections: list[dict], forced: list[dict]) -> float`: max `mjd` over both lists, `np.nan` when neither has one.
   - `prepare_features_for_db(astro_object, feature_name_lut: dict, bands: SurveyBands, keep_name: bool) -> pd.DataFrame`: body of today's `prepare_ao_features_for_db` with `bands.fid_for_db` in place of the mapper; drops `fid`, and also `name` when `keep_name` is False. Warning logger name stays `alerce.FeatureStep`.
   - `flatten_features_for_output(astro_object, bands: SurveyBands) -> dict[str, float | None]`: name + `bands.suffix(fid)`, sorted by name, `-` → `_`, NaN/None → None, values as float. (Used by Tasks 4 and 5; today's two bodies differ only in `astype(np.double)` vs `astype(float)` and the None check, which give the same result.)
@@ -287,6 +287,7 @@ git commit -m "refactor(feature_step): ztf parsers move into features/surveys/zt
 
 **Interfaces:**
 - Consumes: Task 3 helpers, `LSSTSurvey.bands`.
+- Fix round 2026-11-09 (decision: behaviour that differs from `multisurvey` is restored): `lsst/bands.py` holds `LSST_BANDS`, an `LSSTBands(SurveyBands)` whose `fid_for_db` applies the None guard and `str(band).strip()` of `fid_mapper_for_db_lsst`; `suffix` and `letter` are not overridden. The lsst parser calls `wise_magnitudes(xmatches, require_catalog=True)`.
 - Produces: `detections_to_astro_object_lsst`, `add_mag_and_flux_lsst`, `flux_err_2_mag_err`, `fluxnjy2mag` in `astro_object.py`; `parse_scribe_payload_lsst` and `fid_mapper_for_db_lsst` in `scribe.py`; `parse_output_lsst` in `output.py`. `LSSTSurvey.epochs_from_message(msg)`: `sources + previous_sources` keeping rows whose `band` is not None (today's `pre_execute` arm). `forced_from_message(msg)`: `msg.get("forced_sources")` (today passes it through unchanged, possibly None; keep). `build_astro_object` calls `detections_to_astro_object_lsst(dets, forced, xmatches)`.
 
 - [ ] **Step 1: Write the failing tests** (mirror of Task 4 with `generate_message_lsst`, including the dtype fixture `fixtures/golden_lsst_dtypes.json` recorded from the lsst parser at c9bc3feb8, the last commit whose parser equals `multisurvey`; `test_epochs_drops_no_band` asserts the `band: None` source is gone and the count equals `n_sources - 1 + n_previous`)
@@ -380,3 +381,5 @@ git commit -m "chore(feature_step): drop unused data_utils, core/utils/functions
 - lsst `forced_from_message` may return `None`; the parser iterates it, so a message without `forced_sources` would fail today as well.
 - The `"TIENE LENGTH MAYOR A CERO"` info log was removed in Task 6 (log noise only).
 - ztf `parse_output` gave a `None` feature name for a band outside `g`, `r`, `g,r`, `None`; through `SurveyBands.suffix` it now gives the bare name. Unreachable with today's extractor (spec amendment 8aa8715cc).
+- lsst raises `KeyError('catalog')` for an `xmatches` dict without `catalog` (and for `{}`); ztf gives W1-W4 NaN for the same dict. Kept as on `multisurvey` (`wise_magnitudes(..., require_catalog=True)`).
+- lsst strips the band string for the db code but not for the output suffix: a `" g "` feature row is written with `band: 1` and emitted under the bare feature name. Kept as on `multisurvey` (`LSSTBands.fid_for_db`).
