@@ -253,8 +253,9 @@ def test_build_astro_object_equals_golden(self):
     # message = generate_message(seed=1, with_xmatch=True); epochs = ZTFSurvey().epochs_from_message(message)
     # with index_column stamped as execute does; ao = ZTFSurvey().build_astro_object(epochs, [], message["xmatches"], references_df())
     # expected = fixtures/golden_ztf.json["astro_objects"]["36028941624528297"] (Task 1 oracle);
-    # assert_frame_equal(ao.<frame>, pd.DataFrame(**expected[<frame>]), check_dtype=False) for the four frames,
-    # after the same normalize() round trip on ao's frames (NaN -> "NaN")
+    # the four frames equal expected[<frame>] after the same normalize() round trip on ao's frames (NaN -> "NaN");
+    # column dtypes, index dtype and index names equal fixtures/golden_ztf_dtypes.json, recorded from the pre-move parser
+    # (decision 2026-11-09: dtypes are checked, no check_dtype=False)
 def test_epochs_from_message_drops_bogus(self):   # message with every rb=0.1 -> epochs == []
 def test_forced_is_empty(self):                   # ZTFSurvey().forced_from_message(message) == []
 def test_scribe_and_output_delegate(self):        # ZTFSurvey().scribe_commands is parse_scribe_payload-equivalent:
@@ -288,7 +289,7 @@ git commit -m "refactor(feature_step): ztf parsers move into features/surveys/zt
 - Consumes: Task 3 helpers, `LSSTSurvey.bands`.
 - Produces: `detections_to_astro_object_lsst`, `add_mag_and_flux_lsst`, `flux_err_2_mag_err`, `fluxnjy2mag` in `astro_object.py`; `parse_scribe_payload_lsst` and `fid_mapper_for_db_lsst` in `scribe.py`; `parse_output_lsst` in `output.py`. `LSSTSurvey.epochs_from_message(msg)`: `sources + previous_sources` keeping rows whose `band` is not None (today's `pre_execute` arm). `forced_from_message(msg)`: `msg.get("forced_sources")` (today passes it through unchanged, possibly None; keep). `build_astro_object` calls `detections_to_astro_object_lsst(dets, forced, xmatches)`.
 
-- [ ] **Step 1: Write the failing tests** (mirror of Task 4 with `generate_message_lsst`; `test_epochs_drops_no_band` asserts the `band: None` source is gone and the count equals `n_sources - 1 + n_previous`)
+- [ ] **Step 1: Write the failing tests** (mirror of Task 4 with `generate_message_lsst`, including the dtype fixture `fixtures/golden_lsst_dtypes.json` recorded from the lsst parser at c9bc3feb8, the last commit whose parser equals `multisurvey`; `test_epochs_drops_no_band` asserts the `band: None` source is gone and the count equals `n_sources - 1 + n_previous`)
 
 - [ ] **Step 2: Run, expect FAIL**
 
