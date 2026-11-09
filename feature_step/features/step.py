@@ -119,7 +119,9 @@ class FeatureStep(GenericStep):
 
     def get_xmatch_info(self, messages: List[dict]) -> List[Dict[str, Any]]:
         """
-        Get xmatch information for LSST objects using conesearch.
+        Query the xmatch service for every message of the batch, whatever the survey,
+        skipping the messages whose `sid` is 2, with one conesearch request per
+        catalog in `XMATCH_CATALOGS`.
 
         Parameters
         ----------
@@ -273,7 +275,7 @@ class FeatureStep(GenericStep):
     def pre_execute(self, messages: List[dict]):
         """Attach the xmatch to each message, gather its epochs under "detections" and drop the objects with too few."""
 
-        # Para LSST: obtener xmatch info para TODOS los mensajes antes de filtrar
+        # Any survey: get the xmatch info for ALL the messages, before the min-detections filter
         if self.use_xmatch and len(messages) > 0:  # xmatch enabled and something to match
             xmatch_results = self.get_xmatch_info(messages)  # matches of every catalog
             # xmatch_results holds one match per (oid, catalog). Features only
