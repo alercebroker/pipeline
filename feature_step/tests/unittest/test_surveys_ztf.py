@@ -4,6 +4,11 @@ The oracle is the Task 1 golden fixture fixtures/golden_ztf.json: the
 AstroObject frames as the parser returned them, the scribe commands and the
 output messages. Messages, stub features, LUT, references and the normalizer
 are imported from test_surveys_golden so both tests build the same inputs.
+
+The split dicts carry index, columns and values but no dtypes, so the dtypes
+have their own oracle, fixtures/golden_ztf_dtypes.json: column dtypes, index
+dtype and index names of the same frames, recorded from the pre-move parser
+(features/utils/parsers.py at e30684f25) at the same point, before preprocessing.
 """
 import json  # read the fixture and round-trip scribe commands like the step does
 import pathlib  # locate the fixtures dir
@@ -51,6 +56,23 @@ def frames_of(ao):
     })  # end of the frames dict
 
 
+def golden_dtypes():
+    """Return the parsed golden_ztf_dtypes.json fixture: frame dtypes recorded from the pre-move parser."""
+    return json.loads((FIXTURES / "golden_ztf_dtypes.json").read_text())  # whole dtype fixture
+
+
+def dtypes_of(ao):
+    """Return, per AstroObject frame, the column dtypes in column order, the index dtype and the index names."""
+    described = {}  # frame name -> description, None for an absent frame
+    for name in FRAME_NAMES:  # detections, forced_photometry, metadata, reference
+        frame = getattr(ao, name)  # frame as the parser returns it
+        described[name] = None if frame is None else {  # None stays null, as in the fixture
+            "columns": [[str(column), str(dtype)] for column, dtype in frame.dtypes.items()],  # ordered [name, dtype] pairs
+            "index": {"dtype": str(frame.index.dtype), "names": list(frame.index.names)},  # index dtype and level names
+        }  # end of the frame description
+    return described  # same layout as golden_ztf_dtypes.json
+
+
 class BuildAstroObjectTestCase(unittest.TestCase):
     """ZTFSurvey.build_astro_object against the golden AstroObject frames."""
 
@@ -73,6 +95,33 @@ class BuildAstroObjectTestCase(unittest.TestCase):
         metadata = dict(got["metadata"]["data"])  # name -> value
         self.assertEqual([metadata[w] for w in ("W1", "W2", "W3", "W4")], ["NaN"] * 4)  # no allwise match
         self.assertEqual(got["forced_photometry"]["data"], [])  # no forced epochs
+
+
+class BuildAstroObjectDtypesTestCase(unittest.TestCase):
+    """ZTFSurvey.build_astro_object dtypes against the ones the pre-move parser produced."""
+
+    def setUp(self):
+        """Load the dtype fixture and show full diffs."""
+        self.golden = golden_dtypes()  # oracle recorded from features/utils/parsers.py at e30684f25
+        self.maxDiff = None  # whole diff on mismatch
+
+    def test_dtype_fixture_covers_the_golden_objects(self):
+        """The dtype fixture describes the same oids and the same four frames as golden_ztf.json."""
+        self.assertEqual(sorted(self.golden), sorted(golden()["astro_objects"]))  # same oids as the value oracle
+        for oid, frames in self.golden.items():  # each recorded object
+            self.assertEqual(sorted(frames), sorted(FRAME_NAMES), oid)  # all four frames described
+
+    def test_build_astro_object_dtypes_equal_golden(self):
+        """Message with an allwise xmatch and forced epochs keeps the pre-move column dtypes, index dtype and index names."""
+        message = messages_for("ztf")[0]  # generate_message(seed=1, with_xmatch=True)
+        got = dtypes_of(build(message))  # dtypes of the frames as the parser returns them
+        self.assertEqual(got, self.golden["36028941624528297"])  # equals the pre-move dtypes
+
+    def test_build_astro_object_no_xmatch_no_forced_dtypes_equal_golden(self):
+        """Message without xmatch and without forced epochs keeps the pre-move dtypes, the empty forced frame included."""
+        message = messages_for("ztf")[1]  # generate_message(oid=...298, seed=2, n_forced=0)
+        got = dtypes_of(build(message))  # dtypes of the frames as the parser returns them
+        self.assertEqual(got, self.golden["36028941624528298"])  # equals the pre-move dtypes
 
 
 class EpochsTestCase(unittest.TestCase):
