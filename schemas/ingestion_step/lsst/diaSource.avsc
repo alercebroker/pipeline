@@ -804,6 +804,15 @@
       ]
     },
     {
+      "doc": "The diaSource footprint includes pixels on a predicted diffraction spike of a bright star.",
+      "default": null,
+      "name": "pixelFlags_spike",
+      "type": [
+        "null",
+        "boolean"
+      ]
+    },
+    {
       "doc": "DiaSource's footprint includes suspect pixels.",
       "default": null,
       "name": "pixelFlags_suspect",
@@ -879,6 +888,60 @@
       "doc": "This flag is set if the source is part of a glint trail.",
       "default": null,
       "name": "glint_trail",
+      "type": [
+        "null",
+        "boolean"
+      ]
+    },
+    {
+      "doc": "Weighted mean of the mid-exposure times of the template input images that cover the diaSource centroid, expressed as Modified Julian Date, International Atomic Time. Each input is weighted by its share of the template there, estimated from the coadd weights [d].",
+      "default": null,
+      "name": "templateMjdMean",
+      "type": [
+        "null",
+        "double"
+      ]
+    },
+    {
+      "doc": "Earliest mid-exposure time of the template input images that cover the diaSource centroid, expressed as Modified Julian Date, International Atomic Time [d].",
+      "default": null,
+      "name": "templateMjdMin",
+      "type": [
+        "null",
+        "double"
+      ]
+    },
+    {
+      "doc": "Latest mid-exposure time of the template input images that cover the diaSource centroid, expressed as Modified Julian Date, International Atomic Time [d].",
+      "default": null,
+      "name": "templateMjdMax",
+      "type": [
+        "null",
+        "double"
+      ]
+    },
+    {
+      "doc": "Name of the instrument whose observations were coadded to make the template, or UNKNOWN if it is not known. Required in the Rubin alert; nullable here because detections stored before v11.2 have no value.",
+      "default": null,
+      "name": "templateInstrument",
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    {
+      "doc": "Version of the template. It is 1 if the template is from a different instrument than the diaSource, and 0 otherwise. Required in the Rubin alert; nullable here because detections stored before v11.2 have no value.",
+      "default": null,
+      "name": "templateVersion",
+      "type": [
+        "null",
+        "int"
+      ]
+    },
+    {
+      "doc": "Set if the template instrument is known and differs from the instrument that observed the diaSource. Required in the Rubin alert; nullable here because detections stored before v11.2 have no value.",
+      "default": null,
+      "name": "mixedInstruments",
       "type": [
         "null",
         "boolean"

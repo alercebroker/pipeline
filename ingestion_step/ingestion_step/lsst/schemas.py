@@ -209,6 +209,7 @@ dia_source_schema: dict[str, DType] = {
     "pixelFlags_offimage": pd.BooleanDtype(),
     "pixelFlags_saturated": pd.BooleanDtype(),
     "pixelFlags_saturatedCenter": pd.BooleanDtype(),
+    "pixelFlags_spike": pd.BooleanDtype(),
     "pixelFlags_suspect": pd.BooleanDtype(),
     "pixelFlags_suspectCenter": pd.BooleanDtype(),
     "pixelFlags_streak": pd.BooleanDtype(),
@@ -218,6 +219,12 @@ dia_source_schema: dict[str, DType] = {
     "pixelFlags_injected_template": pd.BooleanDtype(),
     "pixelFlags_injected_templateCenter": pd.BooleanDtype(),
     "glint_trail": pd.BooleanDtype(),
+    "templateMjdMean": pd.Float64Dtype(),
+    "templateMjdMin": pd.Float64Dtype(),
+    "templateMjdMax": pd.Float64Dtype(),
+    "templateInstrument": pd.StringDtype(),
+    "templateVersion": pd.Int32Dtype(),
+    "mixedInstruments": pd.BooleanDtype(),
 }
 
 mpc_orbits_schema: dict[str, DType] = {
