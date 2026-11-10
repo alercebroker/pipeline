@@ -41,13 +41,14 @@ jobs:
       - name: Check for a separate /mnt disk
         id: disk
         run: |
-          df -h / /mnt
-          if [ "$(df --output=target /mnt | tail -1)" = "/mnt" ]; then
+          df -h /
+          if mountpoint -q /mnt; then
             echo "separate_mnt=true" >> "$GITHUB_OUTPUT"
           fi
       - name: Maximize build space
         if: steps.disk.outputs.separate_mnt == 'true'
-        uses: easimon/maximize-build-space@master
+        # Pinned to the master commit CI was already running (11/2026).
+        uses: easimon/maximize-build-space@c28619d8999a147d5e09c1199f84ff6af6ad5794
         with:
           root-reserve-mb: 30720
           temp-reserve-mb: 30720
