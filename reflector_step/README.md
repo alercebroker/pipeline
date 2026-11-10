@@ -66,31 +66,25 @@ The step itself can be run with:
 poetry run step
 ```
 
-## LSST: surviving Rubin schema changes
+## LSST: Rubin schema version check
 
 Rubin publishes alerts in Confluent wire format: a magic byte, a 4-byte schema id and
 the Avro body. The id is built from the schema version (`lsst.v11_2` -> `1102`).
-`reflector_step.utils.LsstMultiVersionRegistryConsumer` reads that id and decodes each
-alert with the matching schema, then upgrades older alerts to `SCHEMA_PATH`, so the
-output topic always carries a single schema version. This lets the reflector be
-deployed *before* Rubin switches schema, and keeps it working if both versions are
-mixed on the topic. An alert with an unknown schema id makes the step fail instead of
-being decoded with the wrong schema.
+`reflector_step.utils.LsstRegistryConsumer` only accepts alerts whose id matches
+`SCHEMA_PATH`. Any other id (an older or a newer Rubin schema), a missing header, or
+bytes left over after decoding make the step fail with an error naming the topic,
+partition, offset and both versions, instead of decoding the alert with the wrong
+schema. When Rubin changes schema, the reflector stops at the first new alert until
+`SCHEMA_PATH` and the pipeline are updated.
 
 ```yaml
 CONSUMER_CONFIG:
-  CLASS: reflector_step.utils.LsstMultiVersionRegistryConsumer
-  SCHEMA_PATH: /schemas/surveys/lsst_v11.2/lsst.v11_2.alert.avsc  # output version
-  PREVIOUS_SCHEMA_PATHS:                                          # also accepted
-    - /schemas/surveys/lsst_v11.1/lsst.v11_1.alert.avsc
+  CLASS: reflector_step.utils.LsstRegistryConsumer
+  SCHEMA_PATH: /schemas/surveys/lsst_v11.2/lsst.v11_2.alert.avsc  # only accepted version
 PRODUCER_CONFIG:
   CLASS: apf.producers.KafkaSchemalessProducer
   SCHEMA_PATH: /schemas/surveys/lsst_v11.2/lsst.v11_2.alert.avsc  # same as consumer
 ```
-
-Fields Rubin adds without an Avro default need a value for older alerts; it is set in
-`LsstMultiVersionRegistryConsumer.UPGRADE_DEFAULTS` (v11.2: `templateInstrument="UNKNOWN"`,
-`templateVersion=0`, `mixedInstruments=False`).
 
 ## Helm deployment
 

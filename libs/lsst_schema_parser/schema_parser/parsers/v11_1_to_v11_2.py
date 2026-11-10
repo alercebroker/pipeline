@@ -19,9 +19,6 @@ class V11_1ToV11_2Parser(BaseParser):
     required ones get the values Rubin documents for "instrument not known /
     template from the same instrument" (every alert before DECam templates).
     Values already present are preserved. All other fields pass through.
-
-    Keep in sync with reflector_step's LsstMultiVersionRegistryConsumer,
-    which upgrades live v11.1 alerts the same way.
     """
 
     _DIA_SOURCE_NEW_FIELDS = {
