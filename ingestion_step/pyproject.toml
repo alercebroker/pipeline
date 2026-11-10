@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ingestion-step"
-version = "27.7.1"
+version = "27.8.0"
 description = "Ingestion step"
 authors = []
 readme = "README.md"
