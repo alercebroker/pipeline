@@ -31,7 +31,20 @@ jobs:
       GHCR_TOKEN: ${{ secrets.GH_TOKEN }}
       PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
     steps:
+      # maximize-build-space joins / and the /mnt temp disk into one volume.
+      # Current GitHub runners have no separate /mnt disk (it is a folder on /),
+      # and the action then fails computing a negative size for it
+      # ("fallocate: invalid length value specified"). Only run it when /mnt
+      # is its own filesystem; otherwise / alone has enough free space.
+      - name: Check for a separate /mnt disk
+        id: disk
+        run: |
+          df -h / /mnt
+          if [ "$(df --output=target /mnt | tail -1)" = "/mnt" ]; then
+            echo "separate_mnt=true" >> "$GITHUB_OUTPUT"
+          fi
       - name: Maximize build space
+        if: steps.disk.outputs.separate_mnt == 'true'
         uses: easimon/maximize-build-space@master
         with:
           root-reserve-mb: 30720
