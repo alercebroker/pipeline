@@ -22,7 +22,7 @@ ZTF_PREFIX = SURVEY_IDS["ZTF"] + 1
 
 
 def catalog_oid_to_masterid(
-    catalog: str, catalog_oid: str, validate: bool = False
+    catalog: str, catalog_oid: str, validate: bool = True
 ) -> np.int64:
     """Convert a ZTF object id to its oid. Only "ZTF" is supported."""
     if catalog != "ZTF":

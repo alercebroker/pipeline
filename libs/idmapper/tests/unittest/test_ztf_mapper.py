@@ -116,3 +116,19 @@ class TestZTFMapper(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestZTFValidation(unittest.TestCase):
+    def test_validates_by_default(self):
+        with self.assertRaises(ValueError):
+            catalog_oid_to_masterid("ZTF", "ZTF20aaelul")  # 6 letters
+
+    def test_valid_names_still_encode(self):
+        self.assertEqual(
+            catalog_oid_to_masterid("ZTF", "ZTF20aaelulu"),
+            catalog_oid_to_masterid("ZTF", "ZTF20aaelulu", validate=False),
+        )
+
+    def test_rejects_non_ascii(self):
+        for oid in ("ZTF2²aaelulu", "ZTF20aaéluluu"[:12], "ZTF20AAELULU"):
+            self.assertFalse(is_ztf_oid_valid(oid), oid)

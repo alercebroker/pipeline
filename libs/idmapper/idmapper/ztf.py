@@ -1,4 +1,8 @@
+import re
+
 import numpy as np
+
+ZTF_OID_REGEX = re.compile(r"ZTF[0-9]{2}[a-z]{7}")
 
 
 def encode_ztf_to_masterid_without_survey(ztf_oid: str, validate: bool) -> np.int64:
@@ -30,17 +34,8 @@ def is_ztf_oid_valid(ztf_oid: str) -> bool:
     """
     if not isinstance(ztf_oid, str):
         return False
-    if len(ztf_oid) != 12:
-        return False
-    if ztf_oid[0:3] != "ZTF":
-        return False
-    if not ztf_oid[3:5].isdigit():
-        return False
-    if not ztf_oid[5:12].isalpha():
-        return False
-    if not ztf_oid[5:12].islower():
-        return False
-    return True
+    # ASCII only: str.isdigit/isalpha/islower also accept other scripts
+    return ZTF_OID_REGEX.fullmatch(ztf_oid) is not None
 
 
 def decode_masterid_for_ztf(masterid_without_survey: np.int64) -> str:
