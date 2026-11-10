@@ -78,18 +78,29 @@ class LsstStrategy(StrategyInterface[LsstData]):
 
     @classmethod
     def insert_into_db(
-        cls, driver: PsqlDatabase, parsed_data: LsstData, chunk_size: int | None = None
+        cls,
+        driver: PsqlDatabase,
+        parsed_data: LsstData,
+        chunk_size: int | None = None,
     ):
-        insert_dia_objects(driver, parsed_data["dia_object"], chunk_size=chunk_size)
-        insert_mpc_orbit(driver, parsed_data["mpc_orbits"], chunk_size=chunk_size)
+        insert_dia_objects(
+            driver, parsed_data["dia_object"], chunk_size=chunk_size
+        )
+        insert_mpc_orbit(
+            driver, parsed_data["mpc_orbits"], chunk_size=chunk_size
+        )
         insert_sources(
             driver,
             parsed_data["dia_sources"],
             on_conflict_do_update=True,
             chunk_size=chunk_size,
         )
-        insert_sources(driver, parsed_data["previous_sources"], chunk_size=chunk_size)
-        insert_ss_sources(driver, parsed_data["ss_sources"], chunk_size=chunk_size)
+        insert_sources(
+            driver, parsed_data["previous_sources"], chunk_size=chunk_size
+        )
+        insert_ss_sources(
+            driver, parsed_data["ss_sources"], chunk_size=chunk_size
+        )
         insert_forced_sources(
             driver, parsed_data["forced_sources"], chunk_size=chunk_size
         )
@@ -107,10 +118,18 @@ class LsstStrategy(StrategyInterface[LsstData]):
         forced_sources_df = parsed_data["forced_sources"]
         mpc_orbits_df = parsed_data["mpc_orbits"]
 
-        dia_sources_by_msg = dia_sources_df.set_index("message_id").to_dict("index")
-        dia_object_lookup = dia_object_df.set_index("message_id").to_dict("index")
-        ss_sources_lookup = ss_sources_df.set_index("message_id").to_dict("index")
-        mpc_orbits_lookup = mpc_orbits_df.set_index("message_id").to_dict("index")
+        dia_sources_by_msg = dia_sources_df.set_index("message_id").to_dict(
+            "index"
+        )
+        dia_object_lookup = dia_object_df.set_index("message_id").to_dict(
+            "index"
+        )
+        ss_sources_lookup = ss_sources_df.set_index("message_id").to_dict(
+            "index"
+        )
+        mpc_orbits_lookup = mpc_orbits_df.set_index("message_id").to_dict(
+            "index"
+        )
 
         def to_records(df: pd.DataFrame) -> list[dict[Any, Any]]:
             return df.to_dict("records")

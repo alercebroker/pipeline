@@ -16,7 +16,11 @@ import numpy as np
 import pandas as pd
 from idmapper.mapper import catalog_oid_to_masterid
 
-from ingestion_step.core.utils import add_constant_column, copy_column, deduplicate
+from ingestion_step.core.utils import (
+    add_constant_column,
+    copy_column,
+    deduplicate,
+)
 
 ERRORS = {
     1: 0.065,
@@ -36,7 +40,9 @@ def objectId_to_oid(df: pd.DataFrame):
     and uses them to calculate the new columns:
         - `oid`
     """
-    df["oid"] = df["objectId"].apply(lambda x: int(catalog_oid_to_masterid("ZTF", x)))
+    df["oid"] = df["objectId"].apply(
+        lambda x: int(catalog_oid_to_masterid("ZTF", x))
+    )
 
 
 def jd_to_mjd(df: pd.DataFrame):
@@ -89,9 +95,11 @@ def sigmadec_to_e_dec(df: pd.DataFrame):
         - `e_dec`
     """
     df["e_dec"] = df.apply(
-        lambda x: x["sigmadec"]
-        if "sigmadec" in x and not pd.isna(x["sigmadec"])
-        else ERRORS[x["fid"]],
+        lambda x: (
+            x["sigmadec"]
+            if "sigmadec" in x and not pd.isna(x["sigmadec"])
+            else ERRORS[x["fid"]]
+        ),
         axis=1,
         result_type="reduce",
     )
@@ -126,7 +134,10 @@ def _calculate_mag(
         e_mag = ZERO_MAG
     else:
         e_mag = (
-            1.0857 * forcediffimfluxunc * flux2uJy / np.abs(forcediffimflux * flux2uJy)
+            1.0857
+            * forcediffimfluxunc
+            * flux2uJy
+            / np.abs(forcediffimflux * flux2uJy)
         )
 
     return mag, e_mag
