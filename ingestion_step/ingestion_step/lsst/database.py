@@ -21,7 +21,9 @@ from ingestion_step.core.database import (
 
 
 def insert_dia_objects(
-    driver: PsqlDatabase, dia_objects: pd.DataFrame, chunk_size: int | None = None
+    driver: PsqlDatabase,
+    dia_objects: pd.DataFrame,
+    chunk_size: int | None = None,
 ):
     if len(dia_objects) == 0:
         return
@@ -44,10 +46,12 @@ def insert_dia_objects(
                 Object,
                 objects_dict[i : i + chunk_size],
             )
-            objects_dia_lsst_sql_stmt = db_insert_on_conflict_do_update_builder(
-                LsstDiaObject,
-                objects_dia_lsst_dict[i : i + chunk_size],
-                pk=["oid"],
+            objects_dia_lsst_sql_stmt = (
+                db_insert_on_conflict_do_update_builder(
+                    LsstDiaObject,
+                    objects_dia_lsst_dict[i : i + chunk_size],
+                    pk=["oid"],
+                )
             )
 
             session.execute(objects_sql_stmt)
@@ -64,21 +68,30 @@ def insert_mpc_orbit(
     if chunk_size is None:
         chunk_size = len(mpcorbs)
 
-    lsst_columns = set(mpcorbs.columns) - {"message_id", "midpointMjdTai", "mjd", "id"}
+    lsst_columns = set(mpcorbs.columns) - {
+        "message_id",
+        "midpointMjdTai",
+        "mjd",
+        "id",
+    }
 
     mpcorbs_dict = mpcorbs[list(lsst_columns)].to_dict("records")
 
     with driver.session() as session:
         for i in range(0, len(mpcorbs), chunk_size):
             mpcorbs_sql_stmt = db_insert_on_conflict_do_update_builder(
-                LsstMpcOrbits, mpcorbs_dict[i : i + chunk_size], pk=["ssObjectId"]
+                LsstMpcOrbits,
+                mpcorbs_dict[i : i + chunk_size],
+                pk=["ssObjectId"],
             )
             session.execute(mpcorbs_sql_stmt)
         session.commit()
 
 
 def insert_fake_ss_objects(
-    driver: PsqlDatabase, fake_ss_object: pd.DataFrame, chunk_size: int | None = None
+    driver: PsqlDatabase,
+    fake_ss_object: pd.DataFrame,
+    chunk_size: int | None = None,
 ):
     if len(fake_ss_object) == 0:
         return
@@ -138,19 +151,23 @@ def insert_sources(
                     pk=["oid", "measurement_id", "sid"],
                 )
 
-                detections_lsst_sql_stmt = db_insert_on_conflict_do_update_builder(
-                    LsstDetection,
-                    detections_lsst_dict[i : i + chunk_size],
-                    pk=["oid", "measurement_id"],
+                detections_lsst_sql_stmt = (
+                    db_insert_on_conflict_do_update_builder(
+                        LsstDetection,
+                        detections_lsst_dict[i : i + chunk_size],
+                        pk=["oid", "measurement_id"],
+                    )
                 )
             else:
                 detections_sql_stmt = db_insert_on_conflict_do_nothing_builder(
                     Detection,
                     detections_dict[i : i + chunk_size],
                 )
-                detections_lsst_sql_stmt = db_insert_on_conflict_do_nothing_builder(
-                    LsstDetection,
-                    detections_lsst_dict[i : i + chunk_size],
+                detections_lsst_sql_stmt = (
+                    db_insert_on_conflict_do_nothing_builder(
+                        LsstDetection,
+                        detections_lsst_dict[i : i + chunk_size],
+                    )
                 )
 
             session.execute(detections_sql_stmt)
@@ -187,7 +204,9 @@ def insert_ss_sources(
 
 
 def insert_forced_sources(
-    driver: PsqlDatabase, forced_sources: pd.DataFrame, chunk_size: int | None = None
+    driver: PsqlDatabase,
+    forced_sources: pd.DataFrame,
+    chunk_size: int | None = None,
 ):
     if len(forced_sources) == 0:
         return
@@ -201,18 +220,26 @@ def insert_forced_sources(
     )
     lsst_columns = lsst_columns.union({"oid", "sid", "measurement_id"})
 
-    forced_detections_dict = forced_sources[FORCED_DETECTION_COLUMNS].to_dict("records")
-    forced_detections_lsst_dict = forced_sources[list(lsst_columns)].to_dict("records")
+    forced_detections_dict = forced_sources[FORCED_DETECTION_COLUMNS].to_dict(
+        "records"
+    )
+    forced_detections_lsst_dict = forced_sources[list(lsst_columns)].to_dict(
+        "records"
+    )
 
     with driver.session() as session:
         for i in range(0, len(forced_sources), chunk_size):
-            forced_detections_sql_stmt = db_insert_on_conflict_do_nothing_builder(
-                ForcedPhotometry,
-                forced_detections_dict[i : i + chunk_size],
+            forced_detections_sql_stmt = (
+                db_insert_on_conflict_do_nothing_builder(
+                    ForcedPhotometry,
+                    forced_detections_dict[i : i + chunk_size],
+                )
             )
-            forced_detections_lsst_sql_stmt = db_insert_on_conflict_do_nothing_builder(
-                LsstForcedPhotometry,
-                forced_detections_lsst_dict[i : i + chunk_size],
+            forced_detections_lsst_sql_stmt = (
+                db_insert_on_conflict_do_nothing_builder(
+                    LsstForcedPhotometry,
+                    forced_detections_lsst_dict[i : i + chunk_size],
+                )
             )
 
             session.execute(forced_detections_sql_stmt)

@@ -433,6 +433,7 @@ class LsstAlertGenerator:
             "pixelFlags_saturatedCenter": self._noneable(
                 self.rng.choice([True, False])
             ),
+            "pixelFlags_spike": self._noneable(self.rng.choice([True, False])),
             "pixelFlags_suspect": self._noneable(self.rng.choice([True, False])),
             "pixelFlags_suspectCenter": self._noneable(self.rng.choice([True, False])),
             "pixelFlags_streak": self._noneable(self.rng.choice([True, False])),
@@ -446,6 +447,13 @@ class LsstAlertGenerator:
                 self.rng.choice([True, False])
             ),
             "glint_trail": self._noneable(self.rng.choice([True, False])),
+            "templateMjdMean": self._noneable(mjd - self.rng.uniform(30, 365)),
+            "templateMjdMin": self._noneable(mjd - self.rng.uniform(365, 730)),
+            "templateMjdMax": self._noneable(mjd - self.rng.uniform(1, 30)),
+            # Required (non-nullable) since v11.2
+            "templateInstrument": self.rng.choice(["LSSTCam", "DECam", "UNKNOWN"]),
+            "templateVersion": self.rng.choice([0, 1]),
+            "mixedInstruments": self.rng.choice([True, False]),
         }
 
     def _random_ss_source(

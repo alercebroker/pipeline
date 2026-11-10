@@ -37,7 +37,10 @@ class StrategyInterface(ABC, Generic[T]):
     @classmethod
     @abstractmethod
     def insert_into_db(
-        cls, driver: PsqlDatabase, parsed_data: T, chunk_size: int | None = None
+        cls,
+        driver: PsqlDatabase,
+        parsed_data: T,
+        chunk_size: int | None = None,
     ):
         """
         Insert data obtained from parse method into the given db.

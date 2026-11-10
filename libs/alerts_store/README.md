@@ -20,7 +20,7 @@ The compose stack is two independent halves:
 **Store only, no exposure:**
 
     docker compose up -d alerts_store
-    docker compose up -d alerts_store indexer_v11_1   # + backfill/safety re-index
+    docker compose up -d alerts_store indexer_v11_2   # + backfill/safety re-index
 
 **Take exposure down on a running stack:**
 

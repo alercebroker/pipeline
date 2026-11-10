@@ -66,6 +66,31 @@ The step itself can be run with:
 poetry run step
 ```
 
+## LSST: Rubin schema version check
+
+Rubin publishes alerts in Confluent wire format: a magic byte, a 4-byte schema id and
+the Avro body. The id is built from the schema version (`lsst.v11_2` -> `1102`).
+`reflector_step.utils.LsstRegistryConsumer` only accepts alerts whose id matches
+`SCHEMA_PATH`. Any other id (an older or a newer Rubin schema) or a missing header
+makes the step fail with an error naming the topic, partition, offset and both
+versions, instead of decoding the alert with the wrong schema. When Rubin changes
+schema version, the reflector stops at the first new alert until `SCHEMA_PATH` and the
+pipeline are updated.
+
+The check relies on the id. If Rubin edits a schema in place without changing its id,
+the step fails only when decoding breaks (usually an error inside fastavro, or bytes
+left over), and the error then names the alert's location. An edit that keeps the
+bytes decodable (e.g. a renamed field) is not detected.
+
+```yaml
+CONSUMER_CONFIG:
+  CLASS: reflector_step.utils.LsstRegistryConsumer
+  SCHEMA_PATH: /schemas/surveys/lsst_v11.2/lsst.v11_2.alert.avsc  # only accepted version
+PRODUCER_CONFIG:
+  CLASS: apf.producers.KafkaSchemalessProducer
+  SCHEMA_PATH: /schemas/surveys/lsst_v11.2/lsst.v11_2.alert.avsc  # same as consumer
+```
+
 ## Helm deployment
 
 To deploy this step using Helm, you can use the provided `values.yaml` file as a template. Adjust the parameters according to your Kafka setup and the topics you want to mirror.

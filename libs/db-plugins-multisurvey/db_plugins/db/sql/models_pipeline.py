@@ -573,6 +573,7 @@ class LsstDetection(Base):
     pixelFlags_offimage = Column(Boolean)
     pixelFlags_saturated = Column(Boolean)
     pixelFlags_saturatedCenter = Column(Boolean)
+    pixelFlags_spike = Column(Boolean)
     pixelFlags_suspect = Column(Boolean)
     pixelFlags_suspectCenter = Column(Boolean)
     pixelFlags_streak = Column(Boolean)
@@ -582,6 +583,15 @@ class LsstDetection(Base):
     pixelFlags_injected_template = Column(Boolean)
     pixelFlags_injected_templateCenter = Column(Boolean)
     glint_trail = Column(Boolean)
+    # v11.2 (DECam templates). Nullable here although templateInstrument,
+    # templateVersion and mixedInstruments are required in the alert: rows
+    # stored before v11.2 have no value.
+    templateMjdMean = Column(DOUBLE_PRECISION)
+    templateMjdMin = Column(DOUBLE_PRECISION)
+    templateMjdMax = Column(DOUBLE_PRECISION)
+    templateInstrument = Column(VARCHAR)
+    templateVersion = Column(Integer)
+    mixedInstruments = Column(Boolean)
     has_stamp = Column(Boolean)  # bool,
 
     created_date = Column(Date, server_default=func.now())

@@ -53,7 +53,9 @@ def band_to_int(df: pd.DataFrame):
 
 def NaT_to_None(column: str):
     def _NaT_to_None(df: pd.DataFrame):
-        df[column] = df[column].astype("object").where(df[column].notna(), None)
+        df[column] = (
+            df[column].astype("object").where(df[column].notna(), None)
+        )
 
     return _NaT_to_None
 

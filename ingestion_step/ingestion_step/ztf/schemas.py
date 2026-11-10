@@ -1,6 +1,5 @@
 import pandas as pd
 
-
 DType = (
     pd.Int32Dtype
     | pd.Int64Dtype
