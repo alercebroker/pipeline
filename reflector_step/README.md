@@ -71,11 +71,16 @@ poetry run step
 Rubin publishes alerts in Confluent wire format: a magic byte, a 4-byte schema id and
 the Avro body. The id is built from the schema version (`lsst.v11_2` -> `1102`).
 `reflector_step.utils.LsstRegistryConsumer` only accepts alerts whose id matches
-`SCHEMA_PATH`. Any other id (an older or a newer Rubin schema), a missing header, or
-bytes left over after decoding make the step fail with an error naming the topic,
-partition, offset and both versions, instead of decoding the alert with the wrong
-schema. When Rubin changes schema, the reflector stops at the first new alert until
-`SCHEMA_PATH` and the pipeline are updated.
+`SCHEMA_PATH`. Any other id (an older or a newer Rubin schema) or a missing header
+makes the step fail with an error naming the topic, partition, offset and both
+versions, instead of decoding the alert with the wrong schema. When Rubin changes
+schema version, the reflector stops at the first new alert until `SCHEMA_PATH` and the
+pipeline are updated.
+
+The check relies on the id. If Rubin edits a schema in place without changing its id,
+the step fails only when decoding breaks (usually an error inside fastavro, or bytes
+left over), and the error then names the alert's location. An edit that keeps the
+bytes decodable (e.g. a renamed field) is not detected.
 
 ```yaml
 CONSUMER_CONFIG:

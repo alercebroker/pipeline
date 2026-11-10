@@ -87,6 +87,11 @@ def rubin_schema_id(schema: dict) -> int:
     return int(numbers[0] + numbers[1].zfill(2))
 
 
+def _version(schema_id: int) -> str:
+    """Inverse of rubin_schema_id: 1102 -> '11.2'."""
+    return f"{schema_id // 100}.{schema_id % 100}"
+
+
 class LsstRegistryConsumer(KafkaSchemalessRegistryConsumer):
     """
     Reads Rubin alerts in Confluent wire format (magic byte + 4-byte schema id +
@@ -130,19 +135,26 @@ class LsstRegistryConsumer(KafkaSchemalessRegistryConsumer):
                 "update SCHEMA_PATH and the pipeline before resuming."
             )
 
+        # Same id but a different schema behind it (e.g. Rubin edited the
+        # version in place): fastavro usually fails mid-decode with a bare
+        # IndexError/EOFError/etc.; leftover bytes only catch some cases.
+        mismatch = (
+            f"the schema behind id {schema_id} differs from SCHEMA_PATH "
+            f"({self.schema['name']})."
+        )
         body = io.BytesIO(msg_bytes)
         body.seek(5)
-        data = fastavro.schemaless_reader(body, self.schema)
+        try:
+            data = fastavro.schemaless_reader(body, self.schema)
+        except Exception as e:
+            raise ValueError(
+                f"Rubin alert at {where} could not be decoded "
+                f"({type(e).__name__}: {e}): {mismatch}"
+            ) from e
         leftover = len(msg_bytes) - body.tell()
         if leftover:
             raise ValueError(
                 f"Rubin alert at {where} has {leftover} bytes left after "
-                f"decoding with {self.schema['name']}: the schema behind id "
-                f"{schema_id} differs from SCHEMA_PATH."
+                f"decoding: {mismatch}"
             )
         return data
-
-
-def _version(schema_id: int) -> str:
-    """Inverse of rubin_schema_id: 1102 -> '11.2'."""
-    return f"{schema_id // 100}.{schema_id % 100}"

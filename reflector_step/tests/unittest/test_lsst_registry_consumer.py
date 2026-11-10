@@ -79,7 +79,8 @@ class TestLsstRegistryConsumer(TestCase):
             io.BytesIO(), self.v11_2, decoded, strict=True
         )
 
-    def test_rejects_previous_version(self, _):
+    def _as_v11_1(self) -> dict:
+        """Rubin's 11.2 sample without the 7 diaSource fields added in 11.2."""
         v11_2_only = {
             "pixelFlags_spike",
             "templateMjdMean",
@@ -96,10 +97,13 @@ class TestLsstRegistryConsumer(TestCase):
             if k not in v11_2_only
         }
         old["prvDiaSources"] = None
+        return old
+
+    def test_rejects_previous_version(self, _):
         consumer = make_consumer()
         with self.assertRaises(ValueError) as ctx:
             consumer._deserialize_message(
-                FakeMessage(wire(1101, self.v11_1, old))
+                FakeMessage(wire(1101, self.v11_1, self._as_v11_1()))
             )
         message = str(ctx.exception)
         self.assertIn("schema id 1101 (v11.1)", message)
@@ -138,3 +142,16 @@ class TestLsstRegistryConsumer(TestCase):
         payload = wire(1102, self.v11_2, self.alert) + b"\x00\x02"
         with self.assertRaisesRegex(ValueError, "2 bytes left"):
             consumer._deserialize_message(FakeMessage(payload))
+
+    def test_rejects_body_from_another_schema_with_location(self, _):
+        # Same id, but the body was written with another schema (here v11.1):
+        # fastavro fails mid-decode instead of leaving bytes over, and the
+        # error must still say where the alert is.
+        consumer = make_consumer()
+        payload = wire(1102, self.v11_1, self._as_v11_1())
+        with self.assertRaises(ValueError) as ctx:
+            consumer._deserialize_message(FakeMessage(payload))
+        message = str(ctx.exception)
+        self.assertIn("could not be decoded", message)
+        self.assertIn("topic lsst-alerts-v11 partition 3 offset 42", message)
+        self.assertIn("differs from SCHEMA_PATH", message)
