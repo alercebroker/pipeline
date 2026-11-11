@@ -14,7 +14,7 @@ The diagram below describes the legacy single-survey topology and is currently o
 
 ## Multisurvey pipeline
 
-The multisurvey pipeline replaces the legacy "one codebase per survey" approach with a single image per step, parameterised by a survey strategy. Survey-tagged Kafka topics carry messages through the pipeline. Object identifiers are unified as 64-bit integers via the [idmapper](./libs/idmapper) library.
+The multisurvey pipeline replaces the legacy "one codebase per survey" approach with a single image per step, parameterised by a survey strategy. Survey-tagged Kafka topics carry messages through the pipeline. An object is identified by a 64-bit integer `oid` plus a survey id `sid`; the `oid` is unique only within its survey. ZTF names are encoded to integers via the [idmapper](./libs/idmapper) library.
 
 **Deployment pattern.** Multisurvey steps share a single generic Helm chart, [`charts/multisurvey_step/`](./charts/multisurvey_step/). Each deployment supplies its own values overlay that sets the container image, namespace, and `configYaml` (Kafka consumer/producer topics, schemas, PSQL connection, survey strategy, …). For example, ZTF ingestion in staging is deployed via `charts/multisurvey_step/values.ztf.staging.yaml` with `image.repository: ghcr.io/alercebroker/ingestion_step`. The same chart is reused for correction, magstats, scribe, s3, and the stamp classifiers — each with its own image and overlay. (The legacy `charts/correction_multistream_ztf_step/` is a separate one-off chart kept alongside this pattern.)
 
@@ -106,7 +106,7 @@ The multisurvey gateway. Replaces `sorting_hat_step` + `prv_candidates_step` for
 
 - Parses raw alerts using a survey-specific strategy (ZTF or LSST).
 - Applies survey-specific transforms (`jd_to_mjd`, `fid_to_band`, `forcediffimflux_to_mag`, `isdiffpos_to_int`, …; full list in [ingestion_step/ingestion_step](./ingestion_step)/`*/transforms.py`).
-- Resolves the unified 64-bit `oid` for each object via [idmapper](./libs/idmapper).
+- Sets each object's `oid` and `sid`: ZTF names are encoded via [idmapper](./libs/idmapper), LSST ids are used as they come.
 - Inserts objects, detections, forced photometry, and non-detections directly into the multisurvey PSQL schema (no scribe hop).
 - Produces a normalised, survey-tagged message to the next topic.
 
@@ -284,7 +284,7 @@ ML model that classifies alerts based on their stamps. One instance per survey (
 
 | Concern | Legacy | Multisurvey |
 |---|---|---|
-| Object ID | String `aid` (`AL25…`) + survey `oid` (`ZTF21abcdefg`) | Numeric 64-bit `oid` (bit-packed; resolved by `idmapper`) |
+| Object ID | String `aid` (`AL25…`) + survey `oid` (`ZTF21abcdefg`) | Numeric 64-bit `oid`, unique within its survey; objects keyed by `(oid, sid)` (ZTF names encoded by `idmapper`) |
 | DB schema | MongoDB (objects, probabilities, features) + PSQL (users, …) | Unified PSQL multisurvey schema (`db-plugins-multisurvey`), hash-partitioned |
 | Gateway | `sorting_hat_step` (per survey) | `ingestion_step` (one image, survey strategy) |
 | Lightcurve retrieval | Dedicated `lightcurve-step` | Folded into `correction_multisurvey_step` |

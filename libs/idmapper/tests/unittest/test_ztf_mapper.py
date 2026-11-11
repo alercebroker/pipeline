@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from idmapper.mapper import catalog_oid_to_masterid, decode_masterid
+from idmapper.mapper import SURVEY_IDS, catalog_oid_to_masterid, decode_masterid
 from idmapper.ztf import is_ztf_oid_valid
 
 
@@ -29,15 +29,25 @@ class TestZTFMapper(unittest.TestCase):
                 f"Master ID should have the correct sequence bits at position {i}",
             )
 
-    def test_max_oid(self):
-        oid = "123456789"
-        masterid = catalog_oid_to_masterid("MAXSURVEY", oid)
-        masterid_bits = "{0:b}".format(masterid).zfill(64)
+    def test_stored_oid_unchanged(self):
+        # A real oid from the multisurvey database. Every stored ZTF oid depends on
+        # this encoding, so it must never change.
         self.assertEqual(
-            masterid_bits[1:9],
-            "11111111",
-            "Master ID should have the correct survey ID bits",
+            catalog_oid_to_masterid("ZTF", "ZTF17aaaaauj"), 36028933559737489
         )
+        self.assertEqual(decode_masterid(36028933559737489), ("ZTF", "ZTF17aaaaauj"))
+
+    def test_ztf_prefix(self):
+        self.assertEqual(SURVEY_IDS["ZTF"], 0)
+        masterid = catalog_oid_to_masterid("ZTF", "ZTF20abcdefg")
+        self.assertEqual(int(masterid) >> (63 - 8), 1)
+
+    def test_non_ztf_rejected(self):
+        with self.assertRaises(ValueError):
+            catalog_oid_to_masterid("LSST DIA Object", "313853798223069211")
+        # An LSST DIA object oid as stored in the database (no ZTF prefix).
+        with self.assertRaises(ValueError):
+            decode_masterid(313853798223069211)
 
     def test_masterid_type(self):
         ztf_oid = "ZTF20abcdefg"
@@ -106,3 +116,19 @@ class TestZTFMapper(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestZTFValidation(unittest.TestCase):
+    def test_validates_by_default(self):
+        with self.assertRaises(ValueError):
+            catalog_oid_to_masterid("ZTF", "ZTF20aaelul")  # 6 letters
+
+    def test_valid_names_still_encode(self):
+        self.assertEqual(
+            catalog_oid_to_masterid("ZTF", "ZTF20aaelulu"),
+            catalog_oid_to_masterid("ZTF", "ZTF20aaelulu", validate=False),
+        )
+
+    def test_rejects_non_ascii(self):
+        for oid in ("ZTF2²aaelulu", "ZTF20aaéluluu"[:12], "ZTF20AAELULU"):
+            self.assertFalse(is_ztf_oid_valid(oid), oid)
