@@ -194,28 +194,8 @@ class ScribeAndOutputTestCase(unittest.TestCase):
         )  # end of the keys assertion
 
 
-class ReexportTestCase(unittest.TestCase):
-    """features.utils.parsers keeps exporting the moved names."""
-
-    def test_parsers_reexports_moved_names(self):
-        """Every moved ztf name is importable from parsers and is the moved object itself."""
-        from features.surveys import common  # DETECTION_KEYS_MAP home
-        from features.surveys.ztf import astro_object, output, scribe  # new homes
-        from features.utils import parsers  # old home, still imported by step.py and tests
-
-        moved = {  # name -> new module
-            "DETECTION_KEYS_MAP": common,  # shared by both surveys
-            "add_mag_and_flux_columns": astro_object,  # ztf magnitude and flux rows
-            "get_bogus_flags_for_each_detection": astro_object,  # rb and procstatus per epoch
-            "get_reference_for_each_detection": astro_object,  # distnr and rfid per epoch
-            "get_new_references_from_message": astro_object,  # references carried in the message
-            "detections_to_astro_object": astro_object,  # the ztf parser
-            "fid_mapper_for_db": scribe,  # band -> db code
-            "parse_scribe_payload": scribe,  # scribe commands
-            "parse_output": output,  # output messages
-        }  # end of the moved names
-        for name, module in moved.items():  # each moved name
-            self.assertIs(getattr(parsers, name), getattr(module, name), name)  # same object in both places
+class FidMapperTestCase(unittest.TestCase):
+    """fid_mapper_for_db in features/surveys/ztf/scribe.py keeps the band codes."""
 
     def test_fid_mapper_for_db_is_band_table(self):
         """fid_mapper_for_db keeps today's codes: g 1, r 2, g,r 12, anything else 0."""

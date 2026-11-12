@@ -227,32 +227,8 @@ class ScribeAndOutputTestCase(unittest.TestCase):
         self.assertEqual(sorted(out[0]), ["detections", "features", "measurement_id", "oid"])  # keys today
 
 
-class ReexportTestCase(unittest.TestCase):
-    """features.utils.parsers keeps exporting the moved names."""
-
-    def test_parsers_reexports_moved_names(self):
-        """Every moved lsst name is importable from parsers and is the moved object itself."""
-        from features.surveys.lsst import astro_object, output, scribe  # new homes
-        from features.utils import parsers  # old home, still imported by step.py and tests
-
-        moved = {  # name -> new module
-            "flux_err_2_mag_err": astro_object,  # flux error -> magnitude error
-            "fluxnjy2mag": astro_object,  # nJy flux -> AB magnitude
-            "add_mag_and_flux_lsst": astro_object,  # lsst magnitude and flux rows
-            "detections_to_astro_object_lsst": astro_object,  # the lsst parser
-            "fid_mapper_for_db_lsst": scribe,  # band -> db code
-            "parse_scribe_payload_lsst": scribe,  # scribe commands
-            "parse_output_lsst": output,  # output messages
-        }  # end of the moved names
-        for name, module in moved.items():  # each moved name
-            self.assertIs(getattr(parsers, name), getattr(module, name), name)  # same object in both places
-
-    def test_parsers_keeps_the_prepare_shims(self):
-        """The two prepare_ao_features_for_db names existing tests import are still in parsers."""
-        from features.utils import parsers  # old home
-
-        self.assertTrue(callable(parsers.prepare_ao_features_for_db))  # ztf shim still there
-        self.assertTrue(callable(parsers.prepare_ao_features_for_db_lsst))  # lsst shim still there
+class FidMapperTestCase(unittest.TestCase):
+    """fid_mapper_for_db_lsst in features/surveys/lsst/scribe.py keeps the band codes."""
 
     def test_fid_mapper_for_db_lsst_is_band_table(self):
         """fid_mapper_for_db_lsst keeps today's codes, the None and unknown 0, and the strip of the band string."""
@@ -313,11 +289,11 @@ class PaddedBandTestCase(unittest.TestCase):
         result = prepare_features_for_db(self.ao, LUT["lsst"], LSSTSurvey.bands, keep_name=False)  # four-argument call
         self.assertEqual(result.to_dict("records"), PADDED_DB_ROWS)  # same rows as prepare_ao_features_for_db_lsst gave
 
-    def test_parsers_shim_strips_padded_bands(self):
-        """parsers.prepare_ao_features_for_db_lsst, still imported by other tests, gives the multisurvey rows too."""
-        from features.utils import parsers  # old home of the lsst helper
+    def test_prepare_ao_features_for_db_lsst_strips_padded_bands(self):
+        """prepare_ao_features_for_db_lsst, the two-argument lsst function, gives the multisurvey rows too."""
+        from features.surveys.lsst.scribe import prepare_ao_features_for_db_lsst  # two-argument function under test
 
-        result = parsers.prepare_ao_features_for_db_lsst(self.ao, LUT["lsst"])  # shim under test
+        result = prepare_ao_features_for_db_lsst(self.ao, LUT["lsst"])  # two positional arguments
         self.assertEqual(result.to_dict("records"), PADDED_DB_ROWS)  # same rows as on multisurvey
 
     def test_band_table_fid_for_db_is_the_multisurvey_mapper(self):
@@ -327,7 +303,7 @@ class PaddedBandTestCase(unittest.TestCase):
         cases = {" g ": 1, "g ": 1, " u,g": 61, " g,r": 12, "g": 1, None: 0, "other": 0, 1: 0, float("nan"): 0}  # band -> code
         for band, code in cases.items():  # each band
             self.assertEqual(LSSTSurvey.bands.fid_for_db(band), code, repr(band))  # band table
-            self.assertEqual(fid_mapper_for_db_lsst(band), code, repr(band))  # function name kept by parsers
+            self.assertEqual(fid_mapper_for_db_lsst(band), code, repr(band))  # the moved function
         self.assertEqual(LSSTSurvey.bands.fid_for_db(["g"]), 0)  # str(["g"]) is no band; multisurvey did not raise
 
     def test_output_does_not_strip_padded_bands(self):

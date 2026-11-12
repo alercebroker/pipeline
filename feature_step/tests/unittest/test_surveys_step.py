@@ -1,15 +1,16 @@
-"""FeatureStep dispatches through the Survey contract and utils/parsers is a re-export shim.
+"""FeatureStep dispatches through the Survey contract; the two prepare_ao_features_for_db names keep their rows.
 
-Spec criteria 1 (no survey branches in step.py), 2 (parsers.py has no bodies and
-keeps its names) and the FeatureStep half of 3 (unknown or missing SURVEY raises
-at construction). The behaviour around them (scribe commands, output, frames) is
-pinned by test_surveys_golden; the tests here that already pass before the
-rewrite pin what the rewrite must keep.
+Spec criteria 1 (no survey branches in step.py) and the FeatureStep half of 3
+(unknown or missing SURVEY raises at construction), plus the two-argument
+prepare_ao_features_for_db functions under features/surveys. The behaviour
+around them (scribe commands, output, frames) is pinned by test_surveys_golden;
+the tests here that already pass before the rewrite pin what the rewrite must
+keep. The removal of features/utils (criterion 2) is pinned by
+test_surveys_no_parsers.
 """
-import ast  # parse step.py and parsers.py without importing them
-import importlib  # resolve the home module of each re-exported name
+import ast  # parse step.py without importing it
 import json  # decode the scribe xmatch command
-import pathlib  # locate the two source files
+import pathlib  # locate step.py
 import re  # the survey-branch pattern of spec criterion 1
 import unittest  # test case base class
 from importlib.metadata import version  # package version the step registers
@@ -21,9 +22,10 @@ import features.step as step_module  # module under test, for its path and patch
 from features.step import FeatureStep  # the step under test
 from features.surveys.common import prepare_features_for_db  # shared body the two prepare names delegate to
 from features.surveys.lsst import LSSTSurvey  # lsst survey class
+from features.surveys.lsst.scribe import prepare_ao_features_for_db_lsst  # lsst two-argument name under test
 from features.surveys.registry import SURVEYS  # registered survey names
 from features.surveys.ztf import ZTFSurvey  # ztf survey class
-from features.utils import parsers  # the shim under test
+from features.surveys.ztf.scribe import prepare_ao_features_for_db  # ztf two-argument name under test
 from lc_classifier.features.composites.lsst import LSSTFeatureExtractor  # extractor an lsst step holds
 from lc_classifier.features.composites.ztf import ZTFFeatureExtractor  # extractor a ztf step holds
 from lc_classifier.features.preprocess.lsst import LSSTLightcurvePreprocessor  # preprocessor an lsst step holds
@@ -44,34 +46,6 @@ from .test_surveys_golden import (  # Task 1 step builder, configs, stub and inp
 )  # end of the golden imports
 
 STEP_PATH = pathlib.Path(step_module.__file__)  # feature_step/features/step.py
-PARSERS_PATH = pathlib.Path(parsers.__file__)  # feature_step/features/utils/parsers.py
-
-CRITERION_2_NAMES = {  # the 12 names of spec criterion 2 -> module that must define each
-    "detections_to_astro_object": "features.surveys.ztf.astro_object",  # ztf parser
-    "detections_to_astro_object_lsst": "features.surveys.lsst.astro_object",  # lsst parser
-    "get_bogus_flags_for_each_detection": "features.surveys.ztf.astro_object",  # rb and procstatus per epoch
-    "prepare_ao_features_for_db": "features.surveys.ztf.scribe",  # ztf feature rows for the db
-    "prepare_ao_features_for_db_lsst": "features.surveys.lsst.scribe",  # lsst feature rows for the db
-    "parse_scribe_payload": "features.surveys.ztf.scribe",  # ztf scribe commands
-    "parse_scribe_payload_lsst": "features.surveys.lsst.scribe",  # lsst scribe commands
-    "parse_output": "features.surveys.ztf.output",  # ztf output messages
-    "parse_output_lsst": "features.surveys.lsst.output",  # lsst output messages
-    "fid_mapper_for_db": "features.surveys.ztf.scribe",  # ztf band -> db code
-    "fid_mapper_for_db_lsst": "features.surveys.lsst.scribe",  # lsst band -> db code
-    "DETECTION_KEYS_MAP": "features.surveys.common",  # input key -> AstroObject column
-}  # end of the criterion 2 names
-
-NAMES_BEFORE_THE_SHIM = [  # every public name bound in parsers.py before this task, in file order
-    "logging", "np", "pd", "AstroObject", "query_ao_table", "mag2flux", "mag_err_2_flux_err",  # incidental imports
-    "List", "Dict", "Optional", "os", "json",  # incidental imports
-    "last_mjd_of", "prepare_features_for_db", "wise_magnitudes", "LSSTSurvey", "ZTFSurvey",  # shared helpers and classes
-    "DETECTION_KEYS_MAP", "add_mag_and_flux_columns", "detections_to_astro_object",  # ztf parser names
-    "get_bogus_flags_for_each_detection", "get_new_references_from_message",  # ztf parser names
-    "get_reference_for_each_detection", "parse_output", "fid_mapper_for_db", "parse_scribe_payload",  # ztf names
-    "add_mag_and_flux_lsst", "detections_to_astro_object_lsst", "flux_err_2_mag_err", "fluxnjy2mag",  # lsst parser names
-    "parse_output_lsst", "fid_mapper_for_db_lsst", "parse_scribe_payload_lsst",  # lsst names
-    "prepare_ao_features_for_db", "prepare_ao_features_for_db_lsst",  # the two bodies this task moves
-]  # end of the names
 
 
 def config_for(**extra):
@@ -193,52 +167,14 @@ class NoSurveyBranchesTestCase(unittest.TestCase):
         self.assertEqual(self.source.count("TIENE LENGTH"), 0)  # log noise dropped by this task
 
 
-class ParsersShimTestCase(unittest.TestCase):
-    """features/utils/parsers.py only re-exports names that live under features/surveys (criterion 2)."""
-
-    def setUp(self):
-        """Parse parsers.py once."""
-        self.tree = ast.parse(PARSERS_PATH.read_text())  # syntax tree of the shim
-
-    def test_parsers_is_a_shim(self):
-        """parsers.py has no function, class or lambda, and the 12 names of criterion 2 are importable from it."""
-        bodies = [  # nodes that carry code of their own
-            type(node).__name__ for node in ast.walk(self.tree)  # every node of the file
-            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Lambda))  # def, class, lambda
-        ]  # end of the bodies
-        self.assertEqual(bodies, [])  # re-exports only
-        for name in CRITERION_2_NAMES:  # each of the 12 names
-            self.assertTrue(hasattr(parsers, name), name)  # importable from the old home
-
-    def test_parsers_has_only_a_docstring_and_imports(self):
-        """Every top-level statement of parsers.py is the module docstring or an import, and the docstring says shim."""
-        docstring = ast.get_docstring(self.tree)  # module docstring, None when absent
-        self.assertIsNotNone(docstring)  # the shim explains itself
-        self.assertIn("re-export", docstring)  # and says what it is
-        others = [  # statements that are neither the docstring nor an import
-            type(node).__name__ for node in self.tree.body[1:]  # skip the docstring expression
-            if not isinstance(node, (ast.Import, ast.ImportFrom))  # anything else is code
-        ]  # end of the others
-        self.assertEqual(others, [])  # nothing else
-
-    def test_criterion_2_names_are_the_objects_under_surveys(self):
-        """Each of the 12 names in parsers is the very object its features.surveys module defines."""
-        for name, module_name in CRITERION_2_NAMES.items():  # name -> home module
-            home = importlib.import_module(module_name)  # module under features/surveys
-            self.assertIs(getattr(parsers, name), getattr(home, name), name)  # same object, not a copy
-            if callable(getattr(home, name)):  # functions know where they were defined
-                self.assertEqual(getattr(home, name).__module__, module_name, name)  # defined there, not re-imported
-
-    def test_every_name_bound_before_the_shim_is_still_importable(self):
-        """No name that parsers.py bound before this task disappears from it."""
-        missing = [name for name in NAMES_BEFORE_THE_SHIM if not hasattr(parsers, name)]  # names lost
-        self.assertEqual(missing, [])  # none
+class PrepareNamesTestCase(unittest.TestCase):
+    """The two-argument prepare_ao_features_for_db functions under features/surveys give the shared body's rows."""
 
     def test_prepare_ao_features_for_db_keeps_its_rows(self):
         """prepare_ao_features_for_db(ao, lut) equals the shared body with the ztf bands and the name kept."""
         ao = astro_object_with(STUB_FEATURES["ztf"])  # stub rows with NaN, inf and an unknown name
         with self.assertLogs("alerce.FeatureStep", "WARNING"):  # Unknown_feat is dropped with a warning
-            got = parsers.prepare_ao_features_for_db(ao, LUT["ztf"])  # name under test, two positional arguments
+            got = prepare_ao_features_for_db(ao, LUT["ztf"])  # name under test, two positional arguments
         with self.assertLogs("alerce.FeatureStep", "WARNING"):  # same warning from the shared body
             expected = prepare_features_for_db(ao, LUT["ztf"], ZTFSurvey.bands, keep_name=True)  # ztf bands, name kept
         assert_frame_equal(got, expected)  # same rows, columns, dtypes and index
@@ -248,7 +184,7 @@ class ParsersShimTestCase(unittest.TestCase):
         """prepare_ao_features_for_db_lsst(ao, lut) equals the shared body with the lsst bands and no name."""
         ao = astro_object_with(STUB_FEATURES["lsst"])  # stub rows with NaN and an unknown name
         with self.assertLogs("alerce.FeatureStep", "WARNING"):  # Unknown_feat is dropped with a warning
-            got = parsers.prepare_ao_features_for_db_lsst(ao, LUT["lsst"])  # name under test, two positional arguments
+            got = prepare_ao_features_for_db_lsst(ao, LUT["lsst"])  # name under test, two positional arguments
         with self.assertLogs("alerce.FeatureStep", "WARNING"):  # same warning from the shared body
             expected = prepare_features_for_db(ao, LUT["lsst"], LSSTSurvey.bands, keep_name=False)  # lsst bands, no name
         assert_frame_equal(got, expected)  # same rows, columns, dtypes and index

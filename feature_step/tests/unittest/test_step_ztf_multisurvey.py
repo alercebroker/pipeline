@@ -17,12 +17,12 @@ from unittest import mock
 import pandas as pd
 
 from features.step import FeatureStep
-from features.utils.parsers import (
-    detections_to_astro_object,
-    get_bogus_flags_for_each_detection,
-    prepare_ao_features_for_db,
-    prepare_ao_features_for_db_lsst,
-)
+from features.surveys.lsst.scribe import prepare_ao_features_for_db_lsst  # lsst feature rows for the db
+from features.surveys.ztf.astro_object import (  # ztf parser functions
+    detections_to_astro_object,  # ztf epochs -> AstroObject
+    get_bogus_flags_for_each_detection,  # rb and procstatus per epoch
+)  # end of the ztf parser imports
+from features.surveys.ztf.scribe import prepare_ao_features_for_db  # ztf feature rows for the db
 from lc_classifier.features.core.base import query_ao_table
 from lc_classifier.features.composites.ztf import ZTFFeatureExtractor
 from lc_classifier.features.preprocess.ztf import ZTFLightcurvePreprocessor
