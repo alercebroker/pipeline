@@ -27,7 +27,8 @@ commands, output messages, DB reads) is identical to `multisurvey` today.
   `get_xmatch_info`, or xmatch results attached only for `allwise`). Each is kept
   as is and listed in the PR body under "noticed, not changed".
 - No deletion of code in this PR's main commits. Dead-code removal, if any, is one
-  separate final commit that the human can drop.
+  separate final commit that the human can drop. The removal of `features/utils/`
+  (criterion 2) is its own commit after it, with the import changes it needs.
 - No new survey. The contract is shaped by ztf and lsst only.
 
 ## Design
@@ -48,7 +49,7 @@ features/
       output.py           # parse_output
     lsst/
       (same four files, lsst bodies)
-  utils/parsers.py        # shim: re-exports the names below from features.surveys
+  (utils/ is removed: parsers.py was its only module and nothing re-exports the old names)
 ```
 
 `Survey` contract (one attribute or method each, all overridden per survey):
@@ -96,13 +97,13 @@ extractor.
 
 1. `grep -n 'survey ==\|survey==\|== "ztf"\|== "lsst"' feature_step/features/step.py`
    prints nothing.
-2. `features/utils/parsers.py` has no function bodies: it only re-exports
-   `detections_to_astro_object`, `detections_to_astro_object_lsst`,
-   `get_bogus_flags_for_each_detection`, `prepare_ao_features_for_db`,
-   `prepare_ao_features_for_db_lsst`, `parse_scribe_payload`,
-   `parse_scribe_payload_lsst`, `parse_output`, `parse_output_lsst`,
-   `fid_mapper_for_db`, `fid_mapper_for_db_lsst`, `DETECTION_KEYS_MAP`, and the
-   existing tests import them unchanged.
+2. `features/utils/` does not exist (`parsers.py` and the empty `__init__.py` are
+   deleted). Every importer takes the names from `features.surveys.*`:
+   `grep -rn "utils\.parsers\|utils import parsers" feature_step --include='*.py'`
+   prints nothing. The existing tests that imported from `features.utils.parsers`
+   (`tests/message_factory.py`, `tests/message_factory_lsst.py`,
+   `tests/unittest/test_step_ztf_multisurvey.py`) change their import lines only;
+   their assertions stay as they are.
 3. `features/surveys/registry.py` maps `"ztf"` and `"lsst"`; `get_survey("x")`
    raises `ValueError` whose message lists both known names; `FeatureStep` with
    `SURVEY: "x"` raises at construction.
@@ -137,6 +138,6 @@ exits 0 (no failure outside the recorded baseline: 7 in `test_step_ztf`, 1 in
 `test_step_lsst`), with new test files
 `feature_step/tests/unittest/test_surveys_<task>.py`, one per task (`golden` for
 criterion 5, `bands_registry` for 3-4, `common` for 7, `ztf` and `lsst` for 6,
-`step` for 1-3), each seen red before the implementation exists. One file per task
+`step` for 1 and 3, `no_parsers` for 2), each seen red before the implementation exists. One file per task
 because a committed test file is read-only for the agent (`edit_guard`). The ztf and lsst golden fixtures are generated from the
 `multisurvey` code before any refactor commit, in the first task.
