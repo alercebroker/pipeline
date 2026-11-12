@@ -33,18 +33,18 @@ def lsst_epoch(oid, measurement_id, band, mjd, rng):
         "tid": LSST_TID,  # telescope id
         "band": BAND_MAP[band],  # int band code
         "measurement_id": measurement_id,  # unique id of the epoch
-    }
+    }  # end of the epoch dict
 
 
-def generate_message_lsst(
-    oid: int = 1152921504606847001,
-    bands=("u", "g", "r", "i"),
-    n_sources=5,
-    n_previous=3,
-    n_forced=4,
-    seed=7,
-    with_xmatch=False,
-) -> dict:
+def generate_message_lsst(  # one synthetic lsst message, every argument optional
+    oid: int = 1152921504606847001,  # object id of the message and of every epoch
+    bands=("u", "g", "r", "i"),  # band letters the epochs cycle through
+    n_sources=5,  # number of alert sources, at least 3
+    n_previous=3,  # number of previous sources
+    n_forced=4,  # number of forced sources, at least 1
+    seed=7,  # seed of the message's private generator
+    with_xmatch=False,  # attach an allwise match under xmatches
+) -> dict:  # returns the message dict
     """Build one LSST message with `sources`, `previous_sources` and `forced_sources`.
 
     sources[1] gets `band: None` and sources[2] gets `scienceFlux: -5.0`, so
@@ -84,7 +84,7 @@ def generate_message_lsst(
         "sources": sources,  # alert sources
         "previous_sources": previous_sources,  # earlier sources
         "forced_sources": forced_sources,  # forced photometry
-    }
+    }  # end of the message dict
     if with_xmatch:  # attach an allwise match only when asked
         message["xmatches"] = allwise_match(oid)  # same shape the xmatch client returns
     return message  # the finished message

@@ -27,7 +27,7 @@ CONSUMER_CONFIG = {  # consumer config copied from test_step_ztf_multisurvey
     "CLASS": "unittest.mock.MagicMock",  # no Kafka consumer
     "PARAMS": {"bootstrap.servers": "server", "group.id": "group_id"},  # dummy params
     "TOPICS": ["topic"],  # dummy topic
-}
+}  # end of the consumer config
 PRODUCER_CONFIG = {"CLASS": "unittest.mock.MagicMock", "TOPIC": "test"}  # no Kafka producer
 SCRIBE_PRODUCER_CONFIG = {"CLASS": "unittest.mock.MagicMock", "TOPIC": "test-scribe"}  # no scribe producer
 
@@ -38,7 +38,7 @@ STUB_FEATURES = {  # (name, fid, value) rows the stub writes into every AstroObj
             ("Skew", "r", float("inf"))],  # infinite value
     "lsst": [("Amplitude", "u", 1.1), ("Amplitude", "g", 1.2), ("u-g_mean", "u,g", 0.4),  # band and color features
              ("Power_rate_1_2", None, 0.6), ("Mean", "i", float("nan")), ("Unknown_feat", "r", 1.0)],  # renamed, NaN and unmapped features
-}
+}  # end of the stub feature rows
 LUT = {"ztf": {1: "Amplitude", 2: "g-r_max", 3: "g-r_mean", 4: "g-r_max_corr", 5: "g-r_mean_corr",  # ztf feature id -> name
                6: "Power_rate_1/4", 7: "Mean", 8: "Skew"},  # Unknown_feat deliberately absent
        "lsst": {1: "Amplitude", 2: "u-g_mean", 3: "Power_rate_1/2", 4: "Mean"}}  # lsst feature id -> name
@@ -64,7 +64,7 @@ class RecordingPreprocessor:
             self.frames[str(oid)] = {  # snapshot the four frames before preprocessing mutates them
                 name: (None if getattr(ao, name) is None else getattr(ao, name).to_dict("split"))  # None stays null
                 for name in FRAME_NAMES  # detections, forced_photometry, metadata, reference
-            }
+            }  # end of the frames snapshot of this oid
         self.inner.preprocess_batch(astro_objects, progress_bar=progress_bar)  # today's preprocessing, unchanged
 
 
@@ -82,7 +82,7 @@ class StubExtractor:
             ao.features = pd.DataFrame(  # stub features in the extractor frame layout
                 [(name, value, fid, sid, "stub") for name, fid, value in STUB_FEATURES[self.survey]],  # reorder to name, value, fid
                 columns=["name", "value", "fid", "sid", "version"],  # columns of empty_normal_dataframe
-            )
+            )  # end of the stub features frame
 
 
 def messages_for(survey):
@@ -96,11 +96,11 @@ def messages_for(survey):
             generate_message(seed=1, with_xmatch=True),  # default oid, allwise match attached
             generate_message(oid=36028941624528298, seed=2, n_forced=0),  # no forced photometry
             bogus,  # expected to be dropped by pre_execute
-        ]
+        ]  # end of the ztf batch
     return [  # two lsst messages
         generate_message_lsst(seed=7, with_xmatch=True),  # default oid, allwise match attached
         generate_message_lsst(oid=1152921504606847002, seed=8),  # second object, no xmatch
-    ]
+    ]  # end of the lsst batch
 
 
 def references_df():
@@ -108,7 +108,7 @@ def references_df():
     return pd.DataFrame(  # one reference row for the default ztf oid
         [{"oid": 36028941624528297, "rfid": 1, "sharpnr": 0.1, "chinr": 0.5}],  # values from the brief
         columns=["oid", "rfid", "sharpnr", "chinr"],  # column order of get_sql_references
-    )
+    )  # end of the references frame
 
 
 def build_step(survey):
@@ -118,7 +118,7 @@ def build_step(survey):
         "CONSUMER_CONFIG": CONSUMER_CONFIG,  # mocked consumer
         "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,  # mocked scribe producer
         "SURVEY": survey,  # ztf or lsst
-    }
+    }  # end of the step config
     step = FeatureStep(config=config, db_sql=mock.MagicMock())  # no database
     step.scribe_producer = mock.MagicMock()  # records producer.produce calls
     step.extractor_version = 1  # the mocked db would make this a MagicMock
@@ -142,9 +142,9 @@ def capture(survey) -> dict:
             {"topic": kw["topic"], "key": kw["key"].decode(), "value": json.loads(kw["value"]),  # decode key and value
              "raw": kw["value"].decode("utf-8")}  # wire bytes as text: pins key order, separators and NaN spelling
             for _, kw in step.scribe_producer.producer.produce.call_args_list  # keyword calls only
-        ],
+        ],  # end of the scribe command list
         "output": out,  # messages that would go to the output topic
-    })
+    })  # end of the captured structure and of the normalize call
 
 
 def normalize(obj, path="$"):
