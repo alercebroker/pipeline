@@ -1,0 +1,422 @@
+{
+ "36028941624528297": {
+  "detections": {
+   "columns": [
+    [
+     "oid",
+     "int64"
+    ],
+    [
+     "candid",
+     "int64"
+    ],
+    [
+     "tid",
+     "int64"
+    ],
+    [
+     "sid",
+     "object"
+    ],
+    [
+     "pid",
+     "int64"
+    ],
+    [
+     "ra",
+     "float64"
+    ],
+    [
+     "dec",
+     "float64"
+    ],
+    [
+     "mjd",
+     "float64"
+    ],
+    [
+     "brightness",
+     "float64"
+    ],
+    [
+     "e_brightness",
+     "float64"
+    ],
+    [
+     "fid",
+     "object"
+    ],
+    [
+     "isdiffpos",
+     "int64"
+    ],
+    [
+     "forced",
+     "bool"
+    ],
+    [
+     "distnr",
+     "float64"
+    ],
+    [
+     "rfid",
+     "float64"
+    ],
+    [
+     "rb",
+     "float64"
+    ],
+    [
+     "procstatus",
+     "object"
+    ],
+    [
+     "unit",
+     "object"
+    ]
+   ],
+   "index": {
+    "dtype": "int64",
+    "names": [
+     "aid"
+    ]
+   }
+  },
+  "forced_photometry": {
+   "columns": [
+    [
+     "oid",
+     "int64"
+    ],
+    [
+     "candid",
+     "int64"
+    ],
+    [
+     "tid",
+     "int64"
+    ],
+    [
+     "sid",
+     "object"
+    ],
+    [
+     "pid",
+     "int64"
+    ],
+    [
+     "ra",
+     "float64"
+    ],
+    [
+     "dec",
+     "float64"
+    ],
+    [
+     "mjd",
+     "float64"
+    ],
+    [
+     "brightness",
+     "float64"
+    ],
+    [
+     "e_brightness",
+     "float64"
+    ],
+    [
+     "fid",
+     "object"
+    ],
+    [
+     "isdiffpos",
+     "int64"
+    ],
+    [
+     "forced",
+     "bool"
+    ],
+    [
+     "distnr",
+     "float64"
+    ],
+    [
+     "rfid",
+     "float64"
+    ],
+    [
+     "rb",
+     "float64"
+    ],
+    [
+     "procstatus",
+     "object"
+    ],
+    [
+     "unit",
+     "object"
+    ]
+   ],
+   "index": {
+    "dtype": "int64",
+    "names": [
+     "aid"
+    ]
+   }
+  },
+  "metadata": {
+   "columns": [
+    [
+     "name",
+     "object"
+    ],
+    [
+     "value",
+     "object"
+    ]
+   ],
+   "index": {
+    "dtype": "int64",
+    "names": [
+     null
+    ]
+   }
+  },
+  "reference": {
+   "columns": [
+    [
+     "oid",
+     "int64"
+    ],
+    [
+     "rfid",
+     "int64"
+    ],
+    [
+     "sharpnr",
+     "float64"
+    ],
+    [
+     "chinr",
+     "float64"
+    ]
+   ],
+   "index": {
+    "dtype": "int64",
+    "names": [
+     null
+    ]
+   }
+  }
+ },
+ "36028941624528298": {
+  "detections": {
+   "columns": [
+    [
+     "oid",
+     "int64"
+    ],
+    [
+     "candid",
+     "int64"
+    ],
+    [
+     "tid",
+     "int64"
+    ],
+    [
+     "sid",
+     "object"
+    ],
+    [
+     "pid",
+     "int64"
+    ],
+    [
+     "ra",
+     "float64"
+    ],
+    [
+     "dec",
+     "float64"
+    ],
+    [
+     "mjd",
+     "float64"
+    ],
+    [
+     "brightness",
+     "float64"
+    ],
+    [
+     "e_brightness",
+     "float64"
+    ],
+    [
+     "fid",
+     "object"
+    ],
+    [
+     "isdiffpos",
+     "int64"
+    ],
+    [
+     "forced",
+     "bool"
+    ],
+    [
+     "distnr",
+     "float64"
+    ],
+    [
+     "rfid",
+     "float64"
+    ],
+    [
+     "rb",
+     "float64"
+    ],
+    [
+     "procstatus",
+     "object"
+    ],
+    [
+     "unit",
+     "object"
+    ]
+   ],
+   "index": {
+    "dtype": "int64",
+    "names": [
+     "aid"
+    ]
+   }
+  },
+  "forced_photometry": {
+   "columns": [
+    [
+     "oid",
+     "int64"
+    ],
+    [
+     "candid",
+     "int64"
+    ],
+    [
+     "tid",
+     "int64"
+    ],
+    [
+     "sid",
+     "object"
+    ],
+    [
+     "pid",
+     "int64"
+    ],
+    [
+     "ra",
+     "float64"
+    ],
+    [
+     "dec",
+     "float64"
+    ],
+    [
+     "mjd",
+     "float64"
+    ],
+    [
+     "brightness",
+     "float64"
+    ],
+    [
+     "e_brightness",
+     "float64"
+    ],
+    [
+     "fid",
+     "object"
+    ],
+    [
+     "isdiffpos",
+     "int64"
+    ],
+    [
+     "forced",
+     "bool"
+    ],
+    [
+     "distnr",
+     "float64"
+    ],
+    [
+     "rfid",
+     "float64"
+    ],
+    [
+     "rb",
+     "float64"
+    ],
+    [
+     "procstatus",
+     "object"
+    ],
+    [
+     "unit",
+     "object"
+    ]
+   ],
+   "index": {
+    "dtype": "int64",
+    "names": [
+     "aid"
+    ]
+   }
+  },
+  "metadata": {
+   "columns": [
+    [
+     "name",
+     "object"
+    ],
+    [
+     "value",
+     "object"
+    ]
+   ],
+   "index": {
+    "dtype": "int64",
+    "names": [
+     null
+    ]
+   }
+  },
+  "reference": {
+   "columns": [
+    [
+     "oid",
+     "int64"
+    ],
+    [
+     "rfid",
+     "int64"
+    ],
+    [
+     "sharpnr",
+     "float64"
+    ],
+    [
+     "chinr",
+     "float64"
+    ]
+   ],
+   "index": {
+    "dtype": "int64",
+    "names": [
+     null
+    ]
+   }
+  }
+ }
+}

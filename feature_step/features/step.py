@@ -1,32 +1,32 @@
-import pandas as pd
-import logging
-import json
-from typing import Any, Dict, Iterable, List, Optional
+"""Feature step: messages -> AstroObjects -> features -> scribe commands and output messages.
 
-from apf.core import get_class
-from apf.core.step import GenericStep
-from apf.consumers import KafkaConsumer
+Everything that depends on the survey (which epochs a message carries, how the
+AstroObject is built, which scribe commands and output keys are produced) is
+asked to the Survey object that features.surveys.registry returns for SURVEY.
+"""
+import pandas as pd  # type of the references table
+import logging  # step logger
+import json  # encode the scribe commands
+from typing import Any, Dict, Iterable, List, Optional  # type hints of the methods
 
-from lc_classifier.features.core.base import AstroObject, discard_bogus_detections
-from lc_classifier.features.preprocess.ztf import ZTFLightcurvePreprocessor #me falta crear esto
-from lc_classifier.features.composites.ztf import ZTFFeatureExtractor #me falta crear esto
-from lc_classifier.features.composites.lsst import LSSTFeatureExtractor 
-from lc_classifier.features.preprocess.lsst import LSSTLightcurvePreprocessor
+from apf.core import get_class  # resolve the scribe producer class named in the config
+from apf.core.step import GenericStep  # base class of every step
+from apf.consumers import KafkaConsumer  # consumer type checked in tear_down
 
-from xmatch_client import XmatchClient
+from lc_classifier.features.core.base import AstroObject  # object the features are computed on
 
-from .database import (
-    PSQLConnection,
-    get_sql_references,
-    get_feature_name_lut,
-    get_or_create_version_id,
-)
+from xmatch_client import XmatchClient  # client of the xmatch service
 
-from .utils.metrics import get_sid
-from .utils.parsers import parse_output, parse_scribe_payload
-from .utils.parsers import detections_to_astro_object,detections_to_astro_object_lsst
-from .utils.parsers import parse_output_lsst,parse_scribe_payload_lsst
-from .utils.data_utils import clean_and_flatten_columns, save_astro_objects_to_csvs
+from .database import (  # database access of the step
+    PSQLConnection,  # connection type of db_sql
+    get_sql_references,  # references of a list of oids
+    get_feature_name_lut,  # feature id -> name table
+    get_or_create_version_id,  # id of the running feature-step version
+)  # end of the database imports
+
+from .surveys.registry import get_survey  # SURVEY name -> Survey object
+
+from importlib.metadata import version  # installed version of the feature-step package
 
 
 def _match_for_output(match: Dict[str, Any]) -> Dict[str, Any]:
@@ -40,148 +40,123 @@ def _match_for_output(match: Dict[str, Any]) -> Dict[str, Any]:
     reads the scalars: the parser only uses the `w*mpro` maps. The scribe path
     receives the untouched match list, not this copy.
     """
-    metadata = match.get("metadata") or {}
-    return {
-        **match,
-        "metadata": {k: v for k, v in metadata.items() if isinstance(v, dict)},
-    }
-
-
-from importlib.metadata import version
+    metadata = match.get("metadata") or {}  # None or missing counts as empty
+    return {  # copy of the match with the filtered metadata
+        **match,  # every other key as received
+        "metadata": {k: v for k, v in metadata.items() if isinstance(v, dict)},  # map-valued entries only
+    }  # end of the shaped match
 
 
 class FeatureStep(GenericStep):
-    """FeatureStep Description
+    """Step that computes light curve features for the survey named in SURVEY.
 
     Parameters
     ----------
-    consumer : GenericConsumer
-        Description of parameter `consumer`.
+    config : dict
+        Step configuration. SURVEY must be a name known to
+        features.surveys.registry; a missing or unknown name raises ValueError.
+    db_sql : PSQLConnection
+        Database connection used for the references, the version id and the
+        feature name lookup table.
     **step_args : type
         Other args passed to step (DB connections, API requests, etc.)
 
     """
 
-    def __init__(
-        self,
-        config=None,
-        db_sql: PSQLConnection = None,
-        **step_args,
-    ):
+    def __init__(  # signature spans several lines
+        self,  # step instance
+        config=None,  # step configuration
+        db_sql: PSQLConnection = None,  # database connection
+        **step_args,  # passed through to GenericStep
+    ):  # end of the signature
+        """Build the scribe producer, the survey objects, the version id, the LUT and the xmatch client."""
 
-        super().__init__(config=config, **step_args)
+        super().__init__(config=config, **step_args)  # consumer, producer and self.config
 
-        scribe_class = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
-        self.scribe_producer = scribe_class(self.config["SCRIBE_PRODUCER_CONFIG"])
+        scribe_class = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])  # producer class named in the config
+        self.scribe_producer = scribe_class(self.config["SCRIBE_PRODUCER_CONFIG"])  # producer of the scribe commands
 
-        self.scribe_topic_name = self.config["SCRIBE_PRODUCER_CONFIG"].get("TOPIC")
-        self.db_sql = db_sql
-        self.logger = logging.getLogger("alerce.FeatureStep")
-        self.survey = self.config.get("SURVEY")
-        self.use_xmatch = self.config.get("USE_XMATCH", False)
+        self.scribe_topic_name = self.config["SCRIBE_PRODUCER_CONFIG"].get("TOPIC")  # topic of the scribe commands
+        self.db_sql = db_sql  # connection for references, version id and LUT
+        self.logger = logging.getLogger("alerce.FeatureStep")  # step logger
+        self.survey = get_survey(self.config.get("SURVEY"))  # Survey object; ValueError when missing or unknown
+        self.survey_name = self.survey.name  # the SURVEY string, sent in the xmatch scribe command
+        self.use_xmatch = self.config.get("USE_XMATCH", False)  # whether to ask the xmatch service
         # Catalogs to cross-match against (one conesearch request per catalog).
-        self.xmatch_catalogs = self.config.get(
-            "XMATCH_CATALOGS", ["allwise", "gaia"]
-        )
+        self.xmatch_catalogs = self.config.get(  # catalogs from the config
+            "XMATCH_CATALOGS", ["allwise", "gaia"]  # key and default
+        )  # end of the catalogs lookup
 
         # Get schema from configuration
-        self.schema = self.config.get("DB_CONFIG", {}).get("SCHEMA", "multisurvey")
+        self.schema = self.config.get("DB_CONFIG", {}).get("SCHEMA", "multisurvey")  # db schema, multisurvey by default
 
-        if self.survey == "ztf":
-            self.id_column = "measurement_id"
-            self.lightcurve_preprocessor = ZTFLightcurvePreprocessor(drop_bogus=True)
-            self.feature_extractor = ZTFFeatureExtractor()
-            self.extractor_group = ZTFFeatureExtractor.__name__
-            self.detections_to_astro_object_fn = detections_to_astro_object
-            self.parse_output_fn = parse_output
-            self.parse_scribe_payload = parse_scribe_payload
-            version_name = version("feature-step")
-            sid = 0
-            tid = 0  
-            self.extractor_version = get_or_create_version_id(
-                self.db_sql, self.schema, version_name, sid, tid, self.logger
-            )            
-            self.feature_name_lut = get_feature_name_lut(
-                self.db_sql, self.schema, sid, tid, self.logger
-            )
+        self.id_column = self.survey.id_column  # message key and epoch key holding the detection id
+        self.lightcurve_preprocessor = self.survey.make_preprocessor()  # preprocessor of the survey
+        self.feature_extractor = self.survey.make_extractor()  # feature extractor of the survey
+        self.extractor_group = type(self.feature_extractor).__name__  # class name of the extractor
 
-            if self.use_xmatch:
-                xmatch_config = self.config.get("XMATCH_CONFIG", {})
-                self.xmatch_client = XmatchClient(**xmatch_config)
+        # Get version name and resolve version_id from version_lut table
+        version_name = version("feature-step")  # installed package version
+        self.extractor_version = get_or_create_version_id(  # id of that version for this survey
+            self.db_sql, self.schema, version_name, self.survey.sid, self.survey.tid, self.logger  # connection, schema, version, ids, logger
+        )  # end of the version lookup
 
+        # Fetch feature name lookup table from multisurvey schema
+        self.feature_name_lut = get_feature_name_lut(  # feature id -> name for this survey
+            self.db_sql, self.schema, self.survey.sid, self.survey.tid, self.logger  # connection, schema, ids, logger
+        )  # end of the LUT read
 
+        # Initialize xmatch client
+        if self.use_xmatch:  # only when the xmatch is enabled
+            xmatch_config = self.config.get("XMATCH_CONFIG", {})  # client arguments from the config
+            self.xmatch_client = XmatchClient(**xmatch_config)  # client of the xmatch service
 
-        if self.survey == "lsst":
-            self.id_column = "measurement_id"
-            self.lightcurve_preprocessor = LSSTLightcurvePreprocessor()
-            self.feature_extractor = LSSTFeatureExtractor()
-            self.extractor_group = LSSTFeatureExtractor.__name__
-            self.detections_to_astro_object_fn = detections_to_astro_object_lsst
-            self.parse_output_fn = parse_output_lsst
-            self.parse_scribe_payload = parse_scribe_payload_lsst
-            
-            # Get version name and resolve version_id from version_lut table
-            version_name = version("feature-step")
-            sid = 1
-            tid = 1  
-            self.extractor_version = get_or_create_version_id(
-                self.db_sql, self.schema, version_name, sid, tid, self.logger
-            )
-            
-            # Fetch feature name lookup table from multisurvey schema
-            self.feature_name_lut = get_feature_name_lut(
-                self.db_sql, self.schema, sid, tid, self.logger
-            )
-
-            # Initialize xmatch client
-            if self.use_xmatch:
-                xmatch_config = self.config.get("XMATCH_CONFIG", {})
-                self.xmatch_client = XmatchClient(**xmatch_config)
-
-        self.min_detections_features = config.get("MIN_DETECTIONS_FEATURES", None)
-        if self.min_detections_features is None:
-            self.min_detections_features = 1
-        else:
-            self.min_detections_features = int(self.min_detections_features)
+        self.min_detections_features = config.get("MIN_DETECTIONS_FEATURES", None)  # minimum non-forced epochs per object
+        if self.min_detections_features is None:  # not configured
+            self.min_detections_features = 1  # default: one detection
+        else:  # configured
+            self.min_detections_features = int(self.min_detections_features)  # may arrive as a string
 
     def get_xmatch_info(self, messages: List[dict]) -> List[Dict[str, Any]]:
         """
-        Get xmatch information for LSST objects using conesearch.
-        
+        Query the xmatch service for every message of the batch, whatever the survey,
+        skipping the messages whose `sid` is 2, with one conesearch request per
+        catalog in `XMATCH_CATALOGS`.
+
         Parameters
         ----------
         messages : List[dict]
             List of messages containing oid, ra, dec information
-            
+
         Returns
         -------
         List[Dict[str, Any]]
             List of xmatch results, each containing oid and match information
         """
-        oids = []
-        ras = []
-        decs = []
+        oids = []  # object ids to search, as strings
+        ras = []  # right ascensions, same order
+        decs = []  # declinations, same order
 
-        for msg in messages:
-            if msg['sid'] == 2:
+        for msg in messages:  # every incoming message
+            if msg['sid'] == 2:  # messages of sid 2 are not cross-matched
                 continue  # Saltar sid 2
-            oids.append(str(msg["oid"]))
-            ras.append(msg["meanra"])
-            decs.append(msg["meandec"])
+            oids.append(str(msg["oid"]))  # oid as string
+            ras.append(msg["meanra"])  # mean right ascension of the object
+            decs.append(msg["meandec"])  # mean declination of the object
 
         # One request per catalog: the server scopes the search to each catalog
         # before the KNN, so we get the nearest match in every catalog instead
         # of only the single global nearest.
-        results = []
-        for catalog in self.xmatch_catalogs:
-            results += self.xmatch_client.conesearch_with_metadata(
-                ras=ras,
-                decs=decs,
-                oids=oids,
-                catalog=catalog,
-            )
+        results = []  # matches of every catalog
+        for catalog in self.xmatch_catalogs:  # one request per catalog
+            results += self.xmatch_client.conesearch_with_metadata(  # nearest match per object in this catalog
+                ras=ras,  # right ascensions
+                decs=decs,  # declinations
+                oids=oids,  # object ids
+                catalog=catalog,  # catalog to search
+            )  # end of the request
 
-        return results
+        return results  # one match per (oid, catalog) found
 
     def produce_xmatch_to_scribe(self, xmatch_results: List[Dict[str, Any]], messages: List[dict],survey):
         """
@@ -193,229 +168,197 @@ class FeatureStep(GenericStep):
             List of xmatch results from conesearch_with_metadata
         messages : List[dict]
             Original messages to extract sid information
+        survey : str
+            Survey name written in each command
         """
-        if not xmatch_results:
-            return
+        if not xmatch_results:  # nothing matched
+            return  # nothing to send
 
         # Crear mapeo de oid -> sid desde los mensajes
-        oid_to_sid = {}
-        for msg in messages:
-            oid = str(msg['oid'])
-            sid = msg['sid']
-            oid_to_sid[oid] = sid
+        oid_to_sid = {}  # oid as string -> sid of its message
+        for msg in messages:  # every incoming message
+            oid = str(msg['oid'])  # oid as string, like the matches carry it
+            sid = msg['sid']  # survey id of the message
+            oid_to_sid[oid] = sid  # last message of an oid wins
 
 
         # Procesar cada resultado de xmatch
-        flush = False
-        for idx, match in enumerate(xmatch_results):
-            oid = str(match["oid"])
+        flush = False  # set on the last match
+        for idx, match in enumerate(xmatch_results):  # every match, with its position
+            oid = str(match["oid"])  # oid of the match as string
             sid = oid_to_sid.get(oid, 1)  # Usar sid del mensaje o valor por defecto
 
             # Crear comando en el formato especificado
-            xmatch_command = {
-                'step': 'xmatch',
-                'survey': survey,
-                'payload': {
-                    'oid': int(oid),
-                    'sid': sid,
-                    'catalog': match.get('catalog', 'allwise'),
-                    'dist': match.get('distance'),
-                    'oid_catalog': match.get('match_id')
-                }
-            }
+            xmatch_command = {  # scribe xmatch command
+                'step': 'xmatch',  # scribe step
+                'survey': survey,  # survey name
+                'payload': {  # row to write
+                    'oid': int(oid),  # object id
+                    'sid': sid,  # survey id
+                    'catalog': match.get('catalog', 'allwise'),  # catalog of the match
+                    'dist': match.get('distance'),  # distance to the match
+                    'oid_catalog': match.get('match_id')  # id of the match in its catalog
+                }  # end of the payload
+            }  # end of the command
 
-            if idx == len(xmatch_results) - 1:
-                flush = True
+            if idx == len(xmatch_results) - 1:  # last match of the batch
+                flush = True  # flush after producing it
 
-            self.scribe_producer.producer.produce(
-                topic= self.scribe_topic_name,
-                value=json.dumps(xmatch_command).encode("utf-8"),
-                key=str(oid).encode("utf-8"),
-            )
+            self.scribe_producer.producer.produce(  # send the command
+                topic= self.scribe_topic_name,  # scribe topic
+                value=json.dumps(xmatch_command).encode("utf-8"),  # command as json bytes
+                key=str(oid).encode("utf-8"),  # keyed by oid
+            )  # end of the produce call
 
-            if flush:
-                self.scribe_producer.producer.flush()
+            if flush:  # after the last command
+                self.scribe_producer.producer.flush()  # deliver the batch
 
     def produce_to_scribe(self, astro_objects: List[AstroObject]):
-        commands = self.parse_scribe_payload(
-            astro_objects,
-            self.extractor_version,
-            self.extractor_group,
-            self.feature_name_lut
-        )
-        #print(commands["upserting_features"])
-        #print(commands.get("update_object", []))
-        
-        update_object_cmds = commands.get("update_object", [])
-        update_features_cmds = commands["upserting_features"]
+        """Send the scribe commands of the survey: the object updates first, then the feature upserts."""
+        commands = self.survey.scribe_commands(  # commands built by the survey
+            astro_objects,  # objects with computed features
+            self.extractor_version,  # version id
+            self.extractor_group,  # extractor class name
+            self.feature_name_lut  # feature id -> name
+        )  # end of the commands call
 
-        count_objs = 0
-        flush = False
-        for command in update_object_cmds:
-            count_objs += 1
-            if count_objs == len(update_object_cmds):
-                flush = True
-            
-            oid = command["payload"]["oid"]
-            self.scribe_producer.producer.produce(
-                topic= self.scribe_topic_name,
-                value=json.dumps(command).encode("utf-8"),
-                key=str(oid).encode("utf-8"),
-            )
+        update_object_cmds = commands.get("update_object", [])  # object updates, absent for some surveys
+        update_features_cmds = commands["upserting_features"]  # feature upserts, always present
 
-            if flush:
-                self.scribe_producer.producer.flush()
-        
-        count_features = 0
-        flush = False
-        for command in update_features_cmds:
-            count_features += 1
-            if count_features == len(update_features_cmds):
-                flush = True
+        count_objs = 0  # object updates sent so far
+        flush = False  # set on the last object update
+        for command in update_object_cmds:  # every object update
+            count_objs += 1  # one more sent
+            if count_objs == len(update_object_cmds):  # last object update
+                flush = True  # flush after producing it
 
-            if self.survey == "ztf":
-                oid = command["payload"]["oid"]
-                self.scribe_producer.producer.produce(
-                    topic= self.scribe_topic_name,
-                    value=json.dumps(command).encode("utf-8"),
-                    key=str(oid).encode("utf-8"),
-                )
+            oid = command["payload"]["oid"]  # object id of the command
+            self.scribe_producer.producer.produce(  # send the command
+                topic= self.scribe_topic_name,  # scribe topic
+                value=json.dumps(command).encode("utf-8"),  # command as json bytes
+                key=str(oid).encode("utf-8"),  # keyed by oid
+            )  # end of the produce call
 
-                if flush:
-                    self.scribe_producer.producer.flush()
-            
-            elif self.survey=="lsst":
-                oid = command["payload"]["oid"]
-                self.scribe_producer.producer.produce(
-                    topic= self.scribe_topic_name,
-                    value=json.dumps(command).encode("utf-8"),
-                    key=str(oid).encode("utf-8"),
-                )
+            if flush:  # after the last object update
+                self.scribe_producer.producer.flush()  # deliver the batch
 
-                if flush:
-                    self.scribe_producer.producer.flush()
-        
+        count_features = 0  # feature upserts sent so far
+        flush = False  # set on the last feature upsert
+        for command in update_features_cmds:  # every feature upsert
+            count_features += 1  # one more sent
+            if count_features == len(update_features_cmds):  # last feature upsert
+                flush = True  # flush after producing it
 
+            oid = command["payload"]["oid"]  # object id of the command
+            self.scribe_producer.producer.produce(  # send the command
+                topic= self.scribe_topic_name,  # scribe topic
+                value=json.dumps(command).encode("utf-8"),  # command as json bytes
+                key=str(oid).encode("utf-8"),  # keyed by oid
+            )  # end of the produce call
 
+            if flush:  # after the last feature upsert
+                self.scribe_producer.producer.flush()  # deliver the batch
 
     def pre_produce(self, result: Iterable[Dict[str, Any]] | Dict[str, Any]):
-        self.set_producer_key_field("oid")
-        return result
-    
+        """Key the output messages by oid and return them unchanged."""
+        self.set_producer_key_field("oid")  # output topic key
+        return result  # messages as execute returned them
+
     def _get_sql_references(self, oids: List[str]) -> Optional[pd.DataFrame]:
-        db_references = get_sql_references(
-            oids, self.db_sql, keys=["oid", "rfid", "sharpnr", "chinr"], schema=self.schema
-        )
-        db_references = db_references[db_references["chinr"] >= 0.0].copy()
-        return db_references
+        """Return the references of `oids` read from the database, keeping chinr >= 0."""
+        db_references = get_sql_references(  # references of the batch
+            oids, self.db_sql, keys=["oid", "rfid", "sharpnr", "chinr"], schema=self.schema  # oids, connection, columns, schema
+        )  # end of the query
+        db_references = db_references[db_references["chinr"] >= 0.0].copy()  # drop references without a valid chinr
+        return db_references  # references table
 
     def pre_execute(self, messages: List[dict]):
+        """Attach the xmatch to each message, gather its epochs under "detections" and drop the objects with too few."""
 
-        # Para LSST: obtener xmatch info para TODOS los mensajes antes de filtrar
-        if self.use_xmatch and len(messages) > 0:
-            xmatch_results = self.get_xmatch_info(messages)
+        # Any survey: get the xmatch info for ALL the messages, before the min-detections filter
+        if self.use_xmatch and len(messages) > 0:  # xmatch enabled and something to match
+            xmatch_results = self.get_xmatch_info(messages)  # matches of every catalog
             # xmatch_results holds one match per (oid, catalog). Features only
             # use the allwise match (W1-W4), so map oid -> allwise match for the
             # per-message attach; the full list still goes to scribe below.
-            xmatch_dict = {
-                str(match['oid']): _match_for_output(match)
-                for match in xmatch_results
-                if match.get('catalog') == 'allwise'
-            }
+            xmatch_dict = {  # oid as string -> allwise match shaped for the output
+                str(match['oid']): _match_for_output(match)  # scalar metadata entries dropped
+                for match in xmatch_results  # every match
+                if match.get('catalog') == 'allwise'  # allwise only
+            }  # end of the allwise matches
 
-            for msg in messages:
-                oid_str = str(msg['oid'])
-                if oid_str in xmatch_dict:
-                    msg['xmatches'] = xmatch_dict[oid_str]
-                else:
-                    msg['xmatches'] = None
-            self.produce_xmatch_to_scribe(xmatch_results, messages, self.survey)
+            for msg in messages:  # every incoming message
+                oid_str = str(msg['oid'])  # oid as string, like the matches carry it
+                if oid_str in xmatch_dict:  # the object has an allwise match
+                    msg['xmatches'] = xmatch_dict[oid_str]  # attach it
+                else:  # no allwise match
+                    msg['xmatches'] = None  # explicit None
+            self.produce_xmatch_to_scribe(xmatch_results, messages, self.survey_name)  # every match goes to scribe
 
-        filtered_messages = []
-        for message in messages:
-            filtered_message = message.copy()
-            if self.survey == "ztf":
-                epochs = (
-                    (message.get("detections") or [])
-                    + (message.get("previous_detections") or [])
-                    + (message.get("forced_photometries") or [])
-                )
-                filtered_message["detections"] = discard_bogus_detections(epochs)
-                filtered_messages.append(filtered_message)
-            elif self.survey == "lsst":
-                dets = filtered_message.get('sources', []) + filtered_message.get('previous_sources', [])
-                dets = [elem for elem in dets if elem.get('band') is not None]
-                filtered_message['detections'] = dets
-                filtered_messages.append(filtered_message)
+        filtered_messages = []  # copies of the messages with their epochs gathered
+        for message in messages:  # every incoming message
+            filtered_message = message.copy()  # shallow copy, the input message keeps its own keys
+            filtered_message["detections"] = self.survey.epochs_from_message(message)  # epochs the survey keeps
+            filtered_messages.append(filtered_message)  # candidate for the count filter
 
-        def has_enough_detections(message: dict) -> bool: # (ZTF)
-            n_dets = len([True for det in message["detections"] if not det.get("forced", False)])
-            return n_dets >= self.min_detections_features
-        
-        if self.survey == "ztf":
-            filtered_messages = list(filter(has_enough_detections, filtered_messages))
-        else:
-            filtered_messages = list(filter(has_enough_detections, filtered_messages))
+        def has_enough_detections(message: dict) -> bool:
+            """Return whether the message has at least min_detections_features non-forced epochs."""
+            n_dets = len([True for det in message["detections"] if not det.get("forced", False)])  # non-forced epochs
+            return n_dets >= self.min_detections_features  # enough to compute features
 
-        if len(filtered_messages) > 0:
-            self.logger.info("TIENE LENGTH MAYOR A CERO")
+        filtered_messages = list(filter(has_enough_detections, filtered_messages))  # drop objects with too few epochs
 
-        return filtered_messages
-    
-
+        return filtered_messages  # messages execute will process
 
     def execute(self, messages):
-        candids = {}
-        astro_objects = []
-        messages_to_process = []
+        """Build one AstroObject per message, compute its features, send the scribe commands and return the output."""
+        candids = {}  # oid -> detection ids of its messages
+        astro_objects = []  # one AstroObject per message
+        messages_to_process = []  # messages in the same order as astro_objects
 
-        oids = set()
-        bands = set()
-        for msg in messages:
-            oids.add(msg["oid"])
+        oids = set()  # distinct oids of the batch
+        for msg in messages:  # every prepared message
+            oids.add(msg["oid"])  # collect its oid
 
-        if self.survey == "ztf":
-            references_db = self._get_sql_references(list(oids))
+        references_db = self._get_sql_references(list(oids)) if self.survey.needs_references else None  # db references, only for the surveys that use them
 
-        for message in messages:
-            if not message["oid"] in candids:
-                candids[message["oid"]] = []
+        for message in messages:  # every prepared message
+            if not message["oid"] in candids:  # first message of this oid
+                candids[message["oid"]] = []  # start its list
             candids[message["oid"]].extend(message[self.id_column]) #guarda los candid de cada oid
-            m = map(
-                lambda x: {**x, "index_column": str(x[self.id_column]) + "_" + str(x["oid"])},
-                message.get("detections", []),
-            )
+            m = map(  # epochs with their index_column, built lazily
+                lambda x: {**x, "index_column": str(x[self.id_column]) + "_" + str(x["oid"])},  # "<detection id>_<oid>"
+                message.get("detections", []),  # epochs gathered by pre_execute
+            )  # end of the map
 
-            if self.survey == "ztf":
-                # No ZTF multisurvey record has an `aid`; the parser indexes on it.
-                m = map(lambda x: {**x, "aid": x["oid"]}, m)
-                xmatch_data = message.get("xmatches", None)
-                ao = self.detections_to_astro_object_fn(list(m), [], xmatch_data, references_db)
-            else:
-                forced = message.get("forced_sources", None) #si no hay detections, filtrar forced photometry
-                xmatch_data = message.get("xmatches", None)
-                ao = self.detections_to_astro_object_fn(list(m), forced, xmatch_data)
-            astro_objects.append(ao)
-            messages_to_process.append(message)
+            ao = self.survey.build_astro_object(  # the survey builds the AstroObject
+                list(m),  # epochs with index_column
+                self.survey.forced_from_message(message),  # forced photometry the survey passes apart
+                message.get("xmatches", None),  # allwise match or None
+                references_db,  # db references or None
+            )  # end of the build call
+            astro_objects.append(ao)  # keep the object
+            messages_to_process.append(message)  # and its message, same position
 
-        self.lightcurve_preprocessor.preprocess_batch(astro_objects)
-        self.feature_extractor.compute_features_batch(astro_objects, progress_bar=False)
-        self.produce_to_scribe(astro_objects)
-        output = self.parse_output_fn(astro_objects, messages_to_process, candids)
-        return output
+        self.lightcurve_preprocessor.preprocess_batch(astro_objects)  # clean the light curves in place
+        self.feature_extractor.compute_features_batch(astro_objects, progress_bar=False)  # features written on each object
+        self.produce_to_scribe(astro_objects)  # scribe commands
+        output = self.survey.output_messages(astro_objects, messages_to_process, candids)  # one output message per object
+        return output  # messages for the output topic
 
     def post_execute(self, result):
-        
+        """Remove the `reference` key from every output message and return the messages."""
 
-        for message in result:
-            if "reference" in message:
-                del message["reference"]
+        for message in result:  # every output message
+            if "reference" in message:  # only some surveys carry it
+                del message["reference"]  # not part of the output schema
 
-        return result
+        return result  # messages without reference
 
     def tear_down(self):
-        if isinstance(self.consumer, KafkaConsumer):
-            self.consumer.teardown()
-        else:
-            self.consumer.__del__()
-        self.producer.__del__()
+        """Close the consumer and the producer."""
+        if isinstance(self.consumer, KafkaConsumer):  # a real Kafka consumer
+            self.consumer.teardown()  # close it cleanly
+        else:  # any other consumer
+            self.consumer.__del__()  # release it
+        self.producer.__del__()  # release the producer
