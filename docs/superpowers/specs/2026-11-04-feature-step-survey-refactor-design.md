@@ -28,7 +28,8 @@ commands, output messages, DB reads) is identical to `multisurvey` today.
   as is and listed in the PR body under "noticed, not changed".
 - No deletion of code in this PR's main commits. Dead-code removal, if any, is one
   separate final commit that the human can drop. The removal of `features/utils/`
-  (criterion 2) is its own commit after it, with the import changes it needs.
+  (criterion 2) comes after it as its own pair of commits (the test, then the
+  removal with the import changes it needs).
 - No new survey. The contract is shaped by ztf and lsst only.
 
 ## Design
@@ -87,7 +88,9 @@ mapper injected and `keep_name` deciding whether `name` survives), and
 then one block (version id, LUT, xmatch client) using `survey.sid`/`survey.tid`.
 `pre_execute`, `execute`, `produce_to_scribe` call the contract and contain no
 survey name. `_get_sql_references` stays a method on `FeatureStep` with its name
-(tests patch it) and is called only when `survey.needs_references`.
+(tests patch it) and is called only when `survey.needs_references`. The
+`"TIENE LENGTH MAYOR A CERO"` info log that `execute` wrote for every non-empty
+batch is removed: it is debug noise and nothing reads it.
 
 Dispatch is `get_survey(name)`; an unknown name raises `ValueError` naming the
 known surveys at construction time, instead of today's silent step with no
