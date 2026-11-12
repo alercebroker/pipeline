@@ -374,6 +374,30 @@ git commit -m "chore(feature_step): drop unused data_utils, core/utils/functions
 
 ---
 
+### Task 8: `features/utils/` is removed (criterion 2, spec amendment d36bc132d)
+
+**Files:**
+- Create: `feature_step/tests/unittest/test_surveys_no_parsers.py`
+- Delete: `feature_step/features/utils/parsers.py`, `feature_step/features/utils/__init__.py`
+- Modify, import lines only (existing tests, edit authorized by Francisco on 2026-11-12): `feature_step/tests/message_factory.py`, `feature_step/tests/message_factory_lsst.py`, `feature_step/tests/unittest/test_step_ztf_multisurvey.py`
+- Modify (test files this PR created): `test_surveys_ztf.py`, `test_surveys_lsst.py`, `test_surveys_step.py`: a test whose only subject is the shim is deleted; a test that reaches a function through `parsers` imports it from `features.surveys.*` instead
+- Modify: comments and docstrings under `feature_step/features/` that still talk about the shim or a re-export
+- Not committed: `feature_step/scripts/local_sim/check_period_peaks.py` (untracked) gets the same one-line import change
+
+Each old name keeps pointing at the same function object it resolved to through the shim (`fid_mapper_for_db` is the ztf one in both message factories).
+
+- [ ] **Step 1: Write the failing tests** (`features.utils` cannot be imported; `features/utils/` is not on disk; no `.py` under `feature_step` names the old module, the pattern built by concatenation so the test file does not match itself)
+- [ ] **Step 2: Run, expect FAIL; commit the test file**
+- [ ] **Step 3: Change the imports, delete the shim tests, delete the two files, fix stale comments**
+- [ ] **Step 4: Run the new file, the spec's grep for criterion 2 (prints nothing) and the package check (exit 0)**
+- [ ] **Step 5: Commit**
+
+```bash
+git commit -m "refactor(feature_step): features/utils is removed; tests import from features.surveys"
+```
+
+---
+
 ## PR body items to carry ("noticed, not changed")
 
 - `get_xmatch_info` skips messages with `sid == 2` and only attaches `allwise` matches to messages.
