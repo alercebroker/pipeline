@@ -21,7 +21,7 @@ from .test_surveys_golden import CONSUMER_CONFIG, PRODUCER_CONFIG, SCRIBE_PRODUC
 SELECT_SQL = "SELECT version_id FROM multisurvey.feature_version_lut WHERE version_name = :version_name AND feature_version = :feature_version AND sid = :sid AND tid = :tid"  # expected select
 MAX_SQL = "SELECT COALESCE(MAX(version_id), 0) FROM multisurvey.feature_version_lut WHERE sid = :sid AND tid = :tid"  # expected max query
 INSERT_SQL = "INSERT INTO multisurvey.feature_version_lut (version_id, version_name, feature_version, sid, tid) VALUES (:version_id, :version_name, :feature_version, :sid, :tid)"  # expected insert
-V = ("27.8.0", "0.1.0", 1, 1)  # version_name, feature_version, sid, tid
+V = ("27.8.0", "0.1.0", 1, 2)  # version_name, feature_version, sid, tid
 
 
 class FakeResult:
@@ -116,7 +116,7 @@ class LookupTestCase(unittest.TestCase):
         get_or_create_version_id(db, "multisurvey", *V)  # call under test
         sql, params = db.calls[0]  # the select
         self.assertEqual(" ".join(sql.split()), SELECT_SQL)  # full statement, whitespace collapsed: four filters joined by AND
-        self.assertEqual(params, {"version_name": "27.8.0", "feature_version": "0.1.0", "sid": 1, "tid": 1})  # and bound
+        self.assertEqual(params, {"version_name": "27.8.0", "feature_version": "0.1.0", "sid": 1, "tid": 2})  # and bound
 
     def test_new_combination_inserts_next_id(self):
         """A miss inserts the four values with MAX(version_id) + 1 taken over sid and tid."""
@@ -126,8 +126,8 @@ class LookupTestCase(unittest.TestCase):
         self.assertEqual(" ".join(sql.split()), INSERT_SQL)  # full insert, values bound, none literal
         self.assertEqual(" ".join(db.calls[0][0].split()), SELECT_SQL)  # the miss came from the full select
         self.assertEqual(" ".join(db.calls[1][0].split()), MAX_SQL)  # max over sid and tid only
-        self.assertEqual(params, {"version_id": 5, "version_name": "27.8.0", "feature_version": "0.1.0", "sid": 1, "tid": 1})  # four values and id
-        self.assertEqual(db.calls[1][1], {"sid": 1, "tid": 1})  # max is taken over sid and tid only
+        self.assertEqual(params, {"version_id": 5, "version_name": "27.8.0", "feature_version": "0.1.0", "sid": 1, "tid": 2})  # four values and id
+        self.assertEqual(db.calls[1][1], {"sid": 1, "tid": 2})  # max is taken over sid and tid only
         self.assertEqual(db.commits, 1)  # committed once
 
     def test_select_error_is_raised(self):
@@ -199,8 +199,9 @@ class StepTestCase(unittest.TestCase):
 
     def test_version_is_stripped(self):
         """Surrounding blanks are removed before the lookup."""
-        _, version_id, _ = self.build(FEATURE_VERSION=" 0.1.0 ")  # padded value
+        step, version_id, _ = self.build(FEATURE_VERSION=" 0.1.0 ")  # padded value
         self.assertEqual(version_id.call_args[0][3], "0.1.0")  # fourth argument is stripped
+        self.assertEqual(step.feature_version, "0.1.0")  # the attribute is stripped too
 
     def test_non_string_version_raises(self):
         """A float, int, bool or list raises instead of being converted (yaml reads an unquoted 1.10 as 1.1)."""
