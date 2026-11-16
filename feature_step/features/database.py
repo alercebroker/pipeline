@@ -126,7 +126,7 @@ def get_or_create_version_id(db_sql: PSQLConnection, schema: str, version_name: 
     with db_sql.session() as session:  # one session for select and insert
         # First, try to get existing version_id
         select_query = text(  # row of this exact combination
-            f"SELECT version_id FROM {schema}.feature_version_lut WHERE version_name = :version_name AND feature_version = :feature_version AND sid = :sid AND tid = :tid"
+            f"SELECT version_id FROM {schema}.feature_version_lut WHERE version_name = :version_name AND feature_version = :feature_version AND sid = :sid AND tid = :tid"  # select of the exact four-value combination
         )  # end of the select
         result = session.execute(select_query, {"version_name": version_name, "feature_version": feature_version, "sid": sid, "tid": tid})  # run the select
         row = result.fetchone()  # None when the combination has no row
@@ -139,7 +139,7 @@ def get_or_create_version_id(db_sql: PSQLConnection, schema: str, version_name: 
         else:  # the combination is new
             # Get the maximum version_id for this sid and tid, then add 1
             max_query = text(  # highest id of this survey
-                f"SELECT COALESCE(MAX(version_id), 0) FROM {schema}.feature_version_lut WHERE sid = :sid AND tid = :tid"
+                f"SELECT COALESCE(MAX(version_id), 0) FROM {schema}.feature_version_lut WHERE sid = :sid AND tid = :tid"  # highest id for this sid and tid
             )  # end of the max query
             max_result = session.execute(max_query, {"sid": sid, "tid": tid})  # run the max query
             max_version_id = max_result.fetchone()[0]  # current maximum, 0 for an empty table
@@ -147,7 +147,7 @@ def get_or_create_version_id(db_sql: PSQLConnection, schema: str, version_name: 
 
             # Insert the new combination with the calculated version_id
             insert_query = text(  # row for the new combination
-                f"INSERT INTO {schema}.feature_version_lut (version_id, version_name, feature_version, sid, tid) VALUES (:version_id, :version_name, :feature_version, :sid, :tid)"
+                f"INSERT INTO {schema}.feature_version_lut (version_id, version_name, feature_version, sid, tid) VALUES (:version_id, :version_name, :feature_version, :sid, :tid)"  # insert of the four values with the new id
             )  # end of the insert
             session.execute(insert_query, {"version_id": new_version_id, "version_name": version_name, "feature_version": feature_version, "sid": sid, "tid": tid})  # run the insert
             session.commit()  # persist the row
