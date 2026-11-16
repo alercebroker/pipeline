@@ -170,12 +170,14 @@ class StepTestCase(unittest.TestCase):
         return step, version_id, db_sql  # for the assertions
 
     def assert_rejected(self, **extra):
-        """Assert construction raises ValueError naming FEATURE_VERSION before any lookup."""
+        """Assert construction raises ValueError naming FEATURE_VERSION before any lookup or DB call."""
+        db_sql = mock.MagicMock()  # connection that must stay untouched
         with mock.patch.object(step_module, "get_or_create_version_id") as version_id:  # must stay unused
             with self.assertRaises(ValueError) as raised:  # the check under test
-                FeatureStep(config=config_with(**extra), db_sql=mock.MagicMock())  # bad config
+                FeatureStep(config=config_with(**extra), db_sql=db_sql)  # bad config
         self.assertIn("FEATURE_VERSION", str(raised.exception))  # names the key
-        version_id.assert_not_called()  # before any DB call
+        version_id.assert_not_called()  # before any lookup
+        self.assertEqual(db_sql.mock_calls, [])  # before any DB call
 
     def test_step_passes_config_version(self):
         """The lookup gets the package version, the config version, sid and tid."""
@@ -200,7 +202,8 @@ class StepTestCase(unittest.TestCase):
         _, version_id, _ = self.build(FEATURE_VERSION=" 0.1.0 ")  # padded value
         self.assertEqual(version_id.call_args[0][3], "0.1.0")  # fourth argument is stripped
 
-    def test_non_string_version_is_used_as_text(self):
-        """A YAML float arrives as text."""
-        _, version_id, _ = self.build(FEATURE_VERSION=1.0)  # float value
-        self.assertEqual(version_id.call_args[0][3], "1.0")  # fourth argument is a string
+    def test_non_string_version_raises(self):
+        """A float, int, bool or list raises instead of being converted (yaml reads an unquoted 1.10 as 1.1)."""
+        for value in (1.1, 0, False, ["0.1.0"]):  # values an unquoted yaml scalar or a list can give
+            with self.subTest(value=value):  # report each value on its own
+                self.assert_rejected(FEATURE_VERSION=value)  # ValueError naming the key, no calls
