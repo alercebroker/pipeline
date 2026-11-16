@@ -49,6 +49,7 @@ def test_step_ztf(kafka_service):
         "PRODUCER_CONFIG": PRODUCER_CONFIG,
         "CONSUMER_CONFIG": CONSUMER_CONFIG,
         "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
+        "FEATURE_VERSION": "0.1.0",  # version row of feature_version_lut
         "SURVEY": "ztf"
     }
     db_sql = mock.MagicMock()
