@@ -100,7 +100,9 @@ class FeatureStep(GenericStep):
         feature_version = self.config.get("FEATURE_VERSION")  # version from the step config
         if feature_version is None:  # key absent
             raise ValueError("FEATURE_VERSION is missing from the step config")  # no silent default
-        self.feature_version = str(feature_version).strip()  # text without surrounding blanks
+        if not isinstance(feature_version, str):  # float, int, bool or list: yaml read an unquoted value
+            raise ValueError(f"FEATURE_VERSION must be a quoted string, got {feature_version!r}")  # 1.10 would become 1.1
+        self.feature_version = feature_version.strip()  # text without surrounding blanks
         if not self.feature_version:  # empty or blank
             raise ValueError("FEATURE_VERSION is empty in the step config")  # no silent default
         self.extractor_version = get_or_create_version_id(  # id of that version pair for this survey
