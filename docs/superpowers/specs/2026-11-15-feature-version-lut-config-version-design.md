@@ -21,7 +21,7 @@ A row of `feature_version_lut` is identified today by (`version_name`, `sid`, `t
 - Column: `feature_version`, `VARCHAR`, not null, in `feature_version_lut`. **[call]** on the name.
 - Rows that exist before the change take `feature_version = '1.0.0'`. The model declares that as the column's server default, so an `ALTER TABLE ... ADD COLUMN` built from the model backfills them.
 - `get_or_create_version_id` takes the config version as a new argument, selects by (`version_name`, `feature_version`, `sid`, `tid`) and inserts the four values plus the new `version_id`. The `version_id` rule does not change: `MAX(version_id) + 1` for that (`sid`, `tid`).
-- `FEATURE_VERSION` missing or empty: `FeatureStep.__init__` raises `ValueError` naming the key, as it does for `SURVEY`. **[call]** The alternative is to default to `1.0.0`, which would make a deployment that forgot the key reuse the old rows without anyone noticing.
+- `FEATURE_VERSION` missing, not a string, or empty after stripping surrounding whitespace: `FeatureStep.__init__` raises `ValueError` naming the key, as it does for `SURVEY`. A string value is used stripped and kept as `FeatureStep.feature_version`. A non-string is rejected instead of converted because yaml reads an unquoted `1.10` as the float `1.1`, which would select the row of `1.1`. The alternative for a missing key, defaulting to `1.0.0`, would make a deployment that forgot the key reuse the old rows without anyone noticing.
 - A failed lookup or insert raises instead of returning `1`. **[call]** With the fallback, a table that does not have the new column yet makes every pod write features under `version_id` 1 and log one error line. Without a DB connection the function still returns `None`.
 
 ## Approaches
@@ -46,8 +46,8 @@ A row of `feature_version_lut` is identified today by (`version_name`, `sid`, `t
 2. With a row for (`version_name`, `feature_version`, `sid`, `tid`) present, `get_or_create_version_id` returns its `version_id` and inserts nothing.
 3. With rows for the same `version_name`, `sid`, `tid` but another `feature_version`, it inserts one row holding the four values and `version_id = MAX(version_id) + 1` over that (`sid`, `tid`), and returns that id.
 4. The same `feature_version` under a different `version_name`, `sid` or `tid` does not count as a match.
-5. `FeatureStep.__init__` passes `config["FEATURE_VERSION"]` to `get_or_create_version_id` together with the package version, `sid` and `tid` of the survey.
-6. `FeatureStep.__init__` raises `ValueError` naming `FEATURE_VERSION` when the key is missing or an empty string, before any DB call.
+5. `FeatureStep.__init__` passes the stripped `config["FEATURE_VERSION"]` to `get_or_create_version_id` together with the package version, `sid` and `tid` of the survey, and keeps it as `self.feature_version`.
+6. `FeatureStep.__init__` raises `ValueError` naming `FEATURE_VERSION` when the key is missing, is not a string, or is empty after stripping surrounding whitespace, before any DB call. A string value is used stripped.
 7. When the select or the insert raises, `get_or_create_version_id` raises; it does not return `1`. With `db_sql=None` it returns `None`.
 8. Every new or changed line carries a `#` comment and every public function a docstring.
 
