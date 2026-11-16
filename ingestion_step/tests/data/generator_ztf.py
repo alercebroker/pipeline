@@ -33,7 +33,7 @@ def replace_all_fids(alert: Message) -> Message:
 
 def replace_objectId(alert: Message) -> Message:
     alert["objectId"] = "ZTF18" + "".join(
-        random.choices(string.ascii_lowercase + string.digits, k=7)
+        random.choices(string.ascii_lowercase, k=7)
     )
     return alert
 

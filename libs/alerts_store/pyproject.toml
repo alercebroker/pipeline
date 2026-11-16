@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "alerts-store"
-version = "0.1.0"
+version = "0.2.0"
 description = "Store alerts from an inscome script into parquet files."
 authors = ["hectorxh <hectorplj@gmail.com>"]
 readme = "README.md"

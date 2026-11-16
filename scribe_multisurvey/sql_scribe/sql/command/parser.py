@@ -320,6 +320,7 @@ def parse_ztf_refernece(candidate: dict, oid: str) -> dict:
 def parse_obj_stats(raw_magstats, oid: str, sid: int) -> dict:
     obj = {
         "_oid": oid,
+        "_sid": sid,
         "oid": oid,
         "sid": sid,
         "meanra": raw_magstats["meanra"],
@@ -342,6 +343,7 @@ def parse_obj_stats(raw_magstats, oid: str, sid: int) -> dict:
 def parse_ztf_objstats(raw_magstats, oid: str, sid: int) -> dict:
     obj = {
         "_oid": oid,
+        "_sid": sid,
         "oid": oid,
         "sid": sid,
         "meanra": raw_magstats["meanra"],

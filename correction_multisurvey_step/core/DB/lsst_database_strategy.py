@@ -153,6 +153,7 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
                 LsstDetection.pixelFlags_offimage,
                 LsstDetection.pixelFlags_saturated,
                 LsstDetection.pixelFlags_saturatedCenter,
+                LsstDetection.pixelFlags_spike,
                 LsstDetection.pixelFlags_suspect,
                 LsstDetection.pixelFlags_suspectCenter,
                 LsstDetection.pixelFlags_streak,
@@ -161,7 +162,13 @@ class LSSTDatabaseStrategy(DatabaseStrategy):
                 LsstDetection.pixelFlags_injectedCenter,
                 LsstDetection.pixelFlags_injected_template,
                 LsstDetection.pixelFlags_injected_templateCenter,
-                LsstDetection.glint_trail
+                LsstDetection.glint_trail,
+                LsstDetection.templateMjdMean,
+                LsstDetection.templateMjdMin,
+                LsstDetection.templateMjdMax,
+                LsstDetection.templateInstrument,
+                LsstDetection.templateVersion,
+                LsstDetection.mixedInstruments
             ).where(LsstDetection.oid.in_(oids) & LsstDetection.sid.in_(sid_list))
             lsst_detections = session.execute(lsst_stmt).all()
         return lsst_detections

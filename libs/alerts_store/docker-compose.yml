@@ -9,18 +9,19 @@ services:
     restart: unless-stopped
     volumes:
       - ./config.yaml:/config/config.yaml
-      - ${DATA_V11_1:-./data-v11_1}:/data
+      - ${DATA_V11_2:-./data-v11_2}:/data
 
   # FastAPI app — search, pagination, night listing.
   web:
     build: ./app
     restart: unless-stopped
     volumes:
+      - ${DATA_V11_2:-./data-v11_2}:/data-v11_2:ro
       - ${DATA_V11_1:-./data-v11_1}:/data-v11_1:ro
       - ${DATA_V11:-./data-v11}:/data-v11:ro
       - ${DATA_V10:-./data-v10}:/data-v10:ro
     environment:
-      DATA_DIRS: /data-v11_1,/data-v11,/data-v10
+      DATA_DIRS: /data-v11_2,/data-v11_1,/data-v11,/data-v10
       PER_PAGE: 500
 
   # nginx — proxies the UI to `web`, serves .avro + index.txt directly.
@@ -32,6 +33,7 @@ services:
       # To reach it from other internal hosts, add a bind on the host's internal IP
       # (e.g. "10.x.x.x:3546:80") in a gitignored docker-compose.override.yml — not here.
     volumes:
+      - ${DATA_V11_2:-./data-v11_2}:/data-v11_2:ro
       - ${DATA_V11_1:-./data-v11_1}:/data-v11_1:ro
       - ${DATA_V11:-./data-v11}:/data-v11:ro
       - ${DATA_V10:-./data-v10}:/data-v10:ro
@@ -41,6 +43,17 @@ services:
 
   # Backfill + hourly safety re-index for MJD dirs missing index.txt.
   # The alerts_store service maintains index.txt for new alerts; this covers existing data.
+  indexer_v11_2:
+    image: python:3.12-slim
+    restart: unless-stopped
+    volumes:
+      - ${DATA_V11_2:-./data-v11_2}:/data
+      - ./scripts/generate_index.py:/generate_index.py:ro
+    command: python /generate_index.py
+    environment:
+      DATA_DIR: /data
+      CHECK_INTERVAL: "3600"
+
   indexer_v11_1:
     image: python:3.12-slim
     restart: unless-stopped

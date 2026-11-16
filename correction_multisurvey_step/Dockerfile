@@ -22,7 +22,6 @@ COPY correction_multisurvey_step/pyproject.toml /app/
 COPY correction_multisurvey_step/poetry.lock /app/
 COPY libs/apf libs/apf
 COPY libs/db-plugins-multisurvey libs/db-plugins-multisurvey
-COPY libs/idmapper libs/idmapper
 COPY libs/survey_parser_plugins libs/survey_parser_plugins
 
 COPY schemas/ingestion_step schemas/ingestion_step

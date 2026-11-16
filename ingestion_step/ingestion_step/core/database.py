@@ -16,7 +16,9 @@ def db_insert_on_conflict_do_nothing_builder(
 
 
 def db_insert_on_conflict_do_update_builder(
-    model: type[DeclarativeBase], data: list[dict[Hashable, Any]], pk: list[str]
+    model: type[DeclarativeBase],
+    data: list[dict[Hashable, Any]],
+    pk: list[str],
 ):
     stmt = insert(model).values(data)
     stmt = stmt.on_conflict_do_update(

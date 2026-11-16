@@ -111,7 +111,7 @@ Survey-agnostic redesign. One step image is reused across surveys via a strategy
 
 ### Multisurvey-specific concepts
 
-- **`oid` (Object ID)** — In multisurvey, a **64-bit integer** (not a string like `ZTF21abcdefg`). High bits encode a survey prefix, low bits encode the survey-specific id; computed by the [idmapper](./libs/idmapper) library. Replaces both the legacy string `oid` and the legacy `aid` (`AL25...`).
+- **`oid` (Object ID)** — In multisurvey, a **64-bit integer** (not a string like `ZTF21abcdefg`), unique only within its survey: an object is identified by `(oid, sid)`. ZTF names are encoded to integers by the [idmapper](./libs/idmapper) library; LSST ids are stored as they come. Replaces both the legacy string `oid` and the legacy `aid` (`AL25...`).
 - **`sid` (Survey ID)** — Small integer identifying the alert stream sub-type. `0` = ZTF, `1` = LSST DIA Object, `2` = LSST SS Object. Most multisurvey tables use `(oid, sid)` as the composite primary key.
 - **`tid` (Telescope ID)** — Small integer identifying the physical telescope. `0` = ZTF, `1` = LSST/Rubin.
 - **`measurement_id`** — Survey-specific per-detection identifier. ZTF: `candid`. LSST: `diaSourceId`.

@@ -1,58 +1,47 @@
-# Ingestion Step
+# LSST Schema Parser
 
-## Description
+Converters that upgrade an LSST alert from one Rubin alert schema version to the
+next. Each converter takes an alert as a Python `dict` in the older schema and
+returns a new `dict` in the newer one.
 
-The **ingestion_step** processes and inserts alert data from astronomical surveys (e.g., ZTF, LSST) into the ALeRCE multisurvey database. This step focuses on handling raw alert data, performing necessary transformations, and ensuring the data is ready for subsequent steps in the pipeline.
+| Module (`schema_parser/parsers/`) | Class                 | Converts      |
+| --------------------------------- | --------------------- | ------------- |
+| `v9_to_v10.py`                    | `V9ToV10Parser`       | v9 → v10      |
+| `v10_to_v11.py`                   | `V10ToV11Parser`      | v10 → v11     |
+| `v11_0_to_v11_1.py`               | `V11_0ToV11_1Parser`  | v11.0 → v11.1 |
+| `v11_1_to_v11_2.py`               | `V11_1ToV11_2Parser`  | v11.1 → v11.2 |
 
-### Supported Surveys
+Each class's docstring describes what changed between its two versions.
 
-- **ZTF**: Processes alerts from the Zwicky Transient Facility.
-- **LSST**: Prepares for alerts from the Vera C. Rubin Observatory.
+## Usage
 
-### Transformations
+Converters do one version step. To go further, apply them in order:
 
-The following transformations are applied to the alert data:
-- **`jd_to_mjd`**: Converts Julian Date to Modified Julian Date.
-- **`fid_to_band`**: Maps filter IDs to band names.
-- **`forcediffimflux_to_mag`**: Calculates magnitudes from flux values.
-- **`isdiffpos_to_int`**: Converts `isdiffpos` to integer representation.
+```python
+from schema_parser.parsers.v9_to_v10 import V9ToV10Parser
+from schema_parser.parsers.v10_to_v11 import V10ToV11Parser
+from schema_parser.parsers.v11_0_to_v11_1 import V11_0ToV11_1Parser
+from schema_parser.parsers.v11_1_to_v11_2 import V11_1ToV11_2Parser
 
-For a full list of transformations, refer to `transforms.py`.
-
-## Local Installation
-
-### Requirements
-
-To install the repository without support for running the step (only including tools for ingestion), run:
-```bash
-pip install .
+alert = ...  # a v9 alert as a dict
+for parser in (V9ToV10Parser(), V10ToV11Parser(), V11_0ToV11_1Parser(), V11_1ToV11_2Parser()):
+    alert = parser.parse(alert)
 ```
 
-To include the step itself:
+## Step wrapper
+
+`schema_parser/step.py` wraps a converter in an APF step, and `scripts/run_step.py`
+starts it. It is not usable as is: `run_step.py` reads a `config.yaml` that does
+not exist in this library. No Dockerfile, CI job or chart builds or deploys it.
+
+## Tests
+
+The unit tests validate converted alerts against the Avro schemas in the
+repository's top-level `schemas/surveys/` folder, so run them from a full checkout.
+Use Python 3.10: the `fastavro` version pinned by `apf` has no Python 3.11 build,
+so `poetry install` fails on 3.11.
+
 ```bash
-pip install .[apf]
-```
-
-### Development
-
-Install development dependencies using [poetry](https://python-poetry.org/):
-```bash
-poetry install -E apf
-```
-
-Run tests using:
-```bash
-poetry run pytest
-```
-
-## Step Information
-
-#### Next step:
-- [Correction Multistream ZTF Step](https://github.com/alercebroker/pipeline/tree/main/correction_multistream_ztf_step)
-
-## Run the Released Image
-
-To pull the latest Docker image:
-```bash
-docker pull ghcr.io/alercebroker/ingestion_step:latest
+poetry install
+poetry run pytest tests/unit
 ```

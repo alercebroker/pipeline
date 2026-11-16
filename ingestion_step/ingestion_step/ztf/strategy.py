@@ -58,7 +58,10 @@ class ZtfStrategy(StrategyInterface[ZtfData]):
 
     @classmethod
     def insert_into_db(
-        cls, driver: PsqlDatabase, parsed_data: ZtfData, chunk_size: int | None = None
+        cls,
+        driver: PsqlDatabase,
+        parsed_data: ZtfData,
+        chunk_size: int | None = None,
     ):
         insert_objects(driver, parsed_data["objects"], chunk_size=chunk_size)
         insert_detections(
@@ -67,7 +70,9 @@ class ZtfStrategy(StrategyInterface[ZtfData]):
             chunk_size=chunk_size,
             on_conflict_do_update=True,
         )
-        insert_detections(driver, parsed_data["prv_detections"], chunk_size=chunk_size)
+        insert_detections(
+            driver, parsed_data["prv_detections"], chunk_size=chunk_size
+        )
         insert_non_detections(
             driver, parsed_data["non_detections"], chunk_size=chunk_size
         )
@@ -79,9 +84,15 @@ class ZtfStrategy(StrategyInterface[ZtfData]):
     def serialize(cls, parsed_data: ZtfData) -> list[Message]:
         objects = parsed_data["objects"]
         detections = serialize_detections(parsed_data["detections"])
-        prv_detections = serialize_prv_candidates(parsed_data["prv_detections"])
-        forced = serialize_forced_photometries(parsed_data["forced_photometries"])
-        non_detections = serialize_non_detections(parsed_data["non_detections"])
+        prv_detections = serialize_prv_candidates(
+            parsed_data["prv_detections"]
+        )
+        forced = serialize_forced_photometries(
+            parsed_data["forced_photometries"]
+        )
+        non_detections = serialize_non_detections(
+            parsed_data["non_detections"]
+        )
 
         message_objects = groupby_messageid(objects)
         message_detections = groupby_messageid(detections)
