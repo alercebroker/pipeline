@@ -18,6 +18,9 @@ from features.step import FeatureStep  # step under test
 
 from .test_surveys_golden import CONSUMER_CONFIG, PRODUCER_CONFIG, SCRIBE_PRODUCER_CONFIG  # mocked Kafka configs
 
+SELECT_SQL = "SELECT version_id FROM multisurvey.feature_version_lut WHERE version_name = :version_name AND feature_version = :feature_version AND sid = :sid AND tid = :tid"  # expected select
+MAX_SQL = "SELECT COALESCE(MAX(version_id), 0) FROM multisurvey.feature_version_lut WHERE sid = :sid AND tid = :tid"  # expected max query
+INSERT_SQL = "INSERT INTO multisurvey.feature_version_lut (version_id, version_name, feature_version, sid, tid) VALUES (:version_id, :version_name, :feature_version, :sid, :tid)"  # expected insert
 V = ("27.8.0", "0.1.0", 1, 1)  # version_name, feature_version, sid, tid
 
 
@@ -112,8 +115,7 @@ class LookupTestCase(unittest.TestCase):
         db = FakeDb([row(7)])  # select finds id 7
         get_or_create_version_id(db, "multisurvey", *V)  # call under test
         sql, params = db.calls[0]  # the select
-        for cond in ("version_name = :version_name", "feature_version = :feature_version", "sid = :sid", "tid = :tid"):  # four filters
-            self.assertIn(cond, sql)  # each is in the text
+        self.assertEqual(" ".join(sql.split()), SELECT_SQL)  # full statement, whitespace collapsed: four filters joined by AND
         self.assertEqual(params, {"version_name": "27.8.0", "feature_version": "0.1.0", "sid": 1, "tid": 1})  # and bound
 
     def test_new_combination_inserts_next_id(self):
@@ -121,8 +123,9 @@ class LookupTestCase(unittest.TestCase):
         db = FakeDb([row(None, found=False), row(4), None])  # select misses, max is 4, insert
         self.assertEqual(get_or_create_version_id(db, "multisurvey", *V), 5)  # next id
         sql, params = db.calls[2]  # the insert
-        self.assertIn("INSERT INTO multisurvey.feature_version_lut", sql)  # right table
-        self.assertIn("feature_version", sql)  # new column written
+        self.assertEqual(" ".join(sql.split()), INSERT_SQL)  # full insert, values bound, none literal
+        self.assertEqual(" ".join(db.calls[0][0].split()), SELECT_SQL)  # the miss came from the full select
+        self.assertEqual(" ".join(db.calls[1][0].split()), MAX_SQL)  # max over sid and tid only
         self.assertEqual(params, {"version_id": 5, "version_name": "27.8.0", "feature_version": "0.1.0", "sid": 1, "tid": 1})  # four values and id
         self.assertEqual(db.calls[1][1], {"sid": 1, "tid": 1})  # max is taken over sid and tid only
         self.assertEqual(db.commits, 1)  # committed once
