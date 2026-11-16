@@ -25,7 +25,7 @@
 ## Review Focus
 
 1. The table has no `feature_version` column yet (image deployed before the `ALTER TABLE`): the step must fail at start with the database error, not write under id 1. Pinned by `test_select_error_is_raised`.
-2. `FEATURE_VERSION` written unquoted in yaml arrives as a float or int (`1.0`, `2`): it is used as `str(value)`, so `1.0` looks up `"1.0"`. Pinned by `test_non_string_version_is_used_as_text`.
+2. `FEATURE_VERSION` written unquoted in yaml arrives as a float, int or bool (`1.10` becomes `1.1`): the step raises `ValueError` naming the key instead of converting it (spec amendment, criterion 6). Pinned by `test_non_string_version_raises`.
 3. `FEATURE_VERSION` with surrounding spaces (`" 0.1.0 "`): stripped before the lookup, so it does not create a second row. Pinned by `test_version_is_stripped`.
 4. `FEATURE_VERSION` of only spaces: treated as empty, raises. Pinned by `test_blank_version_raises`.
 5. The insert succeeds but is not committed: the next pod would not see the row. Pinned by the `commits == 1` assertion of `test_new_combination_inserts_next_id`.
@@ -39,6 +39,7 @@
 - Modify: `libs/db-plugins-multisurvey/db_plugins/db/sql/models_pipeline.py` (`FeatureVersionLut`, ~line 1104)
 - Modify: `feature_step/features/database.py` (`get_or_create_version_id`, ~line 117)
 - Modify: `feature_step/features/step.py` (~lines 98-102)
+- Modify, one line, authorized 2026-11-15 after the adversarial review: `feature_step/tests/integration/test_step.py` (the step config gains `"FEATURE_VERSION": "0.1.0"`)
 - Modify, one line each, with authorization: `feature_step/tests/unittest/test_surveys_golden.py` (`build_step` config), `feature_step/tests/unittest/test_surveys_step.py` (`config_for` and the `assert_called_once_with` of `test_version_and_lut_are_resolved_with_the_survey_sid_and_tid`), `feature_step/tests/unittest/test_step_ztf_multisurvey.py` (`build_step` config)
 
 **Interfaces:**
@@ -105,7 +106,7 @@ class StepTestCase:  # config = the three mocked Kafka configs of test_surveys_g
     def test_empty_version_raises(self):    # FEATURE_VERSION "" : same
     def test_blank_version_raises(self):    # FEATURE_VERSION "   " : same
     def test_version_is_stripped(self):     # " 0.1.0 " -> lookup called with "0.1.0"
-    def test_non_string_version_is_used_as_text(self):  # 1.0 -> lookup called with "1.0"
+    def test_non_string_version_raises(self):  # 1.1, 0, False, ["0.1.0"] : ValueError naming FEATURE_VERSION, lookup not called
 ```
 
 Written as `unittest.TestCase` classes like the neighbouring files. If `db_plugins.__file__` does not resolve under `libs/db-plugins-multisurvey` in the feature-step env, stop and report instead of working around it.
@@ -123,7 +124,7 @@ Expected: every test fails except `test_no_connection_returns_none` (`TypeError`
 
 - `models_pipeline.py`: add the column from Interfaces after `version_name`.
 - `database.py`: new signature from Interfaces; the select and the insert carry `feature_version`; the `try/except` that returns `1` is removed so exceptions propagate (keep the `db_sql is None` branch and the info logs, which now also name `feature_version`).
-- `step.py`: before the version lookup, read `config.get("FEATURE_VERSION")`; `None` raises `ValueError("FEATURE_VERSION is missing from the step config")`; otherwise `str(value).strip()`, and an empty result raises the same error with "is empty"; store as `self.feature_version` and pass it as the fourth argument.
+- `step.py`: before the version lookup, read `config.get("FEATURE_VERSION")`; `None` raises `ValueError("FEATURE_VERSION is missing from the step config")`; a non-string raises `ValueError` saying the value must be a quoted string; a string is stripped, and an empty result raises the same error with "is empty"; store as `self.feature_version` and pass it as the fourth argument.
 
 - [ ] **Step 5: The four authorized lines in committed tests**
 
