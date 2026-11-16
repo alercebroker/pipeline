@@ -68,17 +68,17 @@ class FakeDb:
         """Build the single session with the scripted results."""
         self.fake_session = FakeSession(results)  # shared by every session() call
 
-    @contextmanager
+    @contextmanager  # makes session() a context manager
     def session(self):
         """Yield the fake session like PSQLConnection.session does."""
         yield self.fake_session  # no real transaction
 
-    @property
+    @property  # read as an attribute, not called
     def calls(self):
         """Calls recorded by the session."""
         return self.fake_session.calls  # (sql, params) pairs
 
-    @property
+    @property  # read as an attribute, not called
     def commits(self):
         """Commits recorded by the session."""
         return self.fake_session.commits  # count
