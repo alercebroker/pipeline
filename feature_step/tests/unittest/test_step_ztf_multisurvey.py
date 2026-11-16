@@ -49,6 +49,7 @@ def build_step(**extra_config):
         "CONSUMER_CONFIG": CONSUMER_CONFIG,
         "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
         "SURVEY": "ztf",
+        "FEATURE_VERSION": "0.1.0",
         **extra_config,
     }
     step = FeatureStep(config=config, db_sql=mock.MagicMock())

@@ -54,6 +54,7 @@ def config_for(**extra):
         "PRODUCER_CONFIG": PRODUCER_CONFIG,  # mocked producer
         "CONSUMER_CONFIG": CONSUMER_CONFIG,  # mocked consumer
         "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,  # mocked scribe producer
+        "FEATURE_VERSION": "0.1.0",  # version row of feature_version_lut
         **extra,  # SURVEY and anything else the test sets
     }  # end of the config
 
@@ -121,7 +122,7 @@ class ConstructionTestCase(unittest.TestCase):
                     db_sql = mock.MagicMock()  # connection handed to both calls
                     step = FeatureStep(config=config_for(SURVEY=survey), db_sql=db_sql)  # step under test
             version_id.assert_called_once_with(  # one version lookup
-                db_sql, "multisurvey", version("feature-step"), sid, tid, step.logger  # default schema, package version
+                db_sql, "multisurvey", version("feature-step"), "0.1.0", sid, tid, step.logger  # default schema, package version
             )  # end of the version assertion
             lut.assert_called_once_with(db_sql, "multisurvey", sid, tid, step.logger)  # one LUT read
             self.assertIs(step.extractor_version, version_id.return_value)  # stored as returned

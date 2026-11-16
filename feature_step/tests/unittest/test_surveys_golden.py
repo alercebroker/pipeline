@@ -118,6 +118,7 @@ def build_step(survey):
         "CONSUMER_CONFIG": CONSUMER_CONFIG,  # mocked consumer
         "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,  # mocked scribe producer
         "SURVEY": survey,  # ztf or lsst
+        "FEATURE_VERSION": "0.1.0",  # version row of feature_version_lut
     }  # end of the step config
     step = FeatureStep(config=config, db_sql=mock.MagicMock())  # no database
     step.scribe_producer = mock.MagicMock()  # records producer.produce calls

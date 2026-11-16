@@ -97,8 +97,14 @@ class FeatureStep(GenericStep):
 
         # Get version name and resolve version_id from version_lut table
         version_name = version("feature-step")  # installed package version
-        self.extractor_version = get_or_create_version_id(  # id of that version for this survey
-            self.db_sql, self.schema, version_name, self.survey.sid, self.survey.tid, self.logger  # connection, schema, version, ids, logger
+        feature_version = self.config.get("FEATURE_VERSION")  # version from the step config
+        if feature_version is None:  # key absent
+            raise ValueError("FEATURE_VERSION is missing from the step config")  # no silent default
+        self.feature_version = str(feature_version).strip()  # text without surrounding blanks
+        if not self.feature_version:  # empty or blank
+            raise ValueError("FEATURE_VERSION is empty in the step config")  # no silent default
+        self.extractor_version = get_or_create_version_id(  # id of that version pair for this survey
+            self.db_sql, self.schema, version_name, self.feature_version, self.survey.sid, self.survey.tid, self.logger  # connection, schema, versions, ids, logger
         )  # end of the version lookup
 
         # Fetch feature name lookup table from multisurvey schema
