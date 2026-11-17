@@ -25,6 +25,7 @@ from .database import (  # database access of the step
 )  # end of the database imports
 
 from .surveys.registry import get_survey  # SURVEY name -> Survey object
+from .scribe_sender import send_commands  # produce a list of scribe commands and flush once
 
 from importlib.metadata import version  # installed version of the feature-step package
 
@@ -233,39 +234,9 @@ class FeatureStep(GenericStep):
         update_object_cmds = commands.get("update_object", [])  # object updates, absent for some surveys
         update_features_cmds = commands["upserting_features"]  # feature upserts, always present
 
-        count_objs = 0  # object updates sent so far
-        flush = False  # set on the last object update
-        for command in update_object_cmds:  # every object update
-            count_objs += 1  # one more sent
-            if count_objs == len(update_object_cmds):  # last object update
-                flush = True  # flush after producing it
-
-            oid = command["payload"]["oid"]  # object id of the command
-            self.scribe_producer.producer.produce(  # send the command
-                topic= self.scribe_topic_name,  # scribe topic
-                value=json.dumps(command).encode("utf-8"),  # command as json bytes
-                key=str(oid).encode("utf-8"),  # keyed by oid
-            )  # end of the produce call
-
-            if flush:  # after the last object update
-                self.scribe_producer.producer.flush()  # deliver the batch
-
-        count_features = 0  # feature upserts sent so far
-        flush = False  # set on the last feature upsert
-        for command in update_features_cmds:  # every feature upsert
-            count_features += 1  # one more sent
-            if count_features == len(update_features_cmds):  # last feature upsert
-                flush = True  # flush after producing it
-
-            oid = command["payload"]["oid"]  # object id of the command
-            self.scribe_producer.producer.produce(  # send the command
-                topic= self.scribe_topic_name,  # scribe topic
-                value=json.dumps(command).encode("utf-8"),  # command as json bytes
-                key=str(oid).encode("utf-8"),  # keyed by oid
-            )  # end of the produce call
-
-            if flush:  # after the last feature upsert
-                self.scribe_producer.producer.flush()  # deliver the batch
+        for cmds in (update_object_cmds, update_features_cmds):  # object updates first, then the feature upserts
+            if cmds:  # the producer is only touched when there is something to send, as before
+                send_commands(self.scribe_producer.producer, self.scribe_topic_name, cmds)  # produce in order, one flush
 
     def pre_produce(self, result: Iterable[Dict[str, Any]] | Dict[str, Any]):
         """Key the output messages by oid and return them unchanged."""
