@@ -64,9 +64,9 @@ class StepProduceTestCase(unittest.TestCase):
         step, producer = self.build({"update_object": [a], "upserting_features": [b, c]})  # scripted survey
         step.produce_to_scribe([])  # call under test
         self.assertEqual(  # exact sequence on the producer
-            producer.mock_calls,
-            [expected_produce(a), call.flush(), expected_produce(b), expected_produce(c), call.flush()],
-        )
+            producer.mock_calls,  # what was recorded
+            [expected_produce(a), call.flush(), expected_produce(b), expected_produce(c), call.flush()],  # a, flush, b, c, flush
+        )  # end of the assertion
 
     def test_step_without_object_updates_flushes_once(self):
         """No update_object key: only the upserts are produced, with one flush."""
@@ -74,3 +74,16 @@ class StepProduceTestCase(unittest.TestCase):
         step, producer = self.build({"upserting_features": [b]})  # scripted survey
         step.produce_to_scribe([])  # call under test
         self.assertEqual(producer.mock_calls, [expected_produce(b), call.flush()])  # no flush for the missing list
+
+    def test_step_with_no_commands_leaves_the_producer_untouched(self):
+        """Two empty lists never read the producer attribute of the scribe producer."""
+        step, _ = self.build({"update_object": [], "upserting_features": []})  # scripted survey with nothing to send
+        step.scribe_producer = mock.Mock(spec=[])  # has no `producer` attribute: reading it raises AttributeError
+        step.produce_to_scribe([])  # call under test, must not raise
+
+    def test_step_with_objects_and_no_features_flushes_once(self):
+        """Object updates and an empty upsert list: produce, one flush, nothing else."""
+        a = command(1)  # single object update
+        step, producer = self.build({"update_object": [a], "upserting_features": []})  # scripted survey
+        step.produce_to_scribe([])  # call under test
+        self.assertEqual(producer.mock_calls, [expected_produce(a), call.flush()])  # no second flush for the empty list
