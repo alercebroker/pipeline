@@ -39,6 +39,10 @@ class XmatchEnricher:
         self.catalogs = catalogs  # one request per catalog
         self.survey_name = survey_name  # written in every command
 
+    def sync(self, client, catalogs: list, survey_name: str) -> None:
+        """Take the client, catalogs and survey name the step holds now, they may have been replaced after construction."""
+        self.client, self.catalogs, self.survey_name = client, catalogs, survey_name  # same three values as __init__
+
     def query(self, messages: List[dict]) -> List[Dict[str, Any]]:
         """
         Query the xmatch service for every message of the batch, whatever the survey,

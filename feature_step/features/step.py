@@ -66,9 +66,7 @@ class FeatureStep(GenericStep):
         self.survey_name = self.survey.name  # the SURVEY string, sent in the xmatch scribe command
         self.use_xmatch = self.config.get("USE_XMATCH", False)  # whether to ask the xmatch service
         # Catalogs to cross-match against (one conesearch request per catalog).
-        self.xmatch_catalogs = self.config.get(  # catalogs from the config
-            "XMATCH_CATALOGS", ["allwise", "gaia"]  # key and default
-        )  # end of the catalogs lookup
+        self.xmatch_catalogs = self.config.get("XMATCH_CATALOGS", ["allwise", "gaia"])  # catalogs from the config, with default
 
         # Get schema from configuration
         self.schema = self.config.get("DB_CONFIG", {}).get("SCHEMA", "multisurvey")  # db schema, multisurvey by default
@@ -99,8 +97,7 @@ class FeatureStep(GenericStep):
 
         # Initialize xmatch client
         if self.use_xmatch:  # only when the xmatch is enabled
-            xmatch_config = self.config.get("XMATCH_CONFIG", {})  # client arguments from the config
-            self.xmatch_client = XmatchClient(**xmatch_config)  # client of the xmatch service
+            self.xmatch_client = XmatchClient(**self.config.get("XMATCH_CONFIG", {}))  # client of the xmatch service, arguments from the config
             self.xmatch = XmatchEnricher(self.xmatch_client, self.xmatch_catalogs, self.survey_name)  # query, attach and commands
 
         self.min_detections_features = config.get("MIN_DETECTIONS_FEATURES", None)  # minimum non-forced epochs per object
@@ -143,13 +140,12 @@ class FeatureStep(GenericStep):
 
         # Any survey: get the xmatch info for ALL the messages, before the min-detections filter
         if self.use_xmatch and len(messages) > 0:  # xmatch enabled and something to match
-            self.xmatch.client = self.xmatch_client  # the client the step holds now, it may have been replaced after construction
+            self.xmatch.sync(self.xmatch_client, self.xmatch_catalogs, self.survey_name)  # the values the step holds now
             results = self.xmatch.query(messages)  # matches of every catalog
             self.xmatch.attach(messages, results)  # allwise match or None on each message
             commands = self.xmatch.commands(results, messages)  # every match goes to scribe
             if commands:  # the producer is only touched when there is something to send, as before
                 send_commands(self.scribe_producer.producer, self.scribe_topic_name, commands)  # produce in order, one flush
-
         filtered_messages = []  # copies of the messages with their epochs gathered
         for message in messages:  # every incoming message
             filtered_message = message.copy()  # shallow copy, the input message keeps its own keys
