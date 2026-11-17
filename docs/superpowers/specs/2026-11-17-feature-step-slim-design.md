@@ -65,8 +65,9 @@ committed tests and `local_sim/equiv.py` patch them on the step module.
    once per command, in order, and `producer.flush()` once, after the last one. For
    an empty list it calls neither.
 2. `FeatureStep.produce_to_scribe` sends the `update_object` commands and then the
-   `upserting_features` commands with two `send_commands` calls: two flushes when
-   both lists have commands, one when only one has, in that order.
+   `upserting_features` commands, with one `send_commands` call per non-empty list:
+   two flushes when both lists have commands, one when only one has, none when both
+   are empty (the scribe producer is not touched then).
 3. `features/xmatch.py` has `XmatchEnricher(client, catalogs, survey_name)` with
    `query(messages)` (one `conesearch_with_metadata` request per catalog, messages
    with `sid == 2` left out, oids as strings), `attach(messages, results)` (sets
