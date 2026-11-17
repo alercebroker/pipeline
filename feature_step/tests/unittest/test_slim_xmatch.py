@@ -3,6 +3,7 @@
 Covers features.xmatch.XmatchEnricher and the use FeatureStep.pre_execute makes of it.
 Mock client and producer only: no network, no Kafka, no database.
 """
+import json  # decode the produced commands
 import unittest  # test case base class
 from unittest import mock  # fake client, survey and producer
 
@@ -134,3 +135,14 @@ class StepXmatchTestCase(unittest.TestCase):
         step.scribe_producer = mock.Mock(spec=[])  # has no `producer` attribute: reading it raises AttributeError
         out = step.pre_execute([msg(1)])  # call under test, must not raise
         self.assertIsNone(out[0]["xmatches"])  # no match attached
+
+    def test_step_uses_the_catalogs_and_survey_name_it_currently_holds(self):
+        """Catalogs and survey name set on the step after construction are the ones queried and written."""
+        step = self.build([match(1)])  # one allwise match for every catalog
+        step.xmatch_catalogs = ["allwise", "gaia"]  # replaced after construction
+        step.survey_name = "lsst"  # replaced after construction
+        step.pre_execute([msg(1)])  # call under test
+        catalogs = [c.kwargs["catalog"] for c in step.xmatch_client.conesearch_with_metadata.call_args_list]  # catalogs requested
+        self.assertEqual(catalogs, ["allwise", "gaia"])  # the new catalogs, not the construction-time ones
+        sent = [json.loads(c.kwargs["value"]) for c in step.scribe_producer.producer.produce.call_args_list]  # commands produced
+        self.assertEqual({c["survey"] for c in sent}, {"lsst"})  # the new survey name
