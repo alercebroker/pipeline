@@ -48,7 +48,7 @@
   - `test_step_without_object_updates_flushes_once`: `{"upserting_features": [b]}` -> produce b, flush.
 - [ ] **Step 2: run, expect FAIL** (`ModuleNotFoundError` for the module tests; the two step tests pass already and are kept as the behaviour pin: say so in the report).
 - [ ] **Step 3: commit the test file alone**: `test(feature_step): scribe commands are sent in order with one flush per list`
-- [ ] **Step 4: implement** `send_commands`; `produce_to_scribe` becomes the `scribe_commands` call plus two `send_commands` calls. `json` is still imported in `step.py` until Task 2.
+- [ ] **Step 4: implement** `send_commands`; `produce_to_scribe` becomes the `scribe_commands` call plus one `send_commands` call per non-empty list (spec amendment, criterion 2). `json` is still imported in `step.py` until Task 2.
 - [ ] **Step 5: run** the new file (all pass) and the package check (exit 0).
 - [ ] **Step 6: commit**: `refactor(feature_step): one send_commands for the scribe produce loops`
 
