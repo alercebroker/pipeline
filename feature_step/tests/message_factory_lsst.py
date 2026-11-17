@@ -1,7 +1,7 @@
 import pandas as pd
 import random
 from test_utils.mockdata.extra_fields.elasticc import generate_extra_fields
-from features.utils.parsers import fid_mapper_for_db
+from features.surveys.ztf.scribe import fid_mapper_for_db  # ztf band -> db code, the same function this factory used before
 import copy
 import os
 import json

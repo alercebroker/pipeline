@@ -136,6 +136,7 @@ class StepTestCase(unittest.TestCase):
                 "FEATURE_VERSION": "1.0-test",
             },
             "MIN_DETECTIONS_FEATURES": 2,
+            "SURVEY": "ztf",  # a config without SURVEY raises ValueError at construction
         }
         db_sql = mock.MagicMock()
         step = FeatureStep(config=step_config, db_sql=db_sql)

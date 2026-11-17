@@ -114,50 +114,44 @@ def get_feature_name_lut(db_sql: PSQLConnection, schema: str, sid: int, tid: int
         return {}
 
 
-def get_or_create_version_id(db_sql: PSQLConnection, schema: str, version_name: str, sid: int, tid: int, logger=None) -> int:
-    """Get version_id from version_lut table, or create it if it doesn't exist."""
-    if db_sql is None:
-        if logger:
-            logger.warning("No database connection available for version lookup")
-        return None
-        
-    try:
-        from sqlalchemy import text
-        
-        with db_sql.session() as session:
-            # First, try to get existing version_id
-            select_query = text(
-                f"SELECT version_id FROM {schema}.feature_version_lut WHERE version_name = :version_name AND sid = :sid AND tid = :tid"
-            )
-            result = session.execute(select_query, {"version_name": version_name, "sid": sid, "tid": tid})
-            row = result.fetchone()
-            
-            if row:
-                version_id = row[0]
-                if logger:
-                    logger.info(f"Found existing version_id {version_id} for version_name '{version_name}', sid={sid}, tid={tid}")
-                return version_id
-            else:
-                # Get the maximum version_id for this sid and tid, then add 1
-                max_query = text(
-                    f"SELECT COALESCE(MAX(version_id), 0) FROM {schema}.feature_version_lut WHERE sid = :sid AND tid = :tid"
-                )
-                max_result = session.execute(max_query, {"sid": sid, "tid": tid})
-                max_version_id = max_result.fetchone()[0]
-                new_version_id = max_version_id + 1
-                
-                # Insert new version_name, sid, tid with the calculated version_id
-                insert_query = text(
-                    f"INSERT INTO {schema}.feature_version_lut (version_id, version_name, sid, tid) VALUES (:version_id, :version_name, :sid, :tid)"
-                )
-                session.execute(insert_query, {"version_id": new_version_id, "version_name": version_name, "sid": sid, "tid": tid})
-                session.commit()
-                
-                if logger:
-                    logger.info(f"Created new version_id {new_version_id} for version_name '{version_name}', sid={sid}, tid={tid}")
-                return new_version_id
-                
-    except Exception as e:
-        if logger:
-            logger.error(f"Error handling version_lut table: {e}")
-        return 1 # None
+def get_or_create_version_id(db_sql: PSQLConnection, schema: str, version_name: str, feature_version: str, sid: int, tid: int, logger=None) -> int:  # signature with the config version
+    """Get version_id for (version_name, feature_version, sid, tid) from feature_version_lut, or create it; raises on a DB error."""
+    if db_sql is None:  # no connection
+        if logger:  # only when a logger was given
+            logger.warning("No database connection available for version lookup")  # tell why nothing was looked up
+        return None  # nothing to look up
+
+    from sqlalchemy import text  # build the queries
+
+    with db_sql.session() as session:  # one session for select and insert
+        # First, try to get existing version_id
+        select_query = text(  # row of this exact combination
+            f"SELECT version_id FROM {schema}.feature_version_lut WHERE version_name = :version_name AND feature_version = :feature_version AND sid = :sid AND tid = :tid"  # select of the exact four-value combination
+        )  # end of the select
+        result = session.execute(select_query, {"version_name": version_name, "feature_version": feature_version, "sid": sid, "tid": tid})  # run the select
+        row = result.fetchone()  # None when the combination has no row
+
+        if row:  # the combination exists
+            version_id = row[0]  # its id
+            if logger:  # only when a logger was given
+                logger.info(f"Found existing version_id {version_id} for version_name '{version_name}', feature_version '{feature_version}', sid={sid}, tid={tid}")  # report the match
+            return version_id  # nothing inserted
+        else:  # the combination is new
+            # Get the maximum version_id for this sid and tid, then add 1
+            max_query = text(  # highest id of this survey
+                f"SELECT COALESCE(MAX(version_id), 0) FROM {schema}.feature_version_lut WHERE sid = :sid AND tid = :tid"  # highest id for this sid and tid
+            )  # end of the max query
+            max_result = session.execute(max_query, {"sid": sid, "tid": tid})  # run the max query
+            max_version_id = max_result.fetchone()[0]  # current maximum, 0 for an empty table
+            new_version_id = max_version_id + 1  # next free id
+
+            # Insert the new combination with the calculated version_id
+            insert_query = text(  # row for the new combination
+                f"INSERT INTO {schema}.feature_version_lut (version_id, version_name, feature_version, sid, tid) VALUES (:version_id, :version_name, :feature_version, :sid, :tid)"  # insert of the four values with the new id
+            )  # end of the insert
+            session.execute(insert_query, {"version_id": new_version_id, "version_name": version_name, "feature_version": feature_version, "sid": sid, "tid": tid})  # run the insert
+            session.commit()  # persist the row
+
+            if logger:  # only when a logger was given
+                logger.info(f"Created new version_id {new_version_id} for version_name '{version_name}', feature_version '{feature_version}', sid={sid}, tid={tid}")  # report the insert
+            return new_version_id  # the new id

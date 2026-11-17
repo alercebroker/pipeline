@@ -1,0 +1,276 @@
+{
+ "1152921504606847001": {
+  "detections": {
+   "columns": [
+    [
+     "oid",
+     "int64"
+    ],
+    [
+     "sid",
+     "object"
+    ],
+    [
+     "mjd",
+     "float64"
+    ],
+    [
+     "ra",
+     "float64"
+    ],
+    [
+     "dec",
+     "float64"
+    ],
+    [
+     "brightness",
+     "float64"
+    ],
+    [
+     "e_brightness",
+     "float64"
+    ],
+    [
+     "tid",
+     "int64"
+    ],
+    [
+     "fid",
+     "object"
+    ],
+    [
+     "candid",
+     "int64"
+    ],
+    [
+     "forced",
+     "bool"
+    ],
+    [
+     "unit",
+     "object"
+    ]
+   ],
+   "index": {
+    "dtype": "int64",
+    "names": [
+     null
+    ]
+   }
+  },
+  "forced_photometry": {
+   "columns": [
+    [
+     "oid",
+     "int64"
+    ],
+    [
+     "sid",
+     "object"
+    ],
+    [
+     "mjd",
+     "float64"
+    ],
+    [
+     "ra",
+     "float64"
+    ],
+    [
+     "dec",
+     "float64"
+    ],
+    [
+     "brightness",
+     "float64"
+    ],
+    [
+     "e_brightness",
+     "float64"
+    ],
+    [
+     "tid",
+     "int64"
+    ],
+    [
+     "fid",
+     "object"
+    ],
+    [
+     "candid",
+     "int64"
+    ],
+    [
+     "forced",
+     "bool"
+    ],
+    [
+     "unit",
+     "object"
+    ]
+   ],
+   "index": {
+    "dtype": "int64",
+    "names": [
+     null
+    ]
+   }
+  },
+  "metadata": {
+   "columns": [
+    [
+     "name",
+     "object"
+    ],
+    [
+     "value",
+     "object"
+    ]
+   ],
+   "index": {
+    "dtype": "int64",
+    "names": [
+     null
+    ]
+   }
+  },
+  "reference": null
+ },
+ "1152921504606847002": {
+  "detections": {
+   "columns": [
+    [
+     "oid",
+     "int64"
+    ],
+    [
+     "sid",
+     "object"
+    ],
+    [
+     "mjd",
+     "float64"
+    ],
+    [
+     "ra",
+     "float64"
+    ],
+    [
+     "dec",
+     "float64"
+    ],
+    [
+     "brightness",
+     "float64"
+    ],
+    [
+     "e_brightness",
+     "float64"
+    ],
+    [
+     "tid",
+     "int64"
+    ],
+    [
+     "fid",
+     "object"
+    ],
+    [
+     "candid",
+     "int64"
+    ],
+    [
+     "forced",
+     "bool"
+    ],
+    [
+     "unit",
+     "object"
+    ]
+   ],
+   "index": {
+    "dtype": "int64",
+    "names": [
+     null
+    ]
+   }
+  },
+  "forced_photometry": {
+   "columns": [
+    [
+     "oid",
+     "int64"
+    ],
+    [
+     "sid",
+     "object"
+    ],
+    [
+     "mjd",
+     "float64"
+    ],
+    [
+     "ra",
+     "float64"
+    ],
+    [
+     "dec",
+     "float64"
+    ],
+    [
+     "brightness",
+     "float64"
+    ],
+    [
+     "e_brightness",
+     "float64"
+    ],
+    [
+     "tid",
+     "int64"
+    ],
+    [
+     "fid",
+     "object"
+    ],
+    [
+     "candid",
+     "int64"
+    ],
+    [
+     "forced",
+     "bool"
+    ],
+    [
+     "unit",
+     "object"
+    ]
+   ],
+   "index": {
+    "dtype": "int64",
+    "names": [
+     null
+    ]
+   }
+  },
+  "metadata": {
+   "columns": [
+    [
+     "name",
+     "object"
+    ],
+    [
+     "value",
+     "object"
+    ]
+   ],
+   "index": {
+    "dtype": "int64",
+    "names": [
+     null
+    ]
+   }
+  },
+  "reference": null
+ }
+}

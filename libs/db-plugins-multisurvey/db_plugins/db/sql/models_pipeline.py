@@ -1106,6 +1106,7 @@ class FeatureVersionLut(Base):
 
     version_id = Column(SmallInteger, nullable=False)
     version_name = Column(VARCHAR, nullable=False)
+    feature_version = Column(VARCHAR, nullable=False, server_default="1.0.0")  # version from the step config; old rows take 1.0.0
     sid = Column(SmallInteger, nullable=False)
     tid = Column(SmallInteger, nullable=False)
 
