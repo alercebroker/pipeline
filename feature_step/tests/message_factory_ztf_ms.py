@@ -61,13 +61,14 @@ def candidate(oid, measurement_id, band, mjd, rng, rb=0.9, rfid=783120150):
             "distpsnr1": 0.4,
             "rbversion": "t17_f5_c3",
             "drbversion": "d6_m7",
+            "exptime": 30.0,
         }
     )
     return epoch
 
 
 def prv_candidate(oid, measurement_id, band, mjd, rng, rb=0.9):
-    """One `prv_candidate` record: rb but no rfid and no PS1 columns."""
+    """One `prv_candidate` record: rb but no rfid, no PS1 columns, no exptime."""
     epoch = _base_epoch(oid, measurement_id, band, mjd, False, rng)
     epoch.update(
         {
@@ -108,6 +109,7 @@ def forced_photometry(oid, measurement_id, band, mjd, rng, procstatus="0",
             "programid": 1,
             "forcediffimflux": 100.0,
             "forcediffimfluxunc": 10.0,
+            "exptime": 30.0,
         }
     )
     return epoch

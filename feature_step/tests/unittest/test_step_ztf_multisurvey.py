@@ -14,6 +14,7 @@ import fastavro
 import fastavro.schema
 from unittest import mock
 
+import numpy as np
 import pandas as pd
 
 from features.step import FeatureStep
@@ -193,6 +194,22 @@ class ParserTestCase(unittest.TestCase):
         det_mag = ao.detections[ao.detections["unit"] == "magnitude"]
         self.assertTrue(det_mag["rb"].notna().all())
         self.assertTrue(det_mag["distnr"].notna().all())
+
+    def test_exptime_reaches_the_astro_object(self):
+        # candidate and forced_photometry carry exptime; prv_candidate does not.
+        message = generate_message(n_detections=2, n_previous_detections=2, n_forced=2)
+        message["detections"][0]["exptime"] = 240.0
+        ao = astro_object_from(message)
+
+        det_mag = ao.detections[ao.detections["unit"] == "magnitude"]
+        exptime = dict(zip(det_mag["candid"], det_mag["exptime"]))
+        self.assertEqual(240.0, exptime[message["detections"][0]["measurement_id"]])
+        self.assertEqual(30.0, exptime[message["detections"][1]["measurement_id"]])
+        for epoch in message["previous_detections"]:
+            self.assertTrue(np.isnan(exptime[epoch["measurement_id"]]))
+
+        forced_mag = ao.forced_photometry[ao.forced_photometry["unit"] == "magnitude"]
+        self.assertTrue((forced_mag["exptime"] == 30.0).all())
 
     def test_parser_indexes_detections_by_aid(self):
         # Given epochs that already carry `aid` (execute stamps it; so does

@@ -261,6 +261,10 @@ def detections_to_astro_object(
         "band",
         "isdiffpos",
         "forced",
+        # Seconds; candidate and forced_photometry carry it, prv_candidate does
+        # not. The preprocessor uses it to move start-of-exposure times to
+        # mid-exposure.
+        "exptime",
     ]
 
     # Forced epochs arrive inline in `detections` with a per-row `forced` flag,
@@ -280,6 +284,8 @@ def detections_to_astro_object(
         values.append(row)
 
     a = pd.DataFrame(data=values, columns=detection_keys)
+    # Absent on prv_candidate rows: keep it float so missing values are NaN.
+    a["exptime"] = pd.to_numeric(a["exptime"], errors="coerce")
     a.fillna(value=np.nan, inplace=True)
 
     # A record's type selects at most one spelling of the corrected magnitude --
